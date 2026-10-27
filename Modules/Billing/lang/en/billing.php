@@ -235,6 +235,7 @@ return [
     'cancel_now' => 'Cancel now',
     'cancel_now_hint' => 'Ends the subscription immediately and voids its open invoices. Refunds are handled manually.',
     'assign_package' => 'Assign package',
+    'no_modules_in_package' => 'This package includes no modules.',
     'assign' => 'Assign',
 
     // Coupons

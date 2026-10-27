@@ -12,6 +12,12 @@ use App\Models\Business\Business;
 interface Entitlements
 {
     /**
+     * True when this provider (e.g. packages) is the only thing deciding
+     * module access; the per-business on/off switches are then ignored.
+     */
+    public function controlsModules(): bool;
+
+    /**
      * May this business use the given code module right now?
      */
     public function allowsModule(Business $business, string $module): bool;

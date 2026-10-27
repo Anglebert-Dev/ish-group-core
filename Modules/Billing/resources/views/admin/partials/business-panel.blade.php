@@ -13,6 +13,13 @@
                 </div>
                 <p class="text-sm text-muted">{{ Money::format($subscription->price()) }} / {{ $subscription->interval()->label($subscription->intervalCount()) }}
                     @if ($subscription->current_period_end) · {{ __('billing::billing.paid_until') }} {{ $subscription->current_period_end->format('d M Y') }} @endif</p>
+                <div class="flex flex-wrap gap-1.5 pt-1">
+                    @forelse ($subscription->snapshot['modules'] ?? [] as $module)
+                        <x-common.badge :color="$subscription->status->grantsAccess() ? 'success' : 'muted'">{{ $module }}</x-common.badge>
+                    @empty
+                        <span class="text-sm text-muted">{{ __('billing::billing.no_modules_in_package') }}</span>
+                    @endforelse
+                </div>
                 <x-common.action-button :href="route('superadmin.billing.subscriptions.show', $subscription)">{{ __('body.manage') }}</x-common.action-button>
             @else
                 <p class="text-sm text-muted">{{ __('billing::billing.no_subscription') }}</p>

@@ -130,23 +130,30 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {{-- Modules --}}
-            <form action="{{ route('superadmin.businesses.modules', $business) }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-4">
-                @csrf @method('PUT')
-                <div>
+            {{-- Modules: per-business switches only when no billing module decides --}}
+            @if ($modulesFromPackage)
+                <div class="bg-white border border-line rounded-xl p-5 space-y-2">
                     <h2 class="font-display font-bold text-ink">{{ __('body.business_modules') }}</h2>
-                    <p class="text-sm text-muted mt-1">{{ __('body.business_modules_hint') }}</p>
+                    <p class="text-sm text-muted">{{ __('body.business_modules_from_package') }}</p>
                 </div>
-                @forelse ($modules as $module)
-                    <x-common.checkbox name="modules[]" :value="$module['name']" :label="$module['name']" :description="$module['description']"
-                        :checked="$enabled === null || in_array($module['name'], $enabled, true)" />
-                @empty
-                    <p class="text-sm text-muted">{{ __('body.no_active_modules') }}</p>
-                @endforelse
-                @if ($modules->isNotEmpty())
-                    <x-common.button type="submit" size="sm">{{ __('body.save') }}</x-common.button>
-                @endif
-            </form>
+            @else
+                <form action="{{ route('superadmin.businesses.modules', $business) }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-4">
+                    @csrf @method('PUT')
+                    <div>
+                        <h2 class="font-display font-bold text-ink">{{ __('body.business_modules') }}</h2>
+                        <p class="text-sm text-muted mt-1">{{ __('body.business_modules_hint') }}</p>
+                    </div>
+                    @forelse ($modules as $module)
+                        <x-common.checkbox name="modules[]" :value="$module['name']" :label="$module['name']" :description="$module['description']"
+                            :checked="$enabled === null || in_array($module['name'], $enabled, true)" />
+                    @empty
+                        <p class="text-sm text-muted">{{ __('body.no_active_modules') }}</p>
+                    @endforelse
+                    @if ($modules->isNotEmpty())
+                        <x-common.button type="submit" size="sm">{{ __('body.save') }}</x-common.button>
+                    @endif
+                </form>
+            @endif
 
             {{-- Danger zone --}}
             @unless ($isOwnBusiness)

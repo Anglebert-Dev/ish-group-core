@@ -76,7 +76,9 @@ class BusinessController extends Controller
             'business' => $business->load('owner'),
             'users' => $this->platform->businessUsers($business),
             'stats' => $this->platform->businessStats($business),
-            'modules' => $this->modules->catalogue()->where('active', true)->values(),
+            'modules' => $this->modules->catalogue()->where('active', true)
+                ->reject(fn ($m) => $this->modules->isBillingExempt($m['name']))->values(),
+            'modulesFromPackage' => app(\App\Contracts\Entitlements::class)->controlsModules(),
         ]);
     }
 

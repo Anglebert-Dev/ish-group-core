@@ -286,4 +286,20 @@ class SubscriptionLifecycleTest extends BillingTestCase
         $this->assertFalse($this->service()->subscribe($business, $private)['status']);
         $this->assertTrue($this->service()->subscribe($business, $private, null, true)['status']);
     }
+
+    public function test_package_alone_decides_modules_when_billing_is_installed(): void
+    {
+        [$business] = $this->makeBusiness();
+        $business->forceFill(['enabled_modules' => []])->save(); // stale switch: everything off
+        $this->service()->subscribe($business, $this->package(['price' => 0, 'modules' => ['Frontend']]));
+
+        $this->assertTrue($business->fresh()->canUseModule('Frontend'), 'package wins over old switches');
+
+        $this->actingAs($this->root, 'staff');
+        $this->get(route('superadmin.businesses.show', $business))
+            ->assertOk()
+            ->assertSee(__('body.business_modules_from_package'))
+            ->assertDontSee('name="modules[]"', false);
+        $this->put(route('superadmin.businesses.modules', $business), ['modules' => []])->assertSessionHas('error');
+    }
 }

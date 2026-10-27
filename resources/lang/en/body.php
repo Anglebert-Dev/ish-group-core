@@ -380,6 +380,7 @@ return [
     'business_has_no_owner' => 'This business has no owner account.',
     'business_modules' => 'Modules for this business',
     'business_modules_hint' => 'Turn installed modules on or off for this business only.',
+    'business_modules_from_package' => 'Modules come from this business\'s package — see the subscription above. Change its package to change its modules.',
     'business_modules_updated' => 'Business modules updated.',
     'cannot_deactivate_own_business' => 'You cannot deactivate the business you are signed in to.',
     'deactivate_business_warning' => 'Its users are signed out on their next request and cannot sign in until it is reactivated.',

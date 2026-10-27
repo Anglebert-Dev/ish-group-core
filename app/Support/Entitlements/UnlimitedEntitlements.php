@@ -10,6 +10,11 @@ use App\Models\Business\Business;
  */
 class UnlimitedEntitlements implements Entitlements
 {
+    public function controlsModules(): bool
+    {
+        return false;
+    }
+
     public function allowsModule(Business $business, string $module): bool
     {
         return true;

@@ -30,6 +30,11 @@ class BillingEntitlements implements Entitlements
     {
     }
 
+    public function controlsModules(): bool
+    {
+        return $this->billingActive();
+    }
+
     public function allowsModule(Business $business, string $module): bool
     {
         if (! $this->billingActive() || $this->modules->isBillingExempt($module) || $this->isPlatformOwner($business)) {

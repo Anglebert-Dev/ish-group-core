@@ -69,13 +69,16 @@ class Business extends BaseModel
     }
 
     /**
-     * Switched on for this business (enabled_modules) AND allowed by its
-     * package/subscription (App\Contracts\Entitlements).
+     * With a billing module: whatever the business's package allows.
+     * Without one: the per-business on/off switches (enabled_modules).
      */
     public function canUseModule(string $module): bool
     {
-        return $this->hasModuleEnabled($module)
-            && app(Entitlements::class)->allowsModule($this, $module);
+        $entitlements = app(Entitlements::class);
+
+        return $entitlements->controlsModules()
+            ? $entitlements->allowsModule($this, $module)
+            : $this->hasModuleEnabled($module);
     }
 
     /**

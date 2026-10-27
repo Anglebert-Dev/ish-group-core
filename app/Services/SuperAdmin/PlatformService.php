@@ -140,6 +140,10 @@ class PlatformService extends BaseService
      */
     public function updateEnabledModules(Business $business, array $modules): array
     {
+        if (app(\App\Contracts\Entitlements::class)->controlsModules()) {
+            return $this->failure(__('body.business_modules_from_package'));
+        }
+
         $known = $this->modules->catalogue()->pluck('name')->all();
 
         $business->forceFill([

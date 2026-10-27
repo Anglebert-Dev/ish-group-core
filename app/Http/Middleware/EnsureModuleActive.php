@@ -10,9 +10,9 @@ use Illuminate\Http\Request;
 /**
  * Usage: ->middleware('module:Inventory')
  *
- * 404 unless the module is installed and enabled, and — for a signed-in
- * staff user — switched on for their business (enabled_modules). A module
- * outside the business's package redirects to the upgrade page.
+ * 404 unless the module is installed and enabled and the signed-in staff
+ * user's business may use it (its package, or its on/off switch when no
+ * billing module is installed). Locked modules redirect to the upgrade page.
  */
 class EnsureModuleActive
 {
@@ -26,9 +26,7 @@ class EnsureModuleActive
 
         $business = auth('staff')->user()?->business;
 
-        abort_if($business && ! $business->hasModuleEnabled($module), 404);
-
-        if ($business && ! app(Entitlements::class)->allowsModule($business, $module)) {
+        if ($business && ! $business->canUseModule($module)) {
             // Not in the business's package (or the subscription lapsed):
             // send them where they can fix it, if such a page exists.
             $upgrade = app(Entitlements::class)->upgradeUrl();
