@@ -17,6 +17,15 @@ use ZipArchive;
  */
 class BackupService extends BaseService
 {
+    /**
+     * Defaults keep backups working even for a worker started before
+     * config/backup.php existed (workers keep the config they booted with).
+     */
+    public function directory(): string
+    {
+        return (string) (config('backup.directory') ?: 'backups');
+    }
+
     public function disk()
     {
         return Storage::disk('local');
@@ -27,7 +36,7 @@ class BackupService extends BaseService
      */
     public function list(): Collection
     {
-        $directory = config('backup.directory');
+        $directory = $this->directory();
 
         return collect($this->disk()->files($directory))
             ->filter(fn (string $path) => str_ends_with($path, '.zip'))
@@ -43,7 +52,7 @@ class BackupService extends BaseService
 
     public function create(): array
     {
-        $directory = config('backup.directory');
+        $directory = $this->directory();
         $this->disk()->makeDirectory($directory);
 
         $name = 'backup-'.now()->format('Y-m-d-His').'.zip';
@@ -61,7 +70,7 @@ class BackupService extends BaseService
 
             $zip->addFile($dump, basename($dump));
 
-            foreach (config('backup.include', []) as $folder) {
+            foreach (config('backup.include') ?: ['private', 'public'] as $folder) {
                 $root = storage_path('app/'.$folder);
                 if (! is_dir($root)) {
                     continue;
@@ -95,14 +104,14 @@ class BackupService extends BaseService
 
     public function path(string $name): ?string
     {
-        $relative = config('backup.directory').'/'.basename($name);
+        $relative = $this->directory().'/'.basename($name);
 
         return $this->disk()->exists($relative) ? $this->disk()->path($relative) : null;
     }
 
     public function delete(string $name): bool
     {
-        return $this->disk()->delete(config('backup.directory').'/'.basename($name));
+        return $this->disk()->delete($this->directory().'/'.basename($name));
     }
 
     /**
@@ -138,7 +147,7 @@ class BackupService extends BaseService
                 $result = Process::env(['PGPASSWORD' => (string) ($config['password'] ?? '')])
                     ->timeout(900)
                     ->run([
-                        config('backup.pg_dump'), '--no-owner', '--no-privileges',
+                        config('backup.pg_dump') ?: 'pg_dump', '--no-owner', '--no-privileges',
                         '-h', (string) $config['host'], '-p', (string) $config['port'],
                         '-U', (string) $config['username'], '-f', $target, (string) $config['database'],
                     ]);
@@ -150,7 +159,7 @@ class BackupService extends BaseService
                 $result = Process::env(['MYSQL_PWD' => (string) ($config['password'] ?? '')])
                     ->timeout(900)
                     ->run([
-                        config('backup.mysqldump'), '--single-transaction', '--routines',
+                        config('backup.mysqldump') ?: 'mysqldump', '--single-transaction', '--routines',
                         '-h', (string) $config['host'], '-P', (string) $config['port'],
                         '-u', (string) $config['username'], '--result-file='.$target, (string) $config['database'],
                     ]);
