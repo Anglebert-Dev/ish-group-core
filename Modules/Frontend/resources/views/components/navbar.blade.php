@@ -1,8 +1,8 @@
 @php
     $overlay = request()->routeIs('site.home', 'home');
     $header = $site->get('header');
-    $showAccount = (bool) $header['show_account'];
-    $canRegister = $showAccount && (bool) $site->get('general.allow_registration');
+    $showAccount = (bool) $header['show_account'] && $site->allowsLogin();
+    $canRegister = $showAccount && $site->allowsRegistration();
     $customer = auth('customer')->user();
     $initials = $customer
         ? collect(explode(' ', $customer->name))->filter()->map(fn ($part) => strtoupper($part[0]))->take(2)->implode('')

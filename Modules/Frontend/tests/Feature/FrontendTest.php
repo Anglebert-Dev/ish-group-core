@@ -24,11 +24,15 @@ class FrontendTest extends TestCase
         app(ModuleManager::class)->install('Frontend');
     }
 
+    /**
+     * A published site with customer login and sign-up on, unless $content says otherwise.
+     */
     private function publishedSite(?Business $business = null, array $content = []): Site
     {
         $business ??= $this->makeBusiness()[0];
         $site = app(SiteService::class)->forBusiness($business);
-        $site->forceFill(['is_published' => true, 'content' => $content ?: null])->save();
+        $content = Site::merge(['general' => ['allow_login' => true, 'allow_registration' => true]], $content);
+        $site->forceFill(['is_published' => true, 'content' => $content])->save();
 
         return $site->fresh('business');
     }
@@ -157,7 +161,7 @@ class FrontendTest extends TestCase
         $this->put(route('frontend.admin.website.update', 'general'), [
             'slug' => 'my-place',
             'is_published' => '1',
-            'general' => ['seo_title' => 'My Place', 'seo_description' => 'Hello', 'allow_registration' => '0'],
+            'general' => ['seo_title' => 'My Place', 'seo_description' => 'Hello', 'allow_login' => '1', 'allow_registration' => '0'],
             'contact' => ['email' => 'hi@example.com', 'phone' => '+250 700 000 000', 'address' => 'Main street'],
         ])->assertRedirect(route('frontend.admin.website.edit', 'general'));
 
@@ -186,8 +190,38 @@ class FrontendTest extends TestCase
             ->assertSee('hi@example.com')
             ->assertSee('Footer words')
             ->assertSee('https://instagram.com/myplace', false)
+            ->assertSee('/s/my-place/login', false)
             ->assertDontSee('/s/my-place/register', false);
+        $this->get('/s/my-place/login')->assertOk()->assertDontSee('/s/my-place/register', false);
         $this->get('/s/my-place/register')->assertNotFound();
+    }
+
+    public function test_customer_accounts_are_off_until_the_business_turns_them_on(): void
+    {
+        [$business, $owner] = $this->makeBusiness();
+        $site = app(SiteService::class)->forBusiness($business);
+        $site->forceFill(['is_published' => true])->save();
+        $customer = $this->makeCustomer($business, ['email' => 'off@example.com']);
+
+        $this->get('/s/'.$site->slug)->assertOk()->assertDontSee('/s/'.$site->slug.'/login', false);
+        foreach (['/login', '/register', '/forgot-password', '/account'] as $path) {
+            $this->get('/s/'.$site->slug.$path)->assertNotFound();
+        }
+        $this->post('/s/'.$site->slug.'/login', ['login' => 'off@example.com', 'password' => self::TEST_PASSWORD])->assertNotFound();
+        $this->assertGuest('customer');
+
+        // Staff are not offered website access either.
+        $this->actingAs($owner, 'staff');
+        $this->get(route('customers.show', $customer))->assertOk()->assertDontSee(__('body.customer_send_invite'));
+        $this->post(route('customers.portal.invite', $customer))->assertSessionHas('error');
+    }
+
+    public function test_sign_up_needs_customer_login_on(): void
+    {
+        $site = $this->publishedSite(null, ['general' => ['allow_login' => false, 'allow_registration' => true]]);
+
+        $this->get('/s/'.$site->slug.'/register')->assertNotFound();
+        $this->get('/s/'.$site->slug.'/login')->assertNotFound();
     }
 
     public function test_slug_must_be_unique_and_not_reserved(): void

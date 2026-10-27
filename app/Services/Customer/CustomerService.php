@@ -124,7 +124,7 @@ class CustomerService extends BaseService
      */
     public function portalAvailable(): bool
     {
-        return config('auth.passwords.customers') !== null && $this->modules->cachedHook('customer_portal_url') !== [];
+        return config('auth.passwords.customers') !== null && array_filter($this->modules->cachedHook('customer_portal_url')) !== [];
     }
 
     public function portalUrl(Customer $customer): ?string

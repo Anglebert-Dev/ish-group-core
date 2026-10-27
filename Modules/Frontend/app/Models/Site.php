@@ -43,6 +43,22 @@ class Site extends BaseModel
     }
 
     /**
+     * Customers can sign in on this website (Website → General).
+     */
+    public function allowsLogin(): bool
+    {
+        return (bool) $this->get('general.allow_login');
+    }
+
+    /**
+     * Sign-up needs login to be on as well.
+     */
+    public function allowsRegistration(): bool
+    {
+        return $this->allowsLogin() && (bool) $this->get('general.allow_registration');
+    }
+
+    /**
      * Dot-path access, e.g. $site->get('home.hero.title').
      */
     public function get(string $path, mixed $default = null): mixed

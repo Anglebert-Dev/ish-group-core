@@ -5,7 +5,8 @@
     $cta = $site->get('home.cta');
     $contactSection = $site->get('home.contact');
     $contact = $site->get('contact');
-    $canRegister = (bool) $site->get('general.allow_registration');
+    $canLogin = $site->allowsLogin();
+    $canRegister = $site->allowsRegistration();
 @endphp
 
 <x-frontend::layouts.public :title="$site->get('general.seo_title')" :raw-title="true">
@@ -32,16 +33,16 @@
                 {{ $hero['subtitle'] }}
             </p>
             <div class="flex flex-wrap items-center justify-center gap-3 mt-2">
-                @auth('customer')
+                @if ($canLogin && auth('customer')->check())
                     <x-common.button href="{{ route('profile') }}">{{ __('body.my_account') }}</x-common.button>
-                @else
+                @elseif ($canLogin)
                     @if ($canRegister && filled($hero['primary_label']))
                         <x-common.button href="{{ route('register') }}">{{ $hero['primary_label'] }}</x-common.button>
                     @endif
                     @if (filled($hero['secondary_label']))
                         <x-common.button href="{{ route('login') }}" variant="secondary">{{ $hero['secondary_label'] }}</x-common.button>
                     @endif
-                @endauth
+                @endif
             </div>
         </div>
     </section>

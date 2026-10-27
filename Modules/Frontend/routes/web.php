@@ -30,14 +30,14 @@ Route::prefix('s/{site}')->middleware('frontend.site')->group(function () {
 
     Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:contact')->name('contact.send');
 
-    Route::middleware(['guest:customer', 'frontend.registration'])->group(function () {
+    Route::middleware(['guest:customer', 'frontend.accounts:register'])->group(function () {
         Route::get('/register', [CustomerAuthController::class, 'showRegisterForm'])->name('register');
         Route::post('/register', [CustomerAuthController::class, 'register'])
             ->middleware('throttle:register')
             ->name('register.store');
     });
 
-    Route::middleware('guest:customer')->group(function () {
+    Route::middleware(['guest:customer', 'frontend.accounts:login'])->group(function () {
         Route::get('/login', [CustomerAuthController::class, 'showLoginForm'])->name('login');
         Route::post('/login', [CustomerAuthController::class, 'login'])
             ->middleware('throttle:login')
@@ -56,7 +56,7 @@ Route::prefix('s/{site}')->middleware('frontend.site')->group(function () {
         ->middleware('auth:customer')
         ->name('logout');
 
-    Route::middleware(['auth:customer', 'auth.session', 'exclusive.portal:customer', 'customer.active', 'no-back-cache'])->group(function () {
+    Route::middleware(['frontend.accounts:login', 'auth:customer', 'auth.session', 'exclusive.portal:customer', 'customer.active', 'no-back-cache'])->group(function () {
         Route::get('/account', [CustomerProfileController::class, 'dashboard'])->name('profile');
         Route::get('/account/profile', [CustomerProfileController::class, 'show'])->name('account.profile');
         Route::put('/account/profile', [CustomerProfileController::class, 'update'])->name('profile.update');

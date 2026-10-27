@@ -9,6 +9,7 @@ use App\Services\Module\ModuleManager;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\Notification;
 use Mockery;
+use Modules\Frontend\Services\SiteService;
 use Tests\TestCase;
 
 class CustomersTest extends TestCase
@@ -180,7 +181,9 @@ class CustomersTest extends TestCase
         Notification::fake();
         app(ModuleManager::class)->install('Frontend');
 
-        $this->actingAsStaff();
+        $owner = $this->actingAsStaff();
+        $site = app(SiteService::class)->forBusiness($owner->business);
+        $site->forceFill(['content' => ['general' => ['allow_login' => true]]])->save();
         $this->post(route('customers.store'), $this->payload());
         $customer = Customer::query()->firstOrFail();
 

@@ -25,18 +25,16 @@ class DataController
     }
 
     /**
-     * Customers sign in on the business website. Called without a customer
-     * to ask whether website logins exist at all.
+     * Customers sign in on the business website, when the business turned
+     * customer login on. Called without a customer to ask whether it is.
      */
     public function customer_portal_url(?Customer $customer = null): ?string
     {
         $business = app(CurrentBusiness::class)->get();
 
-        if (! $business) {
-            return null;
-        }
+        $site = $business ? $this->sites->forBusiness($business) : null;
 
-        return route('login', ['site' => $this->sites->forBusiness($business)->slug]);
+        return $site?->allowsLogin() ? route('login', ['site' => $site->slug]) : null;
     }
 
     public function user_permissions(): array

@@ -8,7 +8,9 @@
     <x-common.textarea :name="$n('general.seo_description')" :label="__('body.website_seo_description')" :value="$v('general.seo_description')" :rows="2" />
 </x-frontend::admin.card>
 
-<x-frontend::admin.card :title="__('body.website_customers')">
+<x-frontend::admin.card :title="__('body.website_customer_accounts')" :description="__('body.website_customer_accounts_hint')">
+    <x-frontend::admin.toggle :name="$n('general.allow_login')" :label="__('body.website_allow_login')"
+        :description="__('body.website_allow_login_hint')" :checked="(bool) $v('general.allow_login')" />
     <x-frontend::admin.toggle :name="$n('general.allow_registration')" :label="__('body.website_allow_registration')"
         :description="__('body.website_allow_registration_hint')" :checked="(bool) $v('general.allow_registration')" />
 </x-frontend::admin.card>

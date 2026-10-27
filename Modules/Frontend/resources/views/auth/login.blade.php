@@ -29,10 +29,12 @@
 
     <x-slot:footer>
         <div class="space-y-2">
+            @if ($site->allowsRegistration())
             <p>
                 {{ __('body.auth_no_account') }}
                 <a href="{{ route('register') }}" class="font-semibold text-brand hover:text-brand-dark">{{ __('body.sign_up') }}</a>
             </p>
+            @endif
             <p>
                 {{ __('body.auth_staff_member') }}
                 <a href="{{ route('staff.login') }}" class="font-semibold text-brand hover:text-brand-dark">{{ __('body.auth_login_as_staff') }}</a>

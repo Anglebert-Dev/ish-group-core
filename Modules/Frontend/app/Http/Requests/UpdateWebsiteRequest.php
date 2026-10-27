@@ -35,6 +35,7 @@ class UpdateWebsiteRequest extends FormRequest
                 'is_published' => $flag,
                 'general.seo_title' => $text,
                 'general.seo_description' => ['nullable', 'string', 'max:300'],
+                'general.allow_login' => $flag,
                 'general.allow_registration' => $flag,
                 'contact.email' => ['nullable', 'email', 'max:255'],
                 'contact.phone' => ['nullable', 'string', 'max:50'],

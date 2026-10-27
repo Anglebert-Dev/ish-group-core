@@ -20,7 +20,9 @@ return [
         'general' => [
             'seo_title' => ':company',
             'seo_description' => 'Welcome to :company.',
-            'allow_registration' => true,
+            // Customer accounts are off until the business turns them on.
+            'allow_login' => false,
+            'allow_registration' => false,
         ],
 
         'contact' => [
