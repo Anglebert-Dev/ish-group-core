@@ -98,6 +98,26 @@ A superadmin can also switch an installed module off for a single business (`bus
 
 ---
 
+## Billing module (packages & subscriptions)
+
+Install it with `php artisan core:module install Billing`. Once it's installed, **packages decide what each business can use**:
+
+- **Packages** (Super Admin → Billing → Packages): price, interval, trial days, included modules, limits (e.g. max users), private or only for selected businesses, popular, once per business.
+- **Subscriptions**: pending → trial / active → past due (grace period, modules stay on) → suspended (paid modules locked). Paying any open invoice restores access.
+  - Each subscription keeps a frozen copy of its package's terms.
+  - **Upgrades** are prorated and take effect once paid; **downgrades** wait for the end of the period.
+- **Invoices**: numbered and taxed (one currency, optional tax inclusive/exclusive), with coupons, account credit and a PDF.
+- **Payments are offline**: the business sends proof from its Billing page and a superadmin approves it, or the superadmin records it directly.
+- **Coupons**: percent or fixed amount; first invoice, first N invoices, or every invoice; usage limits, expiry, limited to certain packages.
+- **Daily job**: `php artisan billing:run`. Run the scheduler in production (`* * * * * php artisan schedule:run`), or `php artisan schedule:work` locally.
+- The superadmin's own business is never locked. Modules marked `"billing_exempt": true` (like Billing) are always available.
+
+In code, the core only knows `App\Contracts\Entitlements`, which Billing implements:
+
+- `$business->canUseModule('Inventory')` checks whether a module is included.
+- `app(Quota::class)->canAdd($business, 'users')` checks a limit; `->middleware('quota:users')` enforces it on a route.
+- A module adds its own limit with `app(Quota::class)->register('inventory.products', fn ($business) => ...count...)`.
+
 ## Building a module
 
 ```bash

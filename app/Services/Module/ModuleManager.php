@@ -167,7 +167,8 @@ class ModuleManager extends BaseService
         $business = app(CurrentBusiness::class)->get();
 
         foreach ($this->activeModules() as $name) {
-            if ($business && ! $business->hasModuleEnabled($name)) {
+            // Modules switched off for this business, or outside its package, stay silent.
+            if ($business && ! $business->canUseModule($name)) {
                 continue;
             }
 

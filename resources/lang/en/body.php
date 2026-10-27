@@ -497,6 +497,14 @@ return [
     'quota_users' => 'active users',
     'module_not_in_package' => 'Your current package does not include :module.',
 
+    'amount' => 'Amount',
+    'description' => 'Description',
+    'name' => 'Name',
+    'notes' => 'Notes',
+    'yes' => 'Yes',
+    'no' => 'No',
+    'none' => 'None',
+
     // Website module
     'address' => 'Address',
     'remove' => 'Remove',
