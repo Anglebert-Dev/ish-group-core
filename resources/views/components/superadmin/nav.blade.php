@@ -10,6 +10,7 @@
             $tabs[] = $tab + ['active' => $tab['route']];
         }
     }
+    $tabs[] = ['label' => __('body.backups'), 'route' => 'superadmin.backups.index', 'active' => 'superadmin.backups.*'];
     $tabs[] = ['label' => __('body.communicator'), 'route' => 'superadmin.communicator.index', 'active' => 'superadmin.communicator.*'];
     $tabs[] = ['label' => __('body.platform_settings'), 'route' => 'superadmin.settings.index', 'active' => 'superadmin.settings.*'];
 @endphp

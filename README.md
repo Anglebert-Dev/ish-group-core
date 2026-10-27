@@ -29,8 +29,9 @@ php artisan module:make <Name>     # new module; see Modules/Frontend as the exa
 ```
 
 - **Frontend**: a public website per business at `/s/<slug>`, edited from **Website** in the sidebar.
-- **Billing**: packages decide which modules and limits each business gets; payments are offline and you approve them.
+- **Billing**: packages decide which modules and limits each business gets; payments are offline and you approve them. Public plans are shown at `/pricing`, and signing up from there starts that package.
 - **Communicator** (Super Admin): send announcements to business admins, in-app and/or by email.
+- **Backups** (Super Admin): database + uploads zipped to `storage/app/private/backups`; optional daily run. Copy them off the server too.
 
 ## Email
 

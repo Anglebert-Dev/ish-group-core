@@ -11,6 +11,7 @@ use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Http\Requests\Auth\VerifyStaffMfaRequest;
 use App\Models\User;
 use App\Services\Auth\AuthService;
+use App\Services\Module\ModuleManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -23,8 +24,10 @@ use Illuminate\View\View;
  */
 class AuthController extends Controller
 {
-    public function __construct(protected AuthService $auth)
-    {
+    public function __construct(
+        protected AuthService $auth,
+        protected ModuleManager $modules,
+    ) {
     }
 
     public function showRegisterForm(): View|RedirectResponse
@@ -37,6 +40,8 @@ class AuthController extends Controller
 
         return view('auth.register', [
             'isFirstRegistration' => $this->auth->isFirstRegistration(),
+            // Extra blocks modules add to the form (e.g. the chosen package).
+            'formParts' => $this->auth->isFirstRegistration() ? [] : $this->modules->hook('staff_register_form', request()),
         ]);
     }
 
@@ -53,6 +58,14 @@ class AuthController extends Controller
         }
 
         $request->session()->regenerate();
+
+        // A module may send the new business somewhere first (e.g. its invoice).
+        $user = $result['data'];
+        foreach ($this->modules->hook('registration_redirect', $user->business) as $url) {
+            if (is_string($url) && $url !== '') {
+                return redirect()->to($url)->with('success', $result['message']);
+            }
+        }
 
         return redirect()->route('dashboard')->with('success', $result['message']);
     }

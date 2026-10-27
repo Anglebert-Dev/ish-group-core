@@ -506,6 +506,24 @@ return [
     'no' => 'No',
     'none' => 'None',
 
+    // Backups
+    'backups' => 'Backups',
+    'backups_description' => 'Database and uploaded files, zipped. Stored privately on the server.',
+    'backup_now' => 'Back up now',
+    'backup_started' => 'Backup started — you will get a notification when it is ready.',
+    'backup_created' => 'Backup :name created.',
+    'backup_failed' => 'Backup failed: :error',
+    'backup_deleted' => 'Backup deleted.',
+    'backup_none' => 'No backups yet.',
+    'backup_size' => 'Size',
+    'backup_last' => 'Last backup',
+    'backup_daily' => 'Automatic daily backup',
+    'backup_daily_hint' => 'Every night at 02:00 (needs the scheduler running).',
+    'backup_keep' => 'Keep the last',
+    'backup_keep_hint' => 'Older backups are deleted automatically. 0 = keep all.',
+    'backup_download' => 'Download',
+    'backup_offsite_hint' => 'Copy backups somewhere else too (another server or cloud storage): a backup on the same server does not survive losing that server.',
+
     // Communicator
     'communicator' => 'Communicator',
     'communicator_description' => 'Send an announcement to the admins of your businesses.',
@@ -524,6 +542,9 @@ return [
     'communicator_history' => 'Sent',
     'communicator_none' => 'Nothing sent yet.',
     'communicator_n_recipients' => '{1} :count recipient|[0,*] :count recipients',
+
+    'auth_see_plans' => 'New here?',
+    'auth_pricing' => 'See plans & pricing',
 
     // Email
     'business_email' => 'Contact email',

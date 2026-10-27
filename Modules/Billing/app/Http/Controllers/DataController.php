@@ -3,6 +3,8 @@
 namespace Modules\Billing\Http\Controllers;
 
 use App\Models\Business\Business;
+use Illuminate\Http\Request;
+use Modules\Billing\Models\Invoice;
 use Modules\Billing\Models\Package;
 use Modules\Billing\Services\SubscriptionService;
 use Modules\Billing\Support\BillingEntitlements;
@@ -77,15 +79,63 @@ class DataController
     }
 
     /**
-     * New businesses start on the default package, if one is set.
+     * A new business starts on the package it picked on /pricing, else on
+     * the default package (if one is set).
      */
     public function after_business_created(array $args): void
     {
+        $business = $args['business'];
+
+        if (app(BillingEntitlements::class)->isPlatformOwner($business)) {
+            return;
+        }
+
+        $chosen = $this->publicPackage($args['context']['package'] ?? null);
+
+        if ($chosen) {
+            app(SubscriptionService::class)->subscribe($business, $chosen);
+
+            return;
+        }
+
         $packageId = BillingSettings::get('default_package_id');
         $package = $packageId ? Package::query()->where('is_active', true)->find($packageId) : null;
 
-        if ($package && ! app(BillingEntitlements::class)->isPlatformOwner($args['business'])) {
-            app(SubscriptionService::class)->subscribe($args['business'], $package, null, true);
+        if ($package) {
+            app(SubscriptionService::class)->subscribe($business, $package, null, true);
         }
+    }
+
+    /**
+     * The chosen package on the sign-up form.
+     */
+    public function staff_register_form(Request $request): string
+    {
+        $package = $this->publicPackage($request->query('package') ?? $request->old('package'));
+
+        return $package ? view('billing::public.selected-package', ['package' => $package])->render() : '';
+    }
+
+    /**
+     * Straight to the first invoice when the chosen package needs paying.
+     */
+    public function registration_redirect(?Business $business): ?string
+    {
+        $invoice = $business ? Invoice::query()
+            ->where('business_id', $business->id)
+            ->where('status', 'open')
+            ->latest('id')
+            ->first() : null;
+
+        return $invoice ? route('billing.invoices.show', $invoice) : null;
+    }
+
+    private function publicPackage(?string $uuid): ?Package
+    {
+        if (! $uuid) {
+            return null;
+        }
+
+        return PricingController::publicPackages()->firstWhere('uuid', $uuid);
     }
 }

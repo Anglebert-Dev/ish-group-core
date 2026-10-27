@@ -30,6 +30,12 @@
 
     <x-slot:footer>
         <div class="space-y-2">
+            @if (Route::has('pricing'))
+                <p>
+                    {{ __('body.auth_see_plans') }}
+                    <a href="{{ route('pricing') }}" class="font-semibold text-brand hover:text-brand-dark">{{ __('body.auth_pricing') }}</a>
+                </p>
+            @endif
             @if ($registrationIsOpen)
                 <p>
                     {{ $isFirstRegistration ? __('body.auth_setup_first_admin') : __('body.auth_register_business') }}

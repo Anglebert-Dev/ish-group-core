@@ -21,6 +21,8 @@ use Modules\Billing\Http\Controllers\BillingController;
 |                              payments to approve, coupons, settings
 */
 
+Route::get('/pricing', [\Modules\Billing\Http\Controllers\PricingController::class, 'index'])->name('pricing');
+
 $staff = ['auth:staff', 'auth.session', 'exclusive.portal:staff', 'business.active', 'no-back-cache'];
 
 Route::prefix('app/billing')->name('billing.')->middleware($staff)->group(function () {

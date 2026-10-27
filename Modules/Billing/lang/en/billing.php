@@ -117,6 +117,15 @@ return [
     'trial_days' => '{1} :count-day free trial|[2,*] :count-day free trial',
     'n_subscribers' => '{0} No subscribers|{1} :count subscriber|[2,*] :count subscribers',
 
+    // Pricing / sign-up
+    'pricing_title' => 'Plans & pricing',
+    'pricing_subtitle' => 'Pick the package that fits your business. You can change it any time.',
+    'pricing_closed' => 'Sign-ups are closed at the moment — contact us to get an account.',
+    'get_started' => 'Get started',
+    'start_trial' => 'Start free trial',
+    'selected_plan' => 'Selected plan:',
+    'change_selection' => 'Change plan',
+
     // Business side
     'choose_plan' => 'Choose a plan',
     'choose_plan_description' => 'Pick the package that fits your business.',

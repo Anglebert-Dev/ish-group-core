@@ -6,6 +6,9 @@
 >
     <form action="{{ route('staff.register.store') }}" method="POST" class="space-y-4">
         @csrf
+        @foreach ($formParts ?? [] as $part)
+            @if (filled($part)) {!! $part !!} @endif
+        @endforeach
         @if ($isFirstRegistration ?? false)
             <p class="text-sm text-muted">{{ __('body.auth_first_registration_note') }}</p>
         @endif

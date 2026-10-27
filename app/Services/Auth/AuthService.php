@@ -61,6 +61,7 @@ class AuthService extends BaseService
                 'password' => $data['password'],
                 'is_superadmin' => $first,
             ],
+            ['package' => $data['package'] ?? null],
         );
 
         if (! $result['status']) {

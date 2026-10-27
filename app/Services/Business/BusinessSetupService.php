@@ -28,9 +28,10 @@ class BusinessSetupService extends BaseService
     /**
      * @param  array{name: string, is_active?: bool, brand_color?: string, timezone?: string}  $businessData
      * @param  array{name: string, email: string, password: string, is_superadmin?: bool}  $ownerData
+     * @param  array<string, mixed>  $context  extra sign-up input for modules (e.g. a chosen package)
      * @return array{status: bool, data: array{business: Business, owner: User}|null, message: string}
      */
-    public function createWithOwner(array $businessData, array $ownerData): array
+    public function createWithOwner(array $businessData, array $ownerData, array $context = []): array
     {
         $this->permissions->initPermissions();
 
@@ -62,7 +63,7 @@ class BusinessSetupService extends BaseService
 
         // Outside the transaction: a module's seeding must not be able to roll
         // back the business itself.
-        $this->modules->hook('after_business_created', ['business' => $business, 'owner' => $owner]);
+        $this->modules->hook('after_business_created', ['business' => $business, 'owner' => $owner, 'context' => $context]);
 
         return $this->success(['business' => $business, 'owner' => $owner], __('body.business_created'));
     }

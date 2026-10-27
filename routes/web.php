@@ -8,6 +8,7 @@ use App\Http\Controllers\Web\Landing\LandingController;
 use App\Http\Controllers\Web\Notification\NotificationController;
 use App\Http\Controllers\Web\Role\RoleController;
 use App\Http\Controllers\Web\Setting\SettingController;
+use App\Http\Controllers\Web\SuperAdmin\BackupController;
 use App\Http\Controllers\Web\SuperAdmin\BusinessController;
 use App\Http\Controllers\Web\SuperAdmin\CommunicatorController;
 use App\Http\Controllers\Web\SuperAdmin\ImpersonationController;
@@ -163,6 +164,12 @@ Route::prefix('app')->middleware(['auth:staff', 'auth.session', 'exclusive.porta
         Route::post('/modules/{module}/update', [ModuleController::class, 'update'])->middleware('password.confirm.staff')->name('modules.update');
         Route::post('/modules/{module}/uninstall', [ModuleController::class, 'uninstall'])->middleware('password.confirm.staff')->name('modules.uninstall');
         Route::post('/modules/{module}/toggle', [ModuleController::class, 'toggle'])->middleware('password.confirm.staff')->name('modules.toggle');
+
+        Route::get('/backups', [BackupController::class, 'index'])->name('backups.index');
+        Route::post('/backups', [BackupController::class, 'store'])->middleware('throttle:5,1')->name('backups.store');
+        Route::put('/backups/settings', [BackupController::class, 'settings'])->name('backups.settings');
+        Route::get('/backups/{backup}', [BackupController::class, 'download'])->middleware('password.confirm.staff')->where('backup', '[A-Za-z0-9._-]+')->name('backups.download');
+        Route::delete('/backups/{backup}', [BackupController::class, 'destroy'])->middleware('password.confirm.staff')->where('backup', '[A-Za-z0-9._-]+')->name('backups.destroy');
 
         Route::get('/communicator', [CommunicatorController::class, 'index'])->name('communicator.index');
         Route::post('/communicator', [CommunicatorController::class, 'send'])->middleware('throttle:10,1')->name('communicator.send');
