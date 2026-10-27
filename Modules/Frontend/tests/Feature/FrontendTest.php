@@ -82,6 +82,18 @@ class FrontendTest extends TestCase
         $this->get('/s/'.$site->slug)->assertNotFound();
     }
 
+    public function test_staff_logged_in_through_the_form_can_preview_and_use_view_website(): void
+    {
+        [$business] = $this->makeBusiness(['business_name' => 'Preview Co', 'email' => 'preview@example.com']);
+        $site = app(SiteService::class)->forBusiness($business);
+
+        // A real login (session), not actingAs().
+        $this->post(route('staff.login.store'), ['email' => 'preview@example.com', 'password' => self::TEST_PASSWORD]);
+
+        $this->get(route('frontend.admin.website.view'))->assertRedirect('/s/'.$site->slug);
+        $this->get('/s/'.$site->slug)->assertOk()->assertSee('Preview Co');
+    }
+
     public function test_root_shows_primary_site_once_published(): void
     {
         [$business] = $this->makeBusiness(['business_name' => 'Primary Brand']);

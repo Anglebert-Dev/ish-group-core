@@ -5,6 +5,7 @@ namespace Modules\Frontend\Providers;
 use App\Support\Modules\CoreModuleServiceProvider;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Routing\Router;
+use Illuminate\Session\Middleware\StartSession;
 use Modules\Frontend\Http\Middleware\EnsureCustomerIsActive;
 use Modules\Frontend\Http\Middleware\EnsureRegistrationOpen;
 use Modules\Frontend\Http\Middleware\ResolveSite;
@@ -42,9 +43,10 @@ class FrontendServiceProvider extends CoreModuleServiceProvider
         $router->aliasMiddleware('frontend.site', ResolveSite::class);
         $router->aliasMiddleware('frontend.registration', EnsureRegistrationOpen::class);
 
-        // The site must be resolved before auth:customer runs, so a customer
-        // of another business's site is already a guest by then.
-        $this->app->make(HttpKernel::class)->prependToMiddlewarePriority(ResolveSite::class);
+        // Resolve the site after the session starts (it needs to know who is
+        // signed in) but before auth:customer runs, so a customer of another
+        // business's site is already a guest by then.
+        $this->app->make(HttpKernel::class)->addToMiddlewarePriorityAfter(StartSession::class, ResolveSite::class);
     }
 
     private function registerCustomerGuard(): void
