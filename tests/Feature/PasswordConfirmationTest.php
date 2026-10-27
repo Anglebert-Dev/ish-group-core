@@ -37,6 +37,16 @@ class PasswordConfirmationTest extends TestCase
         $this->assertSame(UserStatus::Banned, $member->fresh()->status);
     }
 
+    public function test_confirm_page_is_shown_inside_the_app(): void
+    {
+        $this->actingAsStaff();
+
+        $this->get(route('staff.password.confirm'))
+            ->assertOk()
+            ->assertSee('id="dashboard-sidebar"', false)
+            ->assertSee(route('staff.password.confirm.store'), false);
+    }
+
     public function test_array_inputs_are_carried_over(): void
     {
         $this->actingAsStaff();
