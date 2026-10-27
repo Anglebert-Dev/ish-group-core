@@ -8,7 +8,16 @@ Laravel 13 base for multi-business apps. Everything app-specific is a module in 
 composer install && npm install && npm run build
 cp .env.example .env && php artisan key:generate
 php artisan core:install     # first business + superadmin
-php artisan serve            # http://localhost:8000
+```
+
+## Run locally
+
+Keep these running in separate terminals:
+
+```bash
+php artisan serve            # the app: http://localhost:8000
+php artisan queue:work       # sends emails — without it, no email goes out
+php artisan schedule:work    # daily jobs (billing renewals, suspensions)
 ```
 
 ## Modules
@@ -27,7 +36,7 @@ php artisan module:make <Name>     # new module; see Modules/Frontend as the exa
 
 Set the SMTP details in `.env`. `MAIL_FROM_ADDRESS` must be the SMTP account itself; each business's emails use that business's name as the sender and its contact email for replies.
 
-Emails are queued, so keep a worker running: `php artisan queue:work` (on the server, under Supervisor or systemd).
+Emails are queued: **without a running `php artisan queue:work`, nothing is sent**. On the server, keep it running under Supervisor or systemd.
 
 ## Billing: required setup
 
@@ -37,9 +46,9 @@ Renewals and suspensions are done by a daily job. On the server, add the schedul
 * * * * * php artisan schedule:run
 ```
 
-Locally, run `php artisan billing:run` by hand.
+Locally, `php artisan schedule:work` does the same, or run `php artisan billing:run` by hand.
 
-Notifications are in-app only for now (no emails). A business with no subscription can still use the core screens, with no user limit.
+Billing events are sent in-app and by email. A business with no subscription can still use the core screens; set **Billing → Settings → Users without a package** to limit them.
 
 ## Tests
 
