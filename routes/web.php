@@ -8,6 +8,7 @@ use App\Http\Controllers\Web\Landing\LandingController;
 use App\Http\Controllers\Web\Notification\NotificationController;
 use App\Http\Controllers\Web\Role\RoleController;
 use App\Http\Controllers\Web\Setting\SettingController;
+use App\Http\Controllers\Web\SuperAdmin\AuditController;
 use App\Http\Controllers\Web\SuperAdmin\BackupController;
 use App\Http\Controllers\Web\SuperAdmin\BusinessController;
 use App\Http\Controllers\Web\SuperAdmin\CommunicatorController;
@@ -164,6 +165,10 @@ Route::prefix('app')->middleware(['auth:staff', 'auth.session', 'exclusive.porta
         Route::post('/modules/{module}/update', [ModuleController::class, 'update'])->middleware('password.confirm.staff')->name('modules.update');
         Route::post('/modules/{module}/uninstall', [ModuleController::class, 'uninstall'])->middleware('password.confirm.staff')->name('modules.uninstall');
         Route::post('/modules/{module}/toggle', [ModuleController::class, 'toggle'])->middleware('password.confirm.staff')->name('modules.toggle');
+
+        Route::get('/audit', [AuditController::class, 'index'])->name('audit.index');
+        Route::get('/audit/export/{format}', [AuditController::class, 'export'])->whereIn('format', ['pdf', 'excel'])->name('audit.export');
+        Route::get('/audit/{log}', [AuditController::class, 'show'])->name('audit.show');
 
         Route::get('/backups', [BackupController::class, 'index'])->name('backups.index');
         Route::post('/backups', [BackupController::class, 'store'])->middleware('throttle:5,1')->name('backups.store');

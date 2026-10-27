@@ -2,6 +2,8 @@
 
 namespace App\Services\User;
 
+use App\Services\ActivityLog\ActivityLogService;
+use App\Enums\ActivityLogAction;
 use App\Enums\UserStatus;
 use App\Libraries\ListExport;
 use App\Models\Role\Role;
@@ -94,6 +96,7 @@ class UserService extends BaseService
 
         if ($role) {
             $user->assignRole($role);
+            $this->logRoleChange($user, null, $role);
         }
 
         return $this->success($user, __('body.staff_created'));
@@ -117,7 +120,11 @@ class UserService extends BaseService
         ]);
 
         $this->users->save($user);
+        $previous = $user->roles->first();
         $user->syncRoles($role ? [$role] : []);
+        if ($previous?->id !== $role?->id) {
+            $this->logRoleChange($user, $previous, $role);
+        }
 
         return $this->success($user, __('body.staff_updated'));
     }
@@ -166,6 +173,17 @@ class UserService extends BaseService
         }
 
         return $role;
+    }
+
+    private function logRoleChange(User $user, ?Role $from, ?Role $to): void
+    {
+        app(ActivityLogService::class)->log(
+            ActivityLogAction::RoleChanged,
+            __('body.audit_log_role', ['name' => $user->name, 'from' => $from?->display_name ?? '—', 'to' => $to?->display_name ?? '—']),
+            $user,
+            ['from' => $from?->display_name, 'to' => $to?->display_name],
+            $user->business_id,
+        );
     }
 
     private function isLastAdmin(User $user): bool

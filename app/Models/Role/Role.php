@@ -13,6 +13,8 @@ use Spatie\Permission\Models\Role as SpatieRole;
  */
 class Role extends SpatieRole
 {
+    use \App\Models\Concerns\LogsActivity;
+
     public const SEPARATOR = '#';
 
     public const ADMIN = 'Admin';

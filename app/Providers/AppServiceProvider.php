@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Contracts\Entitlements;
+use App\Listeners\AuditAuthEvents;
 use App\Models\Business\Business;
 use App\Models\User;
 use App\Support\Mail\BrandedMail;
@@ -59,6 +60,7 @@ class AppServiceProvider extends ServiceProvider
         $this->registerGate();
 
         Event::listen(RequestHandled::class, fn () => $this->app->forgetScopedInstances());
+        Event::subscribe(AuditAuthEvents::class);
 
         Password::defaults(function () {
             $rule = Password::min(12)

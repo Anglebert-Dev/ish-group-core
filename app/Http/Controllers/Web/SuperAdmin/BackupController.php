@@ -31,6 +31,7 @@ class BackupController extends Controller
     public function store(): RedirectResponse
     {
         CreateBackup::dispatch(Auth::guard('staff')->id());
+        app(\App\Services\ActivityLog\ActivityLogService::class)->log(\App\Enums\ActivityLogAction::Backup, __('body.audit_log_backup_started'));
 
         return back()->with('success', __('body.backup_started'));
     }
@@ -40,12 +41,15 @@ class BackupController extends Controller
         $path = $this->backups->path($backup);
         abort_unless($path, 404);
 
+        app(\App\Services\ActivityLog\ActivityLogService::class)->log(\App\Enums\ActivityLogAction::Downloaded, __('body.audit_log_backup_downloaded', ['name' => basename($path)]), null, ['backup' => basename($path)]);
+
         return response()->download($path);
     }
 
     public function destroy(string $backup): RedirectResponse
     {
         abort_unless($this->backups->delete($backup), 404);
+        app(\App\Services\ActivityLog\ActivityLogService::class)->log(\App\Enums\ActivityLogAction::Deleted, __('body.audit_log_backup_deleted', ['name' => basename($backup)]), null, ['backup' => basename($backup)]);
 
         return back()->with('success', __('body.backup_deleted'));
     }

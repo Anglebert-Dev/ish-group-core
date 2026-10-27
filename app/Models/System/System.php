@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Schema;
  */
 class System extends Model
 {
+    use \App\Models\Concerns\LogsActivity;
+
     protected $table = 'system';
 
     protected $fillable = ['key', 'value'];

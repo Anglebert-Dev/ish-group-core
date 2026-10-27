@@ -2,6 +2,8 @@
 
 namespace App\Services\Auth;
 
+use App\Services\ActivityLog\ActivityLogService;
+use App\Enums\ActivityLogAction;
 use App\Libraries\TotpLibrary;
 use App\Models\User;
 use App\Repositories\User\UserRepository;
@@ -53,6 +55,7 @@ class StaffMfaService extends BaseService
         $this->users->save($user);
 
         $recoveryCodes = $this->generateRecoveryCodes($user);
+        app(ActivityLogService::class)->log(ActivityLogAction::MfaEnabled, __('body.audit_log_mfa_enabled', ['name' => $user->name]), $user);
 
         return $this->success(['user' => $user, 'recovery_codes' => $recoveryCodes], __('body.mfa_enabled'));
     }
@@ -65,6 +68,7 @@ class StaffMfaService extends BaseService
             'mfa_recovery_codes' => null,
         ]);
         $this->users->save($user);
+        app(ActivityLogService::class)->log(ActivityLogAction::MfaDisabled, __('body.audit_log_mfa_disabled', ['name' => $user->name]), $user);
 
         return $this->success($user, __('body.mfa_disabled'));
     }

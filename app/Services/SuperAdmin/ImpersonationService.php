@@ -2,6 +2,8 @@
 
 namespace App\Services\SuperAdmin;
 
+use App\Services\ActivityLog\ActivityLogService;
+use App\Enums\ActivityLogAction;
 use App\Models\User;
 use App\Services\BaseService;
 use Illuminate\Http\Request;
@@ -46,9 +48,17 @@ class ImpersonationService extends BaseService
 
         $returnUrl = route('superadmin.businesses.show', $target->business);
 
-        Auth::guard('staff')->login($target);
+        ActivityLogService::muted(fn () => Auth::guard('staff')->login($target));
         $request->session()->regenerate();
         $request->session()->forget('auth.staff_password_confirmed_at');
+        app(ActivityLogService::class)->log(
+            ActivityLogAction::ImpersonationStarted,
+            __('body.audit_log_impersonation_started', ['admin' => $impersonator->name, 'name' => $target->name]),
+            $target,
+            ['impersonator_id' => $impersonator->id],
+            $target->business_id,
+            $impersonator,
+        );
         $request->session()->put(self::SESSION_KEY, [
             'impersonator_id' => $impersonator->id,
             'impersonator_name' => $impersonator->name,
@@ -81,8 +91,17 @@ class ImpersonationService extends BaseService
             return $this->failure(__('body.impersonation_return_failed'));
         }
 
-        Auth::guard('staff')->login($impersonator);
+        $impersonated = $impersonatedId ? User::query()->find($impersonatedId) : null;
+        ActivityLogService::muted(fn () => Auth::guard('staff')->login($impersonator));
         $request->session()->regenerate();
+        app(ActivityLogService::class)->log(
+            ActivityLogAction::ImpersonationEnded,
+            __('body.audit_log_impersonation_ended', ['admin' => $impersonator->name, 'name' => $impersonated?->name ?? '—']),
+            $impersonated,
+            ['impersonator_id' => $impersonator->id],
+            $impersonated?->business_id,
+            $impersonator,
+        );
         $request->session()->forget([self::SESSION_KEY, 'auth.staff_password_confirmed_at']);
 
         Log::info('auth.impersonation.end', [

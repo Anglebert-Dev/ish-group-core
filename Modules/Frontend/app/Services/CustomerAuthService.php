@@ -2,7 +2,9 @@
 
 namespace Modules\Frontend\Services;
 
+use App\Enums\ActivityLogAction;
 use App\Helpers\AuthHelper;
+use App\Services\ActivityLog\ActivityLogService;
 use App\Services\BaseService;
 use App\Support\Tenancy\CurrentBusiness;
 use Illuminate\Support\Facades\Auth;
@@ -122,6 +124,8 @@ class CustomerAuthService extends BaseService
         $customer->forceFill(['password' => $data['password']]);
         $this->customers->save($customer);
 
+        app(ActivityLogService::class)->log(ActivityLogAction::PasswordChanged, __('body.audit_log_password_changed', ['name' => $customer->name]), $customer);
+
         if (Auth::guard('customer')->check() && Auth::guard('customer')->id() === $customer->id) {
             Auth::guard('customer')->logoutOtherDevices($data['password']);
         }
@@ -202,5 +206,13 @@ class CustomerAuthService extends BaseService
             'reason' => $reason,
             'ip' => request()->ip(),
         ]);
+
+        app(ActivityLogService::class)->log(
+            ActivityLogAction::LoginFailed,
+            __('body.audit_log_failed', ['login' => (string) $email, 'portal' => __('body.audit_portal_website')]).($reason ? ' ('.$reason.')' : ''),
+            null,
+            ['guard' => 'customer', 'login' => $email, 'reason' => $reason],
+            $this->business->id(),
+        );
     }
 }

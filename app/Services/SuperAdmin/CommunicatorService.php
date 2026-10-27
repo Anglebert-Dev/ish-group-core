@@ -51,6 +51,8 @@ class CommunicatorService extends BaseService
             }
         }
 
+        app(\App\Services\ActivityLog\ActivityLogService::class)->log(\App\Enums\ActivityLogAction::Sent, __('body.audit_log_announcement', ['subject' => $announcement->subject, 'count' => $recipients->count()]), $announcement, [], $sender->business_id);
+
         return $this->success($announcement, __('body.communicator_sent', ['count' => $recipients->count()]));
     }
 

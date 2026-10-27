@@ -2,6 +2,8 @@
 
 namespace App\Services\Role;
 
+use App\Services\ActivityLog\ActivityLogService;
+use App\Enums\ActivityLogAction;
 use App\Libraries\ListExport;
 use App\Models\Role\Role;
 use App\Models\User;
@@ -94,6 +96,7 @@ class RoleService extends BaseService
         ]);
 
         $role->syncPermissions($data['permissions'] ?? []);
+        $this->logPermissions($role, [], $data['permissions'] ?? []);
 
         return $this->success($role, __('body.role_created'));
     }
@@ -108,8 +111,10 @@ class RoleService extends BaseService
             return $this->failure(__('body.role_name_taken'));
         }
 
+        $before = $role->permissions()->pluck('name')->all();
         $role->update(['name' => Role::scopedName($data['name'], (int) $role->business_id)]);
         $role->syncPermissions($data['permissions'] ?? []);
+        $this->logPermissions($role, $before, $data['permissions'] ?? []);
 
         return $this->success($role, __('body.role_updated'));
     }
@@ -123,6 +128,24 @@ class RoleService extends BaseService
         $role->delete();
 
         return $this->success(null, __('body.role_deleted'));
+    }
+
+    private function logPermissions(Role $role, array $before, array $after): void
+    {
+        $added = array_values(array_diff($after, $before));
+        $removed = array_values(array_diff($before, $after));
+
+        if ($added === [] && $removed === []) {
+            return;
+        }
+
+        app(ActivityLogService::class)->log(
+            ActivityLogAction::PermissionsChanged,
+            __('body.audit_log_permissions', ['role' => $role->display_name, 'added' => count($added), 'removed' => count($removed)]),
+            $role,
+            ['added' => $added, 'removed' => $removed],
+            $role->business_id,
+        );
     }
 
     private function isReservedName(string $name): bool

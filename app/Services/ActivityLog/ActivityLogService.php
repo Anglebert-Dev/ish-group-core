@@ -8,10 +8,14 @@ use App\Libraries\GeneralLibrary;
 use App\Libraries\ListExport;
 use App\Models\ActivityLog\ActivityLog;
 use App\Models\Business\Business;
+use App\Models\System\System;
+use App\Models\User;
 use App\Repositories\ActivityLog\ActivityLogRepository;
 use App\Services\BaseService;
 use App\Support\Tenancy\CurrentBusiness;
+use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -23,6 +27,9 @@ class ActivityLogService extends BaseService
     private const HIDDEN_KEYS = [
         'password',
         'remember_token',
+        'mfa_secret',
+        'mfa_recovery_codes',
+        'content',
         'insert_by',
         'update_by',
         'delete_by',
@@ -30,6 +37,8 @@ class ActivityLogService extends BaseService
 
     private const NOISE_KEYS = [
         'updated_at',
+        'last_login_at',
+        'last_login_ip',
         'update_by',
         'insert_by',
         'delete_by',
@@ -40,31 +49,60 @@ class ActivityLogService extends BaseService
     {
     }
 
-    public function list(): LengthAwarePaginator
+    /**
+     * @param  array{q?: ?string, action?: ?string, user?: ?string, business?: ?string, from?: ?string, to?: ?string}  $filters
+     * @param  bool  $allBusinesses  superadmin view across every business
+     */
+    public function list(array $filters = [], bool $allBusinesses = false): LengthAwarePaginator
     {
-        return $this->logs->paginateRecent();
+        return $this->filtered($filters, $allBusinesses)->with(['user', 'business'])->paginate(25)->withQueryString();
     }
 
-    public function exportList(): ListExport
+    public function exportList(array $filters = [], bool $allBusinesses = false): ListExport
     {
-        $rows = $this->logs->query()
-            ->with('user')
-            ->latest()
+        $rows = $this->filtered($filters, $allBusinesses)
+            ->with(['user', 'business'])
+            ->limit(5000)
             ->get()
-            ->map(fn (ActivityLog $log) => [
+            ->map(fn (ActivityLog $log) => array_values(array_filter([
                 GeneralLibrary::formatDateTime($log->created_at),
+                $allBusinesses ? ($log->business?->name ?? __('body.audit_platform')) : null,
                 $log->actorName(),
                 $log->action->label(),
                 $log->description ?: $log->subjectName(),
-            ])
+                (string) $log->ip_address,
+            ], fn ($v) => $v !== null)))
             ->all();
 
-        return ListExport::make(__('body.audit_logs'), 'audit-logs', [
+        return ListExport::make(__('body.audit_logs'), 'audit-logs', array_values(array_filter([
             __('body.when'),
+            $allBusinesses ? __('body.business') : null,
             __('body.actor'),
             __('body.action'),
             __('body.subject'),
-        ], $rows);
+            'IP',
+        ])), $rows);
+    }
+
+    public function filtered(array $filters, bool $allBusinesses = false): Builder
+    {
+        $query = $allBusinesses ? ActivityLog::query()->withoutGlobalScope('business') : ActivityLog::query();
+        $search = trim((string) ($filters['q'] ?? ''));
+
+        return $query
+            ->when($filters['action'] ?? null, fn ($q, $action) => $q->where('action', $action))
+            ->when($filters['user'] ?? null, fn ($q, $user) => $q->where('user_id', $user))
+            ->when($allBusinesses && filled($filters['business'] ?? null), fn ($q) => $filters['business'] === 'platform'
+                ? $q->whereNull('business_id')
+                : $q->where('business_id', $filters['business']))
+            ->when($filters['from'] ?? null, fn ($q, $from) => $q->where('created_at', '>=', Carbon::parse($from)->startOfDay()))
+            ->when($filters['to'] ?? null, fn ($q, $to) => $q->where('created_at', '<=', Carbon::parse($to)->endOfDay()))
+            ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w
+                ->where('description', 'like', "%{$search}%")
+                ->orWhere('subject_label', 'like', "%{$search}%")
+                ->orWhere('actor_name', 'like', "%{$search}%")
+                ->orWhere('ip_address', 'like', "%{$search}%")))
+            ->latest('id');
     }
 
     public function details(ActivityLog $log): ActivityLog
@@ -98,6 +136,10 @@ class ActivityLogService extends BaseService
             $old = array_intersect_key($old, array_flip($changedKeys));
         }
 
+        if (self::$muted > 0) {
+            return;
+        }
+
         $staff = Auth::guard('staff')->user();
         // The customer guard only exists while the Frontend module is installed.
         $customer = config('auth.guards.customer') ? Auth::guard('customer')->user() : null;
@@ -125,10 +167,72 @@ class ActivityLogService extends BaseService
         $this->logs->save($log);
     }
 
+    /**
+     * Log an event that is not a record change: logins, exports, module
+     * installs, approvals, ...
+     */
+    public function log(
+        ActivityLogAction $action,
+        string $description,
+        ?Model $subject = null,
+        array $properties = [],
+        ?int $businessId = null,
+        ?User $actor = null,
+    ): void {
+        if (self::$muted > 0) {
+            return;
+        }
+
+        try {
+            $staff = $actor ?? Auth::guard('staff')->user();
+            $customer = $actor ? null : (config('auth.guards.customer') ? Auth::guard('customer')->user() : null);
+            $request = request();
+
+            $this->logs->save(new ActivityLog([
+                'status' => ActivityLogStatus::Active,
+                'business_id' => $businessId ?? ($subject ? $this->businessIdFor($subject) : null) ?? $staff?->business_id ?? $customer?->business_id,
+                'user_id' => $staff?->id,
+                'actor_name' => $staff?->name ?? $customer?->name,
+                'action' => $action,
+                'subject_type' => $subject?->getMorphClass(),
+                'subject_id' => $subject?->getKey(),
+                'subject_label' => $subject ? $this->subjectLabel($subject) : null,
+                'description' => Str::limit($description, 250, ''),
+                'properties' => $properties ?: null,
+                'ip_address' => $request?->ip(),
+                'user_agent' => Str::limit((string) $request?->userAgent(), 512, ''),
+            ]));
+        } catch (Throwable $e) {
+            report($e);
+        }
+    }
+
+    private static int $muted = 0;
+
+    /**
+     * Run $callback without event logging (e.g. the silent login that
+     * impersonation performs — it is logged as impersonation instead).
+     */
+    public static function muted(callable $callback): mixed
+    {
+        self::$muted++;
+
+        try {
+            return $callback();
+        } finally {
+            self::$muted--;
+        }
+    }
+
     private function businessIdFor(Model $model): ?int
     {
         if ($model instanceof Business) {
             return $model->getKey();
+        }
+
+        // Platform-wide records (settings) belong to no business.
+        if ($model instanceof System) {
+            return null;
         }
 
         return $model->getAttribute('business_id') ?? app(CurrentBusiness::class)->id();
@@ -146,7 +250,15 @@ class ActivityLogService extends BaseService
             }
         }
 
-        foreach (['name', 'email', 'title', 'reference'] as $attribute) {
+        if ($model instanceof \App\Models\Role\Role) {
+            return $model->display_name;
+        }
+
+        if ($model instanceof System) {
+            return (string) $model->key;
+        }
+
+        foreach (['name', 'email', 'title', 'reference', 'number', 'code', 'subject'] as $attribute) {
             $value = $model->getAttribute($attribute);
             if (is_scalar($value) && $value !== '') {
                 return (string) $value;

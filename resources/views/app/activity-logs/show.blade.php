@@ -3,11 +3,11 @@
         <x-common.details.header
             :title="$log->description ?: __('body.audit_log_details')"
             :subtitle="__('body.audit_log_details')"
-            :back-href="route('activity-logs.index')"
+            :back-href="$backUrl ?? route('activity-logs.index')"
             :back-label="__('body.back')"
         >
             <x-slot:meta>
-                <x-common.status :status="$log->action->label()" />
+                <x-common.badge :color="$log->action->color()">{{ $log->action->label() }}</x-common.badge>
             </x-slot:meta>
         </x-common.details.header>
 
@@ -15,7 +15,7 @@
             <x-common.details.summary-item :label="__('body.actor')" :value="$log->actorName()" />
             <x-common.details.summary-item :label="__('body.subject')" :value="$log->subjectName()" />
             <x-common.details.summary-item :label="__('body.action')">
-                <x-common.status :status="$log->action->label()" />
+                <x-common.badge :color="$log->action->color()">{{ $log->action->label() }}</x-common.badge>
             </x-common.details.summary-item>
             <x-common.details.summary-item :label="__('body.when')">
                 @datetime($log->created_at)
@@ -31,7 +31,7 @@
                     <x-common.details.field :label="__('body.when')">@datetime($log->created_at)</x-common.details.field>
                     <x-common.details.field :label="__('body.actor')">{{ $log->actorName() }}</x-common.details.field>
                     <x-common.details.field :label="__('body.action')">
-                        <x-common.status :status="$log->action->label()" />
+                        <x-common.badge :color="$log->action->color()">{{ $log->action->label() }}</x-common.badge>
                     </x-common.details.field>
                     <x-common.details.field :label="__('body.subject')">{{ $log->subjectName() }}</x-common.details.field>
                     <x-common.details.field :label="__('body.ip_address')">{{ $log->ip_address ?: '—' }}</x-common.details.field>
@@ -42,8 +42,10 @@
             </x-common.details.section>
 
             @php
-                $attributes = $log->properties['attributes'] ?? [];
-                $old = $log->properties['old'] ?? [];
+                // Record changes keep attributes/old; other events keep flat details.
+                $props = $log->properties ?? [];
+                $attributes = array_key_exists('attributes', $props) || array_key_exists('old', $props) ? ($props['attributes'] ?? []) : $props;
+                $old = $props['old'] ?? [];
                 $keys = collect(array_unique(array_merge(array_keys($old), array_keys($attributes))))->sort()->values();
             @endphp
 

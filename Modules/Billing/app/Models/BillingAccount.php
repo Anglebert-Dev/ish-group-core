@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class BillingAccount extends Model
 {
+    use \App\Models\Concerns\LogsActivity;
+
     protected $table = 'billing_accounts';
 
     protected $fillable = ['business_id', 'billing_name', 'billing_email', 'tax_id', 'address', 'credit_balance'];

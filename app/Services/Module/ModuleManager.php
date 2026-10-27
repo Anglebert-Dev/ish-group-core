@@ -87,6 +87,7 @@ class ModuleManager extends BaseService
         $this->migrate($module);
         System::addProperty($this->versionKey($module), $this->availableVersion($module));
         $this->flush();
+        $this->audit('installed', $module);
 
         return $this->success($module->getName(), __('body.module_installed', ['name' => $module->getName()]));
     }
@@ -106,6 +107,7 @@ class ModuleManager extends BaseService
         $this->migrate($module);
         System::setProperty($this->versionKey($module), $this->availableVersion($module));
         $this->flush();
+        $this->audit('updated', $module);
 
         return $this->success($module->getName(), __('body.module_updated', ['name' => $module->getName()]));
     }
@@ -133,6 +135,7 @@ class ModuleManager extends BaseService
         System::removeProperty($this->versionKey($module));
         $module->disable();
         $this->flush();
+        $this->audit($purgeData ? 'purged' : 'uninstalled', $module);
 
         return $this->success($module->getName(), __('body.module_uninstalled', ['name' => $module->getName()]));
     }
@@ -150,6 +153,7 @@ class ModuleManager extends BaseService
 
         $enabled ? $module->enable() : $module->disable();
         $this->flush();
+        $this->audit($enabled ? 'enabled' : 'disabled', $module);
 
         return $this->success($module->getName(), $enabled
             ? __('body.module_enabled', ['name' => $module->getName()])
@@ -238,6 +242,16 @@ class ModuleManager extends BaseService
     {
         $this->installed = null;
         $this->hookCache = [];
+    }
+
+    private function audit(string $event, ModuleInstance $module): void
+    {
+        app(\App\Services\ActivityLog\ActivityLogService::class)->log(
+            \App\Enums\ActivityLogAction::ModuleChanged,
+            __('body.audit_log_module_'.$event, ['name' => $module->getName()]),
+            null,
+            ['module' => $module->getName(), 'event' => $event, 'version' => $this->availableVersion($module)],
+        );
     }
 
     private function describe(ModuleInstance $module): array

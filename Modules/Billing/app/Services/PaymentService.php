@@ -102,6 +102,14 @@ class PaymentService extends BaseService
             $invoice->save();
         });
 
+        app(\App\Services\ActivityLog\ActivityLogService::class)->log(
+            \App\Enums\ActivityLogAction::Approved,
+            __('body.audit_log_payment_approved', ['amount' => Money::format($payment->amount, $invoice->currency), 'number' => $invoice->number]),
+            $payment,
+            ['amount' => $payment->amount, 'invoice' => $invoice->number],
+            $payment->business_id,
+        );
+
         if ($invoice->status === InvoiceStatus::Paid) {
             $this->subscriptions->invoicePaid($invoice);
         } else {
@@ -128,6 +136,14 @@ class PaymentService extends BaseService
             'reviewed_at' => now(),
             'rejection_reason' => $reason,
         ])->save();
+
+        app(\App\Services\ActivityLog\ActivityLogService::class)->log(
+            \App\Enums\ActivityLogAction::Rejected,
+            __('body.audit_log_payment_rejected', ['amount' => Money::format($payment->amount, $payment->invoice?->currency), 'number' => $payment->invoice?->number]),
+            $payment,
+            ['reason' => $reason],
+            $payment->business_id,
+        );
 
         $this->notifier->business(
             $payment->business,

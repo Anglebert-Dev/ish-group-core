@@ -17,6 +17,8 @@ class ListExportLibrary
 {
     public static function pdf(ListExport $export): Response
     {
+        self::audit($export, 'PDF');
+
         $branding = app(SettingService::class)->current();
         $logoSrc = self::logoDataUri($branding->logo_path);
 
@@ -44,6 +46,8 @@ class ListExportLibrary
 
     public static function excel(ListExport $export): StreamedResponse
     {
+        self::audit($export, 'Excel');
+
         $branding = app(SettingService::class)->current();
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
@@ -115,6 +119,16 @@ class ListExportLibrary
         }, $export->downloadName('xlsx'), [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ]);
+    }
+
+    private static function audit(ListExport $export, string $format): void
+    {
+        app(\App\Services\ActivityLog\ActivityLogService::class)->log(
+            \App\Enums\ActivityLogAction::Exported,
+            __('body.audit_log_exported', ['list' => $export->title, 'format' => $format, 'rows' => count($export->rows)]),
+            null,
+            ['list' => $export->title, 'format' => $format, 'rows' => count($export->rows)],
+        );
     }
 
     private static function logoDataUri(?string $logoPath): ?string

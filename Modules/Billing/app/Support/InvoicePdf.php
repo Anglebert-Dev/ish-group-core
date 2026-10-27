@@ -35,6 +35,8 @@ class InvoicePdf
 
     public static function download(Invoice $invoice): Response
     {
+        app(\App\Services\ActivityLog\ActivityLogService::class)->log(\App\Enums\ActivityLogAction::Downloaded, __('body.audit_log_invoice_pdf', ['number' => $invoice->number]), $invoice, [], $invoice->business_id);
+
         return response(self::render($invoice), 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="'.$invoice->number.'.pdf"',
