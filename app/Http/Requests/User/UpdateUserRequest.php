@@ -21,20 +21,15 @@ class UpdateUserRequest extends FormRequest
                 'required', 'string', 'email', 'max:255',
                 Rule::unique('users', 'email')->ignore($this->route('user')),
             ],
-            'role' => ['nullable', 'string', $this->roleRule()],
+            'role' => ['nullable', 'integer', $this->roleRule()],
         ];
     }
 
     private function roleRule()
     {
-        $acting = Auth::guard('staff')->user();
-
-        return Rule::exists('roles', 'name')->where(function ($query) use ($acting) {
-            $query->where('guard_name', 'staff');
-
-            if (! $acting?->hasRole('SuperAdmin')) {
-                $query->where('name', '!=', 'SuperAdmin');
-            }
-        });
+        // Admin-role restrictions are enforced in UserService.
+        return Rule::exists('roles', 'id')
+            ->where('guard_name', 'staff')
+            ->where('business_id', Auth::guard('staff')->user()?->business_id);
     }
 }

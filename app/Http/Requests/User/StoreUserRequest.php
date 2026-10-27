@@ -20,20 +20,15 @@ class StoreUserRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::defaults()],
-            'role' => ['nullable', 'string', $this->roleRule()],
+            'role' => ['nullable', 'integer', $this->roleRule()],
         ];
     }
 
     private function roleRule()
     {
-        $acting = Auth::guard('staff')->user();
-
-        return Rule::exists('roles', 'name')->where(function ($query) use ($acting) {
-            $query->where('guard_name', 'staff');
-
-            if (! $acting?->hasRole('SuperAdmin')) {
-                $query->where('name', '!=', 'SuperAdmin');
-            }
-        });
+        // Admin-role restrictions are enforced in UserService.
+        return Rule::exists('roles', 'id')
+            ->where('guard_name', 'staff')
+            ->where('business_id', Auth::guard('staff')->user()?->business_id);
     }
 }

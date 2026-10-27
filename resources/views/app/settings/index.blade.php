@@ -17,9 +17,9 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 <x-common.input
-                    name="company_name"
+                    name="name"
                     :label="__('body.company_name')"
-                    :value="old('company_name', $setting->company_name)"
+                    :value="old('name', $setting->name)"
                     required
                 />
 

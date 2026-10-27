@@ -21,7 +21,7 @@
         </x-common.wizard.step>
 
         <x-common.wizard.step :step="2" :title="__('body.role')">
-            <x-common.select name="role" :label="__('body.role')" :value="old('role')" :options="$roles->pluck('name', 'name')" :placeholder="'—'" />
+            <x-common.select name="role" :label="__('body.role')" :value="old('role')" :options="$roles->pluck('display_name', 'id')" :placeholder="'—'" />
             <x-common.wizard.nav />
         </x-common.wizard.step>
 

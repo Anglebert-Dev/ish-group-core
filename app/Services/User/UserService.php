@@ -4,29 +4,41 @@ namespace App\Services\User;
 
 use App\Enums\UserStatus;
 use App\Libraries\ListExport;
+use App\Models\Role\Role;
 use App\Models\User;
+use App\Repositories\Role\RoleRepository;
 use App\Repositories\User\UserRepository;
 use App\Services\BaseService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
 
+/**
+ * Staff users of the acting user's business. Rules (reference doc §3):
+ * one role per user; only a business Admin may grant the Admin role; the
+ * last Admin of a business can't be demoted or suspended.
+ */
 class UserService extends BaseService
 {
     private const EXPORT_ROW_LIMIT = 5000;
 
-    public function __construct(protected UserRepository $users)
-    {
+    public function __construct(
+        protected UserRepository $users,
+        protected RoleRepository $roles,
+    ) {
     }
 
-    public function list(): LengthAwarePaginator
+    public function list(User $actingUser): LengthAwarePaginator
     {
-        return $this->users->query()->with('roles')->orderBy('name')->paginate(15);
+        return $this->users->forBusiness($actingUser->business_id)
+            ->with('roles')
+            ->orderBy('name')
+            ->paginate(15);
     }
 
-    public function exportList(): ListExport
+    public function exportList(User $actingUser): ListExport
     {
-        $rows = $this->users->query()
+        $rows = $this->users->forBusiness($actingUser->business_id)
             ->with('roles')
             ->orderBy('name')
             ->limit(self::EXPORT_ROW_LIMIT)
@@ -34,7 +46,7 @@ class UserService extends BaseService
             ->map(fn (User $user) => [
                 $user->name,
                 $user->email,
-                $user->roles->first()?->name ?? '—',
+                $user->roleName() ?? '—',
                 ucfirst($user->status->value),
             ])
             ->all();
@@ -48,25 +60,25 @@ class UserService extends BaseService
     }
 
     /**
-     * Staff roles assignable by the acting user (SuperAdmin only for SuperAdmin).
+     * Roles of the acting user's business they may hand out. Non-admins
+     * never see the Admin role.
      *
-     * @return \Illuminate\Support\Collection<int, Role>
+     * @return Collection<int, Role>
      */
-    public function assignableRoles(User $actingUser)
+    public function assignableRoles(User $actingUser): Collection
     {
-        $query = Role::where('guard_name', 'staff')->orderBy('name');
-
-        if (! $actingUser->hasRole('SuperAdmin')) {
-            $query->where('name', '!=', 'SuperAdmin');
-        }
-
-        return $query->get();
+        return $this->roles->forBusiness($actingUser->business_id)
+            ->get()
+            ->reject(fn (Role $role) => $role->isAdmin() && ! $actingUser->isBusinessAdmin())
+            ->values();
     }
 
     public function create(User $actingUser, array $data): array
     {
-        if (! empty($data['role']) && ! $this->canAssignRole($actingUser, $data['role'])) {
-            return $this->failure(__('body.cannot_assign_superadmin'));
+        $role = $this->resolveRole($actingUser, $data['role'] ?? null);
+
+        if ($role === false) {
+            return $this->failure(__('body.cannot_assign_admin_role'));
         }
 
         $user = new User([
@@ -74,12 +86,13 @@ class UserService extends BaseService
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
         ]);
+        $user->business_id = $actingUser->business_id;
         $user->status = UserStatus::Active;
 
         $this->users->save($user);
 
-        if (! empty($data['role'])) {
-            $user->assignRole($data['role']);
+        if ($role) {
+            $user->assignRole($role);
         }
 
         return $this->success($user, __('body.staff_created'));
@@ -87,24 +100,23 @@ class UserService extends BaseService
 
     public function update(User $actingUser, User $user, array $data): array
     {
+        $role = $this->resolveRole($actingUser, $data['role'] ?? null);
+
+        if ($role === false) {
+            return $this->failure(__('body.cannot_assign_admin_role'));
+        }
+
+        if ($user->isBusinessAdmin() && ! $role?->isAdmin() && $this->isLastAdmin($user)) {
+            return $this->failure(__('body.cannot_remove_last_admin'));
+        }
+
         $user->fill([
             'name' => $data['name'],
             'email' => $data['email'],
         ]);
 
         $this->users->save($user);
-
-        // SuperAdmin's role is fixed; the edit form disables the field entirely
-        // (so it never submits), and we must not treat that as "clear the role".
-        if (! $user->hasRole('SuperAdmin')) {
-            $role = $data['role'] ?? null;
-
-            if (! empty($role) && ! $this->canAssignRole($actingUser, $role)) {
-                return $this->failure(__('body.cannot_assign_superadmin'));
-            }
-
-            $user->syncRoles(! empty($role) ? [$role] : []);
-        }
+        $user->syncRoles($role ? [$role] : []);
 
         return $this->success($user, __('body.staff_updated'));
     }
@@ -115,8 +127,12 @@ class UserService extends BaseService
             return $this->failure(__('body.cannot_modify_self_status'));
         }
 
-        if ($target->hasRole('SuperAdmin') && ! $actingUser->hasRole('SuperAdmin')) {
-            return $this->failure(__('body.cannot_modify_superadmin'));
+        if ($target->isBusinessAdmin() && ! $actingUser->isBusinessAdmin()) {
+            return $this->failure(__('body.cannot_modify_admin'));
+        }
+
+        if ($status !== UserStatus::Active && $target->isBusinessAdmin() && $this->isLastAdmin($target)) {
+            return $this->failure(__('body.cannot_remove_last_admin'));
         }
 
         $target->status = $status;
@@ -125,12 +141,31 @@ class UserService extends BaseService
         return $this->success($target, __('body.staff_status_updated'));
     }
 
-    private function canAssignRole(User $actingUser, string $role): bool
+    /**
+     * @return Role|null|false null = no role, false = not allowed
+     */
+    private function resolveRole(User $actingUser, mixed $roleId): Role|null|false
     {
-        if ($role !== 'SuperAdmin') {
-            return true;
+        if (empty($roleId)) {
+            return null;
         }
 
-        return $actingUser->hasRole('SuperAdmin');
+        $role = $this->roles->forBusiness($actingUser->business_id)->find($roleId);
+
+        if (! $role || ($role->isAdmin() && ! $actingUser->isBusinessAdmin())) {
+            return false;
+        }
+
+        return $role;
+    }
+
+    private function isLastAdmin(User $user): bool
+    {
+        $adminRole = Role::scopedName(Role::ADMIN, (int) $user->business_id);
+
+        return $this->users->forBusiness($user->business_id)
+            ->role($adminRole)
+            ->where('status', UserStatus::Active->value)
+            ->count() <= 1;
     }
 }

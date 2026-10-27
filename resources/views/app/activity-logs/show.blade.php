@@ -18,7 +18,7 @@
                 <x-common.status :status="$log->action->label()" />
             </x-common.details.summary-item>
             <x-common.details.summary-item :label="__('body.when')">
-                @kigali($log->created_at)
+                @datetime($log->created_at)
             </x-common.details.summary-item>
         </x-common.details.summary>
 
@@ -28,7 +28,7 @@
                 icon="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
             >
                 <x-common.details.grid>
-                    <x-common.details.field :label="__('body.when')">@kigali($log->created_at)</x-common.details.field>
+                    <x-common.details.field :label="__('body.when')">@datetime($log->created_at)</x-common.details.field>
                     <x-common.details.field :label="__('body.actor')">{{ $log->actorName() }}</x-common.details.field>
                     <x-common.details.field :label="__('body.action')">
                         <x-common.status :status="$log->action->label()" />

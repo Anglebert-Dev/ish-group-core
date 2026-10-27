@@ -32,14 +32,16 @@
         <div class="space-y-2">
             @if ($registrationIsOpen)
                 <p>
-                    {{ __('body.auth_setup_first_admin') }}
+                    {{ $isFirstRegistration ? __('body.auth_setup_first_admin') : __('body.auth_register_business') }}
                     <a href="{{ route('staff.register') }}" class="font-semibold text-brand hover:text-brand-dark">{{ __('body.auth_create_account') }}</a>
                 </p>
             @endif
-            <p>
-                {{ __('body.auth_customer_renter') }}
-                <a href="{{ route('login') }}" class="font-semibold text-brand hover:text-brand-dark">{{ __('body.auth_login_as_customer') }}</a>
-            </p>
+            @if ($hasPublicSite && Route::has('login'))
+                <p>
+                    {{ __('body.auth_customer_renter') }}
+                    <a href="{{ route('login') }}" class="font-semibold text-brand hover:text-brand-dark">{{ __('body.auth_login_as_customer') }}</a>
+                </p>
+            @endif
         </div>
     </x-slot:footer>
 </x-layouts.auth>

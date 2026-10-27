@@ -14,7 +14,7 @@ class UpdateSettingRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'company_name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
             'brand_color' => ['required', 'string', 'regex:/^#[0-9A-F]{6}$/'],
             'logo' => ['nullable', 'image', 'max:4096'],
             'favicon' => ['nullable', 'image', 'max:1024'],

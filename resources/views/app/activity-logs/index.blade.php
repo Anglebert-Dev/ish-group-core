@@ -23,7 +23,7 @@
             <tbody class="divide-y divide-line">
                 @forelse ($logs as $log)
                     <tr class="hover:bg-surface">
-                        <td class="px-5 py-3.5 text-muted whitespace-nowrap">@kigali($log->created_at)</td>
+                        <td class="px-5 py-3.5 text-muted whitespace-nowrap">@datetime($log->created_at)</td>
                         <td class="px-5 py-3.5 font-medium text-ink whitespace-nowrap">{{ $log->actorName() }}</td>
                         <td class="px-5 py-3.5"><x-common.status :status="$log->action->label()" /></td>
                         <td class="px-5 py-3.5 text-muted">

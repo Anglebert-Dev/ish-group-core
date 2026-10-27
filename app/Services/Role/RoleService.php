@@ -3,27 +3,39 @@
 namespace App\Services\Role;
 
 use App\Libraries\ListExport;
+use App\Models\Role\Role;
+use App\Models\User;
 use App\Repositories\Role\RoleRepository;
 use App\Services\BaseService;
+use App\Services\Permission\AccessCatalogue;
+use App\Services\Permission\PermissionService;
 use Illuminate\Support\Collection;
-use Spatie\Permission\Models\Role;
 
+/**
+ * Roles of one business. Stored as "<Name>#<business_id>"; the default
+ * Admin role is locked (Gate::before already grants it everything).
+ */
 class RoleService extends BaseService
 {
-    public function __construct(protected RoleRepository $roles)
-    {
+    public function __construct(
+        protected RoleRepository $roles,
+        protected AccessCatalogue $catalogue,
+        protected PermissionService $permissions,
+    ) {
     }
 
-    public function list(): Collection
+    public function list(User $actingUser): Collection
     {
-        return $this->roles->allForStaffGuard();
+        return $this->roles->forBusiness($actingUser->business_id)
+            ->withCount('permissions')
+            ->get();
     }
 
-    public function exportList(): ListExport
+    public function exportList(User $actingUser): ListExport
     {
-        $rows = $this->list()
+        $rows = $this->list($actingUser)
             ->map(fn (Role $role) => [
-                $role->name,
+                $role->display_name,
                 (string) $role->permissions_count.' '.__('body.permissions'),
             ])
             ->all();
@@ -34,18 +46,15 @@ class RoleService extends BaseService
         ], $rows);
     }
 
-    public function find(int $id): ?Role
-    {
-        return $this->roles->find($id);
-    }
-
     /**
-     * Every permission this system knows about, in the same shape used to
-     * seed them (see PermissionService), grouped by module for display.
+     * Every permission the system knows about (core + active modules),
+     * grouped by module for display.
      */
     public function permissionCatalogue(): array
     {
-        $config = config('access');
+        $this->permissions->initPermissions();
+
+        $config = $this->catalogue->config();
         $groups = [];
 
         foreach ($config['access_modules'] ?? [] as $module => $controllers) {
@@ -64,23 +73,24 @@ class RoleService extends BaseService
         ];
     }
 
-    public function moduleLabel(string $module): string
+    public function nameTaken(User $actingUser, string $name, ?Role $ignore = null): bool
     {
-        return config("access.module_labels.{$module}")
-            ?? str($module)->headline()->toString();
+        return $this->roles->forBusiness($actingUser->business_id)
+            ->where('name', Role::scopedName($name, (int) $actingUser->business_id))
+            ->when($ignore, fn ($query) => $query->whereKeyNot($ignore->getKey()))
+            ->exists();
     }
 
-    public function controllerLabel(string $controller): string
+    public function create(User $actingUser, array $data): array
     {
-        return config("access.controller_labels.{$controller}")
-            ?? str($controller)->headline()->toString();
-    }
+        if ($this->isReservedName($data['name']) || $this->nameTaken($actingUser, $data['name'])) {
+            return $this->failure(__('body.role_name_taken'));
+        }
 
-    public function create(array $data): array
-    {
-        $role = Role::create([
-            'name' => $data['name'],
+        $role = Role::query()->create([
+            'name' => Role::scopedName($data['name'], (int) $actingUser->business_id),
             'guard_name' => 'staff',
+            'business_id' => $actingUser->business_id,
         ]);
 
         $role->syncPermissions($data['permissions'] ?? []);
@@ -88,13 +98,17 @@ class RoleService extends BaseService
         return $this->success($role, __('body.role_created'));
     }
 
-    public function update(Role $role, array $data): array
+    public function update(User $actingUser, Role $role, array $data): array
     {
-        if ($role->name === 'SuperAdmin') {
-            return $this->failure(__('body.cannot_modify_superadmin'));
+        if ($role->is_default) {
+            return $this->failure(__('body.cannot_modify_default_role'));
         }
 
-        $role->update(['name' => $data['name']]);
+        if ($this->isReservedName($data['name']) || $this->nameTaken($actingUser, $data['name'], $role)) {
+            return $this->failure(__('body.role_name_taken'));
+        }
+
+        $role->update(['name' => Role::scopedName($data['name'], (int) $role->business_id)]);
         $role->syncPermissions($data['permissions'] ?? []);
 
         return $this->success($role, __('body.role_updated'));
@@ -102,12 +116,17 @@ class RoleService extends BaseService
 
     public function delete(Role $role): array
     {
-        if ($role->name === 'SuperAdmin') {
-            return $this->failure(__('body.cannot_modify_superadmin'));
+        if ($role->is_default) {
+            return $this->failure(__('body.cannot_modify_default_role'));
         }
 
         $role->delete();
 
         return $this->success(null, __('body.role_deleted'));
+    }
+
+    private function isReservedName(string $name): bool
+    {
+        return strcasecmp(trim($name), Role::ADMIN) === 0 || str_contains($name, Role::SEPARATOR);
     }
 }

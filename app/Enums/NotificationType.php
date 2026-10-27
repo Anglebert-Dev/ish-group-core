@@ -5,19 +5,19 @@ namespace App\Enums;
 enum NotificationType: string
 {
     case System = 'system';
-    case Booking = 'booking';
-    case Payment = 'payment';
-    case Finance = 'finance';
-    case Fleet = 'fleet';
+    case Info = 'info';
+    case Success = 'success';
+    case Warning = 'warning';
+    case Security = 'security';
 
     public function label(): string
     {
         return match ($this) {
             self::System => 'System',
-            self::Booking => 'Booking',
-            self::Payment => 'Payment',
-            self::Finance => 'Finance',
-            self::Fleet => 'Fleet',
+            self::Info => 'Info',
+            self::Success => 'Success',
+            self::Warning => 'Warning',
+            self::Security => 'Security',
         };
     }
 }

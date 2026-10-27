@@ -7,6 +7,7 @@ use App\Enums\UserStatus;
 use App\Models\Business\Business;
 use App\Models\Concerns\HasUuidAudit;
 use App\Models\Role\Role;
+use App\Support\Tenancy\CurrentBusiness;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -55,6 +56,18 @@ class User extends Authenticatable
     public function isBanned(): bool
     {
         return $this->status === UserStatus::Banned;
+    }
+
+    /**
+     * {user} route parameters only resolve to users of the signed-in staff
+     * member's business (User is not globally scoped — see BelongsToBusiness).
+     */
+    public function resolveRouteBindingQuery($query, $value, $field = null)
+    {
+        $query = parent::resolveRouteBindingQuery($query, $value, $field);
+        $businessId = app(CurrentBusiness::class)->id();
+
+        return $businessId !== null ? $query->where('business_id', $businessId) : $query;
     }
 
     public function business(): BelongsTo

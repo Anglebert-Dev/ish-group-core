@@ -3,6 +3,7 @@
 namespace App\Models\Role;
 
 use App\Models\Business\Business;
+use App\Support\Tenancy\CurrentBusiness;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\Permission\Models\Role as SpatieRole;
 
@@ -15,6 +16,16 @@ class Role extends SpatieRole
     public const SEPARATOR = '#';
 
     public const ADMIN = 'Admin';
+
+    /**
+     * {role} route parameters only resolve within the current business.
+     */
+    public function resolveRouteBindingQuery($query, $value, $field = null)
+    {
+        return parent::resolveRouteBindingQuery($query, $value, $field)
+            ->where('guard_name', 'staff')
+            ->where('business_id', app(CurrentBusiness::class)->id());
+    }
 
     public function business(): BelongsTo
     {

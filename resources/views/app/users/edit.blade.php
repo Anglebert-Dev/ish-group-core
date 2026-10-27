@@ -3,8 +3,7 @@
         ['id' => 'details', 'label' => __('body.details')],
         ['id' => 'review', 'label' => __('body.review')],
     ];
-    $isSuperAdmin = $user->hasRole('SuperAdmin');
-    $roleHint = $isSuperAdmin ? "SuperAdmin's role cannot be changed." : null;
+    $roleHint = $user->isBusinessAdmin() ? __('body.admin_role_hint') : null;
 @endphp
 
 <x-layouts.app title="{{ __('body.edit_staff') }}">
@@ -19,9 +18,9 @@
                     name="role"
                     :label="__('body.role')"
                     :value="old('role', $currentRole)"
-                    :options="$roles->pluck('name', 'name')"
+                    :options="$roles->pluck('display_name', 'id')"
                     :placeholder="'—'"
-                    :disabled="$isSuperAdmin"
+                    :disabled="false"
                     :hint="$roleHint"
                 />
             </div>

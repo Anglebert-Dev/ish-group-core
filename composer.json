@@ -1,11 +1,13 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "ish-group/core",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "Reusable modular Laravel core: multi-tenant auth, roles, superadmin and toggleable modules.",
     "keywords": [
         "laravel",
-        "framework"
+        "modules",
+        "multi-tenant",
+        "core"
     ],
     "license": "MIT",
     "require": {
@@ -79,6 +81,11 @@
     "extra": {
         "laravel": {
             "dont-discover": []
+        },
+        "merge-plugin": {
+            "include": [
+                "Modules/*/composer.json"
+            ]
         }
     },
     "config": {

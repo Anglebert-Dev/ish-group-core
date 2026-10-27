@@ -16,7 +16,7 @@
 
         <x-common.details.summary>
             <x-common.details.summary-item :label="__('body.email_address')" :value="$user->email" />
-            <x-common.details.summary-item :label="__('body.role')" :value="$user->roles->first()?->name ?? '—'" />
+            <x-common.details.summary-item :label="__('body.role')" :value="$user->roleName() ?? '—'" />
             <x-common.details.summary-item :label="__('body.status')">
                 <x-common.status :status="ucfirst($user->status->value)" />
             </x-common.details.summary-item>
@@ -38,7 +38,7 @@
             <x-common.details.grid>
                 <x-common.details.field :label="__('body.full_name')">{{ $user->name }}</x-common.details.field>
                 <x-common.details.field :label="__('body.email_address')">{{ $user->email }}</x-common.details.field>
-                <x-common.details.field :label="__('body.role')">{{ $user->roles->first()?->name ?? '—' }}</x-common.details.field>
+                <x-common.details.field :label="__('body.role')">{{ $user->roleName() ?? '—' }}</x-common.details.field>
                 <x-common.details.field :label="__('body.status')">
                     <x-common.status :status="ucfirst($user->status->value)" />
                 </x-common.details.field>

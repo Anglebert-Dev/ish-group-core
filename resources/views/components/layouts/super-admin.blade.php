@@ -30,13 +30,21 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
+            @php
+                $superAdminNav = [
+                    ['label' => __('body.overview'), 'route' => 'superadmin.dashboard', 'active' => 'superadmin.dashboard'],
+                    ['label' => __('body.businesses'), 'route' => 'superadmin.businesses.index', 'active' => 'superadmin.businesses.*'],
+                    ['label' => __('body.modules'), 'route' => 'superadmin.modules.index', 'active' => 'superadmin.modules.*'],
+                    ['label' => __('body.platform_settings'), 'route' => 'superadmin.settings.index', 'active' => 'superadmin.settings.*'],
+                ];
+            @endphp
             <nav class="flex-1 min-h-0 px-3 py-4 space-y-1 overflow-y-auto">
-                <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('dashboard') ? 'bg-white/10' : 'hover:bg-white/5' }}">Dashboard</a>
-                <a href="{{ route('super-admin.institutions.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('super-admin.institutions.*') ? 'bg-white/10' : 'hover:bg-white/5' }}">Institutions</a>
-                <a href="{{ route('super-admin.users.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('super-admin.users.*') ? 'bg-white/10' : 'hover:bg-white/5' }}">Platform Users</a>
+                @foreach ($superAdminNav as $item)
+                    <a href="{{ route($item['route']) }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs($item['active']) ? 'bg-white/10' : 'hover:bg-white/5' }}">{{ $item['label'] }}</a>
+                @endforeach
             </nav>
             <div class="p-4 border-t border-white/10 space-y-3 shrink-0">
-                <a href="{{ route('home') }}" class="block text-sm font-medium text-slate-400 hover:text-white">{{ __('body.back_to_website') }}</a>
+                <a href="{{ route('dashboard') }}" class="block text-sm font-medium text-slate-400 hover:text-white">{{ __('body.back_to_app') }}</a>
                 <form action="{{ route('staff.logout') }}" method="POST">
                     @csrf
                     <button type="submit" class="text-sm font-medium text-slate-400 hover:text-white">{{ __('body.log_out') }}</button>
@@ -52,7 +60,7 @@
                     </button>
                     <p class="font-display font-bold text-ink truncate">{{ $title ?? 'Super Admin' }}</p>
                 </div>
-                <span class="text-sm text-muted hidden sm:inline shrink-0">Platform Owner</span>
+                <span class="text-sm text-muted hidden sm:inline shrink-0">{{ __('body.platform_owner') }}</span>
             </header>
             <main class="p-4 sm:p-6 lg:p-8">
                 {{ $slot }}

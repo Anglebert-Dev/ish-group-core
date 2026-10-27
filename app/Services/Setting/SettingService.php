@@ -3,76 +3,75 @@
 namespace App\Services\Setting;
 
 use App\Libraries\UploadLibrary;
-use App\Models\Setting\Setting;
-use App\Repositories\Setting\SettingRepository;
+use App\Models\Business\Business;
+use App\Models\System\System;
+use App\Repositories\Business\BusinessRepository;
 use App\Services\BaseService;
+use App\Support\Tenancy\CurrentBusiness;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * Business settings & branding. The branding shown is the signed-in staff
+ * user's business; on pages without one (login, public site) it is the
+ * platform's primary business.
+ */
 class SettingService extends BaseService
 {
-    private ?Setting $current = null;
-
-    public function __construct(protected SettingRepository $settings)
-    {
+    public function __construct(
+        protected BusinessRepository $businesses,
+        protected CurrentBusiness $current,
+    ) {
     }
 
-    public function current(): Setting
+    public function current(): Business
     {
-        if ($this->current) {
-            return $this->current;
+        if (! Schema::hasTable('businesses')) {
+            return $this->fallback();
         }
 
-        if (! Schema::hasTable('settings')) {
-            return $this->current = $this->fallback();
-        }
-
-        $setting = $this->settings->first();
-
-        if (! $setting) {
-            $setting = new Setting([
-                'company_name' => Setting::DEFAULT_COMPANY_NAME,
-                'brand_color' => Setting::DEFAULT_BRAND_COLOR,
-                'status' => 'active',
-            ]);
-
-            $this->settings->save($setting);
-        }
-
-        return $this->current = $setting;
+        return $this->current->get() ?? $this->primary() ?? $this->fallback();
     }
 
-    public function update(Setting $setting, array $data, ?UploadedFile $logo = null, ?UploadedFile $favicon = null): array
+    /**
+     * The business the public site and guest pages represent:
+     * system "primary_business_id", else the first business created.
+     */
+    public function primary(): ?Business
     {
-        $setting->fill($data);
+        $id = System::getProperty('primary_business_id');
+
+        return ($id ? $this->businesses->find($id) : null) ?? $this->businesses->first();
+    }
+
+    public function update(Business $business, array $data, ?UploadedFile $logo = null, ?UploadedFile $favicon = null): array
+    {
+        $business->fill($data);
 
         if ($logo) {
-            if ($setting->logo_path) {
-                UploadLibrary::delete($setting->logo_path, 'public');
+            if ($business->logo_path) {
+                UploadLibrary::delete($business->logo_path, 'public');
             }
-            $setting->logo_path = UploadLibrary::store($logo, 'branding', 'public');
+            $business->logo_path = UploadLibrary::store($logo, 'branding', 'public');
         }
 
         if ($favicon) {
-            if ($setting->favicon_path) {
-                UploadLibrary::delete($setting->favicon_path, 'public');
+            if ($business->favicon_path) {
+                UploadLibrary::delete($business->favicon_path, 'public');
             }
-            $setting->favicon_path = UploadLibrary::store($favicon, 'branding', 'public');
+            $business->favicon_path = UploadLibrary::store($favicon, 'branding', 'public');
         }
 
-        $this->settings->save($setting);
+        $this->businesses->save($business);
 
-        $this->current = $setting;
-
-        return $this->success($setting, __('body.settings_updated'));
+        return $this->success($business, __('body.settings_updated'));
     }
 
-    private function fallback(): Setting
+    private function fallback(): Business
     {
-        return new Setting([
-            'company_name' => Setting::DEFAULT_COMPANY_NAME,
-            'brand_color' => Setting::DEFAULT_BRAND_COLOR,
-            'status' => 'active',
+        return new Business([
+            'name' => Business::DEFAULT_NAME,
+            'brand_color' => Business::DEFAULT_BRAND_COLOR,
         ]);
     }
 }

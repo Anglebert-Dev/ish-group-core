@@ -4,16 +4,19 @@ namespace App\Services\Notification;
 
 use App\Enums\NotificationStatus;
 use App\Enums\NotificationType;
+use App\Enums\UserStatus;
 use App\Libraries\GeneralLibrary;
 use App\Libraries\ListExport;
 use App\Models\Notification\Notification;
 use App\Models\User;
 use App\Repositories\Notification\NotificationRepository;
 use App\Services\BaseService;
+use App\Support\Tenancy\CurrentBusiness;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Schema;
+use Spatie\Permission\Exceptions\PermissionDoesNotExist;
 
 class NotificationService extends BaseService
 {
@@ -138,8 +141,9 @@ class NotificationService extends BaseService
     }
 
     /**
-     * Notify every staff user who has the given permission.
-     * Falls back to all active staff if the permission is missing or unused.
+     * Notify every active staff member of one business who has the given
+     * permission (the business Admin always counts). Defaults to the
+     * current business; never reaches users of other businesses.
      *
      * @return array{status: bool, message: string, data: int}
      */
@@ -150,27 +154,20 @@ class NotificationService extends BaseService
         NotificationType|string $type = NotificationType::System,
         ?string $actionUrl = null,
         ?Model $subject = null,
+        ?int $businessId = null,
     ): array {
-        if (! $this->ready()) {
+        $businessId ??= app(CurrentBusiness::class)->id();
+
+        if (! $this->ready() || $businessId === null) {
             return $this->failure(__('body.something_went_wrong'));
         }
 
-        $users = collect();
-
-        try {
-            $users = User::query()
-                ->permission($permission)
-                ->where('status', \App\Enums\UserStatus::Active->value)
-                ->get();
-        } catch (\Spatie\Permission\Exceptions\PermissionDoesNotExist) {
-            $users = collect();
-        }
-
-        if ($users->isEmpty()) {
-            $users = User::query()
-                ->where('status', \App\Enums\UserStatus::Active->value)
-                ->get();
-        }
+        $users = User::query()
+            ->where('business_id', $businessId)
+            ->where('status', UserStatus::Active->value)
+            ->with('roles', 'permissions')
+            ->get()
+            ->filter(fn (User $user) => $user->isBusinessAdmin() || $this->userHasPermission($user, $permission));
 
         $created = 0;
 
@@ -183,6 +180,15 @@ class NotificationService extends BaseService
         }
 
         return $this->success($created, __('body.notification_created'));
+    }
+
+    private function userHasPermission(User $user, string $permission): bool
+    {
+        try {
+            return $user->hasPermissionTo($permission, 'staff');
+        } catch (PermissionDoesNotExist) {
+            return false;
+        }
     }
 
     protected function ready(): bool

@@ -2,9 +2,9 @@
 
 namespace App\Repositories\Role;
 
+use App\Models\Role\Role;
 use App\Repositories\BaseRepository;
-use Illuminate\Support\Collection;
-use Spatie\Permission\Models\Role;
+use Illuminate\Database\Eloquent\Builder;
 
 class RoleRepository extends BaseRepository
 {
@@ -13,17 +13,12 @@ class RoleRepository extends BaseRepository
         parent::__construct($model);
     }
 
-    public function allForStaffGuard(): Collection
+    public function forBusiness(?int $businessId): Builder
     {
         return $this->query()
             ->where('guard_name', 'staff')
-            ->withCount('permissions')
-            ->orderBy('name')
-            ->get();
-    }
-
-    public function find(int|string $id): ?Role
-    {
-        return $this->query()->where('guard_name', 'staff')->find($id);
+            ->where('business_id', $businessId)
+            ->orderByDesc('is_default')
+            ->orderBy('name');
     }
 }

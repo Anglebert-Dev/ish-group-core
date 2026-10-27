@@ -35,14 +35,4 @@ return [
         ],
     ],
 
-    /*
-    | Free NHTSA vPIC vehicle make/model catalog (no API key).
-    | https://vpic.nhtsa.dot.gov/api/
-    */
-    'nhtsa' => [
-        'enabled' => env('NHTSA_VEHICLE_API_ENABLED', true),
-        'base_url' => env('NHTSA_VEHICLE_API_URL', 'https://vpic.nhtsa.dot.gov/api'),
-        'timeout' => (int) env('NHTSA_VEHICLE_API_TIMEOUT', 20),
-    ],
-
 ];

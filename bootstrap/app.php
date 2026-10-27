@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -16,8 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('web', \App\Http\Middleware\NormalizeFormattedAmounts::class);
 
         $middleware->alias([
-            'approved' => \App\Http\Middleware\EnsureUserIsApproved::class,
-            'customer.active' => \App\Http\Middleware\EnsureCustomerIsActive::class,
+            'business.active' => \App\Http\Middleware\EnsureBusinessActive::class,
+            'superadmin' => \App\Http\Middleware\EnsureSuperAdmin::class,
+            'module' => \App\Http\Middleware\EnsureModuleActive::class,
             'permission' => \App\Http\Middleware\CheckPermission::class,
             'no-back-cache' => \App\Http\Middleware\PreventBackHistoryCache::class,
             'exclusive.portal' => \App\Http\Middleware\EnsureExclusivePortalSession::class,
@@ -25,16 +27,18 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth.session' => \Illuminate\Session\Middleware\AuthenticateSession::class,
         ]);
 
+        // Customer routes only exist while the Frontend module is installed;
+        // everything else belongs to the staff app.
         $middleware->redirectGuestsTo(function (Request $request) {
-            return $request->is('app') || $request->is('app/*') || $request->is('super-admin/*')
-                ? route('staff.login')
-                : route('login');
+            return ! $request->is('app', 'app/*') && Route::has('login')
+                ? route('login')
+                : route('staff.login');
         });
 
         $middleware->redirectUsersTo(function (Request $request) {
-            return $request->is('app') || $request->is('app/*') || $request->is('super-admin/*')
-                ? route('dashboard')
-                : route('profile');
+            return ! $request->is('app', 'app/*') && Route::has('profile')
+                ? route('profile')
+                : route('dashboard');
         });
     })
     ->withExceptions(function (Exceptions $exceptions): void {

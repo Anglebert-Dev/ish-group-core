@@ -1,70 +1,10 @@
+@props(['actions'])
+
 @php
-    $actions = collect([
-        [
-            'label' => __('body.add_booking'),
-            'route' => 'bookings.create',
-            'permission' => 'create bookings.booking',
-            'color' => 'teal',
-            'description' => __('body.quick_action_add_booking'),
-            'icon' => 'M12 6v6m0 0v6m0-6h6m-6 0H6',
-        ],
-        [
-            'label' => __('body.bookings'),
-            'route' => 'bookings.index',
-            'permission' => 'list bookings.booking',
-            'color' => 'indigo',
-            'description' => __('body.quick_action_bookings'),
-            'icon' => 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
-        ],
-        [
-            'label' => __('body.rentals'),
-            'route' => 'rentals.index',
-            'permission' => 'list operations.rental',
-            'color' => 'blue',
-            'description' => __('body.quick_action_rentals'),
-            'icon' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-        ],
-        [
-            'label' => __('body.add_vehicle'),
-            'route' => 'fleet.vehicles.create',
-            'permission' => 'create fleet.vehicle',
-            'color' => 'green',
-            'description' => __('body.quick_action_add_vehicle'),
-            'icon' => 'M5 17h14M5 17a2 2 0 104 0M5 17a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0M5 17l1.5-5.5A2 2 0 018.4 10h7.2a2 2 0 011.9 1.5L19 17M7 10V7a2 2 0 012-2h6a2 2 0 012 2v3',
-        ],
-        [
-            'label' => __('body.invoices'),
-            'route' => 'finance.invoices.index',
-            'permission' => 'list finance.invoice',
-            'color' => 'purple',
-            'description' => __('body.quick_action_invoices'),
-            'icon' => 'M9 14l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
-        ],
-        [
-            'label' => __('body.payments'),
-            'route' => 'finance.payments.index',
-            'permission' => 'list finance.payment',
-            'color' => 'pink',
-            'description' => __('body.quick_action_payments'),
-            'icon' => 'M3 10h18M7 15h1m4 0h1m-7 4h16a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
-        ],
-        [
-            'label' => __('body.customers'),
-            'route' => 'customers.index',
-            'permission' => 'list customers.customer',
-            'color' => 'yellow',
-            'description' => __('body.quick_action_customers'),
-            'icon' => 'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-4a4 4 0 10-8 0 4 4 0 008 0zm6 0a4 4 0 10-8 0 4 4 0 008 0z',
-        ],
-        [
-            'label' => __('body.maintenance'),
-            'route' => 'fleet.maintenance.index',
-            'permission' => 'list fleet.vehicle_maintenance',
-            'color' => 'gray',
-            'description' => __('body.quick_action_maintenance'),
-            'icon' => 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z',
-        ],
-    ])->filter(fn (array $action) => \App\Helpers\AuthHelper::can($action['permission']));
+    // $actions: core quick actions + every active module's
+    // DataController::dashboard_quick_actions() items, already filtered by
+    // permission in DashboardService.
+    $actions = collect($actions);
 
     $colors = [
         'blue' => 'bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200',

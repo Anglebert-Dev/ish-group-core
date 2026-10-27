@@ -11,7 +11,7 @@
             @if ($user->last_login_at)
                 <p class="text-sm text-muted mb-4">
                     {{ __('body.last_login') }}:
-                    <span class="text-body">@kigali($user->last_login_at)</span>
+                    <span class="text-body">@datetime($user->last_login_at)</span>
                     @if ($user->last_login_ip)
                         <span class="text-muted">({{ $user->last_login_ip }})</span>
                     @endif

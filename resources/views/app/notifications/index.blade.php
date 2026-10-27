@@ -41,7 +41,7 @@
                             @endif
                         </td>
                         <td class="px-5 py-3.5 text-muted whitespace-nowrap">{{ $notification->type->label() }}</td>
-                        <td class="px-5 py-3.5 text-muted whitespace-nowrap">@kigali($notification->created_at)</td>
+                        <td class="px-5 py-3.5 text-muted whitespace-nowrap">@datetime($notification->created_at)</td>
                         <td class="px-5 py-3.5 text-right whitespace-nowrap">
                             <a href="{{ route('notifications.show', $notification) }}" class="text-brand hover:text-brand-dark font-medium text-sm">{{ __('body.view') }}</a>
                             @if ($notification->isUnread())

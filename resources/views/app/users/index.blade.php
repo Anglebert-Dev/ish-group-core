@@ -28,7 +28,7 @@
                             <a href="{{ route('users.show', $u) }}" class="hover:text-brand">{{ $u->name }}</a>
                         </td>
                         <td class="px-5 py-3.5 whitespace-nowrap">{{ $u->email }}</td>
-                        <td class="px-5 py-3.5 whitespace-nowrap">{{ $u->roles->first()?->name ?? '—' }}</td>
+                        <td class="px-5 py-3.5 whitespace-nowrap">{{ $u->roleName() ?? '—' }}</td>
                         <td class="px-5 py-3.5"><x-common.status :status="ucfirst($u->status->value)" /></td>
                         <td class="px-5 py-3.5 text-right whitespace-nowrap">
                             <a href="{{ route('users.show', $u) }}" class="text-brand hover:text-brand-dark font-medium text-sm">{{ __('body.view') }}</a>

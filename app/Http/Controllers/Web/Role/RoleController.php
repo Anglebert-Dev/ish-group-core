@@ -9,7 +9,8 @@ use App\Services\Role\RoleService;
 use App\Libraries\ListExportLibrary;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
-use Spatie\Permission\Models\Role;
+use App\Models\Role\Role;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class RoleController extends Controller
@@ -21,18 +22,18 @@ class RoleController extends Controller
     public function index(): View
     {
         return view('app.roles.index', [
-            'roles' => $this->roles->list(),
+            'roles' => $this->roles->list(Auth::guard('staff')->user()),
         ]);
     }
 
     public function exportPdf(): Response
     {
-        return ListExportLibrary::pdf($this->roles->exportList());
+        return ListExportLibrary::pdf($this->roles->exportList(Auth::guard('staff')->user()));
     }
 
     public function exportExcel(): Response
     {
-        return ListExportLibrary::excel($this->roles->exportList());
+        return ListExportLibrary::excel($this->roles->exportList(Auth::guard('staff')->user()));
     }
 
     public function create(): View
@@ -45,7 +46,11 @@ class RoleController extends Controller
 
     public function store(StoreRoleRequest $request): RedirectResponse
     {
-        $result = $this->roles->create($request->validated());
+        $result = $this->roles->create(Auth::guard('staff')->user(), $request->validated());
+
+        if (! $result['status']) {
+            return back()->withInput()->withErrors(['name' => $result['message']]);
+        }
 
         return redirect()->route('roles.index')->with('success', $result['message']);
     }
@@ -70,7 +75,7 @@ class RoleController extends Controller
 
     public function update(UpdateRoleRequest $request, Role $role): RedirectResponse
     {
-        $result = $this->roles->update($role, $request->validated());
+        $result = $this->roles->update(Auth::guard('staff')->user(), $role, $request->validated());
 
         return redirect()->route('roles.index')
             ->with($result['status'] ? 'success' : 'error', $result['message']);

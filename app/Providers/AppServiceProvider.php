@@ -2,15 +2,17 @@
 
 namespace App\Providers;
 
-use App\Services\Extra\ExtraService;
+use App\Models\User;
+use App\Services\Module\ModuleManager;
 use App\Services\Notification\NotificationService;
 use App\Services\Setting\SettingService;
-use App\Models\Customer;
-use App\Models\User;
+use App\Support\Menu\AdminMenu;
+use App\Support\Tenancy\CurrentBusiness;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -19,11 +21,18 @@ use Illuminate\Validation\Rules\Password;
 class AppServiceProvider extends ServiceProvider
 {
     /**
+     * Abilities only a platform superadmin holds; a business Admin never does.
+     */
+    public const PLATFORM_ABILITIES = ['superadmin', 'manage_modules', 'manage_businesses'];
+
+    /**
      * Register any application services.
      */
     public function register(): void
     {
         $this->app->singleton(SettingService::class);
+        $this->app->singleton(CurrentBusiness::class);
+        $this->app->singleton(ModuleManager::class);
     }
 
     /**
@@ -32,6 +41,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         date_default_timezone_set((string) config('app.timezone'));
+
+        $this->registerGate();
 
         Password::defaults(function () {
             $rule = Password::min(12)
@@ -65,12 +76,11 @@ class AppServiceProvider extends ServiceProvider
             ];
         });
 
+        // A model from another broker (e.g. the Frontend module's Customer)
+        // supplies its own link via passwordResetUrl(); staff is the default.
         ResetPassword::createUrlUsing(function (object $user, string $token) {
-            if ($user instanceof Customer) {
-                return url(route('customer.password.reset', [
-                    'token' => $token,
-                    'email' => $user->getEmailForPasswordReset(),
-                ], false));
+            if (method_exists($user, 'passwordResetUrl')) {
+                return $user->passwordResetUrl($token);
             }
 
             return url(route('staff.password.reset', [
@@ -84,10 +94,11 @@ class AppServiceProvider extends ServiceProvider
             $view->with('branding', $branding);
             $view->with('company', $branding->companyName());
             $view->with('appTimezone', config('app.timezone'));
+            $view->with('hasPublicSite', app(ModuleManager::class)->cachedHook('landing_page') !== []);
+        });
 
-            $chauffeurExtra = app(ExtraService::class)->chauffeurExtra();
-            $view->with('chauffeurExtra', $chauffeurExtra);
-            $view->with('chauffeurDailyFee', $chauffeurExtra?->price ?? '0.00');
+        View::composer('components.dashboard.sidebar', function ($view) {
+            $view->with('menuGroups', app(AdminMenu::class)->visibleGroups());
         });
 
         View::composer('components.dashboard.header', function ($view) {
@@ -98,10 +109,31 @@ class AppServiceProvider extends ServiceProvider
             $view->with('headerUnreadCount', $notifications->unreadCount($user));
         });
 
-        Blade::directive('kigali', function ($expression) {
+        Blade::directive('datetime', function ($expression) {
             $expression = trim($expression) !== '' ? $expression : 'null';
 
             return "<?php echo \\App\\Libraries\\GeneralLibrary::formatDateTime($expression); ?>";
+        });
+    }
+
+    /**
+     * Two branches (reference doc §2):
+     *  - platform abilities: only users flagged is_superadmin
+     *  - everything else: true for the business's Admin#<id> role,
+     *    otherwise fall through to spatie permissions
+     */
+    private function registerGate(): void
+    {
+        Gate::before(function ($user, string $ability) {
+            if (! $user instanceof User) {
+                return null;
+            }
+
+            if (in_array($ability, self::PLATFORM_ABILITIES, true)) {
+                return $user->isSuperAdmin() ? true : false;
+            }
+
+            return $user->isBusinessAdmin() ? true : null;
         });
     }
 }

@@ -16,6 +16,8 @@ class CurrentBusiness
 {
     private ?int $pinnedId = null;
 
+    private ?Business $loaded = null;
+
     public function id(): ?int
     {
         if ($this->pinnedId !== null) {
@@ -29,11 +31,26 @@ class CurrentBusiness
     {
         $id = $this->id();
 
-        return $id ? Business::query()->find($id) : null;
+        if (! $id) {
+            return null;
+        }
+
+        // Memoised for this request only (views ask for branding many times).
+        if ($this->loaded?->id !== $id) {
+            $this->loaded = Business::query()->find($id);
+        }
+
+        return $this->loaded;
     }
 
     public function set(Business|int|null $business): void
     {
         $this->pinnedId = $business instanceof Business ? $business->id : $business;
+        $this->loaded = $business instanceof Business ? $business : null;
+    }
+
+    public function forget(): void
+    {
+        $this->loaded = null;
     }
 }

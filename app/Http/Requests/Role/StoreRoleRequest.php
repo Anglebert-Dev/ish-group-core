@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Role;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreRoleRequest extends FormRequest
 {
@@ -15,10 +14,7 @@ class StoreRoleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => [
-                'required', 'string', 'max:255',
-                Rule::unique('roles', 'name')->where('guard_name', 'staff'),
-            ],
+            'name' => ['required', 'string', 'max:100', 'not_regex:/#/'],
             'permissions' => ['array'],
             'permissions.*' => ['string', 'exists:permissions,name'],
         ];

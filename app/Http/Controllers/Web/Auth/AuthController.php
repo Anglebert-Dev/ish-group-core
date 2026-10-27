@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\Auth\AuthService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\View\View;
 
@@ -32,15 +33,21 @@ class AuthController extends Controller
             ]);
         }
 
-        return view('auth.register');
+        return view('auth.register', [
+            'isFirstRegistration' => $this->auth->isFirstRegistration(),
+        ]);
     }
 
     public function register(RegisterStaffRequest $request): RedirectResponse
     {
-        $result = $this->auth->registerFirstSuperAdmin($request->validated());
+        $result = $this->auth->registerBusiness($request->validated());
 
         if (! $result['status']) {
             return redirect()->route('staff.login')->withErrors(['email' => $result['message']]);
+        }
+
+        if (! empty($result['data']['pending'])) {
+            return redirect()->route('staff.login')->with('success', $result['message']);
         }
 
         $request->session()->regenerate();
@@ -52,6 +59,7 @@ class AuthController extends Controller
     {
         return view('auth.login', [
             'registrationIsOpen' => $this->auth->registrationIsOpen(),
+            'isFirstRegistration' => $this->auth->isFirstRegistration(),
         ]);
     }
 
@@ -151,7 +159,7 @@ class AuthController extends Controller
 
         $user = $request->user('staff');
 
-        if (! $user || ! \Illuminate\Support\Facades\Hash::check($request->input('password'), $user->password)) {
+        if (! $user || ! Hash::check($request->input('password'), $user->password)) {
             return back()->withErrors(['password' => __('body.incorrect_current_password')]);
         }
 

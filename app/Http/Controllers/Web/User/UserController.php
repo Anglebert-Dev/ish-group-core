@@ -24,18 +24,18 @@ class UserController extends Controller
     public function index(): View
     {
         return view('app.users.index', [
-            'users' => $this->users->list(),
+            'users' => $this->users->list(Auth::guard('staff')->user()),
         ]);
     }
 
     public function exportPdf(): Response
     {
-        return ListExportLibrary::pdf($this->users->exportList());
+        return ListExportLibrary::pdf($this->users->exportList(Auth::guard('staff')->user()));
     }
 
     public function exportExcel(): Response
     {
-        return ListExportLibrary::excel($this->users->exportList());
+        return ListExportLibrary::excel($this->users->exportList(Auth::guard('staff')->user()));
     }
 
     public function create(): View
@@ -67,7 +67,7 @@ class UserController extends Controller
         return view('app.users.edit', [
             'user' => $user,
             'roles' => $this->users->assignableRoles(Auth::guard('staff')->user()),
-            'currentRole' => $user->roles->first()?->name,
+            'currentRole' => $user->roles->first()?->id,
         ]);
     }
 

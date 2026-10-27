@@ -1,7 +1,7 @@
-<x-layouts.app title="{{ $role->name }}">
+<x-layouts.app title="{{ $role->display_name }}">
     <div data-details-page>
         <x-common.details.header
-            :title="$role->name"
+            :title="$role->display_name"
             :subtitle="__('body.roles_description')"
             :back-href="route('roles.index')"
             :back-label="__('body.back')"
@@ -10,7 +10,7 @@
                 <span class="text-xs px-2 py-1 rounded font-semibold bg-brand-light text-brand-dark">{{ count($assigned) }} {{ __('body.permissions') }}</span>
             </x-slot:meta>
             <x-slot:actions>
-                @if ($role->name !== 'SuperAdmin')
+                @if (! $role->is_default)
                     <x-common.button href="{{ route('roles.edit', $role) }}" variant="secondary" size="sm">{{ __('body.edit') }}</x-common.button>
                 @endif
             </x-slot:actions>
@@ -18,7 +18,7 @@
 
         <x-common.details.summary>
             <x-common.details.summary-item :label="__('body.permissions')" :value="(string) count($assigned)" />
-            <x-common.details.summary-item :label="__('body.role')" :value="$role->name" />
+            <x-common.details.summary-item :label="__('body.role')" :value="$role->display_name" />
         </x-common.details.summary>
 
         <x-common.details.section

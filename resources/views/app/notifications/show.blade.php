@@ -21,7 +21,7 @@
                 <x-common.status :status="$notification->status->label()" />
             </x-common.details.summary-item>
             <x-common.details.summary-item :label="__('body.when')">
-                @kigali($notification->created_at)
+                @datetime($notification->created_at)
             </x-common.details.summary-item>
         </x-common.details.summary>
 
@@ -34,7 +34,7 @@
                     <x-common.status :status="$notification->status->label()" />
                 </x-common.details.field>
                 <x-common.details.field :label="__('body.when')">
-                    @kigali($notification->created_at)
+                    @datetime($notification->created_at)
                 </x-common.details.field>
                 <x-common.details.field :label="__('body.details')" :span="2">
                     {{ $notification->body ?: '—' }}

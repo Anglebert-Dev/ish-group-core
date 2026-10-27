@@ -8,34 +8,22 @@ use Illuminate\Support\Facades\Auth;
 class AuthHelper
 {
     /**
-     * Check if the authenticated user has a permission.
-     * Supports pipe-separated OR logic: "create programs.program|update programs.program"
+     * Check if the authenticated staff user has a permission.
+     * Supports pipe-separated OR logic: "create users.user|update users.user".
+     *
+     * Goes through the Gate, so Gate::before (superadmin / business Admin)
+     * applies — see AppServiceProvider.
      */
     public static function can(string $permission): bool
     {
-        if (! auth('staff')->check()) {
-            return false;
-        }
-
         $user = auth('staff')->user();
 
-        $permissions = explode('|', $permission);
-
-        if ($user->hasRole('SuperAdmin')) {
-            foreach ($permissions as $perm) {
-                $name = trim($perm);
-                if (in_array($name, self::superAdminDeniedPermissions(), true)) {
-                    continue;
-                }
-
-                return true;
-            }
-
+        if (! $user) {
             return false;
         }
 
-        foreach ($permissions as $perm) {
-            if ($user->hasPermissionTo(trim($perm))) {
+        foreach (explode('|', $permission) as $perm) {
+            if ($user->can(trim($perm))) {
                 return true;
             }
         }
@@ -46,7 +34,8 @@ class AuthHelper
     /**
      * Keep only one portal signed in on this browser session.
      * Staff and customer share the same session cookie, so logging into
-     * one portal must clear the other.
+     * one portal must clear the other. The customer guard only exists while
+     * the Frontend module is installed.
      */
     public static function claimExclusivePortal(string $guard): void
     {
@@ -56,25 +45,13 @@ class AuthHelper
             default => null,
         };
 
-        if ($other === null) {
+        if ($other === null || ! config("auth.guards.{$other}")) {
             return;
         }
 
         if (Auth::guard($other)->check()) {
             Auth::guard($other)->logout();
         }
-    }
-
-    /**
-     * Permissions the SuperAdmin bypass should never grant, even though it
-     * otherwise grants everything. Empty for now — kept as a hook for any
-     * future permission that must stay opt-in even for SuperAdmin.
-     *
-     * @return list<string>
-     */
-    public static function superAdminDeniedPermissions(): array
-    {
-        return [];
     }
 
     /**
