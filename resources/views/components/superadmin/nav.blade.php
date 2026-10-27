@@ -3,8 +3,14 @@
         ['label' => __('body.overview'), 'route' => 'superadmin.dashboard', 'active' => 'superadmin.dashboard'],
         ['label' => __('body.businesses'), 'route' => 'superadmin.businesses.index', 'active' => 'superadmin.businesses.*'],
         ['label' => __('body.modules'), 'route' => 'superadmin.modules.index', 'active' => 'superadmin.modules.*'],
-        ['label' => __('body.platform_settings'), 'route' => 'superadmin.settings.index', 'active' => 'superadmin.settings.*'],
     ];
+    // Modules add platform tabs with DataController::superadmin_menu().
+    foreach (app(\App\Services\Module\ModuleManager::class)->collectHook('superadmin_menu') as $tab) {
+        if (is_array($tab) && isset($tab['label'], $tab['route']) && Route::has($tab['route'])) {
+            $tabs[] = $tab + ['active' => $tab['route']];
+        }
+    }
+    $tabs[] = ['label' => __('body.platform_settings'), 'route' => 'superadmin.settings.index', 'active' => 'superadmin.settings.*'];
 @endphp
 
 {{-- Sub-navigation shown on every platform page. --}}

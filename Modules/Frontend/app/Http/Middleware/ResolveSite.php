@@ -30,7 +30,7 @@ class ResolveSite
         $site = $this->sites->findBySlug((string) $request->route('site'));
 
         abort_unless($site && $site->business && $site->business->is_active, 404);
-        abort_unless($site->business->hasModuleEnabled('Frontend'), 404);
+        abort_unless($site->business->canUseModule('Frontend'), 404);
 
         $staff = auth('staff')->user();
         $isOwnStaff = $staff && (int) $staff->business_id === (int) $site->business_id;

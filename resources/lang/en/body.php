@@ -492,6 +492,11 @@ return [
     'view_business' => 'View business',
     'yours' => 'yours',
 
+    // Packages & limits (core)
+    'quota_reached' => 'Your package allows :limit :item. Upgrade your package to add more.',
+    'quota_users' => 'active users',
+    'module_not_in_package' => 'Your current package does not include :module.',
+
     // Website module
     'address' => 'Address',
     'remove' => 'Remove',

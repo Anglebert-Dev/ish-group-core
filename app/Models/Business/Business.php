@@ -2,6 +2,7 @@
 
 namespace App\Models\Business;
 
+use App\Contracts\Entitlements;
 use App\Libraries\ColorLibrary;
 use App\Models\BaseModel;
 use App\Models\User;
@@ -64,6 +65,16 @@ class Business extends BaseModel
         $enabled = $this->enabled_modules;
 
         return $enabled === null || in_array(strtolower($module), array_map('strtolower', $enabled), true);
+    }
+
+    /**
+     * Switched on for this business (enabled_modules) AND allowed by its
+     * package/subscription (App\Contracts\Entitlements).
+     */
+    public function canUseModule(string $module): bool
+    {
+        return $this->hasModuleEnabled($module)
+            && app(Entitlements::class)->allowsModule($this, $module);
     }
 
     public function companyName(): string

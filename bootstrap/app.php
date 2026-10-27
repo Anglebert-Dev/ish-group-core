@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'superadmin' => \App\Http\Middleware\EnsureSuperAdmin::class,
             'not.impersonating' => \App\Http\Middleware\PreventWhileImpersonating::class,
             'module' => \App\Http\Middleware\EnsureModuleActive::class,
+            'quota' => \App\Http\Middleware\EnsureWithinQuota::class,
             'permission' => \App\Http\Middleware\CheckPermission::class,
             'no-back-cache' => \App\Http\Middleware\PreventBackHistoryCache::class,
             'exclusive.portal' => \App\Http\Middleware\EnsureExclusivePortalSession::class,

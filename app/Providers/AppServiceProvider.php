@@ -2,11 +2,14 @@
 
 namespace App\Providers;
 
+use App\Contracts\Entitlements;
 use App\Models\User;
 use App\Services\Module\ModuleManager;
 use App\Services\Notification\NotificationService;
 use App\Services\Setting\SettingService;
 use App\Support\Menu\AdminMenu;
+use App\Support\Entitlements\Quota;
+use App\Support\Entitlements\UnlimitedEntitlements;
 use App\Support\Tenancy\CurrentBusiness;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -38,6 +41,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(SettingService::class);
         $this->app->scoped(CurrentBusiness::class);
         $this->app->scoped(ModuleManager::class);
+
+        // A billing module rebinds Entitlements; Quota counters are global.
+        $this->app->bindIf(Entitlements::class, UnlimitedEntitlements::class);
+        $this->app->singleton(Quota::class);
     }
 
     /**

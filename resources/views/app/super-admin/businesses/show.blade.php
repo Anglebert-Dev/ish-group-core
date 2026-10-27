@@ -63,6 +63,13 @@
             </div>
         </div>
 
+        {{-- Module panels, e.g. the subscription (DataController::superadmin_business_panel) --}}
+        @foreach (app(\App\Services\Module\ModuleManager::class)->hook('superadmin_business_panel', $business) as $panel)
+            @if (filled($panel))
+                {!! $panel !!}
+            @endif
+        @endforeach
+
         {{-- Users --}}
         <div class="bg-white border border-line rounded-xl overflow-hidden">
             <div class="px-5 py-4 border-b border-line">

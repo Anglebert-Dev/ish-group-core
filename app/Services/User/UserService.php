@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Repositories\Role\RoleRepository;
 use App\Repositories\User\UserRepository;
 use App\Services\BaseService;
+use App\Support\Entitlements\Quota;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
@@ -133,6 +134,14 @@ class UserService extends BaseService
 
         if ($status !== UserStatus::Active && $target->isBusinessAdmin() && $this->isLastAdmin($target)) {
             return $this->failure(__('body.cannot_remove_last_admin'));
+        }
+
+        if ($status === UserStatus::Active && $target->status !== UserStatus::Active
+            && $target->business && ! app(Quota::class)->canAdd($target->business, 'users')) {
+            return $this->failure(__('body.quota_reached', [
+                'limit' => app(Quota::class)->limit($target->business, 'users'),
+                'item' => __('body.quota_users'),
+            ]));
         }
 
         $target->status = $status;

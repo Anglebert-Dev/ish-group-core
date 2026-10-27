@@ -214,6 +214,15 @@ class ModuleManager extends BaseService
     }
 
    
+    /**
+     * module.json "billing_exempt": true — always available, never sold
+     * (e.g. the billing module itself, so a locked business can still pay).
+     */
+    public function isBillingExempt(string $name): bool
+    {
+        return (bool) Module::find($name)?->get('billing_exempt', false);
+    }
+
     public function menuGroup(string $name): string
     {
         return (string) (Module::find($name)?->get('menu_group') ?: $name);

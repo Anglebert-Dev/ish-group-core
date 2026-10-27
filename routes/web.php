@@ -99,7 +99,7 @@ Route::prefix('app')->middleware(['auth:staff', 'auth.session', 'exclusive.porta
     Route::get('/users/export/pdf', [UserController::class, 'exportPdf'])->middleware('permission:list users.user')->name('users.export.pdf');
     Route::get('/users/export/excel', [UserController::class, 'exportExcel'])->middleware('permission:list users.user')->name('users.export.excel');
     Route::get('/users/create', [UserController::class, 'create'])->middleware('permission:create users.user')->name('users.create');
-    Route::post('/users', [UserController::class, 'store'])->middleware(['permission:create users.user', 'password.confirm.staff'])->name('users.store');
+    Route::post('/users', [UserController::class, 'store'])->middleware(['permission:create users.user', 'quota:users', 'password.confirm.staff'])->name('users.store');
     Route::get('/users/{user}', [UserController::class, 'show'])->middleware('permission:read users.user')->name('users.show');
     Route::get('/users/{user}/edit', [UserController::class, 'edit'])->middleware('permission:update users.user')->name('users.edit');
     Route::put('/users/{user}', [UserController::class, 'update'])->middleware(['permission:update users.user', 'password.confirm.staff'])->name('users.update');
