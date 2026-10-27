@@ -46,6 +46,24 @@ class SuperAdminTest extends TestCase
             ], false);
     }
 
+    public function test_business_page_offers_log_in_as_and_delete(): void
+    {
+        $super = $this->makeSuperAdmin();
+        [$client, $owner] = $this->makeBusiness();
+        $this->actingAs($super, 'staff');
+
+        $this->get(route('superadmin.businesses.show', $client))
+            ->assertOk()
+            ->assertSee(route('superadmin.impersonate', $owner->uuid), false)
+            ->assertSee(route('superadmin.businesses.destroy', $client), false);
+
+        // Own business: no delete, and no "Log in as" for the superadmin.
+        $this->get(route('superadmin.businesses.show', $super->business))
+            ->assertOk()
+            ->assertDontSee(route('superadmin.businesses.destroy', $super->business), false)
+            ->assertDontSee(route('superadmin.impersonate', $super->uuid), false);
+    }
+
     public function test_superadmin_creates_a_business_with_owner(): void
     {
         $this->actingAs($this->makeSuperAdmin(), 'staff');

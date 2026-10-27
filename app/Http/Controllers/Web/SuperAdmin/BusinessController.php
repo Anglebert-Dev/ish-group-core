@@ -87,4 +87,17 @@ class BusinessController extends Controller
 
         return back()->with($result['status'] ? 'success' : 'error', $result['message']);
     }
+
+    public function destroy(Request $request, Business $business): RedirectResponse
+    {
+        $result = $this->platform->deleteBusiness(
+            $business,
+            Auth::guard('staff')->user(),
+            (string) $request->input('confirm_name'),
+        );
+
+        return $result['status']
+            ? redirect()->route('superadmin.businesses.index')->with('success', $result['message'])
+            : back()->with('error', $result['message']);
+    }
 }

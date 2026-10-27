@@ -2,8 +2,12 @@
 
 namespace App\Services\SuperAdmin;
 
+use App\Enums\ActivityLogAction;
+use App\Enums\ActivityLogStatus;
+use App\Models\ActivityLog\ActivityLog;
 use App\Models\Business\Business;
 use App\Models\System\System;
+use App\Models\User;
 use App\Repositories\Business\BusinessRepository;
 use App\Repositories\User\UserRepository;
 use App\Services\BaseService;
@@ -12,6 +16,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Spatie\Permission\PermissionRegistrar;
 
 /**
  * Platform-level operations for superadmins: businesses and platform
@@ -97,6 +102,67 @@ class PlatformService extends BaseService
         DB::table(config('session.table', 'sessions'))->where('user_id', $owner->id)->delete();
 
         return $this->success($owner, __('body.owner_password_reset'));
+    }
+
+    /**
+     * Permanently delete a business and everything that cascades from it
+     * (users, roles, audit log, module data with a business_id foreign key).
+     * Modules holding data without such a key clean up in the
+     * before_business_deleted hook.
+     */
+    public function deleteBusiness(Business $business, User $actingUser, string $confirmName): array
+    {
+        if ($business->id === $actingUser->business_id) {
+            return $this->failure(__('body.cannot_delete_own_business'));
+        }
+
+        if ((string) $business->id === (string) System::getProperty('primary_business_id')) {
+            return $this->failure(__('body.cannot_delete_primary_business'));
+        }
+
+        if ($this->users->forBusiness($business->id)->withTrashed()->where('is_superadmin', true)->exists()) {
+            return $this->failure(__('body.cannot_delete_business_with_superadmin'));
+        }
+
+        if (trim($confirmName) !== $business->name) {
+            return $this->failure(__('body.business_delete_name_mismatch'));
+        }
+
+        $this->modules->hook('before_business_deleted', ['business' => $business]);
+
+        DB::transaction(function () use ($business, $actingUser) {
+            $users = $this->users->forBusiness($business->id)->withTrashed()->get(['id', 'email']);
+            $userIds = $users->pluck('id');
+
+            DB::table(config('session.table', 'sessions'))->whereIn('user_id', $userIds)->delete();
+            DB::table('password_reset_tokens')->whereIn('email', $users->pluck('email'))->delete();
+            DB::table(config('permission.table_names.model_has_roles'))
+                ->where('model_type', (new User)->getMorphClass())->whereIn('model_id', $userIds)->delete();
+            DB::table(config('permission.table_names.model_has_permissions'))
+                ->where('model_type', (new User)->getMorphClass())->whereIn('model_id', $userIds)->delete();
+
+            // Query-level delete: no model events, so nothing tries to write an
+            // activity row for the business being removed. Foreign keys cascade.
+            Business::withTrashed()->whereKey($business->id)->forceDelete();
+
+            ActivityLog::query()->create([
+                'status' => ActivityLogStatus::Active,
+                'business_id' => $actingUser->business_id,
+                'user_id' => $actingUser->id,
+                'actor_name' => $actingUser->name,
+                'action' => ActivityLogAction::Deleted,
+                'subject_type' => $business->getMorphClass(),
+                'subject_id' => $business->id,
+                'subject_label' => $business->name,
+                'description' => __('body.business_deleted_log', ['name' => $business->name]),
+                'properties' => ['attributes' => ['name' => $business->name, 'users' => $userIds->count()]],
+                'ip_address' => request()->ip(),
+            ]);
+        });
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        return $this->success(null, __('body.business_deleted', ['name' => $business->name]));
     }
 
     /**

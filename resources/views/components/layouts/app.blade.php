@@ -47,6 +47,7 @@
         <x-dashboard.sidebar />
 
         <div class="flex-1 min-w-0 lg:pl-64">
+            <x-dashboard.impersonation-banner />
             <x-dashboard.header :title="$title ?? 'Dashboard'" />
 
             <main class="p-4 sm:p-5 lg:p-8">

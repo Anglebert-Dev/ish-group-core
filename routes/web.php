@@ -9,6 +9,7 @@ use App\Http\Controllers\Web\Notification\NotificationController;
 use App\Http\Controllers\Web\Role\RoleController;
 use App\Http\Controllers\Web\Setting\SettingController;
 use App\Http\Controllers\Web\SuperAdmin\BusinessController;
+use App\Http\Controllers\Web\SuperAdmin\ImpersonationController;
 use App\Http\Controllers\Web\SuperAdmin\ModuleController;
 use App\Http\Controllers\Web\SuperAdmin\PlatformSettingController;
 use App\Http\Controllers\Web\SuperAdmin\SuperAdminDashboardController;
@@ -77,20 +78,20 @@ Route::prefix('app')->middleware(['auth:staff', 'auth.session', 'exclusive.porta
 
     Route::get('/profile', [ProfileController::class, 'show'])->name('staff.profile');
     Route::put('/profile', [ProfileController::class, 'update'])->name('staff.profile.update');
-    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('staff.profile.password');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->middleware('not.impersonating')->name('staff.profile.password');
     Route::post('/profile/mfa/setup', [ProfileController::class, 'beginMfaSetup'])
-        ->middleware('password.confirm.staff')
+        ->middleware(['not.impersonating', 'password.confirm.staff'])
         ->name('staff.profile.mfa.setup');
     Route::post('/profile/mfa/confirm', [ProfileController::class, 'confirmMfaSetup'])
-        ->middleware('password.confirm.staff')
+        ->middleware(['not.impersonating', 'password.confirm.staff'])
         ->name('staff.profile.mfa.confirm');
     Route::post('/profile/mfa/cancel', [ProfileController::class, 'cancelMfaSetup'])
         ->name('staff.profile.mfa.cancel');
     Route::post('/profile/mfa/disable', [ProfileController::class, 'disableMfa'])
-        ->middleware('password.confirm.staff')
+        ->middleware(['not.impersonating', 'password.confirm.staff'])
         ->name('staff.profile.mfa.disable');
     Route::post('/profile/mfa/recovery/regenerate', [ProfileController::class, 'regenerateRecoveryCodes'])
-        ->middleware('password.confirm.staff')
+        ->middleware(['not.impersonating', 'password.confirm.staff'])
         ->name('staff.profile.mfa.recovery.regenerate');
 
     // Users & roles (scoped to the signed-in user's business)
@@ -133,6 +134,9 @@ Route::prefix('app')->middleware(['auth:staff', 'auth.session', 'exclusive.porta
         Route::get('/{activityLog}', [ActivityLogController::class, 'show'])->middleware('permission:read activity.activity_log')->name('show');
     });
 
+    // Back to the superadmin who started impersonating (only them).
+    Route::post('/impersonation/leave', [ImpersonationController::class, 'leave'])->name('impersonation.leave');
+
     /*
     |----------------------------------------------------------------------
     | Super admin (platform level — is_superadmin users only)
@@ -148,6 +152,8 @@ Route::prefix('app')->middleware(['auth:staff', 'auth.session', 'exclusive.porta
         Route::put('/businesses/{business}/active', [BusinessController::class, 'toggleActive'])->middleware('password.confirm.staff')->name('businesses.active');
         Route::put('/businesses/{business}/modules', [BusinessController::class, 'updateModules'])->name('businesses.modules');
         Route::put('/businesses/{business}/owner-password', [BusinessController::class, 'resetOwnerPassword'])->middleware('password.confirm.staff')->name('businesses.owner-password');
+        Route::delete('/businesses/{business}', [BusinessController::class, 'destroy'])->middleware('password.confirm.staff')->name('businesses.destroy');
+        Route::post('/users/{user}/impersonate', [ImpersonationController::class, 'start'])->middleware(['not.impersonating', 'password.confirm.staff'])->name('impersonate');
 
         Route::get('/modules', [ModuleController::class, 'index'])->name('modules.index');
         Route::post('/modules/{module}/install', [ModuleController::class, 'install'])->middleware('password.confirm.staff')->name('modules.install');

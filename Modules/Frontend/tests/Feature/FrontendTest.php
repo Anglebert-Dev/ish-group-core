@@ -293,6 +293,23 @@ class FrontendTest extends TestCase
         $this->put(route('frontend.admin.customers.status', $theirs), ['status' => 'banned'])->assertNotFound();
     }
 
+    public function test_deleting_a_business_removes_its_site_and_customers(): void
+    {
+        $super = $this->makeSuperAdmin();
+        System::addProperty('primary_business_id', $super->business_id);
+        $site = $this->publishedSite($this->makeBusiness(['business_name' => 'Gone Co'])[0]);
+        $customer = $this->makeCustomer($site->business);
+
+        $this->actingAs($super, 'staff');
+        $this->withConfirmedPassword()
+            ->delete(route('superadmin.businesses.destroy', $site->business), ['confirm_name' => 'Gone Co'])
+            ->assertSessionHas('success');
+
+        $this->assertNull(Site::withoutGlobalScopes()->withTrashed()->find($site->id));
+        $this->assertNull(Customer::withoutGlobalScopes()->withTrashed()->find($customer->id));
+        $this->get('/s/'.$site->slug)->assertNotFound();
+    }
+
     public function test_customer_and_staff_sessions_are_exclusive(): void
     {
         $site = $this->publishedSite();

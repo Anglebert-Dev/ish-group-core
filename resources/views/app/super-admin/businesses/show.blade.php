@@ -35,6 +35,7 @@
                             <th class="px-5 py-3 font-semibold">{{ __('body.email_address') }}</th>
                             <th class="px-5 py-3 font-semibold">{{ __('body.role') }}</th>
                             <th class="px-5 py-3 font-semibold">{{ __('body.status') }}</th>
+                            <th class="px-5 py-3 font-semibold text-right">{{ __('body.actions') }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-line">
@@ -44,6 +45,19 @@
                                 <td class="px-5 py-3 whitespace-nowrap">{{ $user->email }}</td>
                                 <td class="px-5 py-3 whitespace-nowrap">{{ $user->roleName() ?? '—' }}</td>
                                 <td class="px-5 py-3"><x-common.status :status="ucfirst($user->status->value)" /></td>
+                                <td class="px-5 py-3 text-right whitespace-nowrap">
+                                    @if (! $user->isSuperAdmin() && $user->isApproved() && $business->is_active)
+                                        <form action="{{ route('superadmin.impersonate', $user->uuid) }}" method="POST" class="inline">
+                                            @csrf
+                                            <button type="submit" class="text-brand hover:text-brand-dark font-medium text-sm"
+                                                data-confirm
+                                                data-confirm-title="{{ __('body.impersonate_confirm_title', ['name' => $user->name]) }}"
+                                                data-confirm-message="{{ __('body.impersonate_confirm_message') }}"
+                                                data-confirm-text="{{ __('body.impersonate') }}"
+                                            >{{ __('body.impersonate') }}</button>
+                                        </form>
+                                    @endif
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -81,6 +95,20 @@
                     <x-common.button type="submit" size="sm" variant="secondary">{{ __('body.reset_password') }}</x-common.button>
                 </form>
             @endif
+
+            @unless ($isOwnBusiness)
+                <form action="{{ route('superadmin.businesses.destroy', $business) }}" method="POST" class="bg-white border border-danger/40 rounded-xl p-5 space-y-4">
+                    @csrf @method('DELETE')
+                    <div>
+                        <h2 class="text-base font-semibold text-danger">{{ __('body.delete_business') }}</h2>
+                        <p class="text-sm text-muted mt-1">{{ __('body.delete_business_warning') }}</p>
+                    </div>
+                    <x-common.input name="confirm_name" :label="__('body.delete_business_confirm', ['name' => $business->name])" required autocomplete="off" />
+                    <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-danger hover:opacity-90 text-white font-semibold text-sm px-4 py-2">
+                        {{ __('body.delete_business_permanently') }}
+                    </button>
+                </form>
+            @endunless
         </div>
     </div>
 </x-layouts.app>
