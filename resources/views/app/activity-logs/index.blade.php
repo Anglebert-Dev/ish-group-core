@@ -1,5 +1,14 @@
 {{-- Business audit (activity-logs.*) and platform audit (superadmin.audit.*) share this view. --}}
 @php
+    $currentSort = $filters['sort'] ?? 'when';
+    $currentDir = ($filters['dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
+    // Header link: sort by $column; clicking the active column flips the direction.
+    $sortUrl = fn (string $column) => route($indexRoute, array_merge(request()->query(), [
+        'sort' => $column,
+        'dir' => $currentSort === $column && $currentDir === 'desc' ? 'asc' : 'desc',
+        'page' => null,
+    ]));
+    $arrow = fn (string $column) => $currentSort === $column ? ($currentDir === 'asc' ? '↑' : '↓') : '';
     $exportPdf = $allBusinesses ? route($exportRoute, ['pdf'] + request()->query()) : route('activity-logs.export.pdf', request()->query());
     $exportExcel = $allBusinesses ? route($exportRoute, ['excel'] + request()->query()) : route('activity-logs.export.excel', request()->query());
 @endphp
@@ -32,10 +41,10 @@
         <table class="w-full text-sm">
             <thead>
                 <tr class="text-left text-xs text-muted uppercase tracking-wide border-b border-line bg-surface/60">
-                    <th class="px-5 py-3 font-semibold">{{ __('body.when') }}</th>
-                    @if ($allBusinesses)<th class="px-5 py-3 font-semibold">{{ __('body.business') }}</th>@endif
-                    <th class="px-5 py-3 font-semibold">{{ __('body.actor') }}</th>
-                    <th class="px-5 py-3 font-semibold">{{ __('body.action') }}</th>
+                    <th class="px-5 py-3 font-semibold"><a href="{{ $sortUrl('when') }}" class="inline-flex items-center gap-1 hover:text-ink">{{ __('body.when') }} <span>{{ $arrow('when') }}</span></a></th>
+                    @if ($allBusinesses)<th class="px-5 py-3 font-semibold"><a href="{{ $sortUrl('business') }}" class="inline-flex items-center gap-1 hover:text-ink">{{ __('body.business') }} <span>{{ $arrow('business') }}</span></a></th>@endif
+                    <th class="px-5 py-3 font-semibold"><a href="{{ $sortUrl('actor') }}" class="inline-flex items-center gap-1 hover:text-ink">{{ __('body.actor') }} <span>{{ $arrow('actor') }}</span></a></th>
+                    <th class="px-5 py-3 font-semibold"><a href="{{ $sortUrl('action') }}" class="inline-flex items-center gap-1 hover:text-ink">{{ __('body.action') }} <span>{{ $arrow('action') }}</span></a></th>
                     <th class="px-5 py-3 font-semibold">{{ __('body.subject') }}</th>
                     <th class="px-5 py-3 font-semibold">IP</th>
                     <th class="px-5 py-3"></th>
@@ -47,7 +56,7 @@
                         <td class="px-5 py-3.5 text-muted whitespace-nowrap">@datetime($log->created_at)</td>
                         @if ($allBusinesses)<td class="px-5 py-3.5 whitespace-nowrap">{{ $log->business?->name ?? __('body.audit_platform') }}</td>@endif
                         <td class="px-5 py-3.5 font-medium text-ink whitespace-nowrap">{{ $log->actorName() }}</td>
-                        <td class="px-5 py-3.5 whitespace-nowrap"><x-common.badge :color="$log->action->color()">{{ $log->action->label() }}</x-common.badge></td>
+                        <td class="px-5 py-3.5 whitespace-nowrap"><x-common.badge :color="$log->actionColor()">{{ $log->actionLabel() }}</x-common.badge></td>
                         <td class="px-5 py-3.5 text-body min-w-[16rem]">{{ $log->description ?: $log->subjectName() }}</td>
                         <td class="px-5 py-3.5 text-muted whitespace-nowrap font-mono text-xs">{{ $log->ip_address ?? '—' }}</td>
                         <td class="px-5 py-3.5 text-right whitespace-nowrap">

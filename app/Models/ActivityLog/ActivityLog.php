@@ -33,7 +33,6 @@ class ActivityLog extends BaseModel
     {
         return [
             'status' => ActivityLogStatus::class,
-            'action' => ActivityLogAction::class,
             'properties' => 'array',
         ];
     }
@@ -46,6 +45,43 @@ class ActivityLog extends BaseModel
     public function subject(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /**
+     * Core actions are ActivityLogAction cases; modules may log their own
+     * (e.g. "sale_completed"), so the raw value is kept as a string.
+     */
+    public function actionEnum(): ?ActivityLogAction
+    {
+        return ActivityLogAction::tryFrom((string) $this->getRawOriginal('action', $this->attributes['action'] ?? ''));
+    }
+
+    public function actionValue(): string
+    {
+        return (string) ($this->attributes['action'] ?? '');
+    }
+
+    public function actionLabel(): string
+    {
+        $value = $this->actionValue();
+
+        if ($enum = $this->actionEnum()) {
+            return $enum->label();
+        }
+
+        // Module actions: translation "<module>::audit.<action>" if present, else readable text.
+        foreach (\App\Services\ActivityLog\ActivityLogService::customLabels() as $key) {
+            if (trans()->has($key.'.'.$value)) {
+                return __($key.'.'.$value);
+            }
+        }
+
+        return \Illuminate\Support\Str::headline($value);
+    }
+
+    public function actionColor(): string
+    {
+        return $this->actionEnum()?->color() ?? 'brand';
     }
 
     public function actorName(): string

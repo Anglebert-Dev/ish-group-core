@@ -7,7 +7,7 @@
             :back-label="__('body.back')"
         >
             <x-slot:meta>
-                <x-common.badge :color="$log->action->color()">{{ $log->action->label() }}</x-common.badge>
+                <x-common.badge :color="$log->actionColor()">{{ $log->actionLabel() }}</x-common.badge>
             </x-slot:meta>
         </x-common.details.header>
 
@@ -15,7 +15,7 @@
             <x-common.details.summary-item :label="__('body.actor')" :value="$log->actorName()" />
             <x-common.details.summary-item :label="__('body.subject')" :value="$log->subjectName()" />
             <x-common.details.summary-item :label="__('body.action')">
-                <x-common.badge :color="$log->action->color()">{{ $log->action->label() }}</x-common.badge>
+                <x-common.badge :color="$log->actionColor()">{{ $log->actionLabel() }}</x-common.badge>
             </x-common.details.summary-item>
             <x-common.details.summary-item :label="__('body.when')">
                 @datetime($log->created_at)
@@ -31,7 +31,7 @@
                     <x-common.details.field :label="__('body.when')">@datetime($log->created_at)</x-common.details.field>
                     <x-common.details.field :label="__('body.actor')">{{ $log->actorName() }}</x-common.details.field>
                     <x-common.details.field :label="__('body.action')">
-                        <x-common.badge :color="$log->action->color()">{{ $log->action->label() }}</x-common.badge>
+                        <x-common.badge :color="$log->actionColor()">{{ $log->actionLabel() }}</x-common.badge>
                     </x-common.details.field>
                     <x-common.details.field :label="__('body.subject')">{{ $log->subjectName() }}</x-common.details.field>
                     <x-common.details.field :label="__('body.ip_address')">{{ $log->ip_address ?: '—' }}</x-common.details.field>
@@ -62,7 +62,7 @@
                             <thead>
                                 <tr class="text-left text-xs text-muted uppercase tracking-wide border-b border-line">
                                     <th class="px-3 py-3 font-semibold">{{ __('body.details') }}</th>
-                                    @if ($log->action->value === 'updated')
+                                    @if ($log->actionValue() === 'updated')
                                         <th class="px-3 py-3 font-semibold">{{ __('body.old_value') }}</th>
                                     @endif
                                     <th class="px-3 py-3 font-semibold">{{ __('body.new_value') }}</th>
@@ -72,7 +72,7 @@
                                 @foreach ($keys as $key)
                                     <tr>
                                         <td class="px-3 py-3 font-medium text-ink whitespace-nowrap">{{ str_replace('_', ' ', $key) }}</td>
-                                        @if ($log->action->value === 'updated')
+                                        @if ($log->actionValue() === 'updated')
                                             <td class="px-3 py-3 text-muted break-all">{{ is_scalar($old[$key] ?? null) || is_null($old[$key] ?? null) ? ($old[$key] ?? '—') : json_encode($old[$key]) }}</td>
                                         @endif
                                         <td class="px-3 py-3 text-muted break-all">{{ is_scalar($attributes[$key] ?? null) || is_null($attributes[$key] ?? null) ? ($attributes[$key] ?? '—') : json_encode($attributes[$key]) }}</td>

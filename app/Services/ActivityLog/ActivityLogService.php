@@ -68,7 +68,7 @@ class ActivityLogService extends BaseService
                 GeneralLibrary::formatDateTime($log->created_at),
                 $allBusinesses ? ($log->business?->name ?? __('body.audit_platform')) : null,
                 $log->actorName(),
-                $log->action->label(),
+                $log->actionLabel(),
                 $log->description ?: $log->subjectName(),
                 (string) $log->ip_address,
             ], fn ($v) => $v !== null)))
@@ -102,7 +102,26 @@ class ActivityLogService extends BaseService
                 ->orWhere('subject_label', 'like', "%{$search}%")
                 ->orWhere('actor_name', 'like', "%{$search}%")
                 ->orWhere('ip_address', 'like', "%{$search}%")))
-            ->latest('id');
+            ->tap(fn (Builder $q) => $this->sort($q, $filters['sort'] ?? 'when', $filters['dir'] ?? 'desc', $allBusinesses));
+    }
+
+    public const SORTS = ['when', 'business', 'actor', 'action'];
+
+    private function sort(Builder $query, string $sort, string $dir, bool $allBusinesses): void
+    {
+        $dir = $dir === 'asc' ? 'asc' : 'desc';
+
+        match ($allBusinesses || $sort !== 'business' ? $sort : 'when') {
+            'business' => $query->orderBy(
+                Business::query()->select('name')->whereColumn('businesses.id', 'activity_logs.business_id'),
+                $dir,
+            ),
+            'actor' => $query->orderBy('actor_name', $dir),
+            'action' => $query->orderBy('action', $dir),
+            default => $query->orderBy('created_at', $dir),
+        };
+
+        $query->orderBy('id', $dir);
     }
 
     public function details(ActivityLog $log): ActivityLog
@@ -151,7 +170,7 @@ class ActivityLogService extends BaseService
             'business_id' => $this->businessIdFor($model),
             'user_id' => $staff?->id,
             'actor_name' => $staff?->name ?? $customer?->name,
-            'action' => $action,
+            'action' => $action->value,
             'subject_type' => $model->getMorphClass(),
             'subject_id' => $model->getKey(),
             'subject_label' => $subjectLabel,
@@ -172,7 +191,7 @@ class ActivityLogService extends BaseService
      * installs, approvals, ...
      */
     public function log(
-        ActivityLogAction $action,
+        ActivityLogAction|string $action,
         string $description,
         ?Model $subject = null,
         array $properties = [],
@@ -193,7 +212,7 @@ class ActivityLogService extends BaseService
                 'business_id' => $businessId ?? ($subject ? $this->businessIdFor($subject) : null) ?? $staff?->business_id ?? $customer?->business_id,
                 'user_id' => $staff?->id,
                 'actor_name' => $staff?->name ?? $customer?->name,
-                'action' => $action,
+                'action' => $action instanceof ActivityLogAction ? $action->value : $action,
                 'subject_type' => $subject?->getMorphClass(),
                 'subject_id' => $subject?->getKey(),
                 'subject_label' => $subject ? $this->subjectLabel($subject) : null,
@@ -208,6 +227,36 @@ class ActivityLogService extends BaseService
     }
 
     private static int $muted = 0;
+
+    /**
+     * Translation groups searched for module action labels
+     * ("<group>.<action>"), one per module: "<alias>::audit".
+     *
+     * @return list<string>
+     */
+    public static function customLabels(): array
+    {
+        return collect(app(\App\Services\Module\ModuleManager::class)->activeModules())
+            ->map(fn (string $name) => strtolower($name).'::audit')
+            ->all();
+    }
+
+    /**
+     * Every action value that occurs, for the filter: core ones plus any
+     * module actions already logged.
+     *
+     * @return array<string, string>
+     */
+    public function actionOptions(bool $allBusinesses = false): array
+    {
+        $query = $allBusinesses ? ActivityLog::query()->withoutGlobalScope('business') : ActivityLog::query();
+        $custom = $query->distinct()->pluck('action')
+            ->reject(fn ($value) => ActivityLogAction::tryFrom((string) $value))
+            ->mapWithKeys(fn ($value) => [$value => (new ActivityLog(['action' => $value]))->actionLabel()])
+            ->all();
+
+        return ActivityLogAction::options() + $custom;
+    }
 
     /**
      * Run $callback without event logging (e.g. the silent login that

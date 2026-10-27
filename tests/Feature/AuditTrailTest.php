@@ -88,4 +88,46 @@ class AuditTrailTest extends TestCase
         $this->get(route('activity-logs.index'))->assertOk()->assertDontSee('Module Frontend installed');
         $this->get(route('activity-logs.index', ['action' => 'impersonation_started']))->assertOk()->assertSee('Client Owner');
     }
+
+    public function test_module_actions_via_helper_are_scoped_to_their_business(): void
+    {
+        [$alpha, $alphaOwner] = $this->makeBusiness();
+        [$bravo, $bravoOwner] = $this->makeBusiness();
+
+        $this->actingAs($alphaOwner, 'staff');
+        audit('sale_completed', 'Sale #100 completed', null, ['total' => 5000]);
+
+        $entry = ActivityLog::query()->withoutGlobalScopes()->where('action', 'sale_completed')->firstOrFail();
+        $this->assertSame($alpha->id, $entry->business_id);
+        $this->assertSame('Sale Completed', $entry->actionLabel());
+
+        $this->get(route('activity-logs.index', ['action' => 'sale_completed']))->assertOk()->assertSee('Sale #100 completed');
+
+        $this->flushSession();
+        $this->actingAs($bravoOwner, 'staff');
+        $this->get(route('activity-logs.index'))->assertOk()->assertDontSee('Sale #100 completed');
+
+        $super = $this->makeSuperAdmin();
+        $this->flushSession();
+        $this->actingAs($super, 'staff');
+        $this->get(route('superadmin.audit.index', ['business' => $alpha->id]))->assertOk()->assertSee('Sale #100 completed');
+        $this->get(route('superadmin.audit.index', ['business' => $bravo->id]))->assertOk()->assertDontSee('Sale #100 completed');
+    }
+
+    public function test_audit_can_be_sorted(): void
+    {
+        [, $owner] = $this->makeBusiness();
+        $this->actingAs($owner, 'staff');
+        audit('zeta_event', 'Zeta happened');
+        audit('alpha_event', 'Alpha happened');
+
+        $this->get(route('activity-logs.index', ['sort' => 'action', 'dir' => 'asc']))
+            ->assertOk()->assertSeeInOrder(['Alpha happened', 'Zeta happened']);
+        $this->get(route('activity-logs.index', ['sort' => 'action', 'dir' => 'desc']))
+            ->assertOk()->assertSeeInOrder(['Zeta happened', 'Alpha happened']);
+
+        $this->flushSession();
+        $this->actingAs($this->makeSuperAdmin(), 'staff');
+        $this->get(route('superadmin.audit.index', ['sort' => 'business', 'dir' => 'asc']))->assertOk();
+    }
 }

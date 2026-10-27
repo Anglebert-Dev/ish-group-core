@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Web\ActivityLog;
 
-use App\Enums\ActivityLogAction;
 use App\Http\Controllers\Controller;
 use App\Libraries\ListExportLibrary;
 use App\Models\ActivityLog\ActivityLog;
@@ -18,7 +17,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class ActivityLogController extends Controller
 {
-    private const FILTERS = ['q', 'action', 'user', 'from', 'to'];
+    private const FILTERS = ['q', 'action', 'user', 'from', 'to', 'sort', 'dir'];
 
     public function __construct(protected ActivityLogService $logs)
     {
@@ -31,7 +30,7 @@ class ActivityLogController extends Controller
         return view('app.activity-logs.index', [
             'logs' => $this->logs->list($filters),
             'filters' => $filters,
-            'actions' => ActivityLogAction::options(),
+            'actions' => $this->logs->actionOptions(false),
             'people' => $users->forBusiness(Auth::guard('staff')->user()->business_id)->orderBy('name')->pluck('name', 'id'),
             'exportRoute' => 'activity-logs.export',
             'indexRoute' => 'activity-logs.index',

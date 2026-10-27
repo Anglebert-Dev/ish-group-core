@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Web\SuperAdmin;
 
-use App\Enums\ActivityLogAction;
 use App\Http\Controllers\Controller;
 use App\Libraries\ListExportLibrary;
 use App\Models\ActivityLog\ActivityLog;
@@ -17,7 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class AuditController extends Controller
 {
-    private const FILTERS = ['q', 'action', 'business', 'from', 'to'];
+    private const FILTERS = ['q', 'action', 'business', 'from', 'to', 'sort', 'dir'];
 
     public function __construct(protected ActivityLogService $logs)
     {
@@ -30,7 +29,7 @@ class AuditController extends Controller
         return view('app.activity-logs.index', [
             'logs' => $this->logs->list($filters, true),
             'filters' => $filters,
-            'actions' => ActivityLogAction::options(),
+            'actions' => $this->logs->actionOptions(true),
             'businesses' => ['platform' => __('body.audit_platform')] + Business::query()->orderBy('name')->pluck('name', 'id')->all(),
             'exportRoute' => 'superadmin.audit.export',
             'indexRoute' => 'superadmin.audit.index',

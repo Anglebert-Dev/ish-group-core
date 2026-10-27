@@ -33,6 +33,15 @@ php artisan module:make <Name>     # new module; see Modules/Frontend as the exa
 - **Communicator** (Super Admin): send announcements to business admins, in-app and/or by email.
 - **Backups** (Super Admin): database + uploads zipped to `storage/app/private/backups`; optional daily run. Copy them off the server too.
 
+## Audit log
+
+Every action must be traceable. Each business sees only its own entries (**Audit log**); the superadmin sees all of them, filterable by business (**Super Admin → Audit log**).
+
+- Records extending `App\Models\BaseModel` log create/update/delete automatically. Give tenant tables a `business_id`.
+- For anything else (completing a sale, approving, exporting, sending…), call:
+  `audit('sale_completed', "Sale #{$sale->number} completed", $sale, ['total' => $sale->total]);`
+- Optional label: `Modules/<Name>/lang/en/audit.php` → `'sale_completed' => 'Sale completed'`.
+
 ## Email
 
 Set the SMTP details in `.env`. `MAIL_FROM_ADDRESS` must be the SMTP account itself; each business's emails use that business's name as the sender and its contact email for replies.
