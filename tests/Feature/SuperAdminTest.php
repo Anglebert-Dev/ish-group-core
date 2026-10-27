@@ -55,12 +55,12 @@ class SuperAdminTest extends TestCase
         $this->get(route('superadmin.businesses.show', $client))
             ->assertOk()
             ->assertSee(route('superadmin.impersonate', $owner->uuid), false)
-            ->assertSee(route('superadmin.businesses.destroy', $client), false);
+            ->assertSee('name="confirm_name"', false);
 
         // Own business: no delete, and no "Log in as" for the superadmin.
         $this->get(route('superadmin.businesses.show', $super->business))
             ->assertOk()
-            ->assertDontSee(route('superadmin.businesses.destroy', $super->business), false)
+            ->assertDontSee('name="confirm_name"', false)
             ->assertDontSee(route('superadmin.impersonate', $super->uuid), false);
     }
 
