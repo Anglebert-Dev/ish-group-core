@@ -1,5 +1,6 @@
 {
     "Frontend": true,
     "Billing": true,
-    "Inventory": true
+    "Inventory": true,
+    "SalesOrders": true
 }

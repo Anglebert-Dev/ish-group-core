@@ -50,6 +50,10 @@
                                 <th class="px-5 py-3 font-semibold text-right whitespace-nowrap">{{ $store->name }}</th>
                             @endforeach
                             <th class="px-5 py-3 font-semibold text-right">{{ __('inventory::inventory.on_hand') }}</th>
+                            @if ($reserved)
+                                <th class="px-5 py-3 font-semibold text-right">{{ __('inventory::inventory.reserved') }}</th>
+                                <th class="px-5 py-3 font-semibold text-right">{{ __('inventory::inventory.available') }}</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-line">
@@ -71,6 +75,10 @@
                                 <td class="px-5 py-3 text-right whitespace-nowrap font-semibold {{ $total <= 0 ? 'text-danger' : ($reorder !== null && $total <= $reorder ? 'text-warning' : 'text-ink') }}">
                                     @include('inventory::partials.qty', ['value' => $total])
                                 </td>
+                                @if ($reserved)
+                                    <td class="px-5 py-3 text-right">@include('inventory::partials.qty', ['value' => $reserved[$variant->id] ?? 0])</td>
+                                    <td class="px-5 py-3 text-right font-semibold">@include('inventory::partials.qty', ['value' => $total - ($reserved[$variant->id] ?? 0)])</td>
+                                @endif
                             </tr>
                         @endforeach
                     </tbody>

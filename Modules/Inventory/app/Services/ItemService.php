@@ -109,6 +109,30 @@ class ItemService extends BaseService
             ->when(($filters['stock'] ?? null) === 'out', fn ($q) => $q->whereRaw('('.$onHand->toSql().') <= 0', $onHand->getBindings()));
     }
 
+    /**
+     * Active variants for document lines (orders, invoices…), finished goods by default.
+     *
+     * @return list<array{uuid: string, label: string, price: ?string, cost: ?string, unit: string}>
+     */
+    public function lineOptions(?ItemType $type = ItemType::Finished): array
+    {
+        return Variant::query()
+            ->with('item')
+            ->where('is_active', true)
+            ->whereHas('item', fn ($q) => $q->where('is_active', true)->when($type, fn ($w) => $w->where('type', $type->value)))
+            ->get()
+            ->sortBy(fn (Variant $v) => mb_strtolower($v->displayName()))
+            ->map(fn (Variant $v) => [
+                'uuid' => $v->uuid,
+                'label' => $v->displayName().($v->sku ? ' · '.$v->sku : ''),
+                'price' => $v->sale_price,
+                'cost' => $v->cost_price,
+                'unit' => $v->item->unit,
+            ])
+            ->values()
+            ->all();
+    }
+
     public function lowStockCount(): int
     {
         return $this->filtered(['stock' => 'low'])->count();

@@ -67,6 +67,7 @@ class ItemController extends Controller
             'stores' => $stores,
             'activeStores' => $stores->where('is_active', true)->values(),
             'onHand' => $this->stock->itemOnHand($item),
+            'reserved' => $this->stock->reserved($item->variants->pluck('id')->all()),
             'movements' => Movement::query()->where('item_id', $item->id)
                 ->with(['variant', 'store', 'user'])
                 ->latest('id')

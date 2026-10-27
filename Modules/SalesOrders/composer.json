@@ -1,0 +1,26 @@
+{
+    "name": "ish-group/salesorders",
+    "description": "Customer orders for the ISH core.",
+    "authors": [
+        {
+            "name": "ISH Group",
+            "email": ""
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\SalesOrders\\": "app/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\SalesOrders\\Tests\\": "tests/"
+        }
+    }
+}

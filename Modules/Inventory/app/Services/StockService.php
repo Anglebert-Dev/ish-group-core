@@ -3,6 +3,7 @@
 namespace Modules\Inventory\Services;
 
 use App\Libraries\UuidLibrary;
+use App\Services\Module\ModuleManager;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -173,6 +174,26 @@ class StockService
             ->whereIn('variant_id', $item->variants()->withTrashed()->select('id'))
             ->when($store, fn ($q) => $q->where('store_id', $store->id))
             ->sum('quantity');
+    }
+
+    /**
+     * Quantities promised but not yet taken out (e.g. confirmed sales orders),
+     * from every module's "inventory_reserved" hook: [variant_id => quantity].
+     *
+     * @param  list<int>  $variantIds
+     * @return array<int, float>
+     */
+    public function reserved(array $variantIds): array
+    {
+        $totals = [];
+
+        foreach (app(ModuleManager::class)->hook('inventory_reserved', $variantIds) as $result) {
+            foreach ((array) $result as $variantId => $quantity) {
+                $totals[(int) $variantId] = ($totals[(int) $variantId] ?? 0) + (float) $quantity;
+            }
+        }
+
+        return $totals;
     }
 
     /**
