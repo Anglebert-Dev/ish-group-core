@@ -22,6 +22,9 @@
                             @if ($module['description'])
                                 <p class="text-xs text-muted mt-1 max-w-xl leading-relaxed">{{ $module['description'] }}</p>
                             @endif
+                            @if ($module['requires'])
+                                <p class="text-xs font-semibold text-brand mt-1">{{ __('body.module_requires_list', ['modules' => implode(', ', $module['requires'])]) }}</p>
+                            @endif
                         </td>
                         <td class="px-5 py-4 whitespace-nowrap text-muted">
                             @if ($module['installed'])

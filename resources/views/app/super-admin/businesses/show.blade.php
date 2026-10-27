@@ -144,7 +144,8 @@
                         <p class="text-sm text-muted mt-1">{{ __('body.business_modules_hint') }}</p>
                     </div>
                     @forelse ($modules as $module)
-                        <x-common.checkbox name="modules[]" :value="$module['name']" :label="$module['name']" :description="$module['description']"
+                        <x-common.checkbox name="modules[]" :value="$module['name']" :label="$module['name']"
+                            :description="trim($module['description'].($module['requires'] ? ' '.__('body.module_requires_list', ['modules' => implode(', ', $module['requires'])]).'.' : ''))"
                             :checked="$enabled === null || in_array($module['name'], $enabled, true)" />
                     @empty
                         <p class="text-sm text-muted">{{ __('body.no_active_modules') }}</p>

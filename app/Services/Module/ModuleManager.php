@@ -83,6 +83,10 @@ class ModuleManager extends BaseService
             return $this->failure(__('body.module_already_installed'));
         }
 
+        if ($missing = $this->missingRequirements($name)) {
+            return $this->failure(__('body.module_requires', ['name' => $module->getName(), 'modules' => implode(', ', $missing)]));
+        }
+
         $module->enable();
         $this->migrate($module);
         System::addProperty($this->versionKey($module), $this->availableVersion($module));
@@ -124,6 +128,10 @@ class ModuleManager extends BaseService
             return $this->failure(__('body.module_not_installed'));
         }
 
+        if ($dependents = $this->dependents($name)) {
+            return $this->failure(__('body.module_required_by', ['name' => $module->getName(), 'modules' => implode(', ', $dependents)]));
+        }
+
         if ($purgeData && is_dir($this->migrationPath($module))) {
             Artisan::call('migrate:reset', [
                 '--path' => $this->migrationPath($module),
@@ -149,6 +157,14 @@ class ModuleManager extends BaseService
 
         if (! $module || ! $this->isInstalled($name)) {
             return $this->failure(__('body.module_not_installed'));
+        }
+
+        if ($enabled && ($missing = $this->missingRequirements($name))) {
+            return $this->failure(__('body.module_requires', ['name' => $module->getName(), 'modules' => implode(', ', $missing)]));
+        }
+
+        if (! $enabled && ($dependents = $this->dependents($name))) {
+            return $this->failure(__('body.module_required_by', ['name' => $module->getName(), 'modules' => implode(', ', $dependents)]));
         }
 
         $enabled ? $module->enable() : $module->disable();
@@ -223,6 +239,68 @@ class ModuleManager extends BaseService
      * module.json "billing_exempt": true — always available, never sold
      * (e.g. the billing module itself, so a locked business can still pay).
      */
+    /**
+     * Modules this one needs, from "requires" in its module.json.
+     *
+     * @return list<string>
+     */
+    public function requires(string $name): array
+    {
+        return collect((array) Module::find($name)?->get('requires', []))
+            ->map(fn ($required) => Module::find((string) $required)?->getName() ?? (string) $required)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Required modules that are not active yet.
+     *
+     * @return list<string>
+     */
+    public function missingRequirements(string $name): array
+    {
+        return array_values(array_filter($this->requires($name), fn (string $required) => ! $this->isActive($required)));
+    }
+
+    /**
+     * Active modules that need this one.
+     *
+     * @return list<string>
+     */
+    public function dependents(string $name): array
+    {
+        return collect($this->activeModules())
+            ->filter(fn (string $other) => in_array(strtolower($name), array_map('strtolower', $this->requires($other)), true))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * $names plus everything they require, all the way down.
+     *
+     * @param  list<string>  $names
+     * @return list<string>
+     */
+    public function withRequirements(array $names): array
+    {
+        $all = [];
+        $queue = array_values($names);
+
+        while ($queue !== []) {
+            $name = array_shift($queue);
+
+            if (in_array($name, $all, true)) {
+                continue;
+            }
+
+            $all[] = $name;
+            array_push($queue, ...$this->requires($name));
+        }
+
+        return $all;
+    }
+
     public function isBillingExempt(string $name): bool
     {
         return (bool) Module::find($name)?->get('billing_exempt', false);
@@ -263,6 +341,7 @@ class ModuleManager extends BaseService
             'name' => $module->getName(),
             'alias' => $module->getLowerName(),
             'description' => (string) $module->getDescription(),
+            'requires' => $this->requires($module->getName()),
             'enabled' => $module->isEnabled(),
             'installed' => $installedVersion !== null,
             'active' => $installedVersion !== null && $module->isEnabled(),

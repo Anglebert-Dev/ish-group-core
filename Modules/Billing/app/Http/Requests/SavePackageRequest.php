@@ -2,6 +2,7 @@
 
 namespace Modules\Billing\Http\Requests;
 
+use App\Services\Module\ModuleManager;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Modules\Billing\Enums\BillingInterval;
@@ -51,7 +52,8 @@ class SavePackageRequest extends FormRequest
             'interval' => $data['interval'],
             'interval_count' => (int) $data['interval_count'],
             'trial_days' => (int) ($data['trial_days'] ?? 0),
-            'modules' => array_values($data['modules'] ?? []),
+            // A module comes with the modules it requires.
+            'modules' => app(ModuleManager::class)->withRequirements(array_values($data['modules'] ?? [])),
             'limits' => array_map('intval', array_filter($data['limits'] ?? [], fn ($v) => $v !== null && $v !== '')),
             'features' => array_values(array_filter(array_map('trim', preg_split('/\R/', (string) ($data['features'] ?? ''))))),
             'is_active' => $this->boolean('is_active'),

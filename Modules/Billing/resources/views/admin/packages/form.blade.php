@@ -37,7 +37,8 @@
             <p class="text-sm text-muted mb-3">{{ __('billing::billing.modules_included_hint') }}</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 @forelse ($modules as $module)
-                    <x-common.checkbox name="modules[]" :value="$module['name']" :label="$module['name']" :checked="in_array($module['name'], $selectedModules, true)" />
+                    <x-common.checkbox name="modules[]" :value="$module['name']" :label="$module['name']" :checked="in_array($module['name'], $selectedModules, true)"
+                        :description="$module['requires'] ? __('body.module_requires_list', ['modules' => implode(', ', $module['requires'])]) : null" />
                 @empty
                     <p class="text-sm text-muted">{{ __('body.no_active_modules') }}</p>
                 @endforelse

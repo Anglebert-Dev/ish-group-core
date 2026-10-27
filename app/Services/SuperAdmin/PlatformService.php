@@ -147,7 +147,8 @@ class PlatformService extends BaseService
         $known = $this->modules->catalogue()->pluck('name')->all();
 
         $business->forceFill([
-            'enabled_modules' => array_values(array_intersect($known, $modules)),
+            // A module comes with the modules it requires.
+            'enabled_modules' => array_values(array_intersect($known, $this->modules->withRequirements($modules))),
         ])->save();
 
         return $this->success($business, __('body.business_modules_updated'));

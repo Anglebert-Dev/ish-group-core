@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Services\Module\ModuleManager;
+use App\Services\SuperAdmin\PlatformService;
 use Illuminate\Support\Facades\Schema;
+use Nwidart\Modules\Facades\Module;
 use Tests\TestCase;
 
 /**
@@ -104,5 +106,64 @@ class ModuleSystemTest extends TestCase
 
         $this->assertSame([], app(ModuleManager::class)->hook('modifyAdminMenu'));
         $this->get(route('frontend.admin.website.edit'))->assertNotFound();
+    }
+
+    /**
+     * Frontend's module.json temporarily says "requires": ["billing"].
+     */
+    private function frontendRequiresBilling(): void
+    {
+        $file = Module::find('Frontend')->getPath().'/module.json';
+        $original = file_get_contents($file);
+        $this->beforeApplicationDestroyed(fn () => file_put_contents($file, $original));
+
+        file_put_contents($file, json_encode(['requires' => ['billing']] + json_decode($original, true), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+    }
+
+    public function test_a_module_cannot_be_installed_or_enabled_without_its_requirements(): void
+    {
+        $this->frontendRequiresBilling();
+        $modules = app(ModuleManager::class);
+
+        $this->assertSame(['Billing'], $modules->requires('Frontend'));
+        $this->assertFalse($modules->install('Frontend')['status']);
+        $this->assertFalse($modules->isInstalled('Frontend'));
+
+        $this->assertTrue($modules->install('Billing')['status']);
+        $this->assertTrue($modules->install('Frontend')['status']);
+
+        // Required modules can't be switched off or removed underneath it.
+        $result = $modules->toggle('Billing', false);
+        $this->assertFalse($result['status']);
+        $this->assertStringContainsString('Frontend', $result['message']);
+        $this->assertFalse($modules->uninstall('Billing')['status']);
+        $this->assertTrue($modules->isActive('Billing'));
+
+        $this->assertTrue($modules->toggle('Frontend', false)['status']);
+        $this->assertTrue($modules->toggle('Billing', false)['status']);
+        $this->assertFalse($modules->toggle('Frontend', true)['status'], 'enabling needs Billing back on');
+    }
+
+    public function test_a_business_only_uses_a_module_with_its_requirements(): void
+    {
+        $this->frontendRequiresBilling();
+        [$business] = $this->makeBusiness();
+
+        $business->forceFill(['enabled_modules' => ['Frontend']])->save();
+        $this->assertFalse($business->fresh()->canUseModule('Frontend'));
+
+        $business->forceFill(['enabled_modules' => ['Frontend', 'Billing']])->save();
+        $this->assertTrue($business->fresh()->canUseModule('Frontend'));
+    }
+
+    public function test_switching_a_module_on_for_a_business_brings_its_requirements(): void
+    {
+        $this->frontendRequiresBilling();
+        [$business] = $this->makeBusiness();
+
+        app(PlatformService::class)->updateEnabledModules($business, ['Frontend']);
+
+        $this->assertEqualsCanonicalizing(['Frontend', 'Billing'], $business->fresh()->enabled_modules);
+        $this->assertEqualsCanonicalizing(['Frontend', 'Billing'], app(ModuleManager::class)->withRequirements(['Frontend']));
     }
 }

@@ -6,6 +6,7 @@ use App\Contracts\Entitlements;
 use App\Libraries\ColorLibrary;
 use App\Models\BaseModel;
 use App\Models\User;
+use App\Services\Module\ModuleManager;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -72,13 +73,28 @@ class Business extends BaseModel
      * With a billing module: whatever the business's package allows.
      * Without one: the per-business on/off switches (enabled_modules).
      */
-    public function canUseModule(string $module): bool
+    public function canUseModule(string $module, array $seen = []): bool
     {
         $entitlements = app(Entitlements::class);
 
-        return $entitlements->controlsModules()
+        $allowed = $entitlements->controlsModules()
             ? $entitlements->allowsModule($this, $module)
             : $this->hasModuleEnabled($module);
+
+        if (! $allowed) {
+            return false;
+        }
+
+        // A module is only usable with everything it requires.
+        $seen[] = strtolower($module);
+
+        foreach (app(ModuleManager::class)->requires($module) as $required) {
+            if (! in_array(strtolower($required), $seen, true) && ! $this->canUseModule($required, $seen)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
