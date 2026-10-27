@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\ConfirmStaffPassword;
 use App\Http\Requests\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Auth\LoginStaffRequest;
 use App\Http\Requests\Auth\RegisterStaffRequest;
@@ -12,6 +13,7 @@ use App\Models\User;
 use App\Services\Auth\AuthService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\View\View;
@@ -151,7 +153,7 @@ class AuthController extends Controller
         return view('auth.confirm-password');
     }
 
-    public function confirmPassword(Request $request): RedirectResponse
+    public function confirmPassword(Request $request): View|RedirectResponse
     {
         $request->validate([
             'password' => ['required', 'string'],
@@ -165,6 +167,42 @@ class AuthController extends Controller
 
         $request->session()->put('auth.staff_password_confirmed_at', time());
 
+        $pending = $request->session()->pull(ConfirmStaffPassword::PENDING_KEY);
+
+        if (is_array($pending) && time() - (int) ($pending['at'] ?? 0) < ConfirmStaffPassword::PENDING_TTL) {
+            // The resumed action's back() should land where the user started,
+            // not on this confirmation page.
+            $request->session()->put('_previous.url', $pending['back']);
+
+            return view('auth.confirm-password-resume', [
+                'method' => $pending['method'],
+                'url' => $pending['url'],
+                'fields' => $this->flattenInput(Crypt::decrypt($pending['input'])),
+            ]);
+        }
+
         return redirect()->intended(route('dashboard'));
+    }
+
+    /**
+     * ['a' => ['x' => 1], 'b' => 2] → [['a[x]', '1'], ['b', '2']]
+     *
+     * @return list<array{0: string, 1: string}>
+     */
+    private function flattenInput(array $input, string $prefix = ''): array
+    {
+        $fields = [];
+
+        foreach ($input as $key => $value) {
+            $name = $prefix === '' ? (string) $key : "{$prefix}[{$key}]";
+
+            if (is_array($value)) {
+                array_push($fields, ...$this->flattenInput($value, $name));
+            } else {
+                $fields[] = [$name, is_bool($value) ? ($value ? '1' : '0') : (string) $value];
+            }
+        }
+
+        return $fields;
     }
 }

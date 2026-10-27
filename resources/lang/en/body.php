@@ -75,6 +75,8 @@ return [
     'confirm_password_title' => 'Confirm your password',
     'confirm_password_subtitle' => 'For your security, please confirm your password before continuing.',
     'confirm_password_action' => 'Confirm Password',
+    'continue' => 'Continue',
+    'confirm_password_continuing' => 'Password confirmed — finishing your action…',
     'last_login' => 'Last login',
     'add_role' => 'Add Role',
     'edit_role' => 'Edit Role',
