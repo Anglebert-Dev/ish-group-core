@@ -1,0 +1,26 @@
+{
+    "name": "ish-group/production",
+    "description": "Work orders and production stages for the ISH core.",
+    "authors": [
+        {
+            "name": "ISH Group",
+            "email": ""
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Production\\": "app/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Production\\Tests\\": "tests/"
+        }
+    }
+}

@@ -2,5 +2,6 @@
     "Frontend": true,
     "Billing": true,
     "Inventory": true,
-    "SalesOrders": true
+    "SalesOrders": true,
+    "Production": true
 }
