@@ -23,7 +23,6 @@
     data-wizard-start="{{ $startStep }}"
     data-msg-required="{{ __('body.field_required') }}"
     data-msg-dates="{{ __('body.dates_incomplete') }}"
-    data-msg-return="{{ __('body.return_after_pickup') }}"
     data-msg-password-weak="{{ __('body.password_strength_hint') }}"
     @if ($enctype) enctype="{{ $enctype }}" @endif
     {{ $attributes->merge(['class' => $maxWidth.' space-y-5']) }}

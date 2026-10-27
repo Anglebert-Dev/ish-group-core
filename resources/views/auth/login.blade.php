@@ -38,7 +38,7 @@
             @endif
             @if ($hasPublicSite && Route::has('login'))
                 <p>
-                    {{ __('body.auth_customer_renter') }}
+                    {{ __('body.auth_customer_prompt') }}
                     <a href="{{ route('login') }}" class="font-semibold text-brand hover:text-brand-dark">{{ __('body.auth_login_as_customer') }}</a>
                 </p>
             @endif

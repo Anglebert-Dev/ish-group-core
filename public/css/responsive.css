@@ -124,30 +124,6 @@ a,
     }
 }
 
-/* Hero search: date/time boxes must not spill out of the card. */
-.hero-search-card .hero-dt-group,
-.hero-search-card .hero-dt-box {
-    min-width: 0;
-}
-
-.hero-search-card .hero-dt-native {
-    font-size: 16px;
-}
-
-@media (max-width: 639px) {
-    .hero-search-card .rental-type-btn {
-        font-size: 0.8125rem;
-        padding-left: 0.85rem;
-        padding-right: 0.85rem;
-    }
-
-    .vehicle-filter-panel {
-        left: 0;
-        right: auto;
-        max-width: calc(100vw - 2rem);
-    }
-}
-
 @media (min-width: 1024px) {
     #dashboard-sidebar,
     #account-sidebar {

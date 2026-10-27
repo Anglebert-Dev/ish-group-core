@@ -17,11 +17,6 @@
         <button type="button" onclick="toggleSidebar(true)" class="lg:hidden text-ink p-2 -ml-2 rounded-lg hover:bg-surface" aria-label="Open menu">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
         </button>
-
-        <div class="hidden md:flex items-center h-10 w-56 lg:w-72 rounded-lg border border-line px-3 gap-2 text-muted min-w-0">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
-            <input type="text" placeholder="Search bookings, vehicles, customers…" class="bg-transparent text-sm text-body placeholder:text-muted focus:outline-none w-full min-w-0">
-        </div>
     </div>
 
     <div class="flex items-center gap-2 sm:gap-4 shrink-0">

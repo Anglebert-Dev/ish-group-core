@@ -484,19 +484,6 @@
             if (!validateDatetimeSplit(splits[s], messages)) return false;
         }
 
-        var pickupHidden = panel.querySelector('[name="pickup_at"][data-datetime-combined]');
-        var returnHidden = panel.querySelector('[name="return_at"][data-datetime-combined]');
-        if (pickupHidden && returnHidden && pickupHidden.value && returnHidden.value) {
-            var pickupAt = new Date(pickupHidden.value);
-            var returnAt = new Date(returnHidden.value);
-            if (!isNaN(pickupAt.getTime()) && !isNaN(returnAt.getTime()) && returnAt <= pickupAt) {
-                var returnSplit = returnHidden.closest('[data-datetime-split]');
-                showClientError(returnSplit?.querySelector('.dt-split-box') || returnHidden, messages.returnAfterPickup);
-                returnSplit?.querySelector('[data-part="date"]')?.focus();
-                return false;
-            }
-        }
-
         var fields = panel.querySelectorAll('input, select, textarea');
         for (var i = 0; i < fields.length; i++) {
             var field = fields[i];
@@ -587,7 +574,6 @@
         return {
             fieldRequired: form.getAttribute('data-msg-required') || 'This field is required.',
             datesIncomplete: form.getAttribute('data-msg-dates') || 'Choose both a date and a time.',
-            returnAfterPickup: form.getAttribute('data-msg-return') || 'Return must be after pickup.',
             passwordWeak: form.getAttribute('data-msg-password-weak') || 'Password does not meet the requirements.',
         };
     }

@@ -26,8 +26,8 @@ class UploadLibrary
      * Store an uploaded file and return its stored path.
      *
      * @param  string  $directory  e.g. 'materials/pdf'
-     * @param  string  $disk  'local' (private — the default; documents like
-     *                        driver licenses must never be publicly reachable)
+     * @param  string  $disk  'local' (private — the default; personal documents
+     *                        must never be publicly reachable)
      *                        or 'public' (web-accessible, e.g. marketing images)
      * @return string stored path relative to the disk root
      */
