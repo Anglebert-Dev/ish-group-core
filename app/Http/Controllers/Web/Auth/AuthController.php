@@ -1,0 +1,162 @@
+<?php
+
+namespace App\Http\Controllers\Web\Auth;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\ForgotPasswordRequest;
+use App\Http\Requests\Auth\LoginStaffRequest;
+use App\Http\Requests\Auth\RegisterStaffRequest;
+use App\Http\Requests\Auth\ResetPasswordRequest;
+use App\Http\Requests\Auth\VerifyStaffMfaRequest;
+use App\Models\User;
+use App\Services\Auth\AuthService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Password;
+use Illuminate\View\View;
+
+/**
+ * Dashboard (staff) authentication — "staff" guard, User model.
+ */
+class AuthController extends Controller
+{
+    public function __construct(protected AuthService $auth)
+    {
+    }
+
+    public function showRegisterForm(): View|RedirectResponse
+    {
+        if (! $this->auth->registrationIsOpen()) {
+            return redirect()->route('staff.login')->withErrors([
+                'email' => __('body.registration_closed'),
+            ]);
+        }
+
+        return view('auth.register');
+    }
+
+    public function register(RegisterStaffRequest $request): RedirectResponse
+    {
+        $result = $this->auth->registerFirstSuperAdmin($request->validated());
+
+        if (! $result['status']) {
+            return redirect()->route('staff.login')->withErrors(['email' => $result['message']]);
+        }
+
+        $request->session()->regenerate();
+
+        return redirect()->route('dashboard')->with('success', $result['message']);
+    }
+
+    public function showLoginForm(): View
+    {
+        return view('auth.login', [
+            'registrationIsOpen' => $this->auth->registrationIsOpen(),
+        ]);
+    }
+
+    public function login(LoginStaffRequest $request): RedirectResponse
+    {
+        $result = $this->auth->login($request->credentials(), $request->boolean('remember'));
+
+        if (! $result['status']) {
+            return back()->withErrors(['email' => $result['message']])->onlyInput('email', 'remember');
+        }
+
+        if (! empty($result['data']['mfa_required'])) {
+            return redirect()->route('staff.mfa.challenge');
+        }
+
+        $request->session()->regenerate();
+
+        return redirect()->route('dashboard')->with('success', $result['message']);
+    }
+
+    public function showMfaChallenge(): View|RedirectResponse
+    {
+        if (! session('staff.mfa.pending_user_id')) {
+            return redirect()->route('staff.login');
+        }
+
+        return view('auth.staff-mfa-challenge');
+    }
+
+    public function verifyMfa(VerifyStaffMfaRequest $request): RedirectResponse
+    {
+        $result = $this->auth->completeMfaLogin($request->validated('code'));
+
+        if (! $result['status']) {
+            return back()->withErrors(['code' => $result['message']]);
+        }
+
+        $request->session()->regenerate();
+
+        return redirect()->route('dashboard')->with('success', $result['message']);
+    }
+
+    public function logout(Request $request): RedirectResponse
+    {
+        $this->auth->logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('staff.login')->with('success', __('body.logged_out'));
+    }
+
+    public function showForgotPasswordForm(): View
+    {
+        return view('auth.forgot-password');
+    }
+
+    public function sendResetLink(ForgotPasswordRequest $request): RedirectResponse
+    {
+        Password::broker('users')->sendResetLink($request->only('email'));
+
+        return back()->with('success', __('body.password_reset_link_sent'));
+    }
+
+    public function showResetForm(Request $request, string $token): View
+    {
+        return view('auth.reset-password', [
+            'token' => $token,
+            'email' => $request->query('email'),
+        ]);
+    }
+
+    public function resetPassword(ResetPasswordRequest $request): RedirectResponse
+    {
+        $status = Password::broker('users')->reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function (User $user, string $password) {
+                $this->auth->finalizePasswordReset($user, $password);
+            }
+        );
+
+        return $status === Password::PASSWORD_RESET
+            ? redirect()->route('staff.login')->with('success', __($status))
+            : back()->withErrors(['email' => __($status)]);
+    }
+
+    public function showConfirmPasswordForm(): View
+    {
+        return view('auth.confirm-password');
+    }
+
+    public function confirmPassword(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'password' => ['required', 'string'],
+        ]);
+
+        $user = $request->user('staff');
+
+        if (! $user || ! \Illuminate\Support\Facades\Hash::check($request->input('password'), $user->password)) {
+            return back()->withErrors(['password' => __('body.incorrect_current_password')]);
+        }
+
+        $request->session()->put('auth.staff_password_confirmed_at', time());
+
+        return redirect()->intended(route('dashboard'));
+    }
+}
