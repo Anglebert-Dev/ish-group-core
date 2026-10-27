@@ -97,6 +97,6 @@ class Business extends BaseModel
     {
         return $this->favicon_path
             ? '/storage/'.$this->favicon_path
-            : '/favicon-32.png';
+            : '/favicon.svg';
     }
 }

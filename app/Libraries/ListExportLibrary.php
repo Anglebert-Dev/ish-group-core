@@ -129,18 +129,6 @@ class ListExportLibrary
         }
 
         if ($absolute === null) {
-            foreach ([
-                public_path('assets/images/logo/logo-horizontal.png'),
-                public_path('assets/images/logo/logo-stacked.png'),
-            ] as $fallback) {
-                if (is_file($fallback)) {
-                    $absolute = $fallback;
-                    break;
-                }
-            }
-        }
-
-        if ($absolute === null) {
             return null;
         }
 

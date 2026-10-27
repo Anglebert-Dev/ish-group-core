@@ -35,7 +35,7 @@ class LibrariesTest extends TestCase
 
         $this->assertSame(Business::DEFAULT_NAME, $business->companyName());
         $this->assertSame(Business::DEFAULT_BRAND_COLOR, $business->brandColor());
-        $this->assertSame('/favicon-32.png', $business->faviconUrl());
+        $this->assertSame('/favicon.svg', $business->faviconUrl());
     }
 
     public function test_business_module_toggles(): void

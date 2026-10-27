@@ -36,7 +36,7 @@ class StaffMfaService extends BaseService
             'otpauth_url' => TotpLibrary::otpAuthUrl(
                 $secret,
                 $user->email,
-                (string) config('app.name', 'Car Rental')
+                (string) config('app.name', 'ISH Core')
             ),
         ], __('body.mfa_setup_title'));
     }

@@ -6,7 +6,7 @@
     $favicon = $branding->faviconUrl();
 @endphp
 <title>{{ $pageTitle }}</title>
-<link rel="icon" type="image/png" href="{{ $favicon }}">
+<link rel="icon" href="{{ $favicon }}">
 <link rel="apple-touch-icon" href="{{ $favicon }}">
 <link rel="stylesheet" href="{{ asset('css/responsive.css') }}{{ file_exists(public_path('css/responsive.css')) ? '?v='.filemtime(public_path('css/responsive.css')) : '' }}">
 <style>

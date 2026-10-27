@@ -1005,7 +1005,7 @@
         boot(document);
     }
 
-    window.CarRentalFormUi = {
+    window.FormUi = {
         boot: boot,
         initFileInputs: initFileInputs,
         initPasswordStrength: initPasswordStrength,

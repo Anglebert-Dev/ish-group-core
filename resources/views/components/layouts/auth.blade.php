@@ -8,7 +8,6 @@
 ])
 
 @php
-    $panelImage = $panelImage ?: asset('assets/images/auth-panel.png');
     $panelText = $panelText ?: __('body.auth_panel_text');
 @endphp
 
@@ -179,12 +178,16 @@
             {{-- Visual panel --}}
             <div class="relative p-4 sm:p-5 lg:p-6 order-first lg:order-none">
                 <div class="auth-panel-frame h-44 sm:h-56 lg:h-full bg-ink">
-                    <img
-                        src="{{ $panelImage }}"
-                        alt=""
-                        class="absolute inset-0 h-full w-full object-cover object-[center_72%] lg:object-center opacity-95"
-                    >
-                    <div class="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/25 to-ink/40"></div>
+                    @if ($panelImage)
+                        <img
+                            src="{{ $panelImage }}"
+                            alt=""
+                            class="absolute inset-0 h-full w-full object-cover object-[center_72%] lg:object-center opacity-95"
+                        >
+                        <div class="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/25 to-ink/40"></div>
+                    @else
+                        <div class="absolute inset-0 bg-gradient-to-br from-brand via-brand-dark to-ink"></div>
+                    @endif
                     <div class="relative z-10 h-full p-6 sm:p-8 lg:p-10 flex flex-col justify-between">
                         <p class="text-white font-display font-bold text-lg sm:text-xl lg:text-2xl leading-snug max-w-sm drop-shadow-sm">
                             {{ $panelText }}

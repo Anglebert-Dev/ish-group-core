@@ -45,17 +45,6 @@
                 </div>
                 <p>{{ __('body.timezone_footer') }}</p>
             </div>
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
-                <p>{{ __('body.tagline_footer') }}</p>
-                <a href="https://afriforge.rw" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 hover:text-white transition-colors">
-                    <span>{{ __('body.powered_by') }}</span>
-                    <img
-                        src="{{ asset('assets/images/logo/afriforge.png') }}"
-                        alt="{{ __('body.powered_by_afriforge') }}"
-                        class="h-7 w-auto object-contain"
-                    >
-                </a>
-            </div>
         </div>
     </div>
 </footer>

@@ -241,7 +241,6 @@ return [
     'privacy_policy' => 'Privacy Policy',
     'terms_and_conditions' => 'Terms & Conditions',
     'all_rights_reserved' => 'All rights reserved.',
-    'tagline_footer' => 'Rent Smarter. Travel Further.',
     'legal_last_updated' => 'Last updated :date',
     'privacy_section_intro_title' => 'Who we are',
     'privacy_section_intro' => ':company (“we”, “us”) operates this platform. This policy explains how we collect and use personal information when you browse the site or use your account.',
@@ -325,8 +324,6 @@ return [
     'timezone_note' => 'All times use :timezone (:abbr). Current time: :time.',
     'timezone_note_short' => 'Times use :timezone (:abbr)',
     'timezone_footer' => 'All times are shown in the platform timezone.',
-    'powered_by' => 'Powered by',
-    'powered_by_afriforge' => 'AfriForge',
 
     'audit_logs' => 'Audit Logs',
     'audit_logs_description' => 'A chronological record of create, update, and delete actions across the platform.',

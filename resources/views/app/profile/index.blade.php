@@ -113,7 +113,7 @@
                     @endforeach
                 </div>
                 <a href="data:text/plain;charset=utf-8,{{ rawurlencode(implode(PHP_EOL, $mfaRecoveryCodes)) }}"
-                   download="afriforge-recovery-codes.txt"
+                   download="{{ \Illuminate\Support\Str::slug($company) }}-recovery-codes.txt"
                    class="inline-flex items-center gap-2 text-sm font-semibold text-brand hover:text-brand-dark">
                     {{ __('body.mfa_recovery_codes_download') }}
                 </a>
