@@ -4,7 +4,7 @@ namespace Modules\Frontend\Services;
 
 use App\Helpers\AuthHelper;
 use App\Services\BaseService;
-use App\Services\Setting\SettingService;
+use App\Support\Tenancy\CurrentBusiness;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -21,7 +21,7 @@ class CustomerAuthService extends BaseService
 {
     public function __construct(
         protected CustomerRepository $customers,
-        protected SettingService $settings,
+        protected CurrentBusiness $business,
     ) {
     }
 
@@ -33,7 +33,7 @@ class CustomerAuthService extends BaseService
             'phone' => $data['phone'] ?? null,
             'password' => Hash::make($data['password']),
         ]);
-        $customer->business_id = $this->settings->primary()?->id;
+        $customer->business_id = $this->business->id();
         $customer->status = CustomerStatus::Active;
 
         $this->customers->save($customer);
@@ -146,6 +146,7 @@ class CustomerAuthService extends BaseService
 
         Password::broker('customers')->sendResetLink([
             'email' => $customer?->email ?? strtolower(trim($email)),
+            'business_id' => $this->business->id(),
         ]);
     }
 
@@ -160,6 +161,7 @@ class CustomerAuthService extends BaseService
         $status = Password::broker('customers')->reset(
             [
                 'email' => $customer?->email ?? strtolower(trim((string) ($data['email'] ?? ''))),
+                'business_id' => $this->business->id(),
                 'password' => $data['password'],
                 'password_confirmation' => $data['password_confirmation'] ?? $data['password'],
                 'token' => $data['token'],

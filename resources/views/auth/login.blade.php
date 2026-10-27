@@ -36,12 +36,6 @@
                     <a href="{{ route('staff.register') }}" class="font-semibold text-brand hover:text-brand-dark">{{ __('body.auth_create_account') }}</a>
                 </p>
             @endif
-            @if ($hasPublicSite && Route::has('login'))
-                <p>
-                    {{ __('body.auth_customer_prompt') }}
-                    <a href="{{ route('login') }}" class="font-semibold text-brand hover:text-brand-dark">{{ __('body.auth_login_as_customer') }}</a>
-                </p>
-            @endif
         </div>
     </x-slot:footer>
 </x-layouts.auth>

@@ -24,7 +24,7 @@ class AdminMenu
     public function visibleGroups(): Collection
     {
         $items = collect(config('menu.items', []))
-            ->merge($this->modules->collectHook('modifyAdminMenu'))
+            ->merge($this->moduleItems())
             ->filter(fn ($item) => is_array($item) && isset($item['label'], $item['route']))
             ->filter(fn (array $item) => Route::has($item['route']) && $this->allowed($item))
             ->map(fn (array $item) => $this->normalise($item));
@@ -33,6 +33,33 @@ class AdminMenu
             ->groupBy(fn (array $item) => (string) $item['group'])
             ->map(fn (Collection $group) => $group->sortBy('order')->values())
             ->sortBy(fn ($group, string $name) => $this->groupRank($name));
+    }
+
+    /**
+     * Every module gets its own sidebar section: items without a 'group'
+     * are filed under the module's name (module.json "menu_group" overrides).
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function moduleItems(): array
+    {
+        $items = [];
+
+        foreach ($this->modules->cachedHook('modifyAdminMenu') as $module => $result) {
+            if (! is_array($result)) {
+                continue;
+            }
+
+            $section = $this->modules->menuGroup($module);
+
+            foreach ($result as $item) {
+                if (is_array($item)) {
+                    $items[] = $item + ['group' => $section];
+                }
+            }
+        }
+
+        return $items;
     }
 
     private function allowed(array $item): bool

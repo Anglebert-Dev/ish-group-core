@@ -1,4 +1,5 @@
 <x-layouts.auth
+    :home-url="route('site.home')"
     :title="__('body.log_in')"
     :eyebrow="__('body.auth_customer_login')"
     :heading="__('body.auth_welcome_back')"

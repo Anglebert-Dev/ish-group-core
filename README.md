@@ -9,7 +9,11 @@ A reusable Laravel 13 base for building apps as **modules**. The core ships only
 - **Module system** (nwidart/laravel-modules): install / update / uninstall / enable / disable, plus a hook bus
 - UI kit: layouts, Blade components, sidebar, dashboard, notifications, audit log, PDF/Excel list exports
 
-Everything app-specific lives in `Modules/<Name>`. The bundled **Frontend** module (public website + customer accounts) is the reference example.
+Everything app-specific lives in `Modules/<Name>`. The bundled **Frontend** module is the reference example:
+
+- Every business gets a public website at `/s/<slug>`, editable from the **Website** section of the sidebar.
+- Each site has its own customer accounts.
+- When the primary business publishes its site, `/` shows it.
 
 The design follows `docs/modules-roles-superadmin-reference.txt` (blueprint §5) and avoids the pitfalls listed in its §6.
 
@@ -30,7 +34,7 @@ php artisan serve                 # http://localhost:8000 → staff login
 
 You can also open `/app/register` on an empty database: the first sign-up becomes the superadmin.
 
-Want the public website? Install the Frontend module (see below). Without it, `/` goes straight to the staff login.
+Want public websites? Install the Frontend module (see below), then use **Website → Edit website** to fill in and publish your site. Until the primary business publishes, `/` goes straight to the staff login.
 
 ---
 
@@ -110,7 +114,9 @@ Then:
    class InventoryServiceProvider extends CoreModuleServiceProvider { /* $name, $nameLower, $providers */ }
    ```
 
-2. **`module.json`**: add a `"version": "1.0.0"` and a short `"description"`. Bump the version when you add migrations, then run `core:module update`.
+2. **`module.json`**:
+   - Add a `"version": "1.0.0"` and a short `"description"`. Bump the version when you add migrations, then run `core:module update` (or click **Update** on the Modules page).
+   - Optionally add `"menu_group": "Inventory"` to name the module's sidebar section.
 
 3. **Routes** (`routes/web.php`): use the same stack as the core staff area, plus `module:<Name>`:
 
@@ -134,14 +140,15 @@ Then:
    | Hook | Return | Used by |
    |---|---|---|
    | `user_permissions()` | `['access_modules' => ['inventory' => ['product']], 'extra_permissions' => [], 'module_labels' => [], 'controller_labels' => []]` | permission seeding + role form |
-   | `modifyAdminMenu()` | list of `['label', 'route', 'permission', 'group', 'order', 'icon', 'active']` | sidebar (see `config/menu.php`) |
+   | `modifyAdminMenu()` | list of `['label', 'route', 'permission', 'order', 'icon', 'active']` | the module's own sidebar section (`group` overrides it) |
    | `dashboard_stats()` | list of `['label', 'value', 'href'?, 'permission'?]` | dashboard tiles |
    | `dashboard_quick_actions()` | list of `['label', 'route', 'permission'?, 'color'?, 'icon'?]` | dashboard quick actions |
    | `dashboard_widget()` | a view name or HTML string | dashboard body |
    | `after_business_created($args)` | — (`$args['business']`, `$args['owner']`) | seed per-business data |
    | `landing_page()` | controller callable, e.g. `[HomeController::class, 'index']` | what `/` shows |
 
-   Add a hook to the core by calling `app(ModuleManager::class)->hook('name', $args)` at the extension point.
+   - Hooks only run for modules that are installed, enabled, and switched on for the current business. A module that's off for a business disappears from its sidebar and dashboard.
+   - To add a new hook to the core, call `app(ModuleManager::class)->hook('name', $args)` at the extension point.
 
 7. **Tests**: put them in `Modules/<Name>/tests` (the `Modules` phpunit suite picks them up). Install the module in `setUp()`:
 
@@ -165,7 +172,7 @@ app/
   Support/                 Menu/AdminMenu, Modules/CoreModuleServiceProvider, Tenancy/CurrentBusiness
 config/access.php          core permissions
 config/menu.php            core sidebar
-Modules/Frontend/          example module: public site + "customer" guard
+Modules/Frontend/          example module: per-business websites (/s/{slug}), content editor, "customer" guard
 ```
 
 ## Tests

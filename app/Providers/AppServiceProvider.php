@@ -11,7 +11,9 @@ use App\Support\Tenancy\CurrentBusiness;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
@@ -30,9 +32,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(SettingService::class);
-        $this->app->singleton(CurrentBusiness::class);
-        $this->app->singleton(ModuleManager::class);
+        // Per-request state (current tenant, memoised hooks/branding): scoped,
+        // and flushed after every request so it never leaks into the next one
+        // (long-running workers, or several requests in one test).
+        $this->app->scoped(SettingService::class);
+        $this->app->scoped(CurrentBusiness::class);
+        $this->app->scoped(ModuleManager::class);
     }
 
     /**
@@ -43,6 +48,8 @@ class AppServiceProvider extends ServiceProvider
         date_default_timezone_set((string) config('app.timezone'));
 
         $this->registerGate();
+
+        Event::listen(RequestHandled::class, fn () => $this->app->forgetScopedInstances());
 
         Password::defaults(function () {
             $rule = Password::min(12)
@@ -94,7 +101,6 @@ class AppServiceProvider extends ServiceProvider
             $view->with('branding', $branding);
             $view->with('company', $branding->companyName());
             $view->with('appTimezone', config('app.timezone'));
-            $view->with('hasPublicSite', app(ModuleManager::class)->cachedHook('landing_page') !== []);
         });
 
         View::composer('components.dashboard.sidebar', function ($view) {

@@ -4,6 +4,7 @@ namespace App\Services\Module;
 
 use App\Models\System\System;
 use App\Services\BaseService;
+use App\Support\Tenancy\CurrentBusiness;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schema;
@@ -163,8 +164,13 @@ class ModuleManager extends BaseService
     public function hook(string $hook, mixed $arguments = null): array
     {
         $results = [];
+        $business = app(CurrentBusiness::class)->get();
 
         foreach ($this->activeModules() as $name) {
+            if ($business && ! $business->hasModuleEnabled($name)) {
+                continue;
+            }
+
             $class = "Modules\\{$name}\\Http\\Controllers\\DataController";
 
             if (! class_exists($class) || ! method_exists($class, $hook)) {
@@ -205,6 +211,12 @@ class ModuleManager extends BaseService
             ->flatten(1)
             ->values()
             ->all();
+    }
+
+   
+    public function menuGroup(string $name): string
+    {
+        return (string) (Module::find($name)?->get('menu_group') ?: $name);
     }
 
     public function installedVersion(string $name): ?string

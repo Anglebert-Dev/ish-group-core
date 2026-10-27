@@ -1,4 +1,5 @@
 <x-layouts.auth
+    :home-url="route('site.home')"
     :title="__('body.auth_create_account')"
     :heading="__('body.auth_register_title_customer')"
     :subtitle="__('body.auth_register_subtitle_customer')"

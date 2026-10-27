@@ -38,7 +38,7 @@ class ModuleSystemTest extends TestCase
         $this->assertFalse($modules->isInstalled('Frontend'));
         $this->assertFalse($modules->isActive('Frontend'));
         $this->assertSame([], $modules->hook('landing_page'));
-        $this->get(route('about'))->assertNotFound();
+        $this->get('/s/anything/about')->assertNotFound();
     }
 
     public function test_install_runs_migrations_and_activates_hooks(): void
@@ -48,9 +48,9 @@ class ModuleSystemTest extends TestCase
         $this->assertTrue($modules->install('Frontend')['status']);
 
         $this->assertTrue($modules->isActive('Frontend'));
-        $this->assertSame('1.0.0', $modules->installedVersion('Frontend'));
+        $this->assertSame('1.1.0', $modules->installedVersion('Frontend'));
         $this->assertTrue(Schema::hasTable('customers'));
-        $this->assertArrayHasKey('Frontend', $modules->hook('landing_page'));
+        $this->assertArrayHasKey('Frontend', $modules->hook('user_permissions'));
         $this->assertFalse($modules->install('Frontend')['status'], 'second install is refused');
     }
 
@@ -100,6 +100,7 @@ class ModuleSystemTest extends TestCase
 
         $this->actingAs($owner, 'staff');
 
-        $this->get(route('about'))->assertNotFound();
+        $this->assertSame([], app(ModuleManager::class)->hook('modifyAdminMenu'));
+        $this->get(route('frontend.admin.website.edit'))->assertNotFound();
     }
 }

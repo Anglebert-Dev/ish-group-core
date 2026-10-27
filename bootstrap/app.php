@@ -29,15 +29,17 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Customer routes only exist while the Frontend module is installed;
         // everything else belongs to the staff app.
+        // Module routes may need URL defaults set by their own middleware
+        // (e.g. Frontend's {site}); fall back to the staff app otherwise.
         $middleware->redirectGuestsTo(function (Request $request) {
             return ! $request->is('app', 'app/*') && Route::has('login')
-                ? route('login')
+                ? rescue(fn () => route('login'), fn () => route('staff.login'), false)
                 : route('staff.login');
         });
 
         $middleware->redirectUsersTo(function (Request $request) {
             return ! $request->is('app', 'app/*') && Route::has('profile')
-                ? route('profile')
+                ? rescue(fn () => route('profile'), fn () => route('dashboard'), false)
                 : route('dashboard');
         });
     })

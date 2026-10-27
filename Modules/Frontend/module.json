@@ -1,12 +1,16 @@
 {
     "name": "Frontend",
     "alias": "frontend",
-    "description": "Public website and customer accounts (register, login, password reset, account area). When off, \"/\" goes straight to the staff login.",
-    "keywords": ["website", "customers"],
-    "version": "1.0.0",
+    "description": "Public website for every business (/s/{slug}) with an editor for its content, plus customer accounts. When the primary business publishes its site, \"/\" shows it; otherwise \"/\" goes to the staff login.",
+    "keywords": [
+        "website",
+        "customers"
+    ],
+    "version": "1.1.0",
     "priority": 0,
     "providers": [
         "Modules\\Frontend\\Providers\\FrontendServiceProvider"
     ],
-    "files": []
+    "files": [],
+    "menu_group": "Website"
 }

@@ -60,7 +60,7 @@ class CustomerAuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('home')->with('success', __('body.logged_out'));
+        return redirect()->route('site.home')->with('success', __('body.logged_out'));
     }
 
     /**

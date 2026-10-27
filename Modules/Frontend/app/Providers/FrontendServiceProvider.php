@@ -3,9 +3,13 @@
 namespace Modules\Frontend\Providers;
 
 use App\Support\Modules\CoreModuleServiceProvider;
+use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Routing\Router;
 use Modules\Frontend\Http\Middleware\EnsureCustomerIsActive;
+use Modules\Frontend\Http\Middleware\EnsureRegistrationOpen;
+use Modules\Frontend\Http\Middleware\ResolveSite;
 use Modules\Frontend\Models\Customer;
+use Modules\Frontend\Support\SiteContext;
 
 /**
  * Public website + customer accounts. Everything customer-related lives in
@@ -25,6 +29,7 @@ class FrontendServiceProvider extends CoreModuleServiceProvider
     {
         parent::register();
 
+        $this->app->scoped(SiteContext::class);
         $this->registerCustomerGuard();
     }
 
@@ -32,7 +37,14 @@ class FrontendServiceProvider extends CoreModuleServiceProvider
     {
         parent::boot();
 
-        $this->app->make(Router::class)->aliasMiddleware('customer.active', EnsureCustomerIsActive::class);
+        $router = $this->app->make(Router::class);
+        $router->aliasMiddleware('customer.active', EnsureCustomerIsActive::class);
+        $router->aliasMiddleware('frontend.site', ResolveSite::class);
+        $router->aliasMiddleware('frontend.registration', EnsureRegistrationOpen::class);
+
+        // The site must be resolved before auth:customer runs, so a customer
+        // of another business's site is already a guest by then.
+        $this->app->make(HttpKernel::class)->prependToMiddlewarePriority(ResolveSite::class);
     }
 
     private function registerCustomerGuard(): void

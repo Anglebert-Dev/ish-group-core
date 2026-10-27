@@ -2,20 +2,19 @@
 
 namespace Modules\Frontend\Models;
 
-use App\Models\Business\Business;
+use App\Models\Concerns\BelongsToBusiness;
 use App\Models\Concerns\HasUuidAudit;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Modules\Frontend\Enums\CustomerStatus;
 
 /**
- * Public-site account ("customer" guard). Belongs to the business the
- * public site represents (system "primary_business_id").
+ * Public-site account ("customer" guard). Belongs to the business whose
+ * site they signed up on; scoped to it by BelongsToBusiness.
  */
 class Customer extends Authenticatable
 {
-    use HasUuidAudit, Notifiable;
+    use BelongsToBusiness, HasUuidAudit, Notifiable;
 
     protected $guard = 'customer';
 
@@ -41,11 +40,6 @@ class Customer extends Authenticatable
         ];
     }
 
-    public function business(): BelongsTo
-    {
-        return $this->belongsTo(Business::class);
-    }
-
     public function isApproved(): bool
     {
         return $this->status === CustomerStatus::Active;
@@ -66,7 +60,12 @@ class Customer extends Authenticatable
      */
     public function passwordResetUrl(string $token): string
     {
+        $slug = Site::query()->withoutGlobalScope('business')
+            ->where('business_id', $this->business_id)
+            ->value('slug');
+
         return url(route('customer.password.reset', [
+            'site' => $slug,
             'token' => $token,
             'email' => $this->getEmailForPasswordReset(),
         ], false));

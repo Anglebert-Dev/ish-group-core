@@ -1,8 +1,8 @@
-@props(['title' => null])
+@props(['title' => null, 'fullTitle' => false])
 
 @php
     $name = $branding->companyName();
-    $pageTitle = filled($title) ? $title.' — '.$name : $name;
+    $pageTitle = filled($title) ? ($fullTitle ? $title : $title.' — '.$name) : $name;
     $favicon = $branding->faviconUrl();
 @endphp
 <title>{{ $pageTitle }}</title>

@@ -1,38 +1,24 @@
-<x-frontend::layouts.public :title="__('body.terms_and_conditions')">
+@php $page = $site->get('pages.terms'); @endphp
+
+<x-frontend::layouts.public :title="$page['title']">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
         <p class="text-brand-dark text-sm font-semibold tracking-wide mb-3">{{ __('body.legal') }}</p>
-        <h1 class="font-display font-bold text-3xl text-ink mb-3">{{ __('body.terms_and_conditions') }}</h1>
-        <p class="text-sm text-muted mb-8">{{ __('body.legal_last_updated', ['date' => '11 Sep 2026']) }}</p>
+        <h1 class="font-display font-bold text-3xl text-ink mb-3">{{ $page['title'] }}</h1>
+        @if (filled($page['updated']))
+            <p class="text-sm text-muted mb-8">{{ __('body.legal_last_updated', ['date' => $page['updated']]) }}</p>
+        @endif
 
-        <div class="space-y-8 text-body leading-relaxed">
-            <section>
-                <h2 class="font-display font-bold text-lg text-ink mb-2">{{ __('body.terms_section_intro_title') }}</h2>
-                <p>{{ __('body.terms_section_intro', ['company' => $company]) }}</p>
-            </section>
-            <section>
-                <h2 class="font-display font-bold text-lg text-ink mb-2">{{ __('body.terms_section_account_title') }}</h2>
-                <p>{{ __('body.terms_section_account') }}</p>
-            </section>
-            <section>
-                <h2 class="font-display font-bold text-lg text-ink mb-2">{{ __('body.terms_section_services_title') }}</h2>
-                <p>{{ __('body.terms_section_services') }}</p>
-            </section>
-            <section>
-                <h2 class="font-display font-bold text-lg text-ink mb-2">{{ __('body.terms_section_conduct_title') }}</h2>
-                <p>{{ __('body.terms_section_conduct') }}</p>
-            </section>
-            <section>
-                <h2 class="font-display font-bold text-lg text-ink mb-2">{{ __('body.terms_section_termination_title') }}</h2>
-                <p>{{ __('body.terms_section_termination') }}</p>
-            </section>
-            <section>
-                <h2 class="font-display font-bold text-lg text-ink mb-2">{{ __('body.terms_section_liability_title') }}</h2>
-                <p>{{ __('body.terms_section_liability', ['company' => $company]) }}</p>
-            </section>
-            <section>
-                <h2 class="font-display font-bold text-lg text-ink mb-2">{{ __('body.terms_section_contact_title') }}</h2>
-                <p>{{ __('body.terms_section_contact') }}</p>
-            </section>
+        <div class="space-y-8 text-body leading-relaxed mt-8">
+            @foreach ($page['sections'] as $section)
+                <section>
+                    @if (filled($section['title'] ?? null))
+                        <h2 class="font-display font-bold text-lg text-ink mb-2">{{ $section['title'] }}</h2>
+                    @endif
+                    <div class="space-y-3">
+                        <x-frontend::paragraphs :text="$section['body'] ?? ''" />
+                    </div>
+                </section>
+            @endforeach
         </div>
     </div>
 </x-frontend::layouts.public>

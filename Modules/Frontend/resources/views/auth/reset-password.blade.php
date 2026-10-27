@@ -1,4 +1,5 @@
 <x-layouts.auth
+    :home-url="route('site.home')"
     :title="__('body.auth_reset_password')"
     :heading="__('body.auth_reset_title')"
     :subtitle="__('body.auth_reset_subtitle_customer')"

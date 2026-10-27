@@ -5,6 +5,7 @@
     'subtitle' => null,
     'panelText' => null,
     'panelImage' => null,
+    'homeUrl' => null,
 ])
 
 @php
@@ -141,7 +142,7 @@
             {{-- Form column --}}
             <div class="flex flex-col justify-center px-5 py-8 sm:px-10 lg:px-12 xl:px-14">
                 <div class="mb-8">
-                    <x-common.logo compact :href="route('home')" />
+                    <x-common.logo compact :href="$homeUrl ?? route('home')" />
                 </div>
 
                 @if ($heading || $eyebrow || isset($header))

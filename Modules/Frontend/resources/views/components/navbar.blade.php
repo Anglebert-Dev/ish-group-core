@@ -1,15 +1,19 @@
 @php
-    $overlay = request()->routeIs('home');
+    $overlay = request()->routeIs('site.home', 'home');
+    $header = $site->get('header');
+    $showAccount = (bool) $header['show_account'];
+    $canRegister = $showAccount && (bool) $site->get('general.allow_registration');
     $customer = auth('customer')->user();
     $initials = $customer
         ? collect(explode(' ', $customer->name))->filter()->map(fn ($part) => strtoupper($part[0]))->take(2)->implode('')
         : '';
     $navItems = [
-        ['label' => __('body.home'), 'href' => route('home'), 'active' => request()->routeIs('home'), 'icon' => 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'],
-        ['label' => __('body.services'), 'href' => route('services'), 'active' => request()->routeIs('services'), 'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4'],
-        ['label' => __('body.about_us'), 'href' => route('about'), 'active' => request()->routeIs('about'), 'icon' => 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'],
-        ['label' => __('body.contact'), 'href' => route('contact'), 'active' => request()->routeIs('contact'), 'icon' => 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'],
+        ['label' => __('body.home'), 'href' => route('site.home'), 'active' => request()->routeIs('site.home', 'home'), 'icon' => 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'],
+        $header['show_services'] ? ['label' => __('body.services'), 'href' => route('services'), 'active' => request()->routeIs('services'), 'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4'] : null,
+        $header['show_about'] ? ['label' => __('body.about_us'), 'href' => route('about'), 'active' => request()->routeIs('about'), 'icon' => 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'] : null,
+        $header['show_contact'] ? ['label' => __('body.contact'), 'href' => route('contact'), 'active' => request()->routeIs('contact'), 'icon' => 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'] : null,
     ];
+    $navItems = array_values(array_filter($navItems));
 @endphp
 
 <header
@@ -27,13 +31,13 @@
         <div class="relative min-w-0 max-w-[10rem] sm:max-w-[14rem] lg:max-w-none">
             @if ($overlay)
                 <div data-nav-logo="dark" class="landing-nav-logo-dark">
-                    <x-common.logo dark :href="route('home').'#home'" />
+                    <x-common.logo dark :href="route('site.home')" />
                 </div>
                 <div data-nav-logo="light" class="landing-nav-logo-light hidden">
-                    <x-common.logo :href="route('home').'#home'" />
+                    <x-common.logo :href="route('site.home')" />
                 </div>
             @else
-                <x-common.logo />
+                <x-common.logo :href="route('site.home')" />
             @endif
         </div>
 
@@ -49,6 +53,7 @@
         </nav>
 
         <div class="flex items-center justify-end gap-2 sm:gap-3 shrink-0">
+            @if ($showAccount)
             @auth('customer')
                 <div class="relative hidden sm:block" data-user-menu>
                     <button type="button"
@@ -92,14 +97,11 @@
                 </a>
             @endauth
 
-            @if ($overlay && auth('customer')->guest())
+            @if ($canRegister && auth('customer')->guest())
                 <x-common.button href="{{ route('register') }}" class="!px-3.5 !py-2 !text-sm sm:!px-5 sm:!py-2.5 sm:!text-[15px]">
                     {{ __('body.sign_up') }}
                 </x-common.button>
-            @elseif (auth('customer')->guest())
-                <x-common.button href="{{ route('register') }}" class="!px-3.5 !py-2 !text-sm sm:!px-5 sm:!py-2.5 sm:!text-[15px]">
-                    {{ __('body.sign_up') }}
-                </x-common.button>
+            @endif
             @endif
 
             <button type="button" onclick="toggleMobileNav()"
@@ -153,6 +155,7 @@
                 </nav>
             </div>
 
+            @if ($showAccount)
             <div class="border-t border-line/70 pt-4">
                 <p class="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted">{{ __('body.account') }}</p>
                 <nav class="space-y-1">
@@ -177,13 +180,16 @@
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
                             <span>{{ __('body.log_in') }}</span>
                         </a>
+                        @if ($canRegister)
                         <a href="{{ route('register') }}" class="flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium text-ink hover:bg-white/70 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
                             <span>{{ __('body.sign_up') }}</span>
                         </a>
+                        @endif
                     @endauth
                 </nav>
             </div>
+            @endif
         </div>
 
         <div class="shrink-0 border-t border-line/70 p-4 bg-white/50" style="padding-bottom: max(1rem, env(safe-area-inset-bottom));">
