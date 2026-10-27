@@ -30,6 +30,22 @@ class SuperAdminTest extends TestCase
         $this->get(route('dashboard'))->assertDontSee(route('superadmin.dashboard'), false);
     }
 
+    public function test_platform_section_sits_at_the_top_of_the_sidebar(): void
+    {
+        $this->actingAs($this->makeSuperAdmin(), 'staff');
+
+        $this->get(route('superadmin.modules.index'))
+            ->assertOk()
+            ->assertSeeInOrder([
+                route('superadmin.dashboard'),
+                route('superadmin.businesses.index'),
+                route('superadmin.modules.index'),
+                route('superadmin.settings.index'),
+                route('dashboard'),
+                route('users.index'),
+            ], false);
+    }
+
     public function test_superadmin_creates_a_business_with_owner(): void
     {
         $this->actingAs($this->makeSuperAdmin(), 'staff');

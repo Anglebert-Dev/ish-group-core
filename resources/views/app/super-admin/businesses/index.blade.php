@@ -1,4 +1,4 @@
-<x-layouts.super-admin :title="__('body.businesses')">
+<x-layouts.app :title="__('body.businesses')">
     <x-common.page-header :title="__('body.businesses')" :description="__('body.businesses_description')">
         <x-slot:actions>
             <x-common.button href="{{ route('superadmin.businesses.create') }}" size="sm">+ {{ __('body.add_business') }}</x-common.button>
@@ -38,4 +38,4 @@
         </div>
         <x-common.pagination :paginator="$businesses" class="border-t border-line" />
     </div>
-</x-layouts.super-admin>
+</x-layouts.app>

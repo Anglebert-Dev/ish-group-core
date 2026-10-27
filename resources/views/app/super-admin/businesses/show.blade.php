@@ -3,7 +3,7 @@
     $isOwnBusiness = auth('staff')->user()->business_id === $business->id;
 @endphp
 
-<x-layouts.super-admin :title="$business->name">
+<x-layouts.app :title="$business->name">
     <x-common.page-header :title="$business->name" :description="$business->owner?->email">
         <x-slot:actions>
             @unless ($isOwnBusiness && $business->is_active)
@@ -83,4 +83,4 @@
             @endif
         </div>
     </div>
-</x-layouts.super-admin>
+</x-layouts.app>

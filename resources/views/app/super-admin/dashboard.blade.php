@@ -1,4 +1,4 @@
-<x-layouts.super-admin :title="__('body.super_admin')">
+<x-layouts.app :title="__('body.super_admin')">
     <x-common.page-header :title="__('body.platform_overview')" :description="__('body.platform_overview_description')" />
 
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
@@ -24,4 +24,4 @@
             @endforelse
         </ul>
     </div>
-</x-layouts.super-admin>
+</x-layouts.app>

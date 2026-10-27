@@ -17,15 +17,16 @@
 |   icon        SVG path data (24x24 outline)
 |
 | Groups render in the order below; unknown groups (from modules) render
-| between "main" and "Management" in alphabetical order.
+| just before "Management", in alphabetical order. "Platform" only has
+| superadmin items, so other users never see it.
 */
 
 return [
 
     'groups' => [
+        'Platform',
         null,
         'Management',
-        'Platform',
         'System',
     ],
 
@@ -57,13 +58,40 @@ return [
             'icon' => 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z',
         ],
         [
-            'label' => 'body.super_admin',
+            'label' => 'body.overview',
             'route' => 'superadmin.dashboard',
-            'active' => 'superadmin.*',
+            'active' => 'superadmin.dashboard',
             'ability' => 'superadmin',
             'group' => 'Platform',
             'order' => 10,
             'icon' => 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z',
+        ],
+        [
+            'label' => 'body.businesses',
+            'route' => 'superadmin.businesses.index',
+            'active' => 'superadmin.businesses.*',
+            'ability' => 'superadmin',
+            'group' => 'Platform',
+            'order' => 20,
+            'icon' => 'M3 21h18M5 21V7l8-4v18M19 21V11l-6-4M9 9h1m-1 4h1m-1 4h1',
+        ],
+        [
+            'label' => 'body.modules',
+            'route' => 'superadmin.modules.index',
+            'active' => 'superadmin.modules.*',
+            'ability' => 'superadmin',
+            'group' => 'Platform',
+            'order' => 30,
+            'icon' => 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4',
+        ],
+        [
+            'label' => 'body.platform_settings',
+            'route' => 'superadmin.settings.index',
+            'active' => 'superadmin.settings.*',
+            'ability' => 'superadmin',
+            'group' => 'Platform',
+            'order' => 40,
+            'icon' => 'M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4',
         ],
         [
             'label' => 'body.notifications',

@@ -1,4 +1,4 @@
-<x-layouts.super-admin :title="__('body.modules')">
+<x-layouts.app :title="__('body.modules')">
     <x-common.page-header :title="__('body.modules')" :description="__('body.modules_description')" />
 
     <div class="bg-white border border-line rounded-xl overflow-hidden">
@@ -82,4 +82,4 @@
     </div>
 
     <p class="text-sm text-muted mt-4">{{ __('body.modules_cli_hint') }}</p>
-</x-layouts.super-admin>
+</x-layouts.app>

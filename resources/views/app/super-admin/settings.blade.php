@@ -1,4 +1,4 @@
-<x-layouts.super-admin :title="__('body.platform_settings')">
+<x-layouts.app :title="__('body.platform_settings')">
     <x-common.page-header :title="__('body.platform_settings')" :description="__('body.platform_settings_description')" />
 
     <form action="{{ route('superadmin.settings.update') }}" method="POST" class="max-w-2xl space-y-6">
@@ -13,4 +13,4 @@
 
         <x-common.button type="submit">{{ __('body.save') }}</x-common.button>
     </form>
-</x-layouts.super-admin>
+</x-layouts.app>

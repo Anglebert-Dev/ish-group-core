@@ -1,4 +1,4 @@
-<x-layouts.super-admin :title="__('body.add_business')">
+<x-layouts.app :title="__('body.add_business')">
     <x-common.page-header :title="__('body.add_business')" :description="__('body.add_business_description')" />
 
     <form action="{{ route('superadmin.businesses.store') }}" method="POST" class="space-y-6 max-w-2xl">
@@ -24,4 +24,4 @@
             <x-common.button href="{{ route('superadmin.businesses.index') }}" variant="secondary">{{ __('body.cancel') }}</x-common.button>
         </div>
     </form>
-</x-layouts.super-admin>
+</x-layouts.app>

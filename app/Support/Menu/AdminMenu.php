@@ -60,21 +60,18 @@ class AdminMenu
 
     /**
      * Core groups keep their configured order; module groups slot in
-     * alphabetically after the top section and before "Management".
+     * alphabetically just before "Management".
      */
     private function groupRank(string $name): string
     {
         $core = array_map(fn ($group) => (string) $group, config('menu.groups', []));
-        $index = array_search($name, $core, true);
+        $position = array_search($name, $core, true);
 
-        if ($index === 0) {
-            return '0';
+        if ($position === false) {
+            $management = array_search('Management', $core, true);
+            $position = ($management === false ? count($core) : $management) - 0.5;
         }
 
-        if ($index !== false) {
-            return '2-'.str_pad((string) $index, 3, '0', STR_PAD_LEFT);
-        }
-
-        return '1-'.strtolower($name);
+        return sprintf('%08.2f-%s', $position, strtolower($name));
     }
 }
