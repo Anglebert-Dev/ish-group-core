@@ -5,14 +5,18 @@ namespace App\Models\ActivityLog;
 use App\Enums\ActivityLogAction;
 use App\Enums\ActivityLogStatus;
 use App\Models\BaseModel;
+use App\Models\Concerns\BelongsToBusiness;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class ActivityLog extends BaseModel
 {
+    use BelongsToBusiness;
+
     protected $fillable = [
         'status',
+        'business_id',
         'user_id',
         'actor_name',
         'action',

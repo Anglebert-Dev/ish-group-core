@@ -7,8 +7,10 @@ use App\Enums\ActivityLogStatus;
 use App\Libraries\GeneralLibrary;
 use App\Libraries\ListExport;
 use App\Models\ActivityLog\ActivityLog;
+use App\Models\Business\Business;
 use App\Repositories\ActivityLog\ActivityLogRepository;
 use App\Services\BaseService;
+use App\Support\Tenancy\CurrentBusiness;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -97,12 +99,14 @@ class ActivityLogService extends BaseService
         }
 
         $staff = Auth::guard('staff')->user();
-        $customer = Auth::guard('customer')->user();
+        // The customer guard only exists while the Frontend module is installed.
+        $customer = config('auth.guards.customer') ? Auth::guard('customer')->user() : null;
         $subjectLabel = $this->subjectLabel($model);
         $request = request();
 
         $log = new ActivityLog([
             'status' => ActivityLogStatus::Active,
+            'business_id' => $this->businessIdFor($model),
             'user_id' => $staff?->id,
             'actor_name' => $staff?->name ?? $customer?->name,
             'action' => $action,
@@ -121,6 +125,15 @@ class ActivityLogService extends BaseService
         $this->logs->save($log);
     }
 
+    private function businessIdFor(Model $model): ?int
+    {
+        if ($model instanceof Business) {
+            return $model->getKey();
+        }
+
+        return $model->getAttribute('business_id') ?? app(CurrentBusiness::class)->id();
+    }
+
     private function subjectLabel(Model $model): string
     {
         if (method_exists($model, 'name')) {
@@ -133,7 +146,7 @@ class ActivityLogService extends BaseService
             }
         }
 
-        foreach (['name', 'booking_number', 'email', 'plate_number', 'title'] as $attribute) {
+        foreach (['name', 'email', 'title', 'reference'] as $attribute) {
             $value = $model->getAttribute($attribute);
             if (is_scalar($value) && $value !== '') {
                 return (string) $value;

@@ -15,6 +15,7 @@
         "laravel/framework": "^13.17",
         "laravel/tinker": "^3.0",
         "masterminds/html5": "^2.0",
+        "nwidart/laravel-modules": "^13.2",
         "phpoffice/phpspreadsheet": "^5.9",
         "spatie/laravel-permission": "^8.3"
     },
@@ -86,7 +87,8 @@
         "sort-packages": true,
         "allow-plugins": {
             "pestphp/pest-plugin": true,
-            "php-http/discovery": true
+            "php-http/discovery": true,
+            "wikimedia/composer-merge-plugin": true
         }
     },
     "minimum-stability": "stable",

@@ -4,11 +4,14 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\UserStatus;
+use App\Models\Business\Business;
 use App\Models\Concerns\HasUuidAudit;
+use App\Models\Role\Role;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -39,6 +42,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'status' => UserStatus::class,
             'mfa_enabled' => 'boolean',
+            'is_superadmin' => 'boolean',
             'last_login_at' => 'datetime',
         ];
     }
@@ -51,5 +55,35 @@ class User extends Authenticatable
     public function isBanned(): bool
     {
         return $this->status === UserStatus::Banned;
+    }
+
+    public function business(): BelongsTo
+    {
+        return $this->belongsTo(Business::class);
+    }
+
+    /**
+     * Platform-level power (manage modules, businesses). Granted only by the
+     * is_superadmin flag, never by a role.
+     */
+    public function isSuperAdmin(): bool
+    {
+        return (bool) $this->is_superadmin;
+    }
+
+    /**
+     * Tenant god-mode: holds this business's locked Admin#<id> role.
+     */
+    public function isBusinessAdmin(): bool
+    {
+        return $this->business_id !== null
+            && $this->hasRole(Role::scopedName(Role::ADMIN, (int) $this->business_id));
+    }
+
+    public function roleName(): ?string
+    {
+        $role = $this->roles->first();
+
+        return $role ? Role::displayName($role->name) : null;
     }
 }
