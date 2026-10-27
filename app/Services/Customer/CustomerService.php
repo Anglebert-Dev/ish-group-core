@@ -6,6 +6,7 @@ use App\Enums\ActivityLogAction;
 use App\Enums\CustomerStatus;
 use App\Libraries\ListExport;
 use App\Models\Customer\Customer;
+use App\Notifications\BrandedNotification;
 use App\Repositories\Customer\CustomerRepository;
 use App\Services\BaseService;
 use App\Services\Module\ModuleManager;
@@ -147,14 +148,34 @@ class CustomerService extends BaseService
             return $this->failure(__('body.customer_invite_needs_email'));
         }
 
-        Password::broker('customers')->sendResetLink([
-            'email' => $customer->email,
-            'business_id' => $customer->business_id,
-        ]);
+        if ($customer->hasPortalPassword()) {
+            Password::broker('customers')->sendResetLink([
+                'email' => $customer->email,
+                'business_id' => $customer->business_id,
+            ]);
+        } else {
+            $this->sendInvitation($customer);
+        }
 
         audit(ActivityLogAction::Sent, __('body.audit_log_customer_invited', ['name' => $customer->displayName()]), $customer);
 
         return $this->success($customer, __('body.customer_invited', ['email' => $customer->email]));
+    }
+
+    private function sendInvitation(Customer $customer): void
+    {
+        $business = $customer->business;
+        $token = Password::broker('customer_invites')->createToken($customer);
+        $url = $customer->passwordResetUrl($token).'&welcome=1';
+
+        $customer->notify(new BrandedNotification(
+            $business,
+            __('body.email_invite_subject', ['business' => $business?->name]),
+            [__('body.email_invite_line', ['name' => $customer->name, 'business' => $business?->name])],
+            __('body.email_invite_action'),
+            $url,
+            [__('body.email_invite_expiry'), __('body.email_invite_login', ['url' => $this->portalUrl($customer)])],
+        ));
     }
 
     public function revokePortal(Customer $customer): array

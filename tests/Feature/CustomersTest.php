@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\CustomerStatus;
 use App\Models\ActivityLog\ActivityLog;
 use App\Models\Customer\Customer;
+use App\Notifications\BrandedNotification;
 use App\Services\Module\ModuleManager;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\Notification;
@@ -189,9 +190,32 @@ class CustomersTest extends TestCase
 
         $this->get(route('customers.show', $customer))->assertSee(__('body.customer_send_invite'));
         $this->post(route('customers.portal.invite', $customer))->assertSessionHas('success');
+        Notification::assertNotSentTo($customer, ResetPassword::class);
+
+        $url = null;
+        Notification::assertSentTo($customer, BrandedNotification::class, function ($n) use (&$url, $owner) {
+            $url = $n->actionUrl;
+
+            return $n->subject === "You're invited to {$owner->business->name}" && str_contains($url, '&welcome=1');
+        });
+
+        // The invitation outlives the 60-minute reset window.
+        $this->travel(2)->days();
+        $this->flushSession();
+        $path = parse_url($url, PHP_URL_PATH);
+        $this->get($path.'?'.parse_url($url, PHP_URL_QUERY))->assertOk()->assertSee(__('body.auth_welcome_title'));
+        $this->post('/s/'.$site->slug.'/reset-password', [
+            'token' => basename($path),
+            'email' => $customer->email,
+            'password' => 'Fresh-Customer-Pass-26!',
+            'password_confirmation' => 'Fresh-Customer-Pass-26!',
+        ])->assertSessionHasNoErrors();
+        $this->assertTrue($customer->fresh()->hasPortalPassword());
+
+        $this->actingAs($owner, 'staff');
+        $this->post(route('customers.portal.invite', $customer))->assertSessionHas('success');
         Notification::assertSentTo($customer, ResetPassword::class);
 
-        $customer->forceFill(['password' => self::TEST_PASSWORD])->save();
         $this->withConfirmedPassword()->delete(route('customers.portal.revoke', $customer))->assertSessionHas('success');
         $this->assertFalse($customer->fresh()->hasPortalPassword());
     }

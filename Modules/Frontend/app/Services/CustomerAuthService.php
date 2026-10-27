@@ -164,7 +164,10 @@ class CustomerAuthService extends BaseService
     {
         $customer = $this->customers->findByEmail($data['email'] ?? '');
 
-        $status = Password::broker('customers')->reset(
+        // Never had a password → this is a staff invitation (a week to accept).
+        $broker = $customer && ! $customer->hasPortalPassword() ? 'customer_invites' : 'customers';
+
+        $status = Password::broker($broker)->reset(
             [
                 'email' => $customer?->email ?? strtolower(trim((string) ($data['email'] ?? ''))),
                 'business_id' => $this->business->id(),

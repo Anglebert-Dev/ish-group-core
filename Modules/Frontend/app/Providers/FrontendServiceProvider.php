@@ -79,6 +79,14 @@ class FrontendServiceProvider extends CoreModuleServiceProvider
             'throttle' => 60,
         ]);
 
+        // Staff invitations (Management → Customers): same tokens, a week to accept.
+        $config->set('auth.passwords.customer_invites', [
+            'provider' => 'customers',
+            'table' => 'customer_password_reset_tokens',
+            'expire' => 60 * 24 * 7,
+            'throttle' => 0,
+        ]);
+
         // Reset links point at the customer's business website.
         Customer::$resetUrlResolver = fn (Customer $customer, string $token): string => url(route('customer.password.reset', [
             'site' => Site::query()->withoutGlobalScope('business')->where('business_id', $customer->business_id)->value('slug'),

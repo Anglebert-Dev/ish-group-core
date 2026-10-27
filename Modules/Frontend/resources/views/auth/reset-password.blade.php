@@ -1,8 +1,8 @@
 <x-layouts.auth
     :home-url="route('site.home')"
     :title="__('body.auth_reset_password')"
-    :heading="__('body.auth_reset_title')"
-    :subtitle="__('body.auth_reset_subtitle_customer')"
+    :heading="$welcome ? __('body.auth_welcome_title') : __('body.auth_reset_title')"
+    :subtitle="$welcome ? __('body.auth_welcome_subtitle', ['business' => $site->business->name]) : __('body.auth_reset_subtitle_customer')"
     :panel-text="__('body.auth_panel_text')"
 >
     <form action="{{ route('customer.password.update') }}" method="POST" class="space-y-4">

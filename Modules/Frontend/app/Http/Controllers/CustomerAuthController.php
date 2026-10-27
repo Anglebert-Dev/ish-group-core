@@ -114,6 +114,7 @@ class CustomerAuthController extends Controller
         return view('frontend::auth.reset-password', [
             'token' => $token,
             'email' => strtolower((string) $request->query('email', '')),
+            'welcome' => $request->boolean('welcome'),
         ]);
     }
 

@@ -612,6 +612,13 @@ return [
     'email_reset_action' => 'Choose a new password',
     'email_reset_expiry' => 'This link expires in :minutes minutes.',
     'email_reset_ignore' => 'If you did not ask for this, you can ignore this email.',
+    'email_invite_subject' => 'You\'re invited to :business',
+    'email_invite_line' => 'Hi :name, :business has created an account for you on their website. Choose a password to sign in.',
+    'email_invite_action' => 'Create your password',
+    'email_invite_expiry' => 'This link expires in 7 days.',
+    'email_invite_login' => 'After that, sign in at :url',
+    'auth_welcome_title' => 'Create your password',
+    'auth_welcome_subtitle' => 'Welcome to :business. Choose a password for your account.',
 
     // Website module
     'contact_sent' => 'Thank you! Your message has been sent.',
