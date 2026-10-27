@@ -1,4 +1,6 @@
 <x-layouts.app :title="__('body.add_business')">
+    <x-superadmin.nav />
+
     <x-common.page-header :title="__('body.add_business')" :description="__('body.add_business_description')" />
 
     <form action="{{ route('superadmin.businesses.store') }}" method="POST" class="space-y-6 max-w-2xl">

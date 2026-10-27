@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Web\SuperAdmin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\SuperAdmin\ResetOwnerPasswordRequest;
+use App\Http\Requests\SuperAdmin\ResetUserPasswordRequest;
 use App\Http\Requests\SuperAdmin\StoreBusinessRequest;
 use App\Http\Requests\SuperAdmin\UpdateBusinessModulesRequest;
+use App\Libraries\ListExportLibrary;
 use App\Models\Business\Business;
+use App\Models\User;
 use App\Services\Business\BusinessSetupService;
 use App\Services\Module\ModuleManager;
 use App\Services\SuperAdmin\PlatformService;
@@ -14,6 +16,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 class BusinessController extends Controller
 {
@@ -24,11 +27,24 @@ class BusinessController extends Controller
     ) {
     }
 
-    public function index(): View
+    public function index(Request $request): View
     {
+        $filters = $request->only(['q', 'status']);
+
         return view('app.super-admin.businesses.index', [
-            'businesses' => $this->platform->listBusinesses(),
+            'businesses' => $this->platform->listBusinesses($filters),
+            'filters' => $filters,
         ]);
+    }
+
+    public function exportPdf(Request $request): Response
+    {
+        return ListExportLibrary::pdf($this->platform->exportBusinesses($request->only(['q', 'status'])));
+    }
+
+    public function exportExcel(Request $request): Response
+    {
+        return ListExportLibrary::excel($this->platform->exportBusinesses($request->only(['q', 'status'])));
     }
 
     public function create(): View
@@ -59,6 +75,7 @@ class BusinessController extends Controller
         return view('app.super-admin.businesses.show', [
             'business' => $business->load('owner'),
             'users' => $this->platform->businessUsers($business),
+            'stats' => $this->platform->businessStats($business),
             'modules' => $this->modules->catalogue()->where('active', true)->values(),
         ]);
     }
@@ -81,9 +98,14 @@ class BusinessController extends Controller
         return back()->with($result['status'] ? 'success' : 'error', $result['message']);
     }
 
-    public function resetOwnerPassword(ResetOwnerPasswordRequest $request, Business $business): RedirectResponse
+    /**
+     * {user} is a UUID across all businesses (the normal {user} binding is
+     * limited to the superadmin's own business).
+     */
+    public function resetUserPassword(ResetUserPasswordRequest $request, string $user): RedirectResponse
     {
-        $result = $this->platform->resetOwnerPassword($business, $request->validated('password'));
+        $target = User::query()->where('uuid', $user)->firstOrFail();
+        $result = $this->platform->resetUserPassword($target, $request->validated('password'));
 
         return back()->with($result['status'] ? 'success' : 'error', $result['message']);
     }

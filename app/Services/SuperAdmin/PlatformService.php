@@ -7,12 +7,16 @@ use App\Enums\ActivityLogStatus;
 use App\Models\ActivityLog\ActivityLog;
 use App\Models\Business\Business;
 use App\Models\System\System;
+use App\Models\Role\Role;
 use App\Models\User;
 use App\Repositories\Business\BusinessRepository;
 use App\Repositories\User\UserRepository;
+use App\Libraries\GeneralLibrary;
+use App\Libraries\ListExport;
 use App\Services\BaseService;
 use App\Services\Module\ModuleManager;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -48,9 +52,68 @@ class PlatformService extends BaseService
         ];
     }
 
-    public function listBusinesses(): LengthAwarePaginator
+    /**
+     * @param  array{q?: ?string, status?: ?string}  $filters
+     */
+    public function listBusinesses(array $filters = []): LengthAwarePaginator
     {
-        return $this->businesses->paginateWithOwner();
+        return $this->filteredBusinesses($filters)->paginate(15)->withQueryString();
+    }
+
+    public function exportBusinesses(array $filters = []): ListExport
+    {
+        $rows = $this->filteredBusinesses($filters)
+            ->limit(5000)
+            ->get()
+            ->map(fn (Business $business) => [
+                $business->name,
+                $business->owner?->name ?? '—',
+                $business->owner?->email ?? '—',
+                (string) $business->users_count,
+                $business->is_active ? __('body.active') : __('body.inactive'),
+                GeneralLibrary::formatDateTime($business->created_at, 'd M Y'),
+            ])
+            ->all();
+
+        return ListExport::make(__('body.businesses'), 'businesses', [
+            __('body.business_name'),
+            __('body.owner'),
+            __('body.email_address'),
+            __('body.users'),
+            __('body.status'),
+            __('body.created'),
+        ], $rows);
+    }
+
+    private function filteredBusinesses(array $filters): Builder
+    {
+        $search = trim((string) ($filters['q'] ?? ''));
+        $status = $filters['status'] ?? null;
+
+        return Business::query()
+            ->with('owner')
+            ->withCount('users')
+            ->when($search !== '', fn (Builder $query) => $query->where(fn (Builder $q) => $q
+                ->where('name', 'like', "%{$search}%")
+                ->orWhereHas('owner', fn (Builder $owner) => $owner
+                    ->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%"))))
+            ->when($status === 'active', fn (Builder $query) => $query->where('is_active', true))
+            ->when($status === 'inactive', fn (Builder $query) => $query->where('is_active', false))
+            ->latest();
+    }
+
+    /**
+     * Figures for the business detail page.
+     */
+    public function businessStats(Business $business): array
+    {
+        return [
+            'users' => $this->users->forBusiness($business->id)->count(),
+            'active_users' => $this->users->forBusiness($business->id)->where('status', 'active')->count(),
+            'roles' => Role::query()->where('business_id', $business->id)->count(),
+            'last_login' => $this->users->forBusiness($business->id)->max('last_login_at'),
+        ];
     }
 
     public function businessUsers(Business $business): Collection
@@ -86,22 +149,19 @@ class PlatformService extends BaseService
         return $this->success($business, __('body.business_modules_updated'));
     }
 
-    public function resetOwnerPassword(Business $business, string $password): array
+    /**
+     * Set a new password for any staff user; their other sessions end.
+     */
+    public function resetUserPassword(User $user, string $password): array
     {
-        $owner = $business->owner;
-
-        if (! $owner) {
-            return $this->failure(__('body.business_has_no_owner'));
-        }
-
-        $owner->forceFill([
+        $user->forceFill([
             'password' => $password,
             'remember_token' => Str::random(60),
         ])->save();
 
-        DB::table(config('session.table', 'sessions'))->where('user_id', $owner->id)->delete();
+        DB::table(config('session.table', 'sessions'))->where('user_id', $user->id)->delete();
 
-        return $this->success($owner, __('body.owner_password_reset'));
+        return $this->success($user, __('body.user_password_reset', ['name' => $user->name]));
     }
 
     /**
@@ -173,6 +233,25 @@ class PlatformService extends BaseService
         $stored = System::getProperties(array_keys(self::SETTINGS));
 
         return array_merge(self::SETTINGS, array_filter($stored, fn ($value) => $value !== null));
+    }
+
+    /**
+     * Read-only facts for Platform settings → System.
+     *
+     * @return array<string, string>
+     */
+    public function systemInfo(): array
+    {
+        return [
+            __('body.app_name') => (string) config('app.name'),
+            __('body.environment') => app()->environment(),
+            __('body.timezone') => (string) config('app.timezone'),
+            'PHP' => PHP_VERSION,
+            'Laravel' => app()->version(),
+            __('body.database') => DB::connection()->getDriverName(),
+            __('body.active_modules') => implode(', ', $this->modules->activeModules()) ?: '—',
+            __('body.mail_driver') => (string) config('mail.default'),
+        ];
     }
 
     public function updateSettings(array $data): array

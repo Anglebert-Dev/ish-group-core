@@ -102,17 +102,52 @@ class SuperAdminTest extends TestCase
         $this->assertTrue($super->business->fresh()->is_active);
     }
 
-    public function test_superadmin_resets_owner_password(): void
+    public function test_superadmin_resets_any_users_password(): void
     {
         $this->actingAs($this->makeSuperAdmin(), 'staff');
         [$client, $owner] = $this->makeBusiness();
 
-        $this->withConfirmedPassword()->put(route('superadmin.businesses.owner-password', $client), [
+        $this->withConfirmedPassword()->put(route('superadmin.users.password', $owner->uuid), [
             'password' => 'BrandNewPass1!',
             'password_confirmation' => 'BrandNewPass1!',
         ])->assertSessionHas('success');
 
         $this->assertTrue(Hash::check('BrandNewPass1!', $owner->fresh()->password));
+    }
+
+    public function test_business_admin_cannot_reset_other_users_passwords(): void
+    {
+        $this->actingAsStaff();
+        [, $owner] = $this->makeBusiness();
+
+        $this->withConfirmedPassword()->put(route('superadmin.users.password', $owner->uuid), [
+            'password' => 'BrandNewPass1!',
+            'password_confirmation' => 'BrandNewPass1!',
+        ])->assertForbidden();
+    }
+
+    public function test_businesses_list_filters_and_exports(): void
+    {
+        $this->actingAs($this->makeSuperAdmin(), 'staff');
+        [$alpha] = $this->makeBusiness(['business_name' => 'Alpha Traders']);
+        [$bravo] = $this->makeBusiness(['business_name' => 'Bravo Foods']);
+        $bravo->forceFill(['is_active' => false])->save();
+
+        $this->get(route('superadmin.businesses.index', ['q' => 'alpha']))
+            ->assertOk()->assertSee('Alpha Traders')->assertDontSee('Bravo Foods');
+        $this->get(route('superadmin.businesses.index', ['status' => 'inactive']))
+            ->assertOk()->assertSee('Bravo Foods')->assertDontSee('Alpha Traders');
+
+        $this->get(route('superadmin.businesses.export.excel'))->assertOk();
+        $this->get(route('superadmin.businesses.export.pdf'))->assertOk();
+    }
+
+    public function test_settings_tabs_render(): void
+    {
+        $this->actingAs($this->makeSuperAdmin(), 'staff');
+
+        $this->get(route('superadmin.settings.index', ['tab' => 'registration']))->assertOk()->assertSee('name="allow_registration"', false);
+        $this->get(route('superadmin.settings.index', ['tab' => 'system']))->assertOk()->assertSee('PHP');
     }
 
     public function test_superadmin_toggles_registration(): void
@@ -122,7 +157,7 @@ class SuperAdminTest extends TestCase
         $this->put(route('superadmin.settings.update'), [
             'allow_registration' => '1',
             'default_business_active_status' => '1',
-        ])->assertRedirect(route('superadmin.settings.index'));
+        ])->assertRedirect(route('superadmin.settings.index', ['tab' => 'registration']));
 
         $this->assertSame('1', System::getProperty('allow_registration'));
     }

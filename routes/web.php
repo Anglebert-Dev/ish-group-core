@@ -146,13 +146,15 @@ Route::prefix('app')->middleware(['auth:staff', 'auth.session', 'exclusive.porta
         Route::get('/', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
 
         Route::get('/businesses', [BusinessController::class, 'index'])->name('businesses.index');
+        Route::get('/businesses/export/pdf', [BusinessController::class, 'exportPdf'])->name('businesses.export.pdf');
+        Route::get('/businesses/export/excel', [BusinessController::class, 'exportExcel'])->name('businesses.export.excel');
         Route::get('/businesses/create', [BusinessController::class, 'create'])->name('businesses.create');
         Route::post('/businesses', [BusinessController::class, 'store'])->middleware('password.confirm.staff')->name('businesses.store');
         Route::get('/businesses/{business}', [BusinessController::class, 'show'])->name('businesses.show');
         Route::put('/businesses/{business}/active', [BusinessController::class, 'toggleActive'])->middleware('password.confirm.staff')->name('businesses.active');
         Route::put('/businesses/{business}/modules', [BusinessController::class, 'updateModules'])->name('businesses.modules');
-        Route::put('/businesses/{business}/owner-password', [BusinessController::class, 'resetOwnerPassword'])->middleware('password.confirm.staff')->name('businesses.owner-password');
         Route::delete('/businesses/{business}', [BusinessController::class, 'destroy'])->middleware('password.confirm.staff')->name('businesses.destroy');
+        Route::put('/users/{user}/password', [BusinessController::class, 'resetUserPassword'])->middleware('password.confirm.staff')->name('users.password');
         Route::post('/users/{user}/impersonate', [ImpersonationController::class, 'start'])->middleware(['not.impersonating', 'password.confirm.staff'])->name('impersonate');
 
         Route::get('/modules', [ModuleController::class, 'index'])->name('modules.index');

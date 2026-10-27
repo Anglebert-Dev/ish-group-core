@@ -5,7 +5,7 @@ namespace App\Http\Requests\SuperAdmin;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
 
-class ResetOwnerPasswordRequest extends FormRequest
+class ResetUserPasswordRequest extends FormRequest
 {
     public function authorize(): bool
     {

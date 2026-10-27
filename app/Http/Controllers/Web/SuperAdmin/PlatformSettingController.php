@@ -18,6 +18,7 @@ class PlatformSettingController extends Controller
     {
         return view('app.super-admin.settings', [
             'settings' => $this->platform->settings(),
+            'system' => $this->platform->systemInfo(),
         ]);
     }
 
@@ -25,6 +26,6 @@ class PlatformSettingController extends Controller
     {
         $result = $this->platform->updateSettings($request->validated());
 
-        return redirect()->route('superadmin.settings.index')->with('success', $result['message']);
+        return redirect()->route('superadmin.settings.index', ['tab' => 'registration'])->with('success', $result['message']);
     }
 }
