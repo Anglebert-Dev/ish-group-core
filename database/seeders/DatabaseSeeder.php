@@ -2,38 +2,37 @@
 
 namespace Database\Seeders;
 
-use App\Enums\UserStatus;
+use App\Models\System\System;
 use App\Models\User;
+use App\Services\Business\BusinessSetupService;
 use App\Services\Permission\PermissionService;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
+/**
+ * Local/demo data only. For a real install use `php artisan core:install`.
+ */
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
         app(PermissionService::class)->initPermissions(true);
 
-        $user = User::query()->firstOrCreate(
-            ['email' => 'test@example.com'],
+        if (! app()->environment('local', 'testing') || User::query()->withTrashed()->exists()) {
+            return;
+        }
+
+        $result = app(BusinessSetupService::class)->createWithOwner(
+            ['name' => 'Demo Business'],
             [
-                'name' => 'Test User',
-                'password' => Hash::make('password'),
+                'name' => 'Demo Admin',
+                'email' => 'admin@example.com',
+                'password' => 'Demo-Admin-Pass-2026!',
+                'is_superadmin' => true,
             ],
         );
 
-        $user->status = UserStatus::Active;
-        $user->save();
+        System::addProperty('primary_business_id', $result['data']['business']->id);
 
-        if (! $user->hasRole('SuperAdmin')) {
-            $user->assignRole('SuperAdmin');
-        }
-
-        $this->call(DemoFleetSeeder::class);
-        $this->call(ChartOfAccountSeeder::class);
-        $this->call(DemoBookingSeeder::class);
+        $this->command?->info('Demo superadmin: admin@example.com / Demo-Admin-Pass-2026!');
     }
 }
