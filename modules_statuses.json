@@ -3,5 +3,6 @@
     "Billing": true,
     "Inventory": true,
     "SalesOrders": true,
-    "Production": true
+    "Production": true,
+    "Invoicing": true
 }

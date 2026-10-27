@@ -1,0 +1,26 @@
+{
+    "name": "ish-group/invoicing",
+    "description": "Sales invoices and customer payments for the ISH core.",
+    "authors": [
+        {
+            "name": "ISH Group",
+            "email": ""
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Invoicing\\": "app/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Invoicing\\Tests\\": "tests/"
+        }
+    }
+}

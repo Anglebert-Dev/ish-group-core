@@ -1,0 +1,14 @@
+{
+    "name": "Invoicing",
+    "alias": "invoicing",
+    "description": "Sales invoices and customer payments. An invoice takes the goods out of stock (checked across all lines) unless they already left with a delivered sales order; payments are a list capped at the amount due; cancelling issues a credit note and can return the goods to stock. Tax rate, PDF invoices and customer balances.",
+    "keywords": ["invoices", "payments", "sales"],
+    "version": "1.0.0",
+    "requires": ["Inventory"],
+    "menu_group": "Sales",
+    "priority": 0,
+    "providers": [
+        "Modules\\Invoicing\\Providers\\InvoicingServiceProvider"
+    ],
+    "files": []
+}
