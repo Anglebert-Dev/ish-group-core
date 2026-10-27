@@ -6,7 +6,7 @@
         "website",
         "customers"
     ],
-    "version": "1.1.0",
+    "version": "1.2.0",
     "priority": 0,
     "providers": [
         "Modules\\Frontend\\Providers\\FrontendServiceProvider"

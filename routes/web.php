@@ -9,6 +9,7 @@ use App\Http\Controllers\Web\Notification\NotificationController;
 use App\Http\Controllers\Web\Role\RoleController;
 use App\Http\Controllers\Web\Setting\SettingController;
 use App\Http\Controllers\Web\SuperAdmin\BusinessController;
+use App\Http\Controllers\Web\SuperAdmin\CommunicatorController;
 use App\Http\Controllers\Web\SuperAdmin\ImpersonationController;
 use App\Http\Controllers\Web\SuperAdmin\ModuleController;
 use App\Http\Controllers\Web\SuperAdmin\PlatformSettingController;
@@ -162,6 +163,9 @@ Route::prefix('app')->middleware(['auth:staff', 'auth.session', 'exclusive.porta
         Route::post('/modules/{module}/update', [ModuleController::class, 'update'])->middleware('password.confirm.staff')->name('modules.update');
         Route::post('/modules/{module}/uninstall', [ModuleController::class, 'uninstall'])->middleware('password.confirm.staff')->name('modules.uninstall');
         Route::post('/modules/{module}/toggle', [ModuleController::class, 'toggle'])->middleware('password.confirm.staff')->name('modules.toggle');
+
+        Route::get('/communicator', [CommunicatorController::class, 'index'])->name('communicator.index');
+        Route::post('/communicator', [CommunicatorController::class, 'send'])->middleware('throttle:10,1')->name('communicator.send');
 
         Route::get('/settings', [PlatformSettingController::class, 'index'])->name('settings.index');
         Route::put('/settings', [PlatformSettingController::class, 'update'])->name('settings.update');

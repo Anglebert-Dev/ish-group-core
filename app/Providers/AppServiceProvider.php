@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Contracts\Entitlements;
+use App\Models\Business\Business;
 use App\Models\User;
+use App\Support\Mail\BrandedMail;
 use App\Services\Module\ModuleManager;
 use App\Services\Notification\NotificationService;
 use App\Services\Setting\SettingService;
@@ -90,8 +92,8 @@ class AppServiceProvider extends ServiceProvider
             ];
         });
 
-        // A model from another broker (e.g. the Frontend module's Customer)
-        // supplies its own link via passwordResetUrl(); staff is the default.
+        // Reset links: a model from another broker (e.g. the Frontend module's
+        // Customer) supplies its own URL via passwordResetUrl(); staff is the default.
         ResetPassword::createUrlUsing(function (object $user, string $token) {
             if (method_exists($user, 'passwordResetUrl')) {
                 return $user->passwordResetUrl($token);
@@ -101,6 +103,21 @@ class AppServiceProvider extends ServiceProvider
                 'token' => $token,
                 'email' => $user instanceof User ? $user->getEmailForPasswordReset() : '',
             ], false));
+        });
+
+        // Reset emails are sent in the name of the user's business.
+        ResetPassword::toMailUsing(function (object $user, string $token) {
+            $business = $user->business ?? null;
+            $minutes = (int) config('auth.passwords.'.config('auth.defaults.passwords').'.expire', 60);
+
+            return BrandedMail::make(
+                $business instanceof Business ? $business : null,
+                __('body.email_reset_subject'),
+                [__('body.email_reset_line', ['name' => $user->name ?? ''])],
+                __('body.email_reset_action'),
+                call_user_func(ResetPassword::$createUrlCallback, $user, $token),
+                [__('body.email_reset_expiry', ['minutes' => $minutes]), __('body.email_reset_ignore')],
+            );
         });
 
         View::composer('*', function ($view) {

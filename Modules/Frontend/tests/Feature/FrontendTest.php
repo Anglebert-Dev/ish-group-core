@@ -7,6 +7,7 @@ use App\Models\System\System;
 use App\Services\Module\ModuleManager;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\Hash;
+use App\Notifications\BrandedNotification;
 use Illuminate\Support\Facades\Notification;
 use Modules\Frontend\Enums\CustomerStatus;
 use Modules\Frontend\Models\Customer;
@@ -308,6 +309,48 @@ class FrontendTest extends TestCase
         $this->assertNull(Site::withoutGlobalScopes()->withTrashed()->find($site->id));
         $this->assertNull(Customer::withoutGlobalScopes()->withTrashed()->find($customer->id));
         $this->get('/s/'.$site->slug)->assertNotFound();
+    }
+
+    public function test_contact_form_saves_emails_business_and_confirms_to_visitor(): void
+    {
+        Notification::fake();
+        [$business, $owner] = $this->makeBusiness(['business_name' => 'Contact Co']);
+        $site = $this->publishedSite($business, ['contact' => ['email' => 'inbox@contact.example']]);
+
+        $this->post('/s/'.$site->slug.'/contact', [
+            'name' => 'Visitor', 'email' => 'visitor@example.com', 'subject' => 'Prices', 'message' => 'How much is it?',
+        ])->assertSessionHas('success');
+
+        $this->assertDatabaseHas('frontend_messages', ['business_id' => $business->id, 'email' => 'visitor@example.com']);
+
+        Notification::assertSentOnDemand(BrandedNotification::class, function ($notification, $channels, $notifiable) {
+            return $notifiable->routes['mail'] === 'inbox@contact.example'
+                && $notification->toMail($notifiable)->from[1] === 'Contact Co'
+                && $notification->toMail($notifiable)->replyTo[0][0] === 'visitor@example.com';
+        });
+        Notification::assertSentOnDemand(BrandedNotification::class, fn ($n, $c, $notifiable) => $notifiable->routes['mail'] === 'visitor@example.com');
+
+        // Staff read it under Website → Messages.
+        $this->actingAs($owner, 'staff');
+        $this->get(route('frontend.admin.messages.index'))->assertOk()->assertSee('Visitor');
+        $message = \Modules\Frontend\Models\Message::query()->first();
+        $this->get(route('frontend.admin.messages.show', $message))->assertOk()->assertSee('How much is it?');
+        $this->assertNotNull($message->fresh()->read_at);
+    }
+
+    public function test_contact_form_honeypot_and_other_businesses_messages(): void
+    {
+        Notification::fake();
+        $site = $this->publishedSite();
+
+        $this->post('/s/'.$site->slug.'/contact', [
+            'name' => 'Bot', 'email' => 'bot@example.com', 'message' => 'Buy now', 'website' => 'http://spam.example',
+        ])->assertSessionHas('success');
+        $this->assertDatabaseMissing('frontend_messages', ['email' => 'bot@example.com']);
+
+        \Modules\Frontend\Models\Message::query()->create(['business_id' => $site->business_id, 'name' => 'Private', 'email' => 'p@example.com', 'message' => 'Secret']);
+        $this->actingAsStaff();
+        $this->get(route('frontend.admin.messages.index'))->assertOk()->assertDontSee('Private');
     }
 
     public function test_customer_and_staff_sessions_are_exclusive(): void

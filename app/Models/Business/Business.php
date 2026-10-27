@@ -21,6 +21,7 @@ class Business extends BaseModel
 
     protected $fillable = [
         'name',
+        'email',
         'owner_id',
         'is_active',
         'enabled_modules',
@@ -75,6 +76,14 @@ class Business extends BaseModel
     {
         return $this->hasModuleEnabled($module)
             && app(Entitlements::class)->allowsModule($this, $module);
+    }
+
+    /**
+     * Address replies to this business's emails go to.
+     */
+    public function contactEmail(): ?string
+    {
+        return $this->email ?: $this->owner?->email;
     }
 
     public function companyName(): string

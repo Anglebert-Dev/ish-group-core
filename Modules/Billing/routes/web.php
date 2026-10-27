@@ -48,18 +48,21 @@ Route::prefix('app/super-admin/billing')->name('superadmin.billing.')->middlewar
     Route::delete('/packages/{package}', [PackageController::class, 'destroy'])->middleware('password.confirm.staff')->name('packages.destroy');
 
     Route::get('/subscriptions', [AdminSubscriptionController::class, 'index'])->name('subscriptions.index');
+    Route::get('/subscriptions/export/{format}', [AdminSubscriptionController::class, 'export'])->whereIn('format', ['pdf', 'excel'])->name('subscriptions.export');
     Route::get('/subscriptions/{subscription}', [AdminSubscriptionController::class, 'show'])->name('subscriptions.show');
     Route::post('/businesses/{business}/subscribe', [AdminSubscriptionController::class, 'assign'])->middleware('password.confirm.staff')->name('subscriptions.assign');
     Route::put('/subscriptions/{subscription}/extend', [AdminSubscriptionController::class, 'extend'])->middleware('password.confirm.staff')->name('subscriptions.extend');
     Route::post('/subscriptions/{subscription}/cancel', [AdminSubscriptionController::class, 'cancel'])->middleware('password.confirm.staff')->name('subscriptions.cancel');
 
     Route::get('/invoices', [AdminInvoiceController::class, 'index'])->name('invoices.index');
+    Route::get('/invoices/export/{format}', [AdminInvoiceController::class, 'export'])->whereIn('format', ['pdf', 'excel'])->name('invoices.export');
     Route::get('/invoices/{invoice}', [AdminInvoiceController::class, 'show'])->name('invoices.show');
     Route::get('/invoices/{invoice}/pdf', [AdminInvoiceController::class, 'pdf'])->name('invoices.pdf');
     Route::post('/invoices/{invoice}/void', [AdminInvoiceController::class, 'void'])->middleware('password.confirm.staff')->name('invoices.void');
     Route::post('/invoices/{invoice}/payments', [AdminInvoiceController::class, 'recordPayment'])->middleware('password.confirm.staff')->name('invoices.record-payment');
 
     Route::get('/payments', [AdminPaymentController::class, 'index'])->name('payments.index');
+    Route::get('/payments/export/{format}', [AdminPaymentController::class, 'export'])->whereIn('format', ['pdf', 'excel'])->name('payments.export');
     Route::get('/payments/{payment}/proof', [AdminPaymentController::class, 'proof'])->name('payments.proof');
     Route::post('/payments/{payment}/approve', [AdminPaymentController::class, 'approve'])->middleware('password.confirm.staff')->name('payments.approve');
     Route::post('/payments/{payment}/reject', [AdminPaymentController::class, 'reject'])->middleware('password.confirm.staff')->name('payments.reject');

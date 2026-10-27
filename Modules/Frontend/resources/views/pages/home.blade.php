@@ -113,8 +113,9 @@
                 <h2 class="font-display font-bold text-3xl sm:text-4xl text-ink tracking-tight">{{ $contactSection['title'] }}</h2>
                 <p class="text-muted mt-5 leading-relaxed">{{ $contactSection['lead'] }}</p>
             </div>
-            <div class="mt-10">
-                <x-frontend::contact-details :contact="$contact" />
+            <div class="mt-10 grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+                <div class="lg:col-span-2"><x-frontend::contact-details :contact="$contact" class="grid-cols-1" /></div>
+                <div class="lg:col-span-3"><x-frontend::contact-form /></div>
             </div>
         </div>
     </section>

@@ -49,7 +49,18 @@ class BillingEntitlements implements Entitlements
 
         $subscription = $this->subscription($business);
 
-        return $subscription ? $subscription->limit($key) : null;
+        if ($subscription && $subscription->status->grantsAccess()) {
+            return $subscription->limit($key);
+        }
+
+        // No usable subscription: the platform's "without a package" limits.
+        if ($key === 'users') {
+            $free = BillingSettings::int('free_users_limit');
+
+            return $free > 0 ? $free : null;
+        }
+
+        return null;
     }
 
     public function upgradeUrl(): ?string

@@ -3,6 +3,8 @@
 namespace Modules\Billing\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Libraries\ListExportLibrary;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -10,6 +12,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Modules\Billing\Models\Payment;
 use Modules\Billing\Services\PaymentService;
+use Modules\Billing\Support\BillingExports;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PaymentController extends Controller
@@ -23,14 +27,24 @@ class PaymentController extends Controller
         $status = $request->query('status', 'pending');
 
         return view('billing::admin.payments.index', [
-            'payments' => Payment::query()
+            'payments' => $this->filtered($status)
                 ->with(['business', 'invoice', 'submitter', 'reviewer'])
-                ->when($status !== 'all', fn ($q) => $q->where('status', $status))
-                ->latest('id')
                 ->paginate(20)
                 ->withQueryString(),
             'status' => $status,
         ]);
+    }
+
+    public function export(Request $request, string $format): Response
+    {
+        $export = BillingExports::payments($this->filtered($request->query('status', 'all')));
+
+        return $format === 'pdf' ? ListExportLibrary::pdf($export) : ListExportLibrary::excel($export);
+    }
+
+    private function filtered(string $status): Builder
+    {
+        return Payment::query()->when($status !== 'all', fn ($q) => $q->where('status', $status))->latest('id');
     }
 
     public function proof(Payment $payment): StreamedResponse

@@ -20,6 +20,7 @@ class BillingSettings
         'due_days' => '7',           // payment terms for new invoices
         'invoice_prefix' => 'INV',
         'default_package_id' => '',  // auto-subscribe new businesses
+        'free_users_limit' => '0',   // users allowed with no subscription; 0 = unlimited
         'payment_instructions' => '',
         'issuer_name' => '',
         'issuer_address' => '',

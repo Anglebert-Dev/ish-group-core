@@ -3,8 +3,10 @@
 namespace Modules\Billing\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Libraries\ListExportLibrary;
 use App\Models\Business\Business;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -12,6 +14,8 @@ use Modules\Billing\Enums\SubscriptionStatus;
 use Modules\Billing\Models\Package;
 use Modules\Billing\Models\Subscription;
 use Modules\Billing\Services\SubscriptionService;
+use Modules\Billing\Support\BillingExports;
+use Symfony\Component\HttpFoundation\Response;
 
 class SubscriptionController extends Controller
 {
@@ -22,21 +26,29 @@ class SubscriptionController extends Controller
     public function index(Request $request): View
     {
         $filters = $request->only(['q', 'status', 'package']);
-
-        $subscriptions = Subscription::query()
-            ->with(['business', 'package'])
-            ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
-            ->when($filters['package'] ?? null, fn ($q, $package) => $q->where('package_id', $package))
-            ->when(trim((string) ($filters['q'] ?? '')) !== '', fn ($q) => $q->whereHas('business', fn ($b) => $b->where('name', 'like', '%'.trim($filters['q']).'%')))
-            ->latest('id')
-            ->paginate(20)
-            ->withQueryString();
+        $subscriptions = $this->filtered($filters)->with(['business', 'package'])->paginate(20)->withQueryString();
 
         return view('billing::admin.subscriptions.index', [
             'subscriptions' => $subscriptions,
             'filters' => $filters,
             'packages' => Package::withTrashed()->ordered()->pluck('name', 'id'),
         ]);
+    }
+
+    public function export(Request $request, string $format): Response
+    {
+        $export = BillingExports::subscriptions($this->filtered($request->only(['q', 'status', 'package'])));
+
+        return $format === 'pdf' ? ListExportLibrary::pdf($export) : ListExportLibrary::excel($export);
+    }
+
+    private function filtered(array $filters): Builder
+    {
+        return Subscription::query()
+            ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
+            ->when($filters['package'] ?? null, fn ($q, $package) => $q->where('package_id', $package))
+            ->when(trim((string) ($filters['q'] ?? '')) !== '', fn ($q) => $q->whereHas('business', fn ($b) => $b->where('name', 'like', '%'.trim($filters['q']).'%')))
+            ->latest('id');
     }
 
     public function show(Subscription $subscription): View

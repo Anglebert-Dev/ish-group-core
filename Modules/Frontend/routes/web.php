@@ -2,7 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Frontend\Http\Controllers\Admin\CustomerController as AdminCustomerController;
+use Modules\Frontend\Http\Controllers\Admin\MessageController;
 use Modules\Frontend\Http\Controllers\Admin\WebsiteController;
+use Modules\Frontend\Http\Controllers\ContactController;
 use Modules\Frontend\Http\Controllers\CustomerAuthController;
 use Modules\Frontend\Http\Controllers\CustomerProfileController;
 use Modules\Frontend\Http\Controllers\SiteController;
@@ -26,6 +28,8 @@ Route::prefix('s/{site}')->middleware('frontend.site')->group(function () {
     foreach (SiteController::PAGES as $page) {
         Route::get('/'.$page, [SiteController::class, 'page'])->defaults('page', $page)->name($page);
     }
+
+    Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:contact')->name('contact.send');
 
     Route::middleware(['guest:customer', 'frontend.registration'])->group(function () {
         Route::get('/register', [CustomerAuthController::class, 'showRegisterForm'])->name('register');
@@ -65,6 +69,10 @@ Route::prefix('app/website')->name('frontend.admin.')
     ->middleware(['auth:staff', 'auth.session', 'exclusive.portal:staff', 'business.active', 'no-back-cache'])
     ->group(function () {
         Route::get('/view', [WebsiteController::class, 'view'])->middleware('permission:read website.site')->name('website.view');
+
+        Route::get('/messages', [MessageController::class, 'index'])->middleware('permission:list website.message')->name('messages.index');
+        Route::get('/messages/{message}', [MessageController::class, 'show'])->middleware('permission:read website.message')->name('messages.show');
+        Route::delete('/messages/{message}', [MessageController::class, 'destroy'])->middleware('permission:delete website.message')->name('messages.destroy');
 
         Route::get('/customers', [AdminCustomerController::class, 'index'])->middleware('permission:list website.customer')->name('customers.index');
         Route::put('/customers/{customer}/status', [AdminCustomerController::class, 'updateStatus'])->middleware('permission:update website.customer')->name('customers.status');

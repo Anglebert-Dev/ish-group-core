@@ -189,4 +189,46 @@ class BillingScreensTest extends BillingTestCase
             ->assertSee(route('billing.index'), false)
             ->assertDontSee(route('frontend.admin.website.edit'), false);
     }
+
+    public function test_exports_download(): void
+    {
+        [$business] = $this->makeBusiness();
+        app(SubscriptionService::class)->subscribe($business, $this->package());
+        $this->pay($this->openInvoice($business));
+
+        $this->actingAs($this->root, 'staff');
+        foreach (['subscriptions', 'invoices', 'payments'] as $list) {
+            $this->get(route('superadmin.billing.'.$list.'.export', ['excel']))->assertOk();
+            $this->get(route('superadmin.billing.'.$list.'.export', ['pdf']))->assertOk()->assertHeader('content-type', 'application/pdf');
+        }
+    }
+
+    public function test_users_limit_without_a_subscription(): void
+    {
+        BillingSettings::set(['free_users_limit' => '1']);
+        [, $owner] = $this->makeBusiness();
+
+        $this->actingAs($owner, 'staff');
+        $this->withConfirmedPassword()->post(route('users.store'), [
+            'name' => 'Extra', 'email' => 'extra@example.com',
+            'password' => self::TEST_PASSWORD, 'password_confirmation' => self::TEST_PASSWORD,
+        ])->assertRedirect(route('billing.index'));
+
+        $this->assertDatabaseMissing('users', ['email' => 'extra@example.com']);
+    }
+
+    public function test_billing_events_are_emailed_in_the_platform_name(): void
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+        BillingSettings::set(['issuer_name' => 'ISH Platform']);
+        [$business] = $this->makeBusiness();
+        app(SubscriptionService::class)->subscribe($business, $this->package());
+        $this->pay($this->openInvoice($business));
+
+        \Illuminate\Support\Facades\Notification::assertSentOnDemand(
+            \App\Notifications\BrandedNotification::class,
+            fn ($n, $c, $notifiable) => $notifiable->routes['mail'] === $business->contactEmail()
+                && $n->toMail($notifiable)->from[1] === 'ISH Platform',
+        );
+    }
 }

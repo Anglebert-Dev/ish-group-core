@@ -24,6 +24,7 @@
                 <x-common.input name="due_days" type="number" min="0" :label="__('billing::billing.due_days')" :value="old('due_days', $settings['due_days'])" :hint="__('billing::billing.due_days_hint')" required />
                 <x-common.input name="reminder_days" type="number" min="0" :label="__('billing::billing.reminder_days')" :value="old('reminder_days', $settings['reminder_days'])" :hint="__('billing::billing.reminder_days_hint')" required />
                 <x-common.input name="grace_days" type="number" min="0" :label="__('billing::billing.grace_days')" :value="old('grace_days', $settings['grace_days'])" :hint="__('billing::billing.grace_days_hint')" required />
+                <x-common.input name="free_users_limit" type="number" min="0" :label="__('billing::billing.free_users_limit')" :value="old('free_users_limit', $settings['free_users_limit'])" :hint="__('billing::billing.free_users_limit_hint')" />
                 <x-common.select name="default_package_id" :label="__('billing::billing.default_package')" :value="old('default_package_id', $settings['default_package_id'])" :options="['' => __('body.none')] + $packages->all()" :hint="__('billing::billing.default_package_hint')" hide-placeholder />
             </div>
         </div>

@@ -3,6 +3,8 @@
 namespace Modules\Billing\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Libraries\ListExportLibrary;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,6 +13,7 @@ use Modules\Billing\Http\Requests\SubmitPaymentRequest;
 use Modules\Billing\Models\Invoice;
 use Modules\Billing\Services\InvoiceService;
 use Modules\Billing\Services\PaymentService;
+use Modules\Billing\Support\BillingExports;
 use Modules\Billing\Support\InvoicePdf;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -27,19 +30,28 @@ class InvoiceController extends Controller
         $filters = $request->only(['q', 'status']);
 
         return view('billing::admin.invoices.index', [
-            'invoices' => Invoice::query()
-                ->with('business')
-                ->when($filters['status'] ?? null, fn ($q, $status) => $status === 'overdue'
-                    ? $q->where('status', 'open')->where('due_at', '<', now())
-                    : $q->where('status', $status))
-                ->when(trim((string) ($filters['q'] ?? '')) !== '', fn ($q) => $q->where(fn ($w) => $w
-                    ->where('number', 'like', '%'.trim($filters['q']).'%')
-                    ->orWhereHas('business', fn ($b) => $b->where('name', 'like', '%'.trim($filters['q']).'%'))))
-                ->latest('id')
-                ->paginate(20)
-                ->withQueryString(),
+            'invoices' => $this->filtered($filters)->with('business')->paginate(20)->withQueryString(),
             'filters' => $filters,
         ]);
+    }
+
+    public function export(Request $request, string $format): Response
+    {
+        $export = BillingExports::invoices($this->filtered($request->only(['q', 'status'])));
+
+        return $format === 'pdf' ? ListExportLibrary::pdf($export) : ListExportLibrary::excel($export);
+    }
+
+    private function filtered(array $filters): Builder
+    {
+        return Invoice::query()
+            ->when($filters['status'] ?? null, fn ($q, $status) => $status === 'overdue'
+                ? $q->where('status', 'open')->where('due_at', '<', now())
+                : $q->where('status', $status))
+            ->when(trim((string) ($filters['q'] ?? '')) !== '', fn ($q) => $q->where(fn ($w) => $w
+                ->where('number', 'like', '%'.trim($filters['q']).'%')
+                ->orWhereHas('business', fn ($b) => $b->where('name', 'like', '%'.trim($filters['q']).'%'))))
+            ->latest('id');
     }
 
     public function show(Invoice $invoice): View

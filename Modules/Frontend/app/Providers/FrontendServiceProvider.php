@@ -4,7 +4,10 @@ namespace Modules\Frontend\Providers;
 
 use App\Support\Modules\CoreModuleServiceProvider;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Session\Middleware\StartSession;
 use Modules\Frontend\Http\Middleware\EnsureCustomerIsActive;
 use Modules\Frontend\Http\Middleware\EnsureRegistrationOpen;
@@ -42,6 +45,8 @@ class FrontendServiceProvider extends CoreModuleServiceProvider
         $router->aliasMiddleware('customer.active', EnsureCustomerIsActive::class);
         $router->aliasMiddleware('frontend.site', ResolveSite::class);
         $router->aliasMiddleware('frontend.registration', EnsureRegistrationOpen::class);
+
+        RateLimiter::for('contact', fn (Request $request) => Limit::perMinute(3)->by('contact|'.$request->ip()));
 
         // Resolve the site after the session starts (it needs to know who is
         // signed in) but before auth:customer runs, so a customer of another

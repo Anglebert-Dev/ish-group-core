@@ -2,7 +2,14 @@
 <x-layouts.app :title="__('billing::billing.subscriptions')">
     @include('billing::admin.partials.nav')
 
-    <x-common.page-header :title="__('billing::billing.subscriptions')" :description="__('billing::billing.subscriptions_description')" />
+    <x-common.page-header :title="__('billing::billing.subscriptions')" :description="__('billing::billing.subscriptions_description')">
+        <x-slot:actions>
+            <x-common.export-buttons
+                :pdf="route('superadmin.billing.subscriptions.export', ['pdf'] + request()->query())"
+                :excel="route('superadmin.billing.subscriptions.export', ['excel'] + request()->query())"
+            />
+        </x-slot:actions>
+    </x-common.page-header>
 
     <x-common.filter-panel :action="route('superadmin.billing.subscriptions.index')" :open="array_filter($filters) !== []">
         <x-common.input name="q" :label="__('body.search')" :value="$filters['q'] ?? ''" :placeholder="__('body.business_name')" compact />

@@ -48,7 +48,7 @@ class ModuleSystemTest extends TestCase
         $this->assertTrue($modules->install('Frontend')['status']);
 
         $this->assertTrue($modules->isActive('Frontend'));
-        $this->assertSame('1.1.0', $modules->installedVersion('Frontend'));
+        $this->assertSame('1.2.0', $modules->installedVersion('Frontend'));
         $this->assertTrue(Schema::hasTable('customers'));
         $this->assertArrayHasKey('Frontend', $modules->hook('user_permissions'));
         $this->assertFalse($modules->install('Frontend')['status'], 'second install is refused');

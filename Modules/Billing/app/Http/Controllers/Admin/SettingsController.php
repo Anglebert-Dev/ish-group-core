@@ -31,6 +31,7 @@ class SettingsController extends Controller
             'due_days' => ['required', 'integer', 'min:0', 'max:90'],
             'invoice_prefix' => ['required', 'string', 'max:10', 'regex:/^[A-Za-z0-9]+$/'],
             'default_package_id' => ['nullable', 'integer', 'exists:billing_packages,id'],
+            'free_users_limit' => ['nullable', 'integer', 'min:0', 'max:100000'],
             'payment_instructions' => ['nullable', 'string', 'max:3000'],
             'issuer_name' => ['nullable', 'string', 'max:255'],
             'issuer_address' => ['nullable', 'string', 'max:500'],
@@ -40,6 +41,7 @@ class SettingsController extends Controller
         ]);
 
         $data['currency'] = strtoupper($data['currency']);
+        $data['free_users_limit'] = (string) (int) ($data['free_users_limit'] ?? 0);
         $data['invoice_prefix'] = strtoupper($data['invoice_prefix']);
         $data['tax_inclusive'] = $request->boolean('tax_inclusive') ? '1' : '0';
 

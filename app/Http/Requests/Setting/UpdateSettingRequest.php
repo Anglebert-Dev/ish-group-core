@@ -15,6 +15,7 @@ class UpdateSettingRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
             'brand_color' => ['required', 'string', 'regex:/^#[0-9A-F]{6}$/'],
             'logo' => ['nullable', 'image', 'max:4096'],
             'favicon' => ['nullable', 'image', 'max:1024'],

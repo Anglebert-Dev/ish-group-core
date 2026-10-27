@@ -26,7 +26,7 @@
 @if ($rows === [])
     <p class="text-sm text-muted">{{ __('body.contact_details_missing') }}</p>
 @else
-    <ul class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <ul {{ $attributes->merge(['class' => 'grid grid-cols-1 sm:grid-cols-3 gap-3']) }}>
         @foreach ($rows as $type => $value)
             <li>
                 <{{ isset($links[$type]) ? 'a' : 'div' }} @isset($links[$type]) href="{{ $links[$type]($value) }}" @endisset

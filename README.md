@@ -21,6 +21,13 @@ php artisan module:make <Name>     # new module; see Modules/Frontend as the exa
 
 - **Frontend**: a public website per business at `/s/<slug>`, edited from **Website** in the sidebar.
 - **Billing**: packages decide which modules and limits each business gets; payments are offline and you approve them.
+- **Communicator** (Super Admin): send announcements to business admins, in-app and/or by email.
+
+## Email
+
+Set the SMTP details in `.env`. `MAIL_FROM_ADDRESS` must be the SMTP account itself; each business's emails use that business's name as the sender and its contact email for replies.
+
+Emails are queued, so keep a worker running: `php artisan queue:work` (on the server, under Supervisor or systemd).
 
 ## Billing: required setup
 

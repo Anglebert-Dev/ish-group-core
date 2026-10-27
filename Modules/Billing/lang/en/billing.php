@@ -281,6 +281,8 @@ return [
     'grace_days_hint' => 'Modules stay on this long after an unpaid period ends',
     'default_package' => 'Package for new businesses',
     'default_package_hint' => 'Subscribed automatically at sign-up',
+    'free_users_limit' => 'Users without a package',
+    'free_users_limit_hint' => 'Active users a business may have with no (or a lapsed) subscription. 0 = unlimited',
     'payment_instructions' => 'Payment instructions',
     'payment_instructions_hint' => 'Bank account, MoMo number, etc. Shown on the billing page and invoices.',
     'issuer' => 'Invoice issuer',
@@ -305,7 +307,13 @@ return [
     'replaced' => 'Replaced by a new subscription.',
     'resumed' => 'Your subscription will continue.',
 
+    // Exports
+    'export_subscriptions' => 'Subscriptions',
+    'export_invoices' => 'Invoices',
+    'export_payments' => 'Payments',
+
     // Notifications
+    'email_open_billing' => 'Open billing',
     'notify_paid_title' => 'Payment received for :number',
     'notify_paid_body' => 'Thank you! Your package is paid until :date.',
     'notify_partial_title' => 'Partial payment received for :number',

@@ -23,6 +23,14 @@
                     required
                 />
 
+                <x-common.input
+                    type="email"
+                    name="email"
+                    :label="__('body.business_email')"
+                    :value="old('email', $setting->email)"
+                    :hint="__('body.business_email_hint')"
+                />
+
                 <div class="flex min-w-0 flex-col gap-2 w-full">
                     <label for="brand_color" class="text-sm font-semibold text-ink">
                         {{ __('body.brand_color') }}
