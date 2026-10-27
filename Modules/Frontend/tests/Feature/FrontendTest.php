@@ -2,15 +2,15 @@
 
 namespace Modules\Frontend\Tests\Feature;
 
+use App\Enums\CustomerStatus;
 use App\Models\Business\Business;
+use App\Models\Customer\Customer;
 use App\Models\System\System;
 use App\Services\Module\ModuleManager;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\Hash;
 use App\Notifications\BrandedNotification;
 use Illuminate\Support\Facades\Notification;
-use Modules\Frontend\Enums\CustomerStatus;
-use Modules\Frontend\Models\Customer;
 use Modules\Frontend\Models\Site;
 use Modules\Frontend\Services\SiteService;
 use Tests\TestCase;
@@ -133,7 +133,7 @@ class FrontendTest extends TestCase
             ->assertOk()
             ->assertSee('Website')
             ->assertSee(route('frontend.admin.website.edit'), false)
-            ->assertSee(route('frontend.admin.customers.index'), false);
+            ->assertSee(route('customers.index'), false);
     }
 
     public function test_website_section_is_hidden_when_module_is_off_for_the_business(): void
@@ -274,24 +274,33 @@ class FrontendTest extends TestCase
         ));
     }
 
-    public function test_staff_manage_only_their_own_customers(): void
+    public function test_website_sign_ups_are_core_customers_with_website_access(): void
     {
-        [$business, $owner] = $this->makeBusiness();
-        [$otherBusiness] = $this->makeBusiness();
-        $mine = $this->makeCustomer($business, ['name' => 'Mine Person', 'email' => 'mine@example.com']);
-        $theirs = $this->makeCustomer($otherBusiness, ['name' => 'Theirs Person', 'email' => 'theirs@example.com']);
+        $site = $this->publishedSite();
+        $mine = $this->makeCustomer($site->business, ['name' => 'Mine Person', 'email' => 'mine@example.com']);
+        $this->makeCustomer($this->makeBusiness()[0], ['name' => 'Theirs Person', 'email' => 'theirs@example.com']);
 
-        $this->actingAs($owner, 'staff');
+        $this->actingAs($site->business->owner, 'staff');
 
-        $this->get(route('frontend.admin.customers.index'))
+        $this->get(route('customers.index'))
             ->assertOk()
             ->assertSee('Mine Person')
             ->assertDontSee('Theirs Person');
 
-        $this->put(route('frontend.admin.customers.status', $mine), ['status' => 'banned'])->assertSessionHas('success');
-        $this->assertTrue($mine->fresh()->isBanned());
+        $this->get(route('customers.show', $mine))
+            ->assertOk()
+            ->assertSee(__('body.customer_portal_on'))
+            ->assertSee('/s/'.$site->slug.'/login', false);
+    }
 
-        $this->put(route('frontend.admin.customers.status', $theirs), ['status' => 'banned'])->assertNotFound();
+    public function test_inactive_customers_cannot_sign_in(): void
+    {
+        $site = $this->publishedSite();
+        $this->makeCustomer($site->business, ['email' => 'idle@example.com', 'status' => CustomerStatus::Inactive]);
+
+        $this->post('/s/'.$site->slug.'/login', ['login' => 'idle@example.com', 'password' => self::TEST_PASSWORD])
+            ->assertSessionHasErrors('login');
+        $this->assertGuest('customer');
     }
 
     public function test_deleting_a_business_removes_its_site_and_customers(): void

@@ -3,7 +3,11 @@
 namespace Modules\Frontend\Services;
 
 use App\Enums\ActivityLogAction;
+use App\Enums\CustomerStatus;
+use App\Enums\CustomerType;
 use App\Helpers\AuthHelper;
+use App\Models\Customer\Customer;
+use App\Repositories\Customer\CustomerRepository;
 use App\Services\ActivityLog\ActivityLogService;
 use App\Services\BaseService;
 use App\Support\Tenancy\CurrentBusiness;
@@ -12,9 +16,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
-use Modules\Frontend\Enums\CustomerStatus;
-use Modules\Frontend\Models\Customer;
-use Modules\Frontend\Repositories\CustomerRepository;
 
 /**
  * Public-site customer accounts — "customer" guard, Customer model.
@@ -36,6 +37,7 @@ class CustomerAuthService extends BaseService
             'password' => Hash::make($data['password']),
         ]);
         $customer->business_id = $this->business->id();
+        $customer->type = CustomerType::Person;
         $customer->status = CustomerStatus::Active;
 
         $this->customers->save($customer);
@@ -60,8 +62,8 @@ class CustomerAuthService extends BaseService
             return $this->failure(__('body.invalid_credentials'));
         }
 
-        if ($customer->isBanned()) {
-            $this->recordLoginFailure($login, 'banned');
+        if (! $customer->isApproved()) {
+            $this->recordLoginFailure($login, $customer->status?->value ?? 'inactive');
 
             return $this->failure(__('body.account_suspended'));
         }

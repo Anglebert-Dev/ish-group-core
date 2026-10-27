@@ -26,19 +26,16 @@ return new class extends Migration
 
         // Customers belong to one business's site: the same email may sign
         // up on several sites.
-        Schema::table('customers', function (Blueprint $table) {
-            $table->dropUnique(['email']);
-            $table->unique(['business_id', 'email']);
-        });
+        if (Schema::hasIndex('customers', 'customers_email_unique')) {
+            Schema::table('customers', function (Blueprint $table) {
+                $table->dropUnique(['email']);
+                $table->unique(['business_id', 'email']);
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('customers', function (Blueprint $table) {
-            $table->dropUnique(['business_id', 'email']);
-            $table->unique('email');
-        });
-
         Schema::dropIfExists('frontend_sites');
     }
 };

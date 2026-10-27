@@ -31,6 +31,10 @@ return [
             'role',
         ],
 
+        'customers' => [
+            'customer',
+        ],
+
         'settings' => [
             'setting',
         ],
@@ -86,6 +90,7 @@ return [
     'module_labels' => [
         'dashboard' => 'Dashboard',
         'users' => 'Users & Roles',
+        'customers' => 'Customers',
         'settings' => 'Settings',
         'notifications' => 'Notifications',
         'activity' => 'Activity',
@@ -95,6 +100,7 @@ return [
         'dashboard' => 'Dashboard',
         'user' => 'Users',
         'role' => 'Roles',
+        'customer' => 'Customers',
         'setting' => 'Settings',
         'notification' => 'Notifications',
         'activity_log' => 'Audit Logs',

@@ -48,7 +48,7 @@ class ModuleSystemTest extends TestCase
         $this->assertTrue($modules->install('Frontend')['status']);
 
         $this->assertTrue($modules->isActive('Frontend'));
-        $this->assertSame('1.2.0', $modules->installedVersion('Frontend'));
+        $this->assertSame('1.3.0', $modules->installedVersion('Frontend'));
         $this->assertTrue(Schema::hasTable('customers'));
         $this->assertArrayHasKey('Frontend', $modules->hook('user_permissions'));
         $this->assertFalse($modules->install('Frontend')['status'], 'second install is refused');
@@ -62,14 +62,16 @@ class ModuleSystemTest extends TestCase
         $modules->toggle('Frontend', false);
         $this->assertFalse($modules->isActive('Frontend'));
         $this->assertTrue($modules->isInstalled('Frontend'));
-        $this->assertTrue(Schema::hasTable('customers'));
+        $this->assertTrue(Schema::hasTable('frontend_sites'));
 
         $modules->toggle('Frontend', true);
         $this->assertTrue($modules->isActive('Frontend'));
 
         $modules->uninstall('Frontend', purgeData: true);
         $this->assertFalse($modules->isInstalled('Frontend'));
-        $this->assertFalse(Schema::hasTable('customers'));
+        $this->assertFalse(Schema::hasTable('frontend_sites'));
+        // Customers are core data and outlive the website module.
+        $this->assertTrue(Schema::hasTable('customers'));
     }
 
     public function test_superadmin_installs_from_the_modules_page(): void

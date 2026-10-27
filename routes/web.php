@@ -3,6 +3,7 @@
 use App\Http\Controllers\Web\ActivityLog\ActivityLogController;
 use App\Http\Controllers\Web\Auth\AuthController;
 use App\Http\Controllers\Web\Auth\ProfileController;
+use App\Http\Controllers\Web\Customer\CustomerController;
 use App\Http\Controllers\Web\Dashboard\DashboardController;
 use App\Http\Controllers\Web\Landing\LandingController;
 use App\Http\Controllers\Web\Notification\NotificationController;
@@ -117,6 +118,22 @@ Route::prefix('app')->middleware(['auth:staff', 'auth.session', 'exclusive.porta
     Route::get('/roles/{role}/edit', [RoleController::class, 'edit'])->middleware('permission:update users.role')->name('roles.edit');
     Route::put('/roles/{role}', [RoleController::class, 'update'])->middleware(['permission:update users.role', 'password.confirm.staff'])->name('roles.update');
     Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->middleware(['permission:delete users.role', 'password.confirm.staff'])->name('roles.destroy');
+
+    // Customers (core business data; modules link orders/invoices to them)
+    Route::prefix('customers')->name('customers.')->group(function () {
+        Route::get('/', [CustomerController::class, 'index'])->middleware('permission:list customers.customer')->name('index');
+        Route::get('/export/pdf', [CustomerController::class, 'exportPdf'])->middleware('permission:list customers.customer')->name('export.pdf');
+        Route::get('/export/excel', [CustomerController::class, 'exportExcel'])->middleware('permission:list customers.customer')->name('export.excel');
+        Route::get('/create', [CustomerController::class, 'create'])->middleware('permission:create customers.customer')->name('create');
+        Route::post('/', [CustomerController::class, 'store'])->middleware('permission:create customers.customer')->name('store');
+        Route::get('/{customer}', [CustomerController::class, 'show'])->middleware('permission:read customers.customer')->name('show');
+        Route::get('/{customer}/edit', [CustomerController::class, 'edit'])->middleware('permission:update customers.customer')->name('edit');
+        Route::put('/{customer}', [CustomerController::class, 'update'])->middleware('permission:update customers.customer')->name('update');
+        Route::put('/{customer}/status', [CustomerController::class, 'updateStatus'])->middleware('permission:update customers.customer')->name('status');
+        Route::delete('/{customer}', [CustomerController::class, 'destroy'])->middleware(['permission:delete customers.customer', 'password.confirm.staff'])->name('destroy');
+        Route::post('/{customer}/portal/invite', [CustomerController::class, 'invite'])->middleware('permission:update customers.customer')->name('portal.invite');
+        Route::delete('/{customer}/portal', [CustomerController::class, 'revokePortal'])->middleware(['permission:update customers.customer', 'password.confirm.staff'])->name('portal.revoke');
+    });
 
     Route::get('/settings', [SettingController::class, 'index'])->middleware('permission:list settings.setting')->name('settings.index');
     Route::put('/settings', [SettingController::class, 'update'])->middleware('permission:update settings.setting')->name('settings.update');

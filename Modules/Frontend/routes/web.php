@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\Frontend\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use Modules\Frontend\Http\Controllers\Admin\MessageController;
 use Modules\Frontend\Http\Controllers\Admin\WebsiteController;
 use Modules\Frontend\Http\Controllers\ContactController;
@@ -19,7 +18,7 @@ use Modules\Frontend\Http\Controllers\SiteController;
 | Public sites:  /s/{site}/...  (one per business; ResolveSite sets the
 |                business, its branding and URL defaults)
 | "/":           the primary business's site, via DataController::landing_page()
-| Staff editor:  /app/website, /app/website/customers
+| Staff editor:  /app/website, /app/website/messages
 */
 
 Route::prefix('s/{site}')->middleware('frontend.site')->group(function () {
@@ -73,9 +72,6 @@ Route::prefix('app/website')->name('frontend.admin.')
         Route::get('/messages', [MessageController::class, 'index'])->middleware('permission:list website.message')->name('messages.index');
         Route::get('/messages/{message}', [MessageController::class, 'show'])->middleware('permission:read website.message')->name('messages.show');
         Route::delete('/messages/{message}', [MessageController::class, 'destroy'])->middleware('permission:delete website.message')->name('messages.destroy');
-
-        Route::get('/customers', [AdminCustomerController::class, 'index'])->middleware('permission:list website.customer')->name('customers.index');
-        Route::put('/customers/{customer}/status', [AdminCustomerController::class, 'updateStatus'])->middleware('permission:update website.customer')->name('customers.status');
 
         Route::get('/{tab?}', [WebsiteController::class, 'edit'])->middleware('permission:read website.site')->name('website.edit');
         Route::put('/{tab}', [WebsiteController::class, 'update'])->middleware('permission:update website.site')->name('website.update');

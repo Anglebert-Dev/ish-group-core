@@ -2,6 +2,8 @@
 
 namespace Modules\Frontend\Http\Controllers;
 
+use App\Models\Customer\Customer;
+use App\Support\Tenancy\CurrentBusiness;
 use Modules\Frontend\Services\SiteService;
 
 /**
@@ -22,14 +24,29 @@ class DataController
         return $this->sites->primary() ? [SiteController::class, 'primary'] : null;
     }
 
+    /**
+     * Customers sign in on the business website. Called without a customer
+     * to ask whether website logins exist at all.
+     */
+    public function customer_portal_url(?Customer $customer = null): ?string
+    {
+        $business = app(CurrentBusiness::class)->get();
+
+        if (! $business) {
+            return null;
+        }
+
+        return route('login', ['site' => $this->sites->forBusiness($business)->slug]);
+    }
+
     public function user_permissions(): array
     {
         return [
             'access_modules' => [
-                'website' => ['site', 'customer', 'message'],
+                'website' => ['site', 'message'],
             ],
             'module_labels' => ['website' => 'Website'],
-            'controller_labels' => ['site' => 'Website content', 'customer' => 'Website customers', 'message' => 'Website messages'],
+            'controller_labels' => ['site' => 'Website content', 'message' => 'Website messages'],
         ];
     }
 
@@ -54,14 +71,6 @@ class DataController
                 'permission' => 'list website.message',
                 'order' => 15,
                 'icon' => 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
-            ],
-            [
-                'label' => 'body.website_customers',
-                'route' => 'frontend.admin.customers.index',
-                'active' => 'frontend.admin.customers.*',
-                'permission' => 'list website.customer',
-                'order' => 20,
-                'icon' => 'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-4a4 4 0 10-8 0 4 4 0 008 0zm6 0a4 4 0 10-8 0 4 4 0 008 0z',
             ],
             [
                 'label' => 'body.website_view',

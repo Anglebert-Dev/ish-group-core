@@ -2,6 +2,7 @@
 
 namespace Modules\Frontend\Providers;
 
+use App\Models\Customer\Customer;
 use App\Support\Modules\CoreModuleServiceProvider;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -12,7 +13,7 @@ use Illuminate\Session\Middleware\StartSession;
 use Modules\Frontend\Http\Middleware\EnsureCustomerIsActive;
 use Modules\Frontend\Http\Middleware\EnsureRegistrationOpen;
 use Modules\Frontend\Http\Middleware\ResolveSite;
-use Modules\Frontend\Models\Customer;
+use Modules\Frontend\Models\Site;
 use Modules\Frontend\Support\SiteContext;
 
 /**
@@ -74,5 +75,12 @@ class FrontendServiceProvider extends CoreModuleServiceProvider
             'expire' => 60,
             'throttle' => 60,
         ]);
+
+        // Reset links point at the customer's business website.
+        Customer::$resetUrlResolver = fn (Customer $customer, string $token): string => url(route('customer.password.reset', [
+            'site' => Site::query()->withoutGlobalScope('business')->where('business_id', $customer->business_id)->value('slug'),
+            'token' => $token,
+            'email' => $customer->getEmailForPasswordReset(),
+        ], false));
     }
 }

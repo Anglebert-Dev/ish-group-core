@@ -12,7 +12,7 @@ class EnsureCustomerIsActive
     {
         $customer = Auth::guard('customer')->user();
 
-        if ($customer && $customer->isBanned()) {
+        if ($customer && ! $customer->isApproved()) {
             Auth::guard('customer')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();

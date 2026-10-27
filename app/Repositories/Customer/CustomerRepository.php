@@ -1,9 +1,9 @@
 <?php
 
-namespace Modules\Frontend\Repositories;
+namespace App\Repositories\Customer;
 
+use App\Models\Customer\Customer;
 use App\Repositories\BaseRepository;
-use Modules\Frontend\Models\Customer;
 
 class CustomerRepository extends BaseRepository
 {

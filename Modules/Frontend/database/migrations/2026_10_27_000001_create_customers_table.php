@@ -8,7 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('customers', function (Blueprint $table) {
+        // The core owns customers now (2026_10_30_000001_create_core_customers_table);
+        // this only runs on databases created before that.
+        if (! Schema::hasTable('customers')) Schema::create('customers', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->nullable()->unique();
             $table->foreignId('business_id')->nullable()->constrained('businesses')->cascadeOnDelete();
@@ -30,7 +32,7 @@ return new class extends Migration
 
         // Separate from staff tokens so a customer and a staff member with
         // the same email never overwrite each other's reset link.
-        Schema::create('customer_password_reset_tokens', function (Blueprint $table) {
+        if (! Schema::hasTable('customer_password_reset_tokens')) Schema::create('customer_password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');
             $table->timestamp('created_at')->nullable();
@@ -40,6 +42,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('customer_password_reset_tokens');
-        Schema::dropIfExists('customers');
+        // customers is core data: never dropped with the module.
     }
 };
