@@ -16,7 +16,11 @@ class PasswordConfirmationTest extends TestCase
 
         $this->from(route('users.index'))
             ->put(route('users.status', $member), ['status' => UserStatus::Banned->value])
-            ->assertRedirect(route('staff.password.confirm'));
+            ->assertRedirect(route('users.index'))
+            ->assertSessionHas(ConfirmStaffPassword::MODAL_FLAG);
+
+        // The page the user is sent back to opens the password pop-up.
+        $this->get(route('users.index'))->assertSee('id="password-confirm-modal" class="fixed inset-0 z-[70] "', false);
 
         $this->assertSame(UserStatus::Active, $member->fresh()->status, 'nothing happens before confirming');
 
@@ -52,12 +56,30 @@ class PasswordConfirmationTest extends TestCase
         $this->actingAsStaff();
 
         $this->post(route('roles.store'), ['name' => 'Auditor', 'permissions' => ['list users.user', 'read users.user']])
-            ->assertRedirect(route('staff.password.confirm'));
+            ->assertRedirect(route('staff.password.confirm'));  // no referer: full page fallback
 
         $this->post(route('staff.password.confirm.store'), ['password' => self::TEST_PASSWORD])
             ->assertSee('name="name" value="Auditor"', false)
             ->assertSee('name="permissions[0]" value="list users.user"', false)
             ->assertSee('name="permissions[1]" value="read users.user"', false);
+    }
+
+    public function test_pop_up_confirms_over_json_and_returns_the_action(): void
+    {
+        [$business, $owner] = $this->makeBusiness();
+        $member = $this->makeMember($business);
+        $this->actingAs($owner, 'staff');
+
+        $this->from(route('users.index'))->put(route('users.status', $member), ['status' => UserStatus::Banned->value]);
+
+        $this->postJson(route('staff.password.confirm.store'), ['password' => 'WrongPass1!'])
+            ->assertStatus(422)->assertJsonPath('message', __('body.incorrect_current_password'));
+
+        $this->postJson(route('staff.password.confirm.store'), ['password' => self::TEST_PASSWORD])
+            ->assertOk()
+            ->assertJsonPath('action.method', 'PUT')
+            ->assertJsonPath('action.url', route('users.status', $member))
+            ->assertJsonPath('action.fields.0', ['status', 'banned']);
     }
 
     public function test_wrong_password_keeps_the_action_pending(): void

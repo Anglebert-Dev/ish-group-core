@@ -130,6 +130,7 @@
 
     <x-common.toast />
     <x-common.confirm-modal />
+    <x-common.password-confirm-modal />
     <script src="{{ asset('js/datetime-split.js') }}"></script>
     <script src="{{ asset('js/searchable-select.js') }}{{ file_exists(public_path('js/searchable-select.js')) ? '?v='.filemtime(public_path('js/searchable-select.js')) : '' }}"></script>
     <script src="{{ asset('js/form-wizard.js') }}{{ file_exists(public_path('js/form-wizard.js')) ? '?v='.filemtime(public_path('js/form-wizard.js')) : '' }}"></script>

@@ -12,6 +12,7 @@ use App\Http\Requests\Auth\VerifyStaffMfaRequest;
 use App\Models\User;
 use App\Services\Auth\AuthService;
 use App\Services\Module\ModuleManager;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -166,7 +167,7 @@ class AuthController extends Controller
         return view('auth.confirm-password');
     }
 
-    public function confirmPassword(Request $request): View|RedirectResponse
+    public function confirmPassword(Request $request): View|RedirectResponse|JsonResponse
     {
         $request->validate([
             'password' => ['required', 'string'],
@@ -175,7 +176,12 @@ class AuthController extends Controller
         $user = $request->user('staff');
 
         if (! $user || ! Hash::check($request->input('password'), $user->password)) {
-            return back()->withErrors(['password' => __('body.incorrect_current_password')]);
+            if ($request->expectsJson()) {
+                return response()->json(['message' => __('body.incorrect_current_password')], 422);
+            }
+
+            return back()->withErrors(['password' => __('body.incorrect_current_password')])
+                ->with(ConfirmStaffPassword::MODAL_FLAG, true);
         }
 
         $request->session()->put('auth.staff_password_confirmed_at', time());
@@ -183,18 +189,34 @@ class AuthController extends Controller
         $pending = $request->session()->pull(ConfirmStaffPassword::PENDING_KEY);
 
         if (is_array($pending) && time() - (int) ($pending['at'] ?? 0) < ConfirmStaffPassword::PENDING_TTL) {
-            // The resumed action's back() should land where the user started,
-            // not on this confirmation page.
+            // The resumed action's back() should land where the user started.
             $request->session()->put('_previous.url', $pending['back']);
 
-            return view('auth.confirm-password-resume', [
+            $action = [
                 'method' => $pending['method'],
                 'url' => $pending['url'],
                 'fields' => $this->flattenInput(Crypt::decrypt($pending['input'])),
-            ]);
+            ];
+
+            // Pop-up: the page re-submits the action itself, no extra page.
+            if ($request->expectsJson()) {
+                return response()->json(['action' => $action]);
+            }
+
+            return view('auth.confirm-password-resume', $action);
         }
 
-        return redirect()->intended(route('dashboard'));
+        $intended = $request->session()->pull('url.intended');
+
+        if ($request->expectsJson()) {
+            if (! $intended) {
+                $request->session()->flash('success', __('body.confirm_password_done'));
+            }
+
+            return response()->json(['redirect' => $intended]);
+        }
+
+        return $intended ? redirect()->to($intended) : redirect()->route('dashboard');
     }
 
     /**

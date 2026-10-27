@@ -94,7 +94,7 @@
                 </div>
                 <div class="hidden sm:block leading-tight min-w-0 text-left">
                     <p class="text-sm font-semibold text-ink truncate max-w-[10rem] lg:max-w-[14rem]">{{ $authUser->name }}</p>
-                    <p class="text-xs text-muted truncate">{{ $authUser->getRoleNames()->first() ?? __('body.staff') }}</p>
+                    <p class="text-xs text-muted truncate">{{ $authUser->roleName() ?? ($authUser->isSuperAdmin() ? __('body.super_admin') : __('body.staff')) }}</p>
                 </div>
                 <svg xmlns="http://www.w3.org/2000/svg" class="hidden sm:block h-4 w-4 text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
             </button>

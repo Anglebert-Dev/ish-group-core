@@ -75,6 +75,7 @@ return [
     'confirm_password_title' => 'Confirm your password',
     'confirm_password_subtitle' => 'For your security, please confirm your password before continuing.',
     'confirm_password_action' => 'Confirm',
+    'confirm_password_done' => 'Password confirmed — you can continue.',
     'confirm_password_note' => 'You will not be asked again for the next :hours hours.',
     'continue' => 'Continue',
     'confirm_password_continuing' => 'Password confirmed — finishing your action…',

@@ -10,13 +10,16 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Staff equivalent of Laravel's password.confirm, bound to the staff guard.
  *
- * For a form submission (POST/PUT/DELETE) the action itself is remembered,
- * so after the password is confirmed it is submitted automatically instead
- * of making the user click it again (see AuthController::confirmPassword).
+ * The user is sent back to the page they were on, where a password pop-up
+ * opens. A form submission (POST/PUT/DELETE) is remembered and submitted
+ * again automatically once confirmed (see AuthController::confirmPassword).
  */
 class ConfirmStaffPassword
 {
     public const PENDING_KEY = 'auth.staff_pending_action';
+
+    /** Flash flag that opens the password pop-up on the next page. */
+    public const MODAL_FLAG = 'confirm_password_modal';
 
     /** Seconds a remembered action stays valid. */
     public const PENDING_TTL = 600;
@@ -31,6 +34,7 @@ class ConfirmStaffPassword
         }
 
         $request->session()->forget(self::PENDING_KEY);
+        $back = $request->headers->get('referer');
 
         if ($request->isMethod('GET')) {
             $request->session()->put('url.intended', $request->fullUrl());
@@ -40,12 +44,15 @@ class ConfirmStaffPassword
                 'url' => $request->fullUrl(),
                 // Encrypted: the input may hold a new user's password.
                 'input' => Crypt::encrypt($request->except(['_token', '_method'])),
-                'back' => $request->headers->get('referer') ?: url()->previous(),
+                'back' => $back ?: url()->previous(),
                 'at' => time(),
             ]);
-        } elseif ($request->headers->get('referer')) {
-            // Uploaded files can't be carried over; return to the form.
-            $request->session()->put('url.intended', $request->headers->get('referer'));
+        }
+
+        // Ask on the page the user is on (password pop-up); the full
+        // confirmation page is only for direct links with nowhere to return.
+        if ($back && ! str_contains($back, '/confirm-password')) {
+            return redirect()->to($back)->with(self::MODAL_FLAG, true);
         }
 
         return redirect()->route('staff.password.confirm');
