@@ -1,0 +1,13 @@
+{
+    "name": "Inventory",
+    "alias": "inventory",
+    "description": "Finished goods and materials with sizes/colours (variants), several stores, and a movement log behind every stock change: receive, adjust, transfer, with full history. Other modules move stock only through it.",
+    "keywords": ["inventory", "stock", "warehouse"],
+    "version": "1.0.0",
+    "menu_group": "Inventory",
+    "priority": 0,
+    "providers": [
+        "Modules\\Inventory\\Providers\\InventoryServiceProvider"
+    ],
+    "files": []
+}
