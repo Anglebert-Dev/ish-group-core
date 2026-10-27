@@ -1,0 +1,12 @@
+{
+    "name": "Frontend",
+    "alias": "frontend",
+    "description": "Public website and customer accounts (register, login, password reset, account area). When off, \"/\" goes straight to the staff login.",
+    "keywords": ["website", "customers"],
+    "version": "1.0.0",
+    "priority": 0,
+    "providers": [
+        "Modules\\Frontend\\Providers\\FrontendServiceProvider"
+    ],
+    "files": []
+}
