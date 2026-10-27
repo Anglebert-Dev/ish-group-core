@@ -61,7 +61,10 @@ class DashboardService
 
         $core[] = [
             'label' => __('body.active_modules'),
-            'value' => count($this->modules->activeModules()),
+            // Modules this business can use (its package), not everything installed.
+            'value' => $user->business
+                ? collect($this->modules->activeModules())->filter(fn (string $name) => $user->business->canUseModule($name))->count()
+                : count($this->modules->activeModules()),
         ];
 
         return collect($core)

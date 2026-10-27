@@ -133,6 +133,9 @@ return [
     'units_hint' => 'One per line. Used when adding items.',
     'settings_saved' => 'Inventory settings saved.',
 
+    // Package limits
+    'quota_stores' => 'Stores',
+
     // Dashboard
     'dashboard_items' => 'Items in stock',
     'dashboard_low' => 'Low stock items',

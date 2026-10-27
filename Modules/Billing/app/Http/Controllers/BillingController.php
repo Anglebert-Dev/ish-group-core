@@ -41,8 +41,8 @@ class BillingController extends Controller
         $business = $this->business();
         $subscription = $this->subscriptions->current($business);
 
-        $usage = collect($quota->keys())->map(fn (string $key) => [
-            'label' => __('body.quota_'.$key) !== 'body.quota_'.$key ? __('body.quota_'.$key) : $key,
+        $usage = collect($quota->keysFor($business))->map(fn (string $key) => [
+            'label' => $quota->label($key),
             'used' => $quota->used($business, $key),
             'limit' => $quota->limit($business, $key),
         ]);
@@ -52,7 +52,11 @@ class BillingController extends Controller
             'subscription' => $subscription,
             'isPlatformOwner' => app(BillingEntitlements::class)->isPlatformOwner($business),
             'usage' => $usage,
-            'moduleNames' => collect($modules->catalogue())->where('active', true)->reject(fn ($m) => $modules->isBillingExempt($m['name']))->pluck('name'),
+            // Only what this business's package gives it.
+            'moduleNames' => collect($modules->catalogue())->where('active', true)
+                ->reject(fn ($m) => $modules->isBillingExempt($m['name']))
+                ->filter(fn ($m) => $business->canUseModule($m['name']))
+                ->pluck('name'),
             'openInvoices' => Invoice::query()->where('business_id', $business->id)->where('status', InvoiceStatus::Open->value)->latest('id')->get(),
             'invoiceHistory' => Invoice::query()->where('business_id', $business->id)->where('status', '!=', InvoiceStatus::Open->value)->latest('id')->limit(20)->get(),
             'payments' => Payment::query()->with('invoice')->where('business_id', $business->id)->latest('id')->limit(20)->get(),

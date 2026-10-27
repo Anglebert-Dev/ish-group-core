@@ -62,4 +62,37 @@ class Quota
     {
         return array_keys($this->counters);
     }
+
+    /**
+     * Limits that apply to this business: core ones, plus those of modules
+     * it can use ("inventory.stores" belongs to Inventory).
+     *
+     * @return list<string>
+     */
+    public function keysFor(Business $business): array
+    {
+        return array_values(array_filter($this->keys(), function (string $key) use ($business) {
+            $module = $this->module($key);
+
+            return $module === null || $business->canUseModule($module);
+        }));
+    }
+
+    /**
+     * "Users", or a module's own label ("<module>::<module>.quota_<name>").
+     */
+    public function label(string $key): string
+    {
+        $module = $this->module($key);
+        $translation = $module === null
+            ? 'body.quota_'.$key
+            : strtolower($module).'::'.strtolower($module).'.quota_'.substr($key, strlen($module) + 1);
+
+        return trans()->has($translation) ? __($translation) : $key;
+    }
+
+    private function module(string $key): ?string
+    {
+        return str_contains($key, '.') ? strstr($key, '.', true) : null;
+    }
 }

@@ -78,6 +78,27 @@ class SubscriptionLifecycleTest extends BillingTestCase
         $this->get(route('billing.index'))->assertOk();
     }
 
+    public function test_business_only_sees_the_modules_in_its_package(): void
+    {
+        app(\App\Services\Module\ModuleManager::class)->install('Inventory');
+        [$business, $owner] = $this->makeBusiness();
+        $this->service()->subscribe($business, $this->package(['price' => 0, 'modules' => ['Frontend'], 'limits' => ['inventory.stores' => 2]]));
+
+        $this->actingAs($owner, 'staff');
+
+        $this->get(route('dashboard'))->assertOk()
+            ->assertSee(route('frontend.admin.website.edit'), false)
+            ->assertDontSee(route('inventory.items.index'), false)
+            ->assertViewHas('stats', fn ($stats) => $stats->firstWhere('label', __('body.active_modules'))['value'] === 2); // Frontend + Billing, not Inventory
+
+        $this->get(route('billing.index'))->assertOk()
+            ->assertSee('Frontend')
+            ->assertDontSee('Inventory')
+            ->assertDontSee(__('inventory::inventory.quota_stores'));
+
+        $this->get(route('inventory.items.index'))->assertRedirect(route('billing.index'));
+    }
+
     public function test_platform_owner_business_is_never_locked(): void
     {
         $this->assertTrue($this->root->business->canUseModule('Frontend'));

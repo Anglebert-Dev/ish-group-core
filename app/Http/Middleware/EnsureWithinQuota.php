@@ -25,7 +25,7 @@ class EnsureWithinQuota
         if ($business && ! $this->quota->canAdd($business, $key)) {
             $message = __('body.quota_reached', [
                 'limit' => $this->quota->limit($business, $key),
-                'item' => __('body.quota_'.$key) !== 'body.quota_'.$key ? __('body.quota_'.$key) : $key,
+                'item' => app(Quota::class)->label($key),
             ]);
 
             $upgrade = $this->entitlements->upgradeUrl();

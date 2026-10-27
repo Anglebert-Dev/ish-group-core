@@ -69,7 +69,7 @@
                     <p class="text-xs font-semibold uppercase tracking-wide text-muted mb-2">{{ __('billing::billing.included_modules') }}</p>
                     <div class="flex flex-wrap gap-2">
                         @forelse ($moduleNames as $name)
-                            <x-common.badge :color="$subscription->includesModule($name) ? 'success' : 'muted'">{{ $subscription->includesModule($name) ? '✓' : '✕' }} {{ $name }}</x-common.badge>
+                            <x-common.badge color="success">✓ {{ $name }}</x-common.badge>
                         @empty
                             <span class="text-sm text-muted">—</span>
                         @endforelse

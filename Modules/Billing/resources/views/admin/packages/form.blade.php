@@ -25,7 +25,7 @@
             <x-common.input name="interval_count" type="number" min="1" :label="__('billing::billing.interval_count')" :value="old('interval_count', $package->interval_count ?? 1)" :hint="__('billing::billing.interval_count_hint')" required />
 
             @foreach ($limitKeys as $key)
-                <x-common.input :name="'limits['.$key.']'" type="number" min="0" :label="__('billing::billing.limit_label', ['item' => __('body.quota_'.$key) !== 'body.quota_'.$key ? __('body.quota_'.$key) : $key])" :value="$limits[$key] ?? ''" :hint="__('billing::billing.zero_infinite')" />
+                <x-common.input :name="'limits['.$key.']'" type="number" min="0" :label="__('billing::billing.limit_label', ['item' => app(\App\Support\Entitlements\Quota::class)->label($key)])" :value="$limits[$key] ?? ''" :hint="__('billing::billing.zero_infinite')" />
             @endforeach
             <x-common.input name="sort_order" type="number" min="0" :label="__('billing::billing.sort_order')" :value="old('sort_order', $package->sort_order ?? 0)" />
         </div>
