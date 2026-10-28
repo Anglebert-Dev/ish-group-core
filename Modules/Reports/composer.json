@@ -1,0 +1,26 @@
+{
+    "name": "ish-group/reports",
+    "description": "Reports across modules for the ISH core.",
+    "authors": [
+        {
+            "name": "ISH Group",
+            "email": ""
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Reports\\": "app/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Reports\\Tests\\": "tests/"
+        }
+    }
+}

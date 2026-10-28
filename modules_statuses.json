@@ -8,5 +8,6 @@
     "Quotations": true,
     "Delivery": true,
     "Purchasing": true,
-    "GarmentPack": true
+    "GarmentPack": true,
+    "Reports": true
 }

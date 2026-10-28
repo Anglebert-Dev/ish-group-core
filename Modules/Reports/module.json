@@ -1,0 +1,14 @@
+{
+    "name": "Reports",
+    "alias": "reports",
+    "description": "Reports for a date range, read from the history (never the current numbers alone): sales by product and customer, production output and rejects, stock value at cost, stock movements and purchases. Each report appears only when its module is in use; PDF and Excel export.",
+    "keywords": ["reports"],
+    "version": "1.0.0",
+    "requires": ["Inventory"],
+    "menu_group": "Reports",
+    "priority": 0,
+    "providers": [
+        "Modules\\Reports\\Providers\\ReportsServiceProvider"
+    ],
+    "files": []
+}
