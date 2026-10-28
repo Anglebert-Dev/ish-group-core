@@ -33,6 +33,18 @@ php artisan module:make <Name>     # new module; see Modules/Frontend as the exa
 - **Communicator** (Super Admin): send announcements to business admins, in-app and/or by email.
 - **Backups** (Super Admin): database + uploads zipped to `storage/app/private/backups`; optional daily run. Copy them off the server too.
 
+## Demo data (test server)
+
+```bash
+php artisan core:install                              # platform + superadmin first
+php artisan db:seed --class=DemoFactorySeeder --force
+```
+
+Creates **Kigali Sun Garments**, a garment factory on the "Garment Factory" package (paid and approved), with five weeks of history: stock, purchases, quotes, orders, production with rejects and piece work, deliveries, invoices and payments. Runs once.
+Logins (password `Demo-Factory-2026!`): `owner@`, `sales@`, `floor@`, `store@kigalisun.test`.
+
+- **Inventory** is the switch for the whole stock system: turning it off turns off Sales Orders, Production, Invoicing, Quotations, Delivery, Purchasing, Garments and Reports (data kept).
+
 ## Audit log
 
 Every action must be traceable. Each business sees only its own entries (**Audit log**); the superadmin sees all of them, filterable by business (**Super Admin → Audit log**).
