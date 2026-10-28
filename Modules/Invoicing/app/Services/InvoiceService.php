@@ -128,7 +128,10 @@ class InvoiceService extends BaseService
             return $this->failure($e->getMessage());
         }
 
-        return $this->success($invoice, __('invoicing::invoicing.created', ['number' => $invoice->number]));
+        // Other modules react, e.g. Quotations applies deposits as payments.
+        $this->modules->hook('invoice_created', $invoice);
+
+        return $this->success($invoice->fresh(), __('invoicing::invoicing.created', ['number' => $invoice->number]));
     }
 
     /**

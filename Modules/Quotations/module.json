@@ -1,0 +1,14 @@
+{
+    "name": "Quotations",
+    "alias": "quotations",
+    "description": "Quotes and samples before an order: follow-up dates, deposits as a list, samples sent from stock and returned to it, and \"Convert to order\" that copies the customer, products and prices. Deposits are applied to the order's invoice automatically.",
+    "keywords": ["quotes", "samples", "deposits"],
+    "version": "1.0.0",
+    "requires": ["SalesOrders"],
+    "menu_group": "Sales",
+    "priority": 0,
+    "providers": [
+        "Modules\\Quotations\\Providers\\QuotationsServiceProvider"
+    ],
+    "files": []
+}
