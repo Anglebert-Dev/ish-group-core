@@ -1,0 +1,26 @@
+{
+    "name": "ish-group/garmentpack",
+    "description": "Style library, bill of materials and costing for the ISH core.",
+    "authors": [
+        {
+            "name": "ISH Group",
+            "email": ""
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\GarmentPack\\": "app/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\GarmentPack\\Tests\\": "tests/"
+        }
+    }
+}

@@ -78,6 +78,11 @@
                 </div>
             </div>
 
+            {{-- Modules add panels here (e.g. GarmentPack's bill of materials) --}}
+            @foreach ($panels as $panel)
+                @if (filled($panel)) {!! $panel !!} @endif
+            @endforeach
+
             <div class="bg-white border border-line rounded-xl p-5 space-y-4">
                 <div>
                     <h2 class="font-display font-bold text-ink">{{ __('production::production.materials') }}</h2>

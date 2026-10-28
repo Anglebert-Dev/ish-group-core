@@ -80,6 +80,7 @@ class WorkOrderController extends Controller
                 ->where('type', 'production_out')->with(['variant.item', 'store'])->latest('id')->get(),
             'materialOptions' => $this->items->lineOptions(ItemType::Material),
             'stores' => $this->stores->all(true)->mapWithKeys(fn ($s) => [$s->uuid => $s->name])->all(),
+            'panels' => $this->modules->hook('work_order_panel', $workOrder),
         ]);
     }
 

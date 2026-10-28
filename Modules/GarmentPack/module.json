@@ -1,0 +1,14 @@
+{
+    "name": "GarmentPack",
+    "alias": "garmentpack",
+    "description": "For garment makers: a style library with a bill of materials per style (fabric, thread, buttons… per piece, with waste), costing per piece and margin per size, and work orders that issue exactly the materials a style needs.",
+    "keywords": ["garments", "styles", "bill of materials", "costing"],
+    "version": "1.0.0",
+    "requires": ["Production", "Inventory"],
+    "menu_group": "Garments",
+    "priority": 0,
+    "providers": [
+        "Modules\\GarmentPack\\Providers\\GarmentPackServiceProvider"
+    ],
+    "files": []
+}

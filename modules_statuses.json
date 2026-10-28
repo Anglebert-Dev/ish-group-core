@@ -7,5 +7,6 @@
     "Invoicing": true,
     "Quotations": true,
     "Delivery": true,
-    "Purchasing": true
+    "Purchasing": true,
+    "GarmentPack": true
 }
