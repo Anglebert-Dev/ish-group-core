@@ -20,6 +20,13 @@ php artisan queue:work       # sends emails — without it, no email goes out
 php artisan schedule:work    # daily jobs (billing renewals, suspensions)
 ```
 
+## Core
+
+- **Businesses**: each business sees only its own data. The superadmin manages them all (Super Admin), can log in as a user, and can delete a business.
+- **Users & roles**: per-business roles built from module permissions.
+- **Customers** (Management → Customers): every business has them; a customer with linked orders or invoices can't be deleted (make them inactive).
+- **Audit log**, **notifications**, **backups**, **Communicator** (announcements to business admins).
+
 ## Modules
 
 ```bash
@@ -28,10 +35,33 @@ php artisan core:module install|update|enable|disable|uninstall <Name> [--purge]
 php artisan module:make <Name>     # new module; see Modules/Frontend as the example
 ```
 
-- **Frontend**: a public website per business at `/s/<slug>`, edited from **Website** in the sidebar.
-- **Billing**: packages decide which modules and limits each business gets; payments are offline and you approve them. Public plans are shown at `/pricing`, and signing up from there starts that package.
-- **Communicator** (Super Admin): send announcements to business admins, in-app and/or by email.
-- **Backups** (Super Admin): database + uploads zipped to `storage/app/private/backups`; optional daily run. Copy them off the server too.
+| Module | What it does | Needs |
+|---|---|---|
+| **Frontend** | A website per business at `/s/<slug>`; customer login and sign-up are switched on per business (Website → General). | — |
+| **Billing** | Packages decide which modules and limits each business gets. Payments are offline: the business sends proof, you approve. Public plans at `/pricing`. | — |
+| **Inventory** | Products and materials with sizes/colours, several stores, stock history. Every stock change is logged; stock never goes below zero. | — |
+| **SalesOrders** | Customer orders: pending → confirmed (stock reserved) → in production → ready → delivered. | Inventory |
+| **Production** | Work orders through each business's own stages, quality rejects, daily targets per line. | Inventory |
+| **Invoicing** | Invoices with tax and PDF, payments (never above the balance), credit notes, customer balances. | Inventory |
+| **Quotations** | Quotes and samples, deposits, "Convert to order". | SalesOrders |
+| **Delivery** | Delivery notes, part deliveries, receiver signature. | SalesOrders |
+| **Purchasing** | Suppliers, purchase orders, goods received at cost, supplier balances, reorder list. | Inventory |
+| **GarmentPack** | Styles with bill of materials and costing, piece-rate pay, subcontracting (CMT), bundles, measurements. | Production, Inventory |
+| **Reports** | Sales, production, stock value, movements and purchases for any period; PDF/Excel. | Inventory |
+
+**One switch:** a module can't run without the modules it needs. Turning **Inventory** off turns off everything built on it (data kept); turning a module on turns on what it needs. Leaving a module out of a package hides it, and everything that needs it, for that business.
+
+## Building a module
+
+- `module.json`: `"requires": ["Inventory"]` for dependencies.
+- `Http/Controllers/DataController.php` answers the core's hooks: `user_permissions`, `modifyAdminMenu`, `dashboard_stats`, `dashboard_quick_actions`, `customer_links`, `customer_panel`, `after_business_created`, …
+- Shared services:
+  - `app(StockService::class)->record(...)` — the only way to change stock.
+  - `app(DocumentNumber::class)->next('sales_order', 'SO')` — `SO-2026-00001`, per business, never reused.
+  - `app(BusinessSettings::class)->get/set('module.key')` — per-business settings.
+  - `money($amount)` — amount in the business's currency.
+- Tenant tables get a `business_id`; models use `BelongsToBusiness` and extend `BaseModel`.
+- Migrations run when the module is installed, not with `php artisan migrate`.
 
 ## Demo data (test server)
 
@@ -41,15 +71,21 @@ php artisan db:seed --class=DemoFactorySeeder --force
 ```
 
 Creates **Kigali Sun Garments**, a garment factory on the "Garment Factory" package (paid and approved), with five weeks of history: stock, purchases, quotes, orders, production with rejects and piece work, deliveries, invoices and payments. Runs once.
-Logins (password `Demo-Factory-2026!`): `owner@`, `sales@`, `floor@`, `store@kigalisun.test`.
 
-- **Inventory** is the switch for the whole stock system: turning it off turns off Sales Orders, Production, Invoicing, Quotations, Delivery, Purchasing, Garments and Reports (data kept).
+| Login | Role |
+|---|---|
+| owner@kigalisun.test | Owner (everything) |
+| sales@kigalisun.test | Sales |
+| floor@kigalisun.test | Production supervisor |
+| store@kigalisun.test | Store keeper |
+
+Password for all: `Demo-Factory-2026!`
 
 ## Audit log
 
 Every action must be traceable. Each business sees only its own entries (**Audit log**); the superadmin sees all of them, filterable by business (**Super Admin → Audit log**).
 
-- Records extending `App\Models\BaseModel` log create/update/delete automatically. Give tenant tables a `business_id`.
+- Records extending `App\Models\BaseModel` log create/update/delete automatically.
 - For anything else (completing a sale, approving, exporting, sending…), call:
   `audit('sale_completed', "Sale #{$sale->number} completed", $sale, ['total' => $sale->total]);`
 - Optional label: `Modules/<Name>/lang/en/audit.php` → `'sale_completed' => 'Sale completed'`.
@@ -60,9 +96,9 @@ Set the SMTP details in `.env`. `MAIL_FROM_ADDRESS` must be the SMTP account its
 
 Emails are queued: **without a running `php artisan queue:work`, nothing is sent**. On the server, keep it running under Supervisor or systemd.
 
-## Billing: required setup
+## Server setup
 
-Renewals and suspensions are done by a daily job. On the server, add the scheduler to cron:
+Renewals and suspensions are done by a daily job. Add the scheduler to cron:
 
 ```
 * * * * * php artisan schedule:run
@@ -71,6 +107,8 @@ Renewals and suspensions are done by a daily job. On the server, add the schedul
 Locally, `php artisan schedule:work` does the same, or run `php artisan billing:run` by hand.
 
 Billing events are sent in-app and by email. A business with no subscription can still use the core screens; set **Billing → Settings → Users without a package** to limit them.
+
+After deploying new code: `php artisan migrate --force`, then `php artisan core:module update <Name>` for each updated module, then `php artisan queue:restart`.
 
 ## Tests
 
