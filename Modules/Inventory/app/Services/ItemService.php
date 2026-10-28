@@ -111,10 +111,11 @@ class ItemService extends BaseService
 
     /**
      * Active variants for document lines (orders, invoices…), finished goods by default.
+     * Purchases pass $costPrices so the suggested price is the cost.
      *
      * @return list<array{uuid: string, label: string, price: ?string, cost: ?string, unit: string}>
      */
-    public function lineOptions(?ItemType $type = ItemType::Finished): array
+    public function lineOptions(?ItemType $type = ItemType::Finished, bool $costPrices = false): array
     {
         return Variant::query()
             ->with('item')
@@ -125,7 +126,7 @@ class ItemService extends BaseService
             ->map(fn (Variant $v) => [
                 'uuid' => $v->uuid,
                 'label' => $v->displayName().($v->sku ? ' · '.$v->sku : ''),
-                'price' => $v->sale_price,
+                'price' => $costPrices ? $v->cost_price : $v->sale_price,
                 'cost' => $v->cost_price,
                 'unit' => $v->item->unit,
             ])

@@ -1,0 +1,14 @@
+{
+    "name": "Purchasing",
+    "alias": "purchasing",
+    "description": "Suppliers, purchase orders and goods received. Receiving (in parts or in full) puts stock in at cost through the Inventory movement log; supplier balances and payments; a reorder list from reorder levels.",
+    "keywords": ["purchasing", "suppliers", "purchase orders"],
+    "version": "1.0.0",
+    "requires": ["Inventory"],
+    "menu_group": "Purchasing",
+    "priority": 0,
+    "providers": [
+        "Modules\\Purchasing\\Providers\\PurchasingServiceProvider"
+    ],
+    "files": []
+}
