@@ -35,6 +35,7 @@ class SavePackageRequest extends FormRequest
             'business_ids' => ['nullable', 'array'],
             'business_ids.*' => ['integer', 'exists:businesses,id'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'apply_to_subscribers' => ['nullable', 'in:none,terms,all'],
         ];
     }
 

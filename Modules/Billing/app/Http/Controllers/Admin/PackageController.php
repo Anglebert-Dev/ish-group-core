@@ -48,10 +48,17 @@ class PackageController extends Controller
 
     public function update(SavePackageRequest $request, Package $package): RedirectResponse
     {
-        // Existing subscribers keep their frozen terms until they renew/change.
+        // Existing subscribers keep their own copy of the package unless told otherwise.
         $package->update($request->packageData());
+        $mode = $request->input('apply_to_subscribers', 'none');
+        $message = __('billing::billing.package_saved');
 
-        return redirect()->route('superadmin.billing.packages.index')->with('success', __('billing::billing.package_saved'));
+        if (in_array($mode, ['terms', 'all'], true)) {
+            $count = app(\Modules\Billing\Services\SubscriptionService::class)->applyPackageChanges($package->fresh(), $mode);
+            $message .= ' '.__('billing::billing.package_applied', ['count' => $count]);
+        }
+
+        return redirect()->route('superadmin.billing.packages.index')->with('success', $message);
     }
 
     public function destroy(Package $package): RedirectResponse
@@ -71,6 +78,8 @@ class PackageController extends Controller
     private function formData(Package $package, ModuleManager $modules, Quota $quota): array
     {
         return [
+            'subscriberCount' => $package->exists ? Subscription::query()->where('package_id', $package->id)
+                ->whereIn('status', array_map(fn ($s) => $s->value, SubscriptionStatus::current()))->count() : 0,
             'package' => $package,
             'modules' => $modules->catalogue()->where('active', true)->reject(fn ($m) => $modules->isBillingExempt($m['name']))->values(),
             'limitKeys' => $quota->keys(),

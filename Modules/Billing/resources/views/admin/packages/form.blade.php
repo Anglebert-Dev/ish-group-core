@@ -68,6 +68,18 @@
 
         <div class="flex justify-center gap-3">
             <x-common.button href="{{ route('superadmin.billing.packages.index') }}" variant="secondary">{{ __('body.cancel') }}</x-common.button>
+            @if ($package->exists && $subscriberCount > 0)
+                <div class="rounded-xl border border-amber-300 bg-amber-50 p-4 space-y-2">
+                    <p class="text-sm font-semibold text-ink">{{ __('billing::billing.apply_title', ['count' => $subscriberCount]) }}</p>
+                    <p class="text-xs text-muted">{{ __('billing::billing.apply_hint') }}</p>
+                    @foreach (['none', 'terms', 'all'] as $mode)
+                        <label class="flex items-start gap-2 text-sm">
+                            <input type="radio" name="apply_to_subscribers" value="{{ $mode }}" class="mt-1" @checked(old('apply_to_subscribers', 'none') === $mode)>
+                            <span><b>{{ __('billing::billing.apply_'.$mode) }}</b><span class="block text-xs text-muted">{{ __('billing::billing.apply_'.$mode.'_hint') }}</span></span>
+                        </label>
+                    @endforeach
+                </div>
+            @endif
             <x-common.button type="submit">{{ __('body.save') }}</x-common.button>
         </div>
     </form>

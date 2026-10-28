@@ -323,4 +323,44 @@ class SubscriptionLifecycleTest extends BillingTestCase
             ->assertDontSee('name="modules[]"', false);
         $this->put(route('superadmin.businesses.modules', $business), ['modules' => []])->assertSessionHas('error');
     }
+
+    private function packagePayload(\Modules\Billing\Models\Package $package, array $overrides = []): array
+    {
+        return $overrides + [
+            'name' => $package->name, 'price' => $package->price, 'interval' => 'month', 'interval_count' => 1, 'trial_days' => 0,
+            'modules' => $package->modules, 'limits' => $package->limits ?? [], 'is_active' => 1,
+        ];
+    }
+
+    public function test_package_edits_reach_current_subscribers_only_when_asked(): void
+    {
+        [$business, $owner] = $this->makeBusiness();
+        $package = $this->package(['modules' => ['Frontend'], 'limits' => ['users' => 3]]);
+        $this->service()->subscribe($business, $package);
+        $this->pay($this->openInvoice($business));
+        $subscription = $this->service()->current($business);
+        $this->assertFalse($business->fresh()->canUseModule('Inventory'));
+
+        $this->actingAs($this->root, 'staff');
+        $this->get(route('superadmin.billing.packages.edit', $package))->assertOk()->assertSee(__('billing::billing.apply_title', ['count' => 1]));
+
+        // Default: only new subscribers.
+        $this->put(route('superadmin.billing.packages.update', $package), $this->packagePayload($package, ['modules' => ['Frontend', 'Inventory']]))->assertRedirect();
+        app(\Modules\Billing\Support\BillingEntitlements::class)->forget();
+        $this->assertFalse($business->fresh()->canUseModule('Inventory'));
+
+        // Modules and limits now, price kept.
+        $this->put(route('superadmin.billing.packages.update', $package), $this->packagePayload($package->fresh(), ['price' => 20000, 'limits' => ['users' => 10], 'apply_to_subscribers' => 'terms']))
+            ->assertSessionHas('success', fn ($m) => str_contains($m, 'Applied to 1 current businesses.'));
+        $subscription->refresh();
+        app(\Modules\Billing\Support\BillingEntitlements::class)->forget();
+        $this->assertTrue($business->fresh()->canUseModule('Inventory'));
+        $this->assertSame(10, $subscription->limit('users'));
+        $this->assertSame('10000.00', $subscription->price(), 'price kept');
+
+        // Everything, including the price for the next invoice.
+        $this->put(route('superadmin.billing.packages.update', $package), $this->packagePayload($package->fresh(), ['price' => 20000, 'apply_to_subscribers' => 'all']));
+        $this->assertSame('20000.00', $subscription->fresh()->price());
+        $this->assertTrue(\App\Models\Notification\Notification::query()->where('user_id', $owner->id)->where('title', 'like', '%was updated%')->exists(), 'the business is told');
+    }
 }

@@ -428,6 +428,66 @@ class SubscriptionService extends BaseService
 
     // ------------------------------------------------------------------
 
+    /**
+     * Push an edited package to businesses already on it. Subscriptions keep a
+     * copy of the package; this refreshes it.
+     *   'terms': name, modules and limits now; price and period stay until they change plan.
+     *   'all':   everything, including the price their next invoice will use.
+     *
+     * @return int subscriptions updated
+     */
+    public function applyPackageChanges(Package $package, string $mode): int
+    {
+        $fresh = $package->snapshot();
+        $updated = 0;
+
+        Subscription::query()
+            ->where('package_id', $package->id)
+            ->whereIn('status', array_map(fn ($s) => $s->value, SubscriptionStatus::current()))
+            ->with('business')
+            ->get()
+            ->each(function (Subscription $subscription) use ($fresh, $mode, &$updated) {
+                $old = $subscription->snapshot ?? [];
+                $new = $mode === 'all'
+                    ? $fresh
+                    : array_merge($old, array_intersect_key($fresh, array_flip(['package_id', 'name', 'modules', 'limits'])));
+
+                if ($new == $old) {
+                    return;
+                }
+
+                $subscription->snapshot = $new;
+                $subscription->save();
+                $updated++;
+
+                $added = array_values(array_diff($new['modules'] ?? [], $old['modules'] ?? []));
+                $removed = array_values(array_diff($old['modules'] ?? [], $new['modules'] ?? []));
+                $lines = array_filter([
+                    $added ? __('billing::billing.package_change_added', ['modules' => implode(', ', $added)]) : null,
+                    $removed ? __('billing::billing.package_change_removed', ['modules' => implode(', ', $removed)]) : null,
+                    ($new['limits'] ?? []) != ($old['limits'] ?? []) ? __('billing::billing.package_change_limits') : null,
+                    ($new['price'] ?? null) !== ($old['price'] ?? null) ? __('billing::billing.package_change_price', ['price' => $new['price'], 'currency' => BillingSettings::get('currency')]) : null,
+                ]);
+
+                if ($subscription->business) {
+                    app(BillingNotifier::class)->business(
+                        $subscription->business,
+                        __('billing::billing.package_change_title', ['name' => $new['name'] ?? '']),
+                        implode(' ', $lines) ?: null,
+                        url: route('billing.index'),
+                    );
+                }
+
+                audit(\App\Enums\ActivityLogAction::Updated, __('billing::billing.audit_package_applied', [
+                    'name' => $new['name'] ?? '', 'mode' => $mode,
+                ]), $subscription, ['old' => $old, 'new' => $new], $subscription->business_id);
+            });
+
+        app(\Modules\Billing\Support\BillingEntitlements::class)->forget();
+
+        return $updated;
+    }
+
     public function isUpgrade(Subscription $subscription, Package $package): bool
     {
         $currentDaily = Money::toCents($subscription->price())
