@@ -146,17 +146,22 @@ class WorkOrderService extends BaseService
                 }
 
                 // Never more at a stage than came out of the one before it (or than planned).
+                // At the last stage, rejected pieces also came out of the previous one.
                 $ceiling = $stage === 0 ? $locked->quantity : $counts[$stage - 1];
+                if ($stage === $locked->lastStage()) {
+                    $ceiling -= $locked->rejected;
+                }
                 if ($new > $ceiling + 0.0005) {
                     throw new ProductionRuleBroken($stage === 0
                         ? __('production::production.above_planned', ['stage' => $name, 'max' => InsufficientStock::format($ceiling)])
                         : __('production::production.above_previous', ['stage' => $name, 'previous' => $locked->stages[$stage - 1], 'max' => InsufficientStock::format($ceiling)]));
                 }
 
-                // Never less than what already went on to the next stage.
-                if ($stage < $locked->lastStage() && $new < $counts[$stage + 1] - 0.0005) {
+                // Never less than what already went on to the next stage (plus rejects before the last).
+                $floor = $stage < $locked->lastStage() ? $counts[$stage + 1] + ($stage + 1 === $locked->lastStage() ? $locked->rejected : 0) : 0;
+                if ($stage < $locked->lastStage() && $new < $floor - 0.0005) {
                     throw new ProductionRuleBroken(__('production::production.below_next', [
-                        'stage' => $name, 'next' => $locked->stages[$stage + 1], 'min' => InsufficientStock::format($counts[$stage + 1]),
+                        'stage' => $name, 'next' => $locked->stages[$stage + 1], 'min' => InsufficientStock::format($floor),
                     ]));
                 }
 
@@ -175,7 +180,7 @@ class WorkOrderService extends BaseService
                     $locked->status = WorkOrderStatus::InProgress;
                 }
 
-                if ($stage === $locked->lastStage() && $new >= $locked->quantity - 0.0005) {
+                if ($stage === $locked->lastStage() && $new + $locked->rejected >= $locked->quantity - 0.0005) {
                     $locked->status = WorkOrderStatus::Completed;
                     $locked->completed_at = now();
                 }
@@ -213,6 +218,78 @@ class WorkOrderService extends BaseService
         $this->syncSalesOrder($order);
 
         return $this->success($order, __('production::production.recorded'));
+    }
+
+    /**
+     * Quality control: pieces that failed at the last stage. They never go into stock.
+     * A minus number (with a note) corrects a mistake.
+     */
+    public function reject(WorkOrder $order, float $quantity, string $reason): array
+    {
+        $quantity = round($quantity, 3);
+
+        if (abs($quantity) < 0.0005 || blank($reason)) {
+            return $this->failure(__('production::production.reject_needs_reason'));
+        }
+
+        try {
+            $order = DB::transaction(function () use ($order, $quantity, $reason) {
+                $locked = WorkOrder::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
+
+                if (! $locked->status->isOpen()) {
+                    throw new ProductionRuleBroken(__('production::production.closed'));
+                }
+
+                $last = $locked->lastStage();
+                $rejected = round($locked->rejected + $quantity, 3);
+                $available = $last === 0 ? $locked->quantity : $locked->count($last - 1);
+
+                if ($rejected < 0) {
+                    throw new ProductionRuleBroken(__('production::production.reject_below_zero'));
+                }
+
+                if ($locked->finished() + $rejected > $available + 0.0005) {
+                    throw new ProductionRuleBroken(__('production::production.reject_too_many', [
+                        'max' => InsufficientStock::format(max(0, $available - $locked->finished() - $locked->rejected)),
+                        'stage' => $last === 0 ? __('production::production.quantity') : $locked->stages[$last - 1],
+                    ]));
+                }
+
+                $locked->rejected = $rejected;
+                if ($locked->finished() + $rejected >= $locked->quantity - 0.0005) {
+                    $locked->status = WorkOrderStatus::Completed;
+                    $locked->completed_at = now();
+                }
+                $locked->save();
+
+                $entry = new ProductionEntry;
+                $entry->forceFill([
+                    'business_id' => $locked->business_id,
+                    'work_order_id' => $locked->id,
+                    'stage' => $last,
+                    'stage_name' => $locked->stages[$last],
+                    'kind' => 'reject',
+                    'quantity' => $quantity,
+                    'count_after' => $rejected,
+                    'work_date' => now()->toDateString(),
+                    'line' => $locked->line,
+                    'note' => mb_substr($reason, 0, 500),
+                    'user_id' => Auth::id(),
+                ])->save();
+
+                audit('production_reject', __('production::production.audit_reject', [
+                    'number' => $locked->number, 'quantity' => InsufficientStock::format($quantity), 'reason' => $reason,
+                ]), $locked, ['quantity' => $quantity, 'rejected' => $rejected]);
+
+                return $locked;
+            });
+        } catch (ProductionRuleBroken $e) {
+            return $this->failure($e->getMessage());
+        }
+
+        $this->syncSalesOrder($order);
+
+        return $this->success($order, __('production::production.reject_recorded'));
     }
 
     /**
@@ -274,6 +351,7 @@ class WorkOrderService extends BaseService
         $rows = ProductionEntry::query()
             ->join('production_work_orders as wo', 'wo.id', '=', 'production_entries.work_order_id')
             ->whereDate('production_entries.work_date', now()->toDateString())
+            ->where('production_entries.kind', 'count')
             ->get(['production_entries.*', 'wo.stages as wo_stages', 'wo.daily_target as wo_target']);
 
         return $rows

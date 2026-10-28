@@ -3,7 +3,7 @@
     "alias": "production",
     "description": "Work orders that move through the business's own stages (cutting, sewing, finishing…). Counts only go forward, a later stage never exceeds an earlier one, and finished pieces go into stock through the Inventory movement log. Materials can be issued to a work order; daily targets per production line.",
     "keywords": ["production", "manufacturing", "work orders"],
-    "version": "1.0.0",
+    "version": "1.1.0",
     "requires": ["Inventory"],
     "menu_group": "Production",
     "priority": 0,

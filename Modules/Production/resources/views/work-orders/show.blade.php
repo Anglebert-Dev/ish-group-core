@@ -64,7 +64,7 @@
                         @forelse ($workOrder->entries as $entry)
                             <tr>
                                 <td class="px-5 py-3 whitespace-nowrap text-muted">{{ $entry->work_date->format('d/m/Y') }}</td>
-                                <td class="px-5 py-3">{{ $entry->stage_name }}</td>
+                                <td class="px-5 py-3">{{ $entry->stage_name }}@if ($entry->kind === 'reject') <x-common.badge color="danger">{{ __('production::production.qc_reject') }}</x-common.badge>@endif</td>
                                 <td class="px-5 py-3 text-right font-semibold {{ $entry->quantity < 0 ? 'text-danger' : 'text-success' }}">{{ $entry->quantity > 0 ? '+' : '' }}@include('inventory::partials.qty', ['value' => $entry->quantity])</td>
                                 <td class="px-5 py-3 text-right">@include('inventory::partials.qty', ['value' => $entry->count_after])</td>
                                 <td class="px-5 py-3 text-muted">{{ $entry->note ?: '—' }}</td>
@@ -136,6 +136,22 @@
                     <x-common.button type="submit" class="w-full">{{ __('production::production.record') }}</x-common.button>
                 </form>
             @endif
+
+            <div class="bg-white border border-line rounded-xl p-5 space-y-3">
+                <div class="flex items-center justify-between">
+                    <h2 class="font-display font-bold text-ink">{{ __('production::production.qc') }}</h2>
+                    <span class="text-sm {{ $workOrder->rejected > 0 ? 'text-danger font-semibold' : 'text-muted' }}">{{ __('production::production.rejected_count', ['count' => \Modules\Inventory\Exceptions\InsufficientStock::format($workOrder->rejected)]) }}</span>
+                </div>
+                <p class="text-xs text-muted">{{ __('production::production.qc_hint') }}</p>
+                @if ($open && $can('create production.entry'))
+                    <form action="{{ route('production.work-orders.reject', $workOrder) }}" method="POST" class="space-y-3">
+                        @csrf
+                        <x-common.input name="quantity" id="reject-quantity" type="number" step="any" :label="__('production::production.rejects')" required />
+                        <x-common.input name="reason" id="reject-reason" :label="__('production::production.reject_reason')" required />
+                        <x-common.button type="submit" variant="secondary" size="sm">{{ __('production::production.reject_record') }}</x-common.button>
+                    </form>
+                @endif
+            </div>
 
             @if ($open && $can('approve production.work_order'))
                 <form action="{{ route('production.work-orders.complete', $workOrder) }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-2">

@@ -23,6 +23,7 @@ class WorkOrder extends BaseModel
         return [
             'status' => WorkOrderStatus::class,
             'quantity' => 'float',
+            'rejected' => 'float',
             'daily_target' => 'float',
             'stages' => 'array',
             'counts' => 'array',

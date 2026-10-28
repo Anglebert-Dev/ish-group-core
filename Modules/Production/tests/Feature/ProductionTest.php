@@ -207,4 +207,36 @@ class ProductionTest extends InventoryTestCase
         $this->actingAsStaff();
         $this->get(route('production.work-orders.show', $wo))->assertNotFound();
     }
+
+    public function test_quality_rejects_never_enter_stock_and_count_against_the_previous_stage(): void
+    {
+        [$wo, $medium] = $this->workOrder(['quantity' => 20]);
+        foreach ([0, 1, 2] as $stage) {
+            $this->record($wo, $stage, 20);
+        }
+
+        $this->post(route('production.work-orders.reject', $wo), ['quantity' => 3, 'reason' => 'Stains'])->assertSessionHas('success');
+        $this->record($wo, 3, 18)->assertSessionHas('error', 'Packing cannot be more than Finishing (17).');
+        $this->record($wo, 3, 17)->assertSessionHas('success');
+
+        $wo->refresh();
+        $this->assertSame(3.0, $wo->rejected);
+        $this->assertSame(17.0, app(StockService::class)->onHand($medium), 'rejects never reach stock');
+        $this->assertSame(WorkOrderStatus::Completed, $wo->status, 'all 20 pieces accounted for');
+        $this->assertSame(1, ProductionEntry::query()->where('kind', 'reject')->count());
+        $this->get(route('production.work-orders.show', $wo))->assertOk()->assertSee('Rejected: 3');
+    }
+
+    public function test_rejects_cannot_exceed_what_came_out_of_the_previous_stage(): void
+    {
+        [$wo] = $this->workOrder(['quantity' => 20]);
+        foreach ([0, 1, 2] as $stage) {
+            $this->record($wo, $stage, 10);
+        }
+        $this->record($wo, 3, 8);
+
+        $this->post(route('production.work-orders.reject', $wo), ['quantity' => 3, 'reason' => 'Holes'])->assertSessionHas('error', 'Only 2 more pieces came out of Finishing.');
+        $this->post(route('production.work-orders.reject', $wo), ['quantity' => 2, 'reason' => 'Holes'])->assertSessionHas('success');
+        $this->record($wo, 2, -1, 'Recount')->assertSessionHas('error', 'Finishing cannot be less than Packing (10).');
+    }
 }

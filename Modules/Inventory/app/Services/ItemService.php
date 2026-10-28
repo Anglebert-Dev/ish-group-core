@@ -129,6 +129,13 @@ class ItemService extends BaseService
                 'price' => $costPrices ? $v->cost_price : $v->sale_price,
                 'cost' => $v->cost_price,
                 'unit' => $v->item->unit,
+                // For the size × colour grid.
+                'item' => $v->item->uuid,
+                'item_name' => $v->item->name,
+                'option1' => $v->option1,
+                'option2' => $v->option2,
+                'option1_name' => $v->item->option1_name,
+                'option2_name' => $v->item->option2_name,
             ])
             ->values()
             ->all();

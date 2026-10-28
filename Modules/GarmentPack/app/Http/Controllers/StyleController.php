@@ -94,6 +94,8 @@ class StyleController extends Controller
             'materials.*.quantity' => ['nullable', 'numeric', 'min:0', 'max:999999'],
             'materials.*.waste_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'materials.*.note' => ['nullable', 'string', 'max:255'],
+            'piece_rates' => ['nullable', 'array'],
+            'piece_rates.*' => ['nullable', 'numeric', 'min:0', 'max:9999999'],
         ]);
 
         $item = Item::query()->where('uuid', $data['item'])->where('type', ItemType::Finished->value)->firstOrFail();
@@ -120,6 +122,7 @@ class StyleController extends Controller
             'description' => $data['description'] ?? null,
             'labour_cost' => (float) ($data['labour_cost'] ?? 0),
             'overhead_cost' => (float) ($data['overhead_cost'] ?? 0),
+            'piece_rates' => array_map('floatval', array_filter((array) ($data['piece_rates'] ?? []), fn ($v) => $v !== null && $v !== '')),
             'is_active' => $request->boolean('is_active', true),
         ], $materials];
     }
@@ -130,6 +133,7 @@ class StyleController extends Controller
             'style' => $style,
             'products' => Item::query()->where('type', ItemType::Finished->value)->where('is_active', true)->orderBy('name')->pluck('name', 'uuid')->all(),
             'materialOptions' => $this->items->lineOptions(ItemType::Material, true),
+            'stages' => app(\Modules\Production\Services\WorkOrderService::class)->stages(),
         ]);
     }
 }

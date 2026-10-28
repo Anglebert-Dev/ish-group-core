@@ -112,6 +112,17 @@ class WorkOrderController extends Controller
         return back()->withInput($result['status'] ? [] : $request->input())->with($result['status'] ? 'success' : 'error', $result['message']);
     }
 
+    public function reject(Request $request, WorkOrder $workOrder): RedirectResponse
+    {
+        $data = $request->validate([
+            'quantity' => ['required', 'numeric', 'not_in:0', 'min:-999999999', 'max:999999999'],
+            'reason' => ['required', 'string', 'max:500'],
+        ]);
+        $result = $this->workOrders->reject($workOrder, (float) $data['quantity'], $data['reason']);
+
+        return back()->with($result['status'] ? 'success' : 'error', $result['message']);
+    }
+
     public function complete(WorkOrder $workOrder): RedirectResponse
     {
         $result = $this->workOrders->complete($workOrder);

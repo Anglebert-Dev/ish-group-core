@@ -23,6 +23,7 @@ Route::prefix('app/production')->name('production.')
             Route::get('/{workOrder}/edit', [WorkOrderController::class, 'edit'])->middleware('permission:update production.work_order')->name('edit');
             Route::put('/{workOrder}', [WorkOrderController::class, 'update'])->middleware('permission:update production.work_order')->name('update');
             Route::post('/{workOrder}/record', [WorkOrderController::class, 'record'])->middleware('permission:create production.entry')->name('record');
+            Route::post('/{workOrder}/reject', [WorkOrderController::class, 'reject'])->middleware('permission:create production.entry')->name('reject');
             Route::post('/{workOrder}/materials', [WorkOrderController::class, 'materials'])->middleware(['permission:create production.entry', 'permission:create inventory.movement'])->name('materials');
             Route::post('/{workOrder}/complete', [WorkOrderController::class, 'complete'])->middleware('permission:approve production.work_order')->name('complete');
             Route::post('/{workOrder}/cancel', [WorkOrderController::class, 'cancel'])->middleware(['permission:delete production.work_order', 'password.confirm.staff'])->name('cancel');

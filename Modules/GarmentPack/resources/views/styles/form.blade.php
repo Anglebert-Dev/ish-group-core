@@ -39,6 +39,15 @@
                 <x-common.input name="overhead_cost" type="number" step="any" min="0" :label="__('garmentpack::garment.overhead_cost')" :value="old('overhead_cost', $style->overhead_cost)" />
             </div>
             <x-common.textarea name="description" :label="__('garmentpack::garment.description')" :value="old('description', $style->description)" :rows="2" />
+            <div>
+                <p class="text-sm font-semibold text-ink">{{ __('garmentpack::garment.piece_rates') }}</p>
+                <p class="text-xs text-muted mb-2">{{ __('garmentpack::garment.piece_rates_hint') }}</p>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    @foreach ($stages as $stage)
+                        <x-common.input :name="'piece_rates['.$stage.']'" :id="'rate-'.\Illuminate\Support\Str::slug($stage)" type="number" step="any" min="0" :label="$stage" :value="old('piece_rates.'.$stage, $style->piece_rates[$stage] ?? '')" />
+                    @endforeach
+                </div>
+            </div>
             @unless ($isNew)
                 <input type="hidden" name="is_active" value="0">
                 <x-common.checkbox name="is_active" value="1" :label="__('garmentpack::garment.active')" :checked="$style->is_active" />
