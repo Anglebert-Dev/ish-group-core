@@ -8,6 +8,7 @@ use App\Services\BaseService;
 use App\Support\Documents\DocumentNumber;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Modules\Inventory\Enums\MovementType;
 use Modules\Inventory\Exceptions\InsufficientStock;
@@ -138,37 +139,69 @@ class OrderService extends BaseService
     }
 
     /**
-     * Hand the goods over: stock leaves the order's store (all or nothing).
+     * Hand over everything still to deliver: stock leaves the order's store (all or nothing).
      */
     public function deliver(SalesOrder $order): array
+    {
+        $order->loadMissing('lines');
+
+        return $this->deliverLines($order, $order->lines->mapWithKeys(fn (SalesOrderLine $line) => [$line->id => $line->remaining()])->all());
+    }
+
+    /**
+     * Deliver some quantities: [order line id => quantity]. Used for part
+     * deliveries (Delivery module passes its delivery note as $reference).
+     */
+    public function deliverLines(SalesOrder $order, array $quantities, ?Model $reference = null, ?string $referenceLabel = null): array
     {
         if (! $order->status->reservesStock()) {
             return $this->failure(__('salesorders::orders.cannot_deliver'));
         }
 
         try {
-            DB::transaction(function () use ($order) {
-                $order->loadMissing(['lines.variant', 'store']);
+            DB::transaction(function () use ($order, $quantities, $reference, $referenceLabel) {
+                $order->load(['lines.variant', 'store']);
+                $moves = [];
+
+                foreach ($order->lines as $line) {
+                    $quantity = round((float) ($quantities[$line->id] ?? 0), 3);
+
+                    if ($quantity <= 0) {
+                        continue;
+                    }
+
+                    if ($quantity > $line->remaining() + 0.0005) {
+                        throw new \RuntimeException(__('salesorders::orders.deliver_too_much', [
+                            'remaining' => InsufficientStock::format($line->remaining()), 'item' => $line->variant?->displayName(),
+                        ]));
+                    }
+
+                    $moves[] = ['variant' => $line->variant, 'store' => $order->store, 'quantity' => -$quantity];
+                    $line->forceFill(['delivered_quantity' => round($line->delivered_quantity + $quantity, 3)])->save();
+                }
+
+                if ($moves === []) {
+                    throw new \RuntimeException(__('salesorders::orders.deliver_nothing'));
+                }
 
                 $this->stock->record(
                     MovementType::Sale,
-                    $order->lines->map(fn (SalesOrderLine $line) => [
-                        'variant' => $line->variant,
-                        'store' => $order->store,
-                        'quantity' => -$line->quantity,
-                    ])->all(),
+                    $moves,
                     __('salesorders::orders.delivery_reason', ['customer' => $order->customer?->displayName()]),
-                    $order,
-                    $order->number,
+                    $reference ?? $order,
+                    $referenceLabel ?? $order->number,
                 );
 
-                $this->transition($order, OrderStatus::Delivered, ['delivered_at' => now()]);
+                $complete = $order->lines->every(fn (SalesOrderLine $line) => $line->remaining() <= 0.0005);
+                $this->transition($order, $complete ? OrderStatus::Delivered : OrderStatus::PartlyDelivered, $complete ? ['delivered_at' => now()] : []);
             });
-        } catch (InsufficientStock $e) {
+        } catch (InsufficientStock|\RuntimeException $e) {
             return $this->failure($e->getMessage());
         }
 
-        return $this->success($order, __('salesorders::orders.delivered'));
+        return $this->success($order, $order->status === OrderStatus::Delivered
+            ? __('salesorders::orders.delivered')
+            : __('salesorders::orders.partly_delivered'));
     }
 
     /**
@@ -178,6 +211,10 @@ class OrderService extends BaseService
     {
         if (in_array($order->status, [OrderStatus::Delivered, OrderStatus::Cancelled], true)) {
             return $this->failure(__('salesorders::orders.cannot_cancel'));
+        }
+
+        if ($order->lines()->where('delivered_quantity', '>', 0)->exists()) {
+            return $this->failure(__('salesorders::orders.cannot_cancel_partly'));
         }
 
         $this->transition($order, OrderStatus::Cancelled, ['cancelled_at' => now(), 'cancel_reason' => mb_substr($reason, 0, 500)]);
@@ -203,7 +240,7 @@ class OrderService extends BaseService
                 fn (OrderStatus $s) => $s->value,
                 array_filter(OrderStatus::cases(), fn (OrderStatus $s) => $s->reservesStock()),
             )))
-            ->selectRaw('variant_id, SUM(quantity) as total')
+            ->selectRaw('variant_id, SUM(quantity - delivered_quantity) as total')
             ->groupBy('variant_id')
             ->pluck('total', 'variant_id')
             ->map(fn ($total) => (float) $total)

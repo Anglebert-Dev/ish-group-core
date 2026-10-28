@@ -1,0 +1,14 @@
+{
+    "name": "Delivery",
+    "alias": "delivery",
+    "description": "Delivery notes for sales orders: deliver in parts, record who received the goods (name, phone, signature on screen) and print the note. Each note takes its quantities out of stock through the Inventory movement log.",
+    "keywords": ["delivery", "dispatch"],
+    "version": "1.0.0",
+    "requires": ["SalesOrders"],
+    "menu_group": "Sales",
+    "priority": 0,
+    "providers": [
+        "Modules\\Delivery\\Providers\\DeliveryServiceProvider"
+    ],
+    "files": []
+}

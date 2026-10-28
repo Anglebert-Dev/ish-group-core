@@ -15,7 +15,12 @@ class SalesOrderLine extends Model
 
     protected function casts(): array
     {
-        return ['quantity' => 'float', 'unit_price' => 'decimal:2', 'line_total' => 'decimal:2'];
+        return ['quantity' => 'float', 'delivered_quantity' => 'float', 'unit_price' => 'decimal:2', 'line_total' => 'decimal:2'];
+    }
+
+    public function remaining(): float
+    {
+        return max(0, round($this->quantity - $this->delivered_quantity, 3));
     }
 
     public function order(): BelongsTo

@@ -8,6 +8,7 @@ enum OrderStatus: string
     case Confirmed = 'confirmed';
     case InProduction = 'in_production';
     case Ready = 'ready';
+    case PartlyDelivered = 'partly_delivered';
     case Delivered = 'delivered';
     case Cancelled = 'cancelled';
 
@@ -21,7 +22,7 @@ enum OrderStatus: string
         return match ($this) {
             self::Pending => 'muted',
             self::Confirmed, self::InProduction => 'brand',
-            self::Ready => 'warning',
+            self::Ready, self::PartlyDelivered => 'warning',
             self::Delivered => 'success',
             self::Cancelled => 'danger',
         };
@@ -32,7 +33,7 @@ enum OrderStatus: string
      */
     public function reservesStock(): bool
     {
-        return in_array($this, [self::Confirmed, self::InProduction, self::Ready], true);
+        return in_array($this, [self::Confirmed, self::InProduction, self::Ready, self::PartlyDelivered], true);
     }
 
     /**

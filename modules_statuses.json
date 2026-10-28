@@ -5,5 +5,6 @@
     "SalesOrders": true,
     "Production": true,
     "Invoicing": true,
-    "Quotations": true
+    "Quotations": true,
+    "Delivery": true
 }

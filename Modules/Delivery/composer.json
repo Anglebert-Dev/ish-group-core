@@ -1,0 +1,26 @@
+{
+    "name": "ish-group/delivery",
+    "description": "Delivery notes and part deliveries for the ISH core.",
+    "authors": [
+        {
+            "name": "ISH Group",
+            "email": ""
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Delivery\\": "app/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Delivery\\Tests\\": "tests/"
+        }
+    }
+}
