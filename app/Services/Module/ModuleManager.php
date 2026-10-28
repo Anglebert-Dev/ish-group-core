@@ -150,6 +150,10 @@ class ModuleManager extends BaseService
 
     /**
      * Code-level on/off for an installed module, keeping its data.
+     *
+     * One switch for a whole family: turning a module off also turns off
+     * every module that needs it (Inventory off = Sales, Production,
+     * Invoicing… off); turning one on also turns on what it needs.
      */
     public function toggle(string $name, bool $enabled): array
     {
@@ -159,21 +163,63 @@ class ModuleManager extends BaseService
             return $this->failure(__('body.module_not_installed'));
         }
 
-        if ($enabled && ($missing = $this->missingRequirements($name))) {
+        $affected = $enabled ? $this->requirementsToEnable($module->getName()) : $this->allDependents($module->getName());
+
+        if ($enabled && ($missing = array_filter($affected, fn (string $required) => ! $this->isInstalled($required)))) {
             return $this->failure(__('body.module_requires', ['name' => $module->getName(), 'modules' => implode(', ', $missing)]));
         }
 
-        if (! $enabled && ($dependents = $this->dependents($name))) {
-            return $this->failure(__('body.module_required_by', ['name' => $module->getName(), 'modules' => implode(', ', $dependents)]));
+        foreach ([...$affected, $module->getName()] as $target) {
+            $instance = Module::find($target);
+            $enabled ? $instance->enable() : $instance->disable();
+            $this->flush();
+            $this->audit($enabled ? 'enabled' : 'disabled', $instance);
         }
 
-        $enabled ? $module->enable() : $module->disable();
-        $this->flush();
-        $this->audit($enabled ? 'enabled' : 'disabled', $module);
-
-        return $this->success($module->getName(), $enabled
+        $message = $enabled
             ? __('body.module_enabled', ['name' => $module->getName()])
-            : __('body.module_disabled', ['name' => $module->getName()]));
+            : __('body.module_disabled', ['name' => $module->getName()]);
+
+        if ($affected !== []) {
+            $message .= ' '.__($enabled ? 'body.module_also_enabled' : 'body.module_also_disabled', ['modules' => implode(', ', $affected)]);
+        }
+
+        return $this->success($module->getName(), $message);
+    }
+
+    /**
+     * Active modules that need $name, directly or through another module.
+     *
+     * @return list<string>
+     */
+    public function allDependents(string $name): array
+    {
+        $found = [];
+        $queue = [$name];
+
+        while ($queue !== []) {
+            foreach ($this->dependents(array_shift($queue)) as $dependent) {
+                if (! in_array($dependent, $found, true)) {
+                    $found[] = $dependent;
+                    $queue[] = $dependent;
+                }
+            }
+        }
+
+        return $found;
+    }
+
+    /**
+     * Requirements (all the way down) that are not enabled yet.
+     *
+     * @return list<string>
+     */
+    private function requirementsToEnable(string $name): array
+    {
+        return array_values(array_filter(
+            array_diff($this->withRequirements([$name]), [$name]),
+            fn (string $required) => ! Module::find($required)?->isEnabled(),
+        ));
     }
 
     /**
@@ -342,6 +388,7 @@ class ModuleManager extends BaseService
             'alias' => $module->getLowerName(),
             'description' => (string) $module->getDescription(),
             'requires' => $this->requires($module->getName()),
+            'needed_by' => $installedVersion !== null && $module->isEnabled() ? $this->allDependents($module->getName()) : [],
             'enabled' => $module->isEnabled(),
             'installed' => $installedVersion !== null,
             'active' => $installedVersion !== null && $module->isEnabled(),

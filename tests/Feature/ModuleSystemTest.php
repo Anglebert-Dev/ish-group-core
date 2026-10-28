@@ -132,16 +132,21 @@ class ModuleSystemTest extends TestCase
         $this->assertTrue($modules->install('Billing')['status']);
         $this->assertTrue($modules->install('Frontend')['status']);
 
-        // Required modules can't be switched off or removed underneath it.
-        $result = $modules->toggle('Billing', false);
-        $this->assertFalse($result['status']);
-        $this->assertStringContainsString('Frontend', $result['message']);
+        // Uninstalling a required module is refused (it could remove data)…
         $this->assertFalse($modules->uninstall('Billing')['status']);
-        $this->assertTrue($modules->isActive('Billing'));
 
-        $this->assertTrue($modules->toggle('Frontend', false)['status']);
-        $this->assertTrue($modules->toggle('Billing', false)['status']);
-        $this->assertFalse($modules->toggle('Frontend', true)['status'], 'enabling needs Billing back on');
+        // …but switching it off switches off what needs it too: one switch for the family.
+        $result = $modules->toggle('Billing', false);
+        $this->assertTrue($result['status']);
+        $this->assertStringContainsString('Frontend', $result['message']);
+        $this->assertFalse($modules->isActive('Billing'));
+        $this->assertFalse($modules->isActive('Frontend'));
+        $this->assertTrue($modules->isInstalled('Frontend'), 'data kept');
+
+        // Switching the dependent back on brings its requirement back.
+        $this->assertTrue($modules->toggle('Frontend', true)['status']);
+        $this->assertTrue($modules->isActive('Billing'));
+        $this->assertTrue($modules->isActive('Frontend'));
     }
 
     public function test_a_business_only_uses_a_module_with_its_requirements(): void

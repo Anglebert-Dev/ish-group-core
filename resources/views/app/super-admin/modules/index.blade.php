@@ -25,6 +25,9 @@
                             @if ($module['requires'])
                                 <p class="text-xs font-semibold text-brand mt-1">{{ __('body.module_requires_list', ['modules' => implode(', ', $module['requires'])]) }}</p>
                             @endif
+                            @if ($module['needed_by'])
+                                <p class="text-xs text-muted mt-0.5">{{ __('body.module_needed_by_list', ['modules' => implode(', ', $module['needed_by'])]) }}</p>
+                            @endif
                         </td>
                         <td class="px-5 py-4 whitespace-nowrap text-muted">
                             @if ($module['installed'])
@@ -53,7 +56,12 @@
                                     @if ($module['update_available'])
                                         <x-common.action-button :action="route('superadmin.modules.update', $module['name'])" color="brand">{{ __('body.update') }}</x-common.action-button>
                                     @endif
-                                    <x-common.action-button :action="route('superadmin.modules.toggle', $module['name'])" :color="$module['enabled'] ? 'warning' : 'success'">
+                                    @php $cascade = $module['enabled'] && $module['needed_by']; @endphp
+                                    <x-common.action-button :action="route('superadmin.modules.toggle', $module['name'])" :color="$module['enabled'] ? 'warning' : 'success'"
+                                        :data-confirm="$cascade"
+                                        :data-confirm-title="$cascade ? __('body.disable').' '.$module['name'].'?' : false"
+                                        :data-confirm-message="$cascade ? __('body.module_disable_cascade', ['modules' => implode(', ', $module['needed_by'])]) : false"
+                                        :data-confirm-variant="$cascade ? 'danger' : false">
                                         <x-slot:fields><input type="hidden" name="enabled" value="{{ $module['enabled'] ? 0 : 1 }}"></x-slot:fields>
                                         {{ $module['enabled'] ? __('body.disable') : __('body.enable') }}
                                     </x-common.action-button>

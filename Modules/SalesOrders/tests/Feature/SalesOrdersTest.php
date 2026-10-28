@@ -204,7 +204,12 @@ class SalesOrdersTest extends InventoryTestCase
     {
         $modules = app(ModuleManager::class);
 
+        $statuses = file_get_contents(base_path('modules_statuses.json'));
+        $this->beforeApplicationDestroyed(fn () => file_put_contents(base_path('modules_statuses.json'), $statuses));
+
         $this->assertSame(['Inventory'], $modules->requires('SalesOrders'));
-        $this->assertFalse($modules->toggle('Inventory', false)['status']);
+        $this->assertFalse($modules->uninstall('Inventory')['status'], 'cannot remove what orders are built on');
+        $this->assertTrue($modules->toggle('Inventory', false)['status']);
+        $this->assertFalse($modules->isActive('SalesOrders'), 'Inventory off turns Sales Orders off');
     }
 }

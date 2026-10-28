@@ -46,9 +46,9 @@
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            @foreach (['is_active' => [true, 'billing_is_active'], 'is_popular' => [false, 'billing_mark_popular'], 'is_private' => [false, 'billing_private_only'], 'once_per_business' => [false, 'billing_once_per_business']] as $field => [$default, $label])
+            @foreach (['is_active' => [true, 'is_active'], 'is_popular' => [false, 'mark_popular'], 'is_private' => [false, 'private_only'], 'once_per_business' => [false, 'once_per_business']] as $field => [$default, $label])
                 <input type="hidden" name="{{ $field }}" value="0">
-                <x-common.checkbox :name="$field" :label="__('body.'.$label)" :description="__('body.'.$label.'_hint')" :checked="$flag($field, $default)" />
+                <x-common.checkbox :name="$field" :label="__('billing::billing.'.$label)" :description="__('billing::billing.'.$label.'_hint')" :checked="$flag($field, $default)" />
             @endforeach
         </div>
 
