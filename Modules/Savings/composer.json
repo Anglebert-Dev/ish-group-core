@@ -1,0 +1,26 @@
+{
+    "name": "ish-group/savings",
+    "description": "Personal finance: ledger, budgets, forecasts for the ISH core.",
+    "authors": [
+        {
+            "name": "ISH Group",
+            "email": ""
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Savings\\": "app/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Savings\\Tests\\": "tests/"
+        }
+    }
+}
