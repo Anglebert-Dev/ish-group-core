@@ -53,24 +53,31 @@ class JsonImportTest extends SavingsTestCase
     {
         $this->upload($this->template())->assertSessionHas('success')->assertSessionMissing('savings_json_errors');
 
-        $this->assertSame(4, Account::query()->count());
-        $this->assertSame(11, Transaction::query()->count());
-        $this->assertSame(35000 - 25600 + 4500 + 50000 - 30000 + 10000, $this->balanceOf('MoMo'));
+        $this->assertSame(5, Account::query()->count());
+        $this->assertSame(18, Transaction::query()->count());
+        $this->assertSame(1200000 + 850000 - 250000 - 50500 + 200000 - 100000 + 150000 - 150000 - 130000 - 52000 - 50000 - 100000, $this->balanceOf('Bank of Kigali'));
+        $this->assertSame(35000 - 25600 + 4500 + 50000 - 30000 + 10000 + 60000, $this->balanceOf('MoMo'));
         $this->assertSame(20000 - 10000 - 1000, $this->balanceOf('Cash'));
-        $this->assertSame(500000 - 150000, $this->balanceOf('Savings'));
+        $this->assertSame(500000 - 150000 + 50000 + 100000, $this->balanceOf('Savings'));
+        $this->assertSame(10000, $this->balanceOf('Dollar account'), '100.00 USD');
 
-        $uncle = Obligation::query()->where('counterparty', 'Uncle Jean')->firstOrFail();
-        $this->assertSame(200000, $this->obligations()->outstanding($uncle));
-        $this->assertSame(15000, $this->obligations()->outstanding(Obligation::query()->where('counterparty', 'Eric')->firstOrFail()));
-        $this->assertSame(0, $this->obligations()->outstanding(Obligation::query()->where('counterparty', 'Alice')->firstOrFail()));
-        $this->assertSame(150000, $this->obligations()->outstanding(Obligation::query()->where('direction', 'restore')->firstOrFail()));
+        $owed = fn (string $name) => $this->obligations()->outstanding(Obligation::query()->where('counterparty', $name)->firstOrFail());
+        $this->assertSame(200000, $owed('Uncle Jean'));
+        $this->assertSame(40000, $owed('Patrick'));
+        $this->assertSame(15000, $owed('Eric'));
+        $this->assertSame(0, $owed('Alice'));
+        $this->assertSame(150000, $owed('SACCO'));
+        $this->assertSame(100000, $this->obligations()->outstanding(Obligation::query()->where('direction', 'restore')->firstOrFail()), '150,000 taken, 50,000 put back');
 
         $this->assertNotNull(Category::query()->where('name', 'Groceries')->value('parent_id'), 'sub-category under Food');
-        $this->assertSame(2, Budget::query()->count());
-        $this->assertSame(200000, $this->planning()->earmarked(Goal::query()->firstOrFail()));
-        $this->assertSame(2, RecurringRule::query()->count());
+        $this->assertSame(4, Budget::query()->count());
+        $goal = Goal::query()->firstOrFail();
+        $this->assertSame(200000, $this->planning()->earmarked($goal));
+        $this->assertSame(100000, $this->planning()->funded($goal));
+        $this->assertSame(7, RecurringRule::query()->count());
         $this->assertSame(2, Expected::query()->where('description', 'Year-end bonus')->count());
-        $this->assertSame(1, Commitment::query()->count());
+        $this->assertSame(1, Expected::query()->where('kind', 'contribution')->whereNull('recurring_rule_id')->count());
+        $this->assertSame(2, Commitment::query()->count());
         $this->assertSame(28, app(\Modules\Savings\Services\Periods::class)->rule()['start_day']);
         $this->assertTrue(ActivityLog::query()->withoutGlobalScopes()->where('action', 'savings_json_import')->exists());
 
@@ -78,21 +85,25 @@ class JsonImportTest extends SavingsTestCase
         $before = $counts();
         $this->upload($this->template())->assertSessionHas('success');
         $this->assertSame($before, $counts(), 'nothing added twice');
-        $this->assertSame(500000 - 150000, $this->balanceOf('Savings'));
+        $this->assertSame(500000, $this->balanceOf('Savings'));
     }
 
     public function test_a_file_with_problems_saves_nothing_and_says_where(): void
     {
         $data = $this->template();
-        $data['transactions'][1]['account'] = 'Unknown bank';
-        $data['transactions'][2]['date'] = '03/02/2026';
-        $data['accounts'][0]['type'] = 'piggy';
+        $data['transactions'][2]['account'] = 'Unknown bank';
+        $data['transactions'][3]['date'] = '03/02/2026';
+        $data['accounts'][3]['type'] = 'piggy';
+        $data['expected'][4]['goal'] = 'Holiday';
 
         $this->upload($data)->assertSessionHas('error');
         $errors = implode("\n", session('savings_json_errors'));
-        $this->assertStringContainsString('transactions[1].account', $errors);
-        $this->assertStringContainsString('transactions[2].date', $errors);
-        $this->assertStringContainsString('accounts[0].type', $errors);
+        $this->assertStringContainsString('transactions item 3 (rent-feb) → account', $errors, 'counted from 1 as in the file, the guide being item 1');
+        $this->assertStringContainsString('transactions item 4 (shopping-feb) → date', $errors);
+        $this->assertStringContainsString('accounts item 4 (Cash) → type', $errors);
+        $this->assertSame(1, substr_count($errors, '"Cash"') + substr_count($errors, '(Cash)'), 'a wrong account is reported once, not at every use');
+        $this->assertStringContainsString('expected item 5 (Bonus into the emergency fund) → goal: no goal named "Holiday"', $errors);
+        $this->assertStringNotContainsString('refund_of', $errors, 'a refund of a broken item is not reported again');
 
         $this->assertSame(0, Account::query()->count());
         $this->assertSame(0, Transaction::query()->count());

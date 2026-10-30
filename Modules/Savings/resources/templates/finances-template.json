@@ -1,18 +1,32 @@
 {
     "format": "ish-finance",
-    "_guide": [
-        "Replace the examples with your own data, keep \"format\" as it is, then upload in Savings > Import & backup > Fill from a file.",
-        "Every section is optional. Keys starting with _ are notes and are ignored.",
-        "Dates are YYYY-MM-DD. Amounts are written normally: \"25600\", \"25,600\" or \"12.50\" (as text, in quotes).",
-        "Accounts, categories and people are written by NAME, exactly as in the accounts and categories sections.",
-        "Categories listed here are created if missing. Transactions may also use categories you already have.",
-        "Record each account with its balance on its opening_date. Transactions cannot be dated before that day.",
-        "Uploading the same file again adds nothing twice: accounts, goals and debts are matched by name, transactions by ref (or by their exact content).",
-        "If anything is wrong, nothing is saved and every problem is listed with its place, e.g. transactions[3].account."
-    ],
+
+    "_READ_ME_FIRST": {
+        "what_this_file_is": "All your finances in one file. Fill it in, then upload it in Savings > Import & backup > Fill from a file. Everything below is an EXAMPLE: replace it with your own data.",
+        "do_not_change": "Keep the line \"format\": \"ish-finance\" exactly as it is, or the file is refused.",
+        "notes": "Anything whose name starts with _ (like this block, or \"_about\" and \"_fields\" at the top of each section) is an explanation only. It is ignored when you upload, so you can leave it or delete it.",
+        "sections": "Every section is optional: keep the ones you need, delete the others. Inside a section, delete the example items and add yours, following the same shape.",
+        "order": "The order of sections and items does not matter. Transactions are recorded oldest first, whatever order you write them in.",
+        "dates": "Always YYYY-MM-DD, for example 2026-03-15 (15 March 2026). Not 15/03/2026.",
+        "amounts": "Write amounts as text in quotes, the normal way: \"25600\", \"25,600\" or \"12.50\". Use the currency of the account the money moves in. Never a minus sign, except in an adjustment.",
+        "names": "Accounts, categories, goals and people are referred to by NAME. The name must be written exactly as in its own section (capital letters for categories do not matter). Accounts, categories and goals you already have in the app can be used too.",
+        "past_history": "To record what happened before you used the app: give each account an opening_date on or before your oldest transaction and the opening_balance it had THAT day. Then add the transactions from that day on. A transaction cannot be dated before its account's opening_date.",
+        "ref": "Give every transaction a short ref of your own (letters, numbers, dashes), unique in the file. Refunds and money to put back point to a transaction by its ref. Never change a ref after you have uploaded the file.",
+        "uploading_again": "You can keep this one file, add new items over time and upload it again. Nothing is added twice: accounts, categories, goals and debts are recognised by their name, transactions by their ref (or, without a ref, by being exactly the same), budgets by category and period, planned items by their description and account.",
+        "what_uploading_again_does_not_do": "Changing an item that was already uploaded (an opening balance, an amount) does NOT change it in the app, and deleting an item from the file does NOT delete it from the app. Fix those in the app: for a transaction use Reverse (and correct).",
+        "if_something_is_wrong": "The whole file is checked. If anything is wrong, NOTHING is saved and every problem is listed with its place, for example: transactions item 4 (rent-feb) → account: no account named \"BK\". Items are counted from 1, and the explanation item at the top of a section counts as item 1.",
+        "json_tips": "Text always in double quotes \"like this\". A comma between items, but none after the last item of a list or block. If the upload says the file is not valid JSON, paste it into jsonlint.com to find the mistake.",
+        "after_upload": "Check Savings > Accounts: each balance should match your bank, mobile money and cash today. If one does not, use Reconcile on that account."
+    },
 
     "settings": {
-        "_help": "currency: main currency (RWF, USD...). period.type: monthly (start_day 1-31, e.g. 28 = 28th to 27th), weekly (weekday 1=Mon..7=Sun) or biweekly (anchor = a first day).",
+        "_about": "Your personal finance settings. Leave out anything you don't want to change.",
+        "_fields": {
+            "currency": "Your main currency: RWF, USD, EUR, KES, UGX... Budgets and totals are shown in it.",
+            "period": "Your budget period. type monthly + start_day (1-31; 28 means 28th to 27th, e.g. when salary comes on the 28th). type weekly + weekday (1 Monday ... 7 Sunday). type biweekly + anchor (a date on which a two-week period starts).",
+            "available": "What 'available to spend' keeps aside. goal_earmarks: money set aside for goals. minimum_balance: each account's minimum balance. true or false (no quotes).",
+            "alerts": "Which alerts you get (true or false): bills coming up, overdue debts, late income, budget at 80% and 100%, missed goal contributions, coming shortfalls."
+        },
         "currency": "RWF",
         "period": { "type": "monthly", "start_day": 28 },
         "available": { "goal_earmarks": true, "minimum_balance": true },
@@ -20,13 +34,14 @@
     },
 
     "categories": {
-        "_help": "A plain name, or {\"name\": ..., \"children\": [...]} for sub-categories.",
-        "income": ["Salary", "Side business"],
+        "_about": "What money comes from (income) and goes to (expense). Each is created if you don't have it yet. Write a plain name, or { \"name\": ..., \"children\": [...] } for a category with sub-categories. A budget on a parent (Food) covers its children (Groceries, Eating out).",
+        "income": ["Salary", "Bonus", "Side business"],
         "expense": [
             "Rent",
             { "name": "Food", "children": ["Groceries", "Eating out"] },
-            "Transport",
-            "Utilities",
+            { "name": "Transport", "children": ["Fuel", "Car insurance"] },
+            { "name": "Utilities", "children": ["Electricity", "Water"] },
+            "School fees",
             "Bank fees",
             "Interest"
         ]
@@ -34,7 +49,21 @@
 
     "accounts": [
         {
-            "_help": "type: bank, cash, mobile_money, savings, investment, credit_card, loan, other. spendable: counts in available to spend (default yes, except savings/investment/loan/credit_card).",
+            "_about": "Every place you keep money. A name is recognised on upload again, so an account already in the app is left as it is.",
+            "_fields": {
+                "name": "Required. Any name you like, e.g. BK, MoMo, Cash.",
+                "type": "bank, cash, mobile_money, savings, investment, credit_card, loan or other. Default bank.",
+                "currency": "Default: your main currency.",
+                "opening_date": "The day you start recording this account from (see past_history at the top). Default: today.",
+                "opening_balance": "What the account had on opening_date. Default 0.",
+                "minimum_balance": "Optional. Money you never want to go below; kept out of available to spend and used for shortfall warnings.",
+                "spendable": "Optional, true or false: counts in available to spend. Default true, except savings, investment, loan and credit_card.",
+                "institution": "Optional: the bank or provider.",
+                "account_number": "Optional.",
+                "notes": "Optional."
+            }
+        },
+        {
             "name": "Bank of Kigali",
             "type": "bank",
             "currency": "RWF",
@@ -42,22 +71,31 @@
             "opening_balance": "1,200,000",
             "minimum_balance": "50,000",
             "institution": "Bank of Kigali",
-            "account_number": "0001-2345"
+            "account_number": "0001-2345",
+            "notes": "Salary account"
         },
-        { "name": "MoMo", "type": "mobile_money", "opening_date": "2026-01-01", "opening_balance": "35,000" },
-        { "name": "Cash", "type": "cash", "opening_date": "2026-01-01", "opening_balance": "20,000" },
-        { "name": "Savings", "type": "savings", "opening_date": "2026-01-01", "opening_balance": "500,000" }
+        { "name": "MoMo", "type": "mobile_money", "currency": "RWF", "opening_date": "2026-01-01", "opening_balance": "35,000" },
+        { "name": "Cash", "type": "cash", "currency": "RWF", "opening_date": "2026-01-01", "opening_balance": "20,000" },
+        { "name": "Savings", "type": "savings", "currency": "RWF", "opening_date": "2026-01-01", "opening_balance": "500,000", "spendable": false },
+        { "name": "Dollar account", "type": "bank", "currency": "USD", "opening_date": "2026-01-01", "opening_balance": "0.00" }
     ],
 
     "debts": [
         {
-            "_help": "direction: owed_to_me (someone owes you), i_owe (you owe someone), to_put_back (money taken from an account that you intend to return; account = where it goes back). amount = what was owed on day one (optional).",
-            "direction": "i_owe",
-            "name": "Uncle Jean",
-            "description": "Loan for the motorbike",
-            "amount": "300,000",
-            "due_date": "2026-12-31"
+            "_about": "Money owed between you and others, and money you took from an account and want to put back. People you lend to, borrow from or split with in transactions are created automatically; list here only debts that already existed on your opening date, or money to put back.",
+            "_fields": {
+                "direction": "Required. owed_to_me (someone owes you), i_owe (you owe someone), to_put_back (money you took from an account, e.g. savings, and intend to return).",
+                "name": "Required. The person or organisation; for to_put_back, a short name for it. Transactions refer to the debt by this name.",
+                "amount": "What was owed on your opening date (owed_to_me / i_owe). Leave it out if the debt only starts with a transaction in this file.",
+                "account": "to_put_back only, required: the account the money must go back into.",
+                "counts": "to_put_back only: the refs of the transactions that took the money out. Each counts in full; to count only part, write { \"ref\": \"...\", \"amount\": \"...\" }. Each transaction counts only once.",
+                "description": "Optional, e.g. what the loan was for.",
+                "due_date": "Optional: when it should be paid back. Late debts give an alert.",
+                "notes": "Optional, e.g. evidence or agreement."
+            }
         },
+        { "direction": "i_owe", "name": "Uncle Jean", "description": "Loan for the motorbike", "amount": "300,000", "due_date": "2026-12-31" },
+        { "direction": "owed_to_me", "name": "Patrick", "description": "Money lent in 2025", "amount": "40,000", "due_date": "2026-06-30" },
         {
             "direction": "to_put_back",
             "name": "School fees taken from savings",
@@ -66,68 +104,149 @@
         }
     ],
 
+    "goals": [
+        {
+            "_about": "Things you are saving for.",
+            "_fields": {
+                "name": "Required.",
+                "target": "Required: the amount you want to reach.",
+                "by": "Optional: the date you want to reach it.",
+                "account": "Optional: where the money for it is kept. Needed to pay into the goal (goal_contribution transactions).",
+                "monthly": "Optional: what you plan to put in each month; a missed month gives an alert.",
+                "earmarked": "Optional: money already in that account that you set aside for this goal (a plan, no money moves)."
+            }
+        },
+        { "name": "Emergency fund", "target": "1,000,000", "by": "2027-06-30", "account": "Savings", "monthly": "100,000", "earmarked": "200,000" }
+    ],
+
     "transactions": [
         {
-            "_help": "type: income, expense, transfer, refund, split, lend, borrow, repayment_received, repayment_made, adjustment. ref: your own short id (needed to refer to it later, e.g. refund_of). Optional on all: description, counterparty, reference, tags, notes.",
-            "ref": "salary-jan",
-            "type": "income",
-            "date": "2026-01-28",
-            "account": "Bank of Kigali",
-            "category": "Salary",
-            "amount": "850,000",
-            "description": "Salary January"
+            "_about": "Everything that already happened, from each account's opening date. One item per transaction. The type decides which fields are needed; there is one example of every type below.",
+            "_fields_for_all_types": {
+                "ref": "Your own short id, unique in the file (see the top). Strongly recommended.",
+                "type": "Required: income, expense, transfer, refund, split, lend, borrow, repayment_received, repayment_made, put_back, goal_contribution, adjustment.",
+                "date": "Required: the day it happened.",
+                "description": "Optional, what it was.",
+                "counterparty": "Optional: who paid you or whom you paid.",
+                "reference": "Optional: receipt or transaction number.",
+                "tags": "Optional: a list of words, e.g. [\"home\", \"wedding\"].",
+                "notes": "Optional."
+            },
+            "_fields_by_type": {
+                "income": "account, category (an income category), amount.",
+                "expense": "account, category (an expense category), amount.",
+                "transfer": "from, to (accounts), amount (in the from account's currency). Optional: fee + fee_category (an expense category; the fee also leaves the from account). Between different currencies add received (what arrived, in the to account's currency) or rate.",
+                "refund": "account (where the money came back), refund_of (the ref of the original expense or income), amount (not more than the original).",
+                "split": "account, category, amount = the WHOLE payment as on your statement, owed_back = the part someone owes you, owed_by = that person. Only amount minus owed_back counts as your spending.",
+                "lend": "account, amount, to (the person). Not spending: it becomes money owed to you.",
+                "borrow": "account (where the money arrived), amount, from (the person or lender). Not income: it becomes money you owe.",
+                "repayment_received": "account, debt (the person's name), amount. Lowers what they owe; not income.",
+                "repayment_made": "account, debt (the name), amount. Optional: interest + interest_category (the interest is spending, the amount lowers the debt).",
+                "put_back": "account (where the money comes from), debt (the to_put_back name), amount. Moves the money into that debt's account and lowers what is left to put back.",
+                "goal_contribution": "account (where the money comes from), goal (its name), amount. Moves the money into the goal's account.",
+                "adjustment": "account, amount (minus to lower the balance, e.g. \"-1,000\"), reason (required). Only for differences you cannot explain; it is not income or spending."
+            }
         },
-        { "ref": "rent-feb", "type": "expense", "date": "2026-02-01", "account": "Bank of Kigali", "category": "Rent", "amount": "250,000", "description": "Rent February" },
+        { "ref": "salary-jan", "type": "income", "date": "2026-01-28", "account": "Bank of Kigali", "category": "Salary", "amount": "850,000", "description": "Salary January", "counterparty": "My employer", "reference": "PAY-0126", "tags": ["work"], "notes": "Paid on time" },
+        { "ref": "rent-feb", "type": "expense", "date": "2026-02-01", "account": "Bank of Kigali", "category": "Rent", "amount": "250,000", "description": "Rent February", "counterparty": "Landlord" },
         { "ref": "shopping-feb", "type": "expense", "date": "2026-02-03", "account": "MoMo", "category": "Groceries", "amount": "25,600", "description": "Supermarket", "tags": ["home"] },
-        { "ref": "refund-feb", "type": "refund", "date": "2026-02-05", "account": "MoMo", "refund_of": "shopping-feb", "amount": "4,500", "description": "Returned item" },
-        {
-            "_help": "transfer: from, to, amount. Optional: fee + fee_category, received (other currency) + rate.",
-            "ref": "momo-topup", "type": "transfer", "date": "2026-02-06", "from": "Bank of Kigali", "to": "MoMo", "amount": "50,000", "fee": "500", "fee_category": "Bank fees"
-        },
-        {
-            "_help": "split: amount = the whole payment, of which owed_back is owed to you by owed_by.",
-            "ref": "dinner-split", "type": "split", "date": "2026-02-10", "account": "MoMo", "category": "Eating out", "amount": "30,000", "owed_back": "15,000", "owed_by": "Eric"
-        },
-        { "ref": "lend-alice", "type": "lend", "date": "2026-02-12", "account": "Cash", "amount": "10,000", "to": "Alice" },
+        { "ref": "refund-feb", "type": "refund", "date": "2026-02-05", "account": "MoMo", "refund_of": "shopping-feb", "amount": "4,500", "description": "Returned a broken item" },
+        { "ref": "momo-topup", "type": "transfer", "date": "2026-02-06", "from": "Bank of Kigali", "to": "MoMo", "amount": "50,000", "fee": "500", "fee_category": "Bank fees", "description": "Top up MoMo" },
+        { "ref": "dinner-split", "type": "split", "date": "2026-02-10", "account": "MoMo", "category": "Eating out", "amount": "30,000", "owed_back": "15,000", "owed_by": "Eric", "description": "Dinner, Eric pays his half later" },
+        { "ref": "lend-alice", "type": "lend", "date": "2026-02-12", "account": "Cash", "amount": "10,000", "to": "Alice", "due_date": "2026-03-01" },
+        { "ref": "sacco-loan", "type": "borrow", "date": "2026-02-15", "account": "Bank of Kigali", "amount": "200,000", "from": "SACCO", "description": "Short loan" },
         { "ref": "alice-pays", "type": "repayment_received", "date": "2026-02-20", "account": "MoMo", "debt": "Alice", "amount": "10,000" },
-        { "ref": "pay-uncle", "type": "repayment_made", "date": "2026-02-25", "account": "Bank of Kigali", "debt": "Uncle Jean", "amount": "100,000", "interest": "2,000", "interest_category": "Interest" },
-        { "ref": "fees-from-savings", "type": "transfer", "date": "2026-03-01", "from": "Savings", "to": "Bank of Kigali", "amount": "150,000", "description": "School fees" },
-        {
-            "_help": "adjustment: amount with minus to reduce the balance; reason required.",
-            "ref": "cash-count", "type": "adjustment", "date": "2026-03-02", "account": "Cash", "amount": "-1,000", "reason": "Cash count difference"
-        }
+        { "ref": "pay-uncle", "type": "repayment_made", "date": "2026-02-25", "account": "Bank of Kigali", "debt": "Uncle Jean", "amount": "100,000" },
+        { "ref": "fees-from-savings", "type": "transfer", "date": "2026-03-01", "from": "Savings", "to": "Bank of Kigali", "amount": "150,000", "description": "Took money from savings for school fees" },
+        { "ref": "school-fees", "type": "expense", "date": "2026-03-02", "account": "Bank of Kigali", "category": "School fees", "amount": "150,000", "description": "School fees term 1" },
+        { "ref": "cash-count", "type": "adjustment", "date": "2026-03-03", "account": "Cash", "amount": "-1,000", "reason": "Cash count was 1,000 less than recorded" },
+        { "ref": "buy-dollars", "type": "transfer", "date": "2026-03-05", "from": "Bank of Kigali", "to": "Dollar account", "amount": "130,000", "received": "100.00", "description": "Bought 100 USD" },
+        { "ref": "side-job", "type": "income", "date": "2026-03-10", "account": "MoMo", "category": "Side business", "amount": "60,000", "description": "Logo design" },
+        { "ref": "pay-sacco", "type": "repayment_made", "date": "2026-03-15", "account": "Bank of Kigali", "debt": "SACCO", "amount": "50,000", "interest": "2,000", "interest_category": "Interest" },
+        { "ref": "put-back-1", "type": "put_back", "date": "2026-03-20", "account": "Bank of Kigali", "debt": "School fees taken from savings", "amount": "50,000" },
+        { "ref": "goal-march", "type": "goal_contribution", "date": "2026-03-25", "account": "Bank of Kigali", "goal": "Emergency fund", "amount": "100,000" }
     ],
 
     "budgets": [
-        { "_help": "period: any date inside the budget period; limit for that expense category.", "period": "2026-11-28", "category": "Food", "limit": "120,000" },
-        { "period": "2026-11-28", "category": "Transport", "limit": "40,000" }
-    ],
-
-    "goals": [
         {
-            "_help": "target, by (date), account (where the money is kept), monthly contribution, earmarked = amount already set aside.",
-            "name": "Emergency fund", "target": "1,000,000", "by": "2027-06-30", "account": "Savings", "monthly": "100,000", "earmarked": "200,000"
-        }
+            "_about": "Spending limits per expense category for one budget period (see settings → period). One item per category per period; to budget several months, add one item for each.",
+            "_fields": {
+                "period": "Required: ANY date inside the budget period. With monthly from the 28th, 2026-11-28 and 2026-12-10 both mean 28 Nov to 27 Dec 2026.",
+                "category": "Required: an expense category. A budget on a parent (Food) counts its sub-categories too.",
+                "limit": "Required: the most you want to spend, in your main currency.",
+                "if_written_twice": "The same category and period again just replaces the limit (no duplicate)."
+            }
+        },
+        { "period": "2026-11-28", "category": "Food", "limit": "120,000" },
+        { "period": "2026-11-28", "category": "Transport", "limit": "40,000" },
+        { "period": "2026-11-28", "category": "Utilities", "limit": "30,000" },
+        { "period": "2026-12-28", "category": "Food", "limit": "150,000" }
     ],
 
     "recurring": [
         {
-            "_help": "kind: income, expense, transfer (to), contribution (goal). Repeats every N unit (day, week, month, year) from start, until end (optional). variable: amount changes each time.",
-            "kind": "expense", "description": "Rent", "account": "Bank of Kigali", "category": "Rent", "amount": "250,000", "every": 1, "unit": "month", "start": "2026-12-01"
+            "_about": "Things that come back regularly (salary, rent, bills, saving). The app creates the coming dates as planned items, used for alerts, available to spend and the forecast. Nothing is recorded until you mark it as received or paid.",
+            "_fields": {
+                "kind": "Required: income, expense, transfer (to another account) or contribution (to a goal).",
+                "description": "Required, and unique per account: how it is recognised on upload again.",
+                "account": "Required: the account the money comes into (income) or goes out of.",
+                "category": "income and expense only, required.",
+                "to": "transfer only, required: the account receiving it.",
+                "goal": "contribution only, required: the goal's name.",
+                "amount": "Required: the usual amount.",
+                "variable": "Optional true: the amount changes each time (it is treated as an estimate).",
+                "every": "How many units between two times. Default 1.",
+                "unit": "day, week, month or year. Default month.",
+                "start": "Required: the first date (monthly ones then come on the same day each month).",
+                "end": "Optional: the last date.",
+                "confidence": "Optional: confirmed (default), expected or uncertain. Used by the forecast."
+            }
         },
-        { "kind": "income", "description": "Salary", "account": "Bank of Kigali", "category": "Salary", "amount": "850,000", "every": 1, "unit": "month", "start": "2026-11-28" }
+        { "kind": "income", "description": "Salary", "account": "Bank of Kigali", "category": "Salary", "amount": "850,000", "every": 1, "unit": "month", "start": "2026-11-28" },
+        { "kind": "expense", "description": "Rent", "account": "Bank of Kigali", "category": "Rent", "amount": "250,000", "every": 1, "unit": "month", "start": "2026-12-01" },
+        { "kind": "expense", "description": "Weekly groceries", "account": "MoMo", "category": "Groceries", "amount": "20,000", "variable": true, "every": 1, "unit": "week", "start": "2026-11-07", "end": "2027-06-30" },
+        { "kind": "expense", "description": "Water bill", "account": "MoMo", "category": "Water", "amount": "9,000", "every": 3, "unit": "month", "start": "2026-12-15", "confidence": "expected" },
+        { "kind": "expense", "description": "Car insurance", "account": "Bank of Kigali", "category": "Car insurance", "amount": "180,000", "every": 1, "unit": "year", "start": "2027-01-10" },
+        { "kind": "transfer", "description": "Top up MoMo", "account": "Bank of Kigali", "to": "MoMo", "amount": "50,000", "every": 1, "unit": "month", "start": "2026-12-01" },
+        { "kind": "contribution", "description": "Emergency fund monthly", "account": "Bank of Kigali", "goal": "Emergency fund", "amount": "100,000", "every": 1, "unit": "month", "start": "2026-12-05" }
     ],
 
     "expected": [
         {
-            "_help": "One-off money expected in or out. Use parts for instalments (e.g. a bonus paid in two parts). confidence: confirmed, expected, uncertain.",
-            "kind": "income", "description": "Year-end bonus", "account": "Bank of Kigali", "category": "Salary", "confidence": "expected",
+            "_about": "One-off money you expect in or out on a date (not regular). Like recurring items, nothing is recorded until you mark it as received or paid.",
+            "_fields": {
+                "kind": "Required: income, expense, transfer or contribution.",
+                "description": "Required.",
+                "account": "Required.",
+                "category": "income and expense only, required.",
+                "to": "transfer only, required.",
+                "goal": "contribution only, required.",
+                "date": "Required, with amount (one payment).",
+                "amount": "Required, with date.",
+                "parts": "Instead of date + amount, when it comes in several parts: a list of { \"date\": ..., \"amount\": ... }.",
+                "confidence": "Optional: confirmed, expected (default) or uncertain."
+            }
+        },
+        {
+            "kind": "income", "description": "Year-end bonus", "account": "Bank of Kigali", "category": "Bonus", "confidence": "expected",
             "parts": [ { "date": "2026-12-20", "amount": "450,000" }, { "date": "2027-01-20", "amount": "550,000" } ]
         },
-        { "kind": "expense", "description": "Car insurance", "account": "Bank of Kigali", "category": "Transport", "date": "2026-12-15", "amount": "180,000", "confidence": "confirmed" }
+        { "kind": "expense", "description": "Car service", "account": "Bank of Kigali", "category": "Transport", "date": "2026-12-15", "amount": "80,000", "confidence": "uncertain" },
+        { "kind": "transfer", "description": "Send dollars for the trip", "account": "Bank of Kigali", "to": "Dollar account", "date": "2027-02-01", "amount": "260,000", "confidence": "confirmed" },
+        { "kind": "contribution", "description": "Bonus into the emergency fund", "account": "Bank of Kigali", "goal": "Emergency fund", "date": "2026-12-21", "amount": "200,000" }
     ],
 
     "commitments": [
-        { "_help": "Money already promised from an account; lowers available to spend, not the balance.", "description": "Family contribution", "account": "MoMo", "amount": "20,000", "due_date": "2026-12-05" }
+        {
+            "_about": "Money already promised from an account but not yet paid (a pledge, a group contribution). It lowers available to spend, not the balance. Settle it in the app when you pay.",
+            "_fields": {
+                "description": "Required, and unique per account while open.",
+                "account": "Required.",
+                "amount": "Required.",
+                "due_date": "Optional."
+            }
+        },
+        { "description": "Family contribution", "account": "MoMo", "amount": "20,000", "due_date": "2026-12-05" },
+        { "description": "Wedding pledge", "account": "Bank of Kigali", "amount": "100,000" }
     ]
 }

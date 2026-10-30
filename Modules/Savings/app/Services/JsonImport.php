@@ -26,7 +26,7 @@ class JsonImport
 {
     public const FORMAT = 'ish-finance';
 
-    public const TRANSACTION_TYPES = ['income', 'expense', 'transfer', 'refund', 'split', 'lend', 'borrow', 'repayment_received', 'repayment_made', 'adjustment'];
+    public const TRANSACTION_TYPES = ['income', 'expense', 'transfer', 'refund', 'split', 'lend', 'borrow', 'repayment_received', 'repayment_made', 'put_back', 'goal_contribution', 'adjustment'];
 
     private const DIRECTIONS = ['owed_to_me' => 'receivable', 'i_owe' => 'payable', 'to_put_back' => 'restore'];
 
@@ -39,8 +39,17 @@ class JsonImport
     /** @var array<string, int> */
     private array $skipped = [];
 
+    /** @var array<string, true> accounts in the file that could not be created (already reported) */
+    private array $badAccounts = [];
+
+    /** @var array<string, true> refs written in the file (a failed one is reported once, not again where it is used) */
+    private array $fileRefs = [];
+
     /** @var array<string, Transaction> by ref */
     private array $refs = [];
+
+    /** @var array<string, list<array{debt: string, count: mixed, path: string}>> "to_put_back" counts waiting for their transaction, by ref */
+    private array $counts = [];
 
     public function __construct(
         protected Operations $operations,
@@ -70,10 +79,15 @@ class JsonImport
             $this->categories((array) ($data['categories'] ?? []));
             $this->accounts($this->rows($data, 'accounts'));
             $this->debts($this->rows($data, 'debts'));
-            $this->transactions($this->rows($data, 'transactions'));
-            $this->restoreCounts($this->rows($data, 'debts'));
-            $this->budgetRows($this->rows($data, 'budgets'));
             $this->goals($this->rows($data, 'goals'));
+            $this->transactions($this->rows($data, 'transactions'));
+            foreach ($this->counts as $ref => $waiting) {
+                if (isset($this->fileRefs[$ref])) {
+                    continue;
+                }
+                $this->errors[] = $waiting[0]['path'].': '.__('savings::savings.json_unknown_ref', ['ref' => $ref]);
+            }
+            $this->budgetRows($this->rows($data, 'budgets'));
             $this->recurring($this->rows($data, 'recurring'));
             $this->expected($this->rows($data, 'expected'));
             $this->commitments($this->rows($data, 'commitments'));
@@ -84,7 +98,7 @@ class JsonImport
         if ($this->errors !== []) {
             DB::rollBack($level);
 
-            throw new LedgerException(implode("\n", array_slice(array_unique($this->errors), 0, 30)));
+            throw new LedgerException(implode("\n", array_slice(array_unique($this->errors), 0, 50)));
         }
 
         DB::commit();
@@ -103,7 +117,7 @@ class JsonImport
         if (isset($settings['period']) && is_array($settings['period'])) {
             $p = $settings['period'];
             if (! in_array($p['type'] ?? 'monthly', ['monthly', 'weekly', 'biweekly'], true)) {
-                $this->errors[] = 'settings.period.type: monthly, weekly or biweekly';
+                $this->errors[] = 'settings → period → type: monthly, weekly or biweekly';
 
                 return;
             }
@@ -112,7 +126,7 @@ class JsonImport
         foreach (['available', 'alerts'] as $group) {
             if (isset($settings[$group]) && is_array($settings[$group])) {
                 $allowed = array_intersect_key($settings[$group], config("savings.{$group}"));
-                Settings::set($group, array_merge(config("savings.{$group}"), (array) Settings::get($group, []), array_map('boolval', $allowed)));
+                Settings::set($group, array_merge(config("savings.{$group}"), (array) Settings::get($group, []), array_map(fn ($v) => filter_var($v, FILTER_VALIDATE_BOOLEAN), $allowed)));
             }
         }
     }
@@ -123,7 +137,7 @@ class JsonImport
             foreach ((array) ($categories[$kind] ?? []) as $i => $entry) {
                 $name = is_array($entry) ? ($entry['name'] ?? null) : $entry;
                 if (! is_string($name) || trim($name) === '') {
-                    $this->errors[] = "categories.{$kind}[{$i}]: ".__('savings::savings.json_name_required');
+                    $this->errors[] = "categories → {$kind} item ".($i + 1).': ' .__('savings::savings.json_name_required');
 
                     continue;
                 }
@@ -138,10 +152,10 @@ class JsonImport
     private function accounts(array $rows): void
     {
         foreach ($rows as $i => $row) {
-            $path = "accounts[{$i}]";
+            $path = $this->where('accounts', $i, $row);
             $name = trim((string) ($row['name'] ?? ''));
             if ($name === '') {
-                $this->errors[] = "{$path}.name: ".__('savings::savings.json_name_required');
+                $this->errors[] = "{$path} → name: ".__('savings::savings.json_name_required');
 
                 continue;
             }
@@ -152,16 +166,17 @@ class JsonImport
             }
             $type = $row['type'] ?? 'bank';
             if (! in_array($type, \Modules\Savings\Http\Controllers\AccountController::TYPES, true)) {
-                $this->errors[] = "{$path}.type: ".implode(', ', \Modules\Savings\Http\Controllers\AccountController::TYPES);
+                $this->badAccounts[$name] = true;
+                $this->errors[] = "{$path} → type: ".implode(', ', \Modules\Savings\Http\Controllers\AccountController::TYPES);
 
                 continue;
             }
             $currency = strtoupper((string) ($row['currency'] ?? Money::baseCurrency()));
             $account = new Account([
                 'name' => $name, 'type' => $type, 'currency' => $currency,
-                'opening_date' => $this->date($row['opening_date'] ?? null, "{$path}.opening_date") ?? now()->toDateString(),
-                'opening_balance' => $this->money($row['opening_balance'] ?? '0', $currency, "{$path}.opening_balance", true) ?? 0,
-                'minimum_balance' => isset($row['minimum_balance']) ? $this->money($row['minimum_balance'], $currency, "{$path}.minimum_balance", true) : null,
+                'opening_date' => $this->date($row['opening_date'] ?? null, "{$path} → opening_date") ?? now()->toDateString(),
+                'opening_balance' => $this->money($row['opening_balance'] ?? '0', $currency, "{$path} → opening_balance", true) ?? 0,
+                'minimum_balance' => isset($row['minimum_balance']) ? $this->money($row['minimum_balance'], $currency, "{$path} → minimum_balance", true) : null,
                 'institution' => $row['institution'] ?? null, 'reference' => $row['account_number'] ?? null,
                 'is_liquid' => (bool) ($row['spendable'] ?? ! in_array($type, ['savings', 'investment', 'loan', 'credit_card'], true)),
                 'status' => 'active', 'notes' => $row['notes'] ?? null,
@@ -174,7 +189,7 @@ class JsonImport
     private function debts(array $rows): void
     {
         foreach ($rows as $i => $row) {
-            $path = "debts[{$i}]";
+            $path = $this->where('debts', $i, $row);
             $direction = self::DIRECTIONS[$row['direction'] ?? ''] ?? null;
             $name = trim((string) ($row['name'] ?? ''));
             if (! $direction || $name === '') {
@@ -182,11 +197,17 @@ class JsonImport
 
                 continue;
             }
-            $account = isset($row['account']) ? $this->account($row['account'], "{$path}.account") : null;
+            $account = isset($row['account']) ? $this->account($row['account'], "{$path} → account") : null;
             if ($direction === 'restore' && ! $account) {
-                $this->errors[] = "{$path}.account: ".__('savings::savings.json_restore_account');
+                $this->errors[] = "{$path} → account: ".__('savings::savings.json_restore_account');
 
                 continue;
+            }
+            if ($direction === 'restore') {
+                foreach ((array) ($row['counts'] ?? []) as $j => $count) {
+                    $ref = (string) (is_array($count) ? ($count['ref'] ?? '') : $count);
+                    $this->counts[$ref][] = ['debt' => $name, 'count' => $count, 'path' => "{$path} → counts item ".($j + 1)];
+                }
             }
             if ($this->debt($direction, $name, false)) {
                 $this->skip('debts');
@@ -197,8 +218,8 @@ class JsonImport
             $this->obligations->create([
                 'direction' => $direction, 'counterparty' => $direction === 'restore' ? null : $name,
                 'description' => $direction === 'restore' ? $name : ($row['description'] ?? $name), 'currency' => $currency, 'account_id' => $account?->id,
-                'due_date' => $this->date($row['due_date'] ?? null, "{$path}.due_date"), 'notes' => $row['notes'] ?? null,
-            ], isset($row['amount']) ? $this->money($row['amount'], $currency, "{$path}.amount") : null, $row['note'] ?? null);
+                'due_date' => $this->date($row['due_date'] ?? null, "{$path} → due_date"), 'notes' => $row['notes'] ?? null,
+            ], isset($row['amount']) ? $this->money($row['amount'], $currency, "{$path} → amount") : null, $row['note'] ?? null);
             $this->add('debts');
         }
     }
@@ -207,20 +228,21 @@ class JsonImport
     {
         // Oldest first, so balances and refunds build up in order.
         uasort($rows, fn ($a, $b) => strcmp((string) ($a['date'] ?? ''), (string) ($b['date'] ?? '')));
+        $this->fileRefs = array_fill_keys(array_filter(array_map(fn ($row) => is_string($row['ref'] ?? null) ? $row['ref'] : null, $rows)), true);
 
         foreach ($rows as $i => $row) {
-            $path = "transactions[{$i}]";
+            $path = $this->where('transactions', $i, $row);
             $type = $row['type'] ?? null;
             if (! in_array($type, self::TRANSACTION_TYPES, true)) {
-                $this->errors[] = "{$path}.type: ".implode(', ', self::TRANSACTION_TYPES);
+                $this->errors[] = "{$path} → type: ".implode(', ', self::TRANSACTION_TYPES);
 
                 continue;
             }
-            $date = $this->date($row['date'] ?? null, "{$path}.date", true);
+            $date = $this->date($row['date'] ?? null, "{$path} → date", true);
             $key = 'json:'.($row['ref'] ?? hash('sha256', json_encode($row)));
             if ($existing = Transaction::query()->where('idempotency_key', $key)->first()) {
                 if (isset($row['ref'])) {
-                    $this->refs[$row['ref']] = $existing;
+                    $this->posted($row['ref'], $existing);
                 }
                 $this->skip('transactions');
 
@@ -246,7 +268,7 @@ class JsonImport
 
             if ($tx) {
                 if (isset($row['ref'])) {
-                    $this->refs[$row['ref']] = $tx;
+                    $this->posted($row['ref'], $tx);
                 }
                 $this->add('transactions');
             }
@@ -255,14 +277,14 @@ class JsonImport
 
     private function transaction(string $type, array $row, string $path, array $meta): ?Transaction
     {
-        $account = fn (string $field = 'account') => $this->account($row[$field] ?? null, "{$path}.{$field}");
-        $amount = fn (Account $a, string $field = 'amount') => $this->money($row[$field] ?? null, $a->currency, "{$path}.{$field}");
+        $account = fn (string $field = 'account') => $this->account($row[$field] ?? null, "{$path} → {$field}");
+        $amount = fn (Account $a, string $field = 'amount') => $this->money($row[$field] ?? null, $a->currency, "{$path} → {$field}");
 
         switch ($type) {
             case 'income':
             case 'expense':
                 $a = $account();
-                $category = $this->category($row['category'] ?? '', $type, null, false, "{$path}.category");
+                $category = $this->category($row['category'] ?? '', $type, null, false, "{$path} → category");
                 if (! $a || ! $category || ($value = $amount($a)) === null) {
                     return null;
                 }
@@ -275,9 +297,9 @@ class JsonImport
                 if (! $from || ! $to || ($value = $amount($from)) === null) {
                     return null;
                 }
-                $fee = isset($row['fee']) ? $this->money($row['fee'], $from->currency, "{$path}.fee", true) : 0;
-                $feeCategory = $fee ? $this->category($row['fee_category'] ?? '', 'expense', null, false, "{$path}.fee_category") : null;
-                $received = isset($row['received']) ? $this->money($row['received'], $to->currency, "{$path}.received") : null;
+                $fee = isset($row['fee']) ? $this->money($row['fee'], $from->currency, "{$path} → fee", true) : 0;
+                $feeCategory = $fee ? $this->category($row['fee_category'] ?? '', 'expense', null, false, "{$path} → fee_category") : null;
+                $received = isset($row['received']) ? $this->money($row['received'], $to->currency, "{$path} → received") : null;
 
                 return $this->operations->transfer($from, $to, $value, $meta, $received, $row['rate'] ?? null, (int) $fee, $feeCategory);
 
@@ -285,7 +307,10 @@ class JsonImport
                 $original = $this->refs[$row['refund_of'] ?? ''] ?? null;
                 $a = $account();
                 if (! $original) {
-                    $this->errors[] = "{$path}.refund_of: ".__('savings::savings.json_unknown_ref', ['ref' => $row['refund_of'] ?? '']);
+                    if (isset($this->fileRefs[$row['refund_of'] ?? ''])) {
+                        return null;
+                    }
+                    $this->errors[] = "{$path} → refund_of: ".__('savings::savings.json_unknown_ref', ['ref' => $row['refund_of'] ?? '']);
 
                     return null;
                 }
@@ -297,7 +322,7 @@ class JsonImport
 
             case 'split':
                 $a = $account();
-                $category = $this->category($row['category'] ?? '', 'expense', null, false, "{$path}.category");
+                $category = $this->category($row['category'] ?? '', 'expense', null, false, "{$path} → category");
                 if (! $a || ! $category || ($value = $amount($a)) === null || ($back = $amount($a, 'owed_back')) === null) {
                     return null;
                 }
@@ -307,7 +332,7 @@ class JsonImport
                     throw new LedgerException('owed_back: '.__('savings::savings.amount_invalid'));
                 }
 
-                return $this->operations->splitPayment($a, $value - $back, $category, $back,$this->debtFor('receivable', $row['owed_by'] ?? null, $a, $row, "{$path}.owed_by"), $meta);
+                return $this->operations->splitPayment($a, $value - $back, $category, $back, $this->debtFor('receivable', $row['owed_by'] ?? null, $a, $row, "{$path} → owed_by"), $meta);
 
             case 'lend':
             case 'borrow':
@@ -316,25 +341,43 @@ class JsonImport
                     return null;
                 }
                 $direction = $type === 'lend' ? 'receivable' : 'payable';
-                $debt = $this->debtFor($direction, $row[$type === 'lend' ? 'to' : 'from'] ?? null, $a, $row, "{$path}.".($type === 'lend' ? 'to' : 'from'));
+                $debt = $this->debtFor($direction, $row[$type === 'lend' ? 'to' : 'from'] ?? null, $a, $row, "{$path} → ".($type === 'lend' ? 'to' : 'from'));
 
                 return $type === 'lend' ? $this->operations->lend($a, $value, $debt, $meta) : $this->operations->borrow($a, $value, $debt, $meta);
 
             case 'repayment_received':
             case 'repayment_made':
                 $a = $account();
-                $debt = $this->debt($type === 'repayment_received' ? 'receivable' : 'payable', (string) ($row['debt'] ?? ''), true, "{$path}.debt");
+                $debt = $this->debt($type === 'repayment_received' ? 'receivable' : 'payable', (string) ($row['debt'] ?? ''), true, "{$path} → debt");
                 if (! $a || ! $debt || ($value = $amount($a)) === null) {
                     return null;
                 }
-                $interest = isset($row['interest']) ? (int) $this->money($row['interest'], $a->currency, "{$path}.interest", true) : 0;
-                $interestCategory = $interest ? $this->category($row['interest_category'] ?? '', 'expense', null, false, "{$path}.interest_category") : null;
+                $interest = isset($row['interest']) ? (int) $this->money($row['interest'], $a->currency, "{$path} → interest", true) : 0;
+                $interestCategory = $interest ? $this->category($row['interest_category'] ?? '', 'expense', null, false, "{$path} → interest_category") : null;
 
                 return $this->obligations->repay($debt, $a, $value, $meta, $interest, $interestCategory);
 
+            case 'put_back':
+                $a = $account();
+                $debt = $this->debt('restore', (string) ($row['debt'] ?? ''), true, "{$path} → debt");
+                if (! $a || ! $debt || ($value = $amount($a)) === null) {
+                    return null;
+                }
+
+                return $this->obligations->repay($debt, $a, $value, $meta);
+
+            case 'goal_contribution':
+                $a = $account();
+                $goal = $this->goal($row['goal'] ?? null, "{$path} → goal");
+                if (! $a || ! $goal || ($value = $amount($a)) === null) {
+                    return null;
+                }
+
+                return $this->planning->contribute($goal, $a, $value, $meta);
+
             case 'adjustment':
                 $a = $account();
-                if (! $a || ($value = $this->money($row['amount'] ?? null, $a->currency, "{$path}.amount")) === null) {
+                if (! $a || ($value = $this->money($row['amount'] ?? null, $a->currency, "{$path} → amount")) === null) {
                     return null;
                 }
 
@@ -345,45 +388,38 @@ class JsonImport
     }
 
     /**
-     * For "to_put_back": which transactions count toward it (by ref), each once.
+     * Remember a transaction by its ref; if a "to_put_back" counts it, count it now (each once),
+     * so later put_back payments in the same file find something to pay back.
      */
-    private function restoreCounts(array $rows): void
+    private function posted(string $ref, Transaction $tx): void
     {
-        foreach ($rows as $i => $row) {
-            if (($row['direction'] ?? null) !== 'to_put_back') {
+        $this->refs[$ref] = $tx;
+
+        foreach ($this->counts[$ref] ?? [] as $waiting) {
+            $debt = $this->debt('restore', $waiting['debt'], false);
+            $count = $waiting['count'];
+            if (! $debt || \Modules\Savings\Models\ObligationItem::query()->where('obligation_id', $debt->id)->where('type', 'basis')->where('transaction_id', $tx->id)->exists()) {
                 continue;
             }
-            $debt = $this->debt('restore', (string) ($row['name'] ?? ''), false);
-            foreach ((array) ($row['counts'] ?? []) as $j => $count) {
-                $ref = is_array($count) ? ($count['ref'] ?? '') : $count;
-                $tx = $this->refs[$ref] ?? null;
-                if (! $tx || ! $debt) {
-                    $this->errors[] = "debts[{$i}].counts[{$j}]: ".__('savings::savings.json_unknown_ref', ['ref' => $ref]);
-
-                    continue;
+            $amount = is_array($count) && isset($count['amount']) ? $this->money($count['amount'], $debt->currency, "{$waiting['path']} → amount") : $tx->amount;
+            try {
+                if ($amount !== null) {
+                    $this->obligations->addBasis($debt, $tx, $amount, is_array($count) ? ($count['note'] ?? null) : null);
                 }
-                if (\Modules\Savings\Models\ObligationItem::query()->where('obligation_id', $debt->id)->where('type', 'basis')->where('transaction_id', $tx->id)->exists()) {
-                    continue;
-                }
-                $amount = is_array($count) && isset($count['amount']) ? $this->money($count['amount'], $debt->currency, "debts[{$i}].counts[{$j}].amount") : $tx->amount;
-                try {
-                    if ($amount !== null) {
-                        $this->obligations->addBasis($debt, $tx, $amount, is_array($count) ? ($count['note'] ?? null) : null);
-                    }
-                } catch (LedgerException $e) {
-                    $this->errors[] = "debts[{$i}].counts[{$j}]: ".$e->getMessage();
-                }
+            } catch (LedgerException $e) {
+                $this->errors[] = "{$waiting['path']}: ".$e->getMessage();
             }
         }
+        unset($this->counts[$ref]);
     }
 
     private function budgetRows(array $rows): void
     {
         foreach ($rows as $i => $row) {
-            $path = "budgets[{$i}]";
-            $date = $this->date($row['period'] ?? null, "{$path}.period", true);
-            $category = $this->category($row['category'] ?? '', 'expense', null, false, "{$path}.category");
-            $limit = $this->money($row['limit'] ?? null, Money::baseCurrency(), "{$path}.limit");
+            $path = $this->where('budgets', $i, $row);
+            $date = $this->date($row['period'] ?? null, "{$path} → period", true);
+            $category = $this->category($row['category'] ?? '', 'expense', null, false, "{$path} → category");
+            $limit = $this->money($row['limit'] ?? null, Money::baseCurrency(), "{$path} → limit");
             if ($date && $category && $limit !== null) {
                 [$start, $end] = $this->periods->for($date);
                 $this->budgets->set($category, $start, $end, $limit);
@@ -395,10 +431,10 @@ class JsonImport
     private function goals(array $rows): void
     {
         foreach ($rows as $i => $row) {
-            $path = "goals[{$i}]";
+            $path = $this->where('goals', $i, $row);
             $name = trim((string) ($row['name'] ?? ''));
             if ($name === '') {
-                $this->errors[] = "{$path}.name: ".__('savings::savings.json_name_required');
+                $this->errors[] = "{$path} → name: ".__('savings::savings.json_name_required');
 
                 continue;
             }
@@ -407,20 +443,20 @@ class JsonImport
 
                 continue;
             }
-            $account = isset($row['account']) ? $this->account($row['account'], "{$path}.account") : null;
+            $account = isset($row['account']) ? $this->account($row['account'], "{$path} → account") : null;
             $currency = $account?->currency ?? strtoupper((string) ($row['currency'] ?? Money::baseCurrency()));
-            $target = $this->money($row['target'] ?? null, $currency, "{$path}.target");
+            $target = $this->money($row['target'] ?? null, $currency, "{$path} → target");
             if ($target === null) {
                 continue;
             }
             $goal = new Goal([
                 'name' => $name, 'target_amount' => $target, 'currency' => $currency, 'account_id' => $account?->id,
-                'target_date' => $this->date($row['by'] ?? null, "{$path}.by"), 'status' => 'active',
-                'monthly_contribution' => isset($row['monthly']) ? $this->money($row['monthly'], $currency, "{$path}.monthly") : null,
+                'target_date' => $this->date($row['by'] ?? null, "{$path} → by"), 'status' => 'active',
+                'monthly_contribution' => isset($row['monthly']) ? $this->money($row['monthly'], $currency, "{$path} → monthly") : null,
             ]);
             $goal->save();
             if (isset($row['earmarked'])) {
-                $earmark = $this->money($row['earmarked'], $currency, "{$path}.earmarked");
+                $earmark = $this->money($row['earmarked'], $currency, "{$path} → earmarked");
                 if ($earmark) {
                     $this->planning->allocate($goal, $earmark, __('savings::savings.json_imported'));
                 }
@@ -432,11 +468,11 @@ class JsonImport
     private function recurring(array $rows): void
     {
         foreach ($rows as $i => $row) {
-            $path = "recurring[{$i}]";
-            $account = $this->account($row['account'] ?? null, "{$path}.account");
+            $path = $this->where('recurring', $i, $row);
+            $account = $this->account($row['account'] ?? null, "{$path} → account");
             $kind = $row['kind'] ?? 'expense';
             if (! in_array($kind, ['income', 'expense', 'transfer', 'contribution'], true)) {
-                $this->errors[] = "{$path}.kind: income, expense, transfer or contribution";
+                $this->errors[] = "{$path} → kind: income, expense, transfer or contribution";
 
                 continue;
             }
@@ -449,20 +485,20 @@ class JsonImport
 
                 continue;
             }
-            $amount = $this->money($row['amount'] ?? null, $account->currency, "{$path}.amount");
-            $start = $this->date($row['start'] ?? null, "{$path}.start", true);
-            $category = in_array($kind, ['income', 'expense'], true) ? $this->category($row['category'] ?? '', $kind, null, false, "{$path}.category") : null;
+            $amount = $this->money($row['amount'] ?? null, $account->currency, "{$path} → amount");
+            $start = $this->date($row['start'] ?? null, "{$path} → start", true);
+            $category = in_array($kind, ['income', 'expense'], true) ? $this->category($row['category'] ?? '', $kind, null, false, "{$path} → category") : null;
             if ($amount === null || ! $start || (in_array($kind, ['income', 'expense'], true) && ! $category)) {
                 continue;
             }
             $this->planning->saveRule(new RecurringRule, [
                 'kind' => $kind, 'description' => $description ?: ($category?->name ?? $kind), 'account_id' => $account->id,
-                'to_account_id' => isset($row['to']) ? $this->account($row['to'], "{$path}.to")?->id : null,
-                'goal_id' => isset($row['goal']) ? Goal::query()->where('name', $row['goal'])->value('id') : null,
+                'to_account_id' => $kind === 'transfer' ? $this->account($row['to'] ?? null, "{$path} → to")?->id : null,
+                'goal_id' => $kind === 'contribution' ? $this->goal($row['goal'] ?? null, "{$path} → goal")?->id : null,
                 'category_id' => $category?->id, 'amount' => $amount, 'is_variable' => (bool) ($row['variable'] ?? false),
                 'frequency' => in_array($row['unit'] ?? 'month', ['day', 'week', 'month', 'year'], true) ? ($row['unit'] ?? 'month') : 'month',
                 'interval' => max(1, (int) ($row['every'] ?? 1)), 'start_date' => $start,
-                'end_date' => $this->date($row['end'] ?? null, "{$path}.end"), 'confidence' => $row['confidence'] ?? 'confirmed', 'is_active' => true,
+                'end_date' => $this->date($row['end'] ?? null, "{$path} → end"), 'confidence' => $row['confidence'] ?? 'confirmed', 'is_active' => true,
             ]);
             $this->add('recurring');
         }
@@ -471,17 +507,27 @@ class JsonImport
     private function expected(array $rows): void
     {
         foreach ($rows as $i => $row) {
-            $path = "expected[{$i}]";
-            $account = $this->account($row['account'] ?? null, "{$path}.account");
+            $path = $this->where('expected', $i, $row);
+            $account = $this->account($row['account'] ?? null, "{$path} → account");
             $kind = $row['kind'] ?? 'income';
-            $category = in_array($kind, ['income', 'expense'], true) ? $this->category($row['category'] ?? '', $kind, null, false, "{$path}.category") : null;
+            if (! in_array($kind, ['income', 'expense', 'transfer', 'contribution'], true)) {
+                $this->errors[] = "{$path} → kind: income, expense, transfer or contribution";
+
+                continue;
+            }
+            $to = $kind === 'transfer' ? $this->account($row['to'] ?? null, "{$path} → to") : null;
+            $goal = $kind === 'contribution' ? $this->goal($row['goal'] ?? null, "{$path} → goal") : null;
+            if (($kind === 'transfer' && ! $to) || ($kind === 'contribution' && ! $goal)) {
+                continue;
+            }
+            $category = in_array($kind, ['income', 'expense'], true) ? $this->category($row['category'] ?? '', $kind, null, false, "{$path} → category") : null;
             if (! $account || (in_array($kind, ['income', 'expense'], true) && ! $category)) {
                 continue;
             }
             $parts = isset($row['parts']) ? (array) $row['parts'] : [['date' => $row['date'] ?? null, 'amount' => $row['amount'] ?? null]];
             foreach ($parts as $j => $part) {
-                $date = $this->date($part['date'] ?? null, "{$path}.parts[{$j}].date", true);
-                $amount = $this->money($part['amount'] ?? null, $account->currency, "{$path}.parts[{$j}].amount");
+                $date = $this->date($part['date'] ?? null, "{$path} → parts item ".($j + 1)." → date", true);
+                $amount = $this->money($part['amount'] ?? null, $account->currency, "{$path} → parts item ".($j + 1)." → amount");
                 if (! $date || $amount === null) {
                     continue;
                 }
@@ -494,7 +540,7 @@ class JsonImport
                 $this->planning->expect([
                     'kind' => $kind, 'description' => (string) ($row['description'] ?? $category?->name ?? $kind),
                     'group_label' => count($parts) > 1 ? ($row['description'] ?? null) : null, 'account_id' => $account->id,
-                    'to_account_id' => isset($row['to']) ? $this->account($row['to'], "{$path}.to")?->id : null,
+                    'to_account_id' => $to?->id, 'goal_id' => $goal?->id,
                     'category_id' => $category?->id, 'amount' => $amount, 'expected_date' => $date,
                     'confidence' => in_array($row['confidence'] ?? '', ['confirmed', 'expected', 'uncertain'], true) ? $row['confidence'] : 'expected',
                 ]);
@@ -506,9 +552,9 @@ class JsonImport
     private function commitments(array $rows): void
     {
         foreach ($rows as $i => $row) {
-            $path = "commitments[{$i}]";
-            $account = $this->account($row['account'] ?? null, "{$path}.account");
-            $amount = $account ? $this->money($row['amount'] ?? null, $account->currency, "{$path}.amount") : null;
+            $path = $this->where('commitments', $i, $row);
+            $account = $this->account($row['account'] ?? null, "{$path} → account");
+            $amount = $account ? $this->money($row['amount'] ?? null, $account->currency, "{$path} → amount") : null;
             if (! $account || $amount === null) {
                 continue;
             }
@@ -517,7 +563,7 @@ class JsonImport
 
                 continue;
             }
-            $this->planning->commit($account, (string) ($row['description'] ?? ''), $amount, $this->date($row['due_date'] ?? null, "{$path}.due_date"));
+            $this->planning->commit($account, (string) ($row['description'] ?? ''), $amount, $this->date($row['due_date'] ?? null, "{$path} → due_date"));
             $this->add('commitments');
         }
     }
@@ -526,19 +572,42 @@ class JsonImport
 
     private function rows(array $data, string $key): array
     {
-        $rows = array_values(array_filter((array) ($data[$key] ?? []), fn ($row) => is_array($row)));
+        $rows = array_filter((array) ($data[$key] ?? []), fn ($row) => is_array($row));
 
-        return array_map(fn ($row) => array_filter($row, fn ($k) => ! str_starts_with((string) $k, '_'), ARRAY_FILTER_USE_KEY), $rows);
+        // Notes ("_" keys) are dropped; a row made only of notes (the guide at the top of a section) is skipped.
+        $rows = array_map(fn ($row) => array_filter($row, fn ($k) => ! str_starts_with((string) $k, '_'), ARRAY_FILTER_USE_KEY), $rows);
+
+        return array_filter($rows);
+    }
+
+    /**
+     * Where a row is, as the person sees the file: "transactions item 3 (rent-feb)".
+     */
+    private function where(string $section, int|string $index, array $row): string
+    {
+        $label = $row['ref'] ?? $row['name'] ?? $row['description'] ?? null;
+
+        return "{$section} item ".((int) $index + 1).(is_string($label) && $label !== '' ? " ({$label})" : '');
     }
 
     private function account(mixed $name, string $path): ?Account
     {
         $account = is_string($name) ? Account::query()->where('name', trim($name))->first() : null;
-        if (! $account) {
+        if (! $account && ! isset($this->badAccounts[is_string($name) ? trim($name) : ''])) {
             $this->errors[] = "{$path}: ".__('savings::savings.json_unknown_account', ['name' => is_string($name) ? $name : '']);
         }
 
         return $account;
+    }
+
+    private function goal(mixed $name, string $path): ?Goal
+    {
+        $goal = is_string($name) ? Goal::query()->where('name', trim($name))->first() : null;
+        if (! $goal) {
+            $this->errors[] = "{$path}: ".__('savings::savings.json_unknown_goal', ['name' => is_string($name) ? $name : '']);
+        }
+
+        return $goal;
     }
 
     private function category(string $name, string $kind, ?Category $parent, bool $create, ?string $path = null): ?Category
@@ -580,7 +649,7 @@ class JsonImport
 
         return $this->debt($direction, trim($person), false) ?? $this->obligations->create([
             'direction' => $direction, 'counterparty' => trim($person), 'description' => $row['description'] ?? trim($person),
-            'currency' => $account->currency, 'account_id' => $account->id, 'due_date' => $this->date($row['due_date'] ?? null, "{$path}.due_date"),
+            'currency' => $account->currency, 'account_id' => $account->id, 'due_date' => $this->date($row['due_date'] ?? null, "{$path} → due_date"),
         ]);
     }
 

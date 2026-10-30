@@ -410,6 +410,7 @@ return [
     'json_unknown_account' => 'no account named ":name" (add it under accounts)',
     'json_unknown_category' => 'no :kind category named ":name" (add it under categories)',
     'json_unknown_debt' => 'no open debt with ":name"',
+    'json_unknown_goal' => 'no goal named ":name" (add it under goals)',
     'json_unknown_ref' => 'no transaction with ref ":ref" in this file',
     'json_restore_account' => 'say which account the money goes back to',
     'json_imported' => 'From imported file',

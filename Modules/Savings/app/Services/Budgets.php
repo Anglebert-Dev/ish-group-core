@@ -44,7 +44,7 @@ class Budgets
     public function summary(Carbon $start, Carbon $end): Collection
     {
         $spentByCategory = $this->totals('expense', $start->toDateString(), $end->toDateString());
-        $budgets = Budget::query()->where('period_start', $start->toDateString())->pluck('amount', 'category_id');
+        $budgets = Budget::query()->whereDate('period_start', $start->toDateString())->pluck('amount', 'category_id');
         $categories = Category::query()->where('kind', 'expense')->with('parent')->orderBy('name')->get();
 
         $days = $start->diffInDays($end) + 1;
