@@ -84,6 +84,36 @@ Creates **Kigali Sun Garments**, a garment factory on the "Garment Factory" pack
 
 Password for all: `Demo-Factory-2026!`
 
+## Savings (personal finance)
+
+Install and switch on (once per platform):
+
+```bash
+php artisan core:module install Savings     # creates its tables
+php artisan core:module update Savings      # after pulling a new version
+```
+
+Then add **Savings** to a package (Super Admin → Billing → Packages); your own superadmin business has it straight away.
+
+**Commands**
+
+| Command | What it does | When |
+|---|---|---|
+| `php artisan savings:alerts` | Creates the coming dates of recurring items and sends each user their alerts (bills due, late income, overdue debts, budget 80/100%, missed goal contributions, coming shortfalls). Each alert is sent once. | Daily at 06:00 via the scheduler (`schedule:run` in cron, or `schedule:work` locally). Run by hand to test. |
+| `php artisan queue:work` | Sends the alert emails. | Always running (see Email). |
+
+**First steps for a user** (sidebar → Savings)
+1. **Categories → Add starter categories** (or create your own).
+2. **Accounts**: add each bank, cash, mobile money or savings account with its balance on the opening date.
+3. **Finance settings**: currency, budget period (e.g. monthly from the 28th), alerts.
+4. Record transactions, or **Import & backup → Import a statement** (CSV: `date, description, amount` with minus for money out, or `debit`/`credit` columns; optional `reference`).
+5. **Planned & recurring**: salary (in parts if needed), bills, rent. **Budgets**: set limits for the period.
+
+**Good to know**
+- Finances are private: each user sees only their own; roles decide who may use which parts.
+- Nothing is edited after it is recorded: use **Reverse** (and correct) on a transaction.
+- **Import & backup → Download backup** gives one JSON file of the user's finances; **Restore** merges (nothing duplicated) or replaces.
+
 ## Audit log
 
 Every action must be traceable. Each business sees only its own entries (**Audit log**); the superadmin sees all of them, filterable by business (**Super Admin → Audit log**).
