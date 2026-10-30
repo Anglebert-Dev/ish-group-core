@@ -8,6 +8,7 @@ Laravel 13 base for multi-business apps. Everything app-specific is a module in 
 composer install && npm install && npm run build
 cp .env.example .env && php artisan key:generate
 php artisan core:install     # first business + superadmin
+php artisan storage:link     # makes uploaded logos and files visible
 ```
 
 ## Run locally
