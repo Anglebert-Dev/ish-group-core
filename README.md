@@ -48,6 +48,7 @@ php artisan module:make <Name>     # new module; see Modules/Frontend as the exa
 | **Purchasing** | Suppliers, purchase orders, goods received at cost, supplier balances, reorder list. | Inventory |
 | **GarmentPack** | Styles with bill of materials and costing, piece-rate pay, subcontracting (CMT), bundles, measurements. | Production, Inventory |
 | **Reports** | Sales, production, stock value, movements and purchases for any period; PDF/Excel. | Inventory |
+| **Savings** | Personal finance: accounts, a balanced ledger, budgets on any period (e.g. 28th→27th), expected income and recurring bills, money owed and to put back, commitments, goals, available to spend, cash-flow forecast with shortfall warnings, reconciliation, reports, alerts, CSV import, backup/restore. Daily `savings:alerts` (scheduler). | — |
 
 **One switch:** a module can't run without the modules it needs. Turning **Inventory** off turns off everything built on it (data kept); turning a module on turns on what it needs. Leaving a module out of a package hides it, and everything that needs it, for that business.
 
