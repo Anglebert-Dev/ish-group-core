@@ -19,9 +19,6 @@ class DemoFactorySeederTest extends TestCase
 {
     public function test_demo_factory_seeds_every_module_and_logins_work(): void
     {
-        $statuses = file_get_contents(base_path('modules_statuses.json'));
-        $this->beforeApplicationDestroyed(fn () => file_put_contents(base_path('modules_statuses.json'), $statuses));
-
         $this->seed(DatabaseSeeder::class);
         $this->seed(DemoFactorySeeder::class);
 

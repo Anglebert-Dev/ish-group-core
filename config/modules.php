@@ -325,13 +325,17 @@ return [
     | The file activator will store the activation status in storage/installed_modules
     */
     'activators' => [
+        // On/off lives in the database (ModuleManager); code is always loaded.
+        'database' => [
+            'class' => \App\Support\Modules\AlwaysOnActivator::class,
+        ],
         'file' => [
             'class' => FileActivator::class,
             'statuses-file' => base_path('modules_statuses.json'),
         ],
     ],
 
-    'activator' => 'file',
+    'activator' => 'database',
 
     /*
     |--------------------------------------------------------------------------

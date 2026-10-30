@@ -13,24 +13,6 @@ use Tests\TestCase;
  */
 class ModuleSystemTest extends TestCase
 {
-    private string $statusesFile;
-
-    private string $statuses;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->statusesFile = base_path('modules_statuses.json');
-        $this->statuses = file_get_contents($this->statusesFile);
-    }
-
-    protected function tearDown(): void
-    {
-        file_put_contents($this->statusesFile, $this->statuses);
-
-        parent::tearDown();
-    }
 
     public function test_module_is_inactive_until_installed(): void
     {
@@ -170,5 +152,20 @@ class ModuleSystemTest extends TestCase
 
         $this->assertEqualsCanonicalizing(['Frontend', 'Billing'], $business->fresh()->enabled_modules);
         $this->assertEqualsCanonicalizing(['Frontend', 'Billing'], app(ModuleManager::class)->withRequirements(['Frontend']));
+    }
+
+    public function test_on_off_is_stored_in_the_database_not_in_files(): void
+    {
+        $modules = app(ModuleManager::class);
+        $modules->install('Frontend');
+
+        $modules->toggle('Frontend', false);
+
+        $this->assertSame('0', \App\Models\System\System::getProperty('frontend_enabled'));
+        $this->assertFileDoesNotExist(base_path('modules_statuses.json'));
+        $this->assertFalse(app(ModuleManager::class)->isActive('Frontend'));
+
+        $modules->toggle('Frontend', true);
+        $this->assertTrue(app(ModuleManager::class)->isActive('Frontend'));
     }
 }

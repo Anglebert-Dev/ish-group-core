@@ -11,9 +11,6 @@ class InventoryFamilyTest extends InventoryTestCase
 {
     public function test_turning_inventory_off_turns_off_every_module_built_on_it(): void
     {
-        $statuses = file_get_contents(base_path('modules_statuses.json'));
-        $this->beforeApplicationDestroyed(fn () => file_put_contents(base_path('modules_statuses.json'), $statuses));
-
         $modules = app(ModuleManager::class);
         foreach (['SalesOrders', 'Production', 'Invoicing', 'Quotations', 'Delivery', 'Purchasing', 'GarmentPack'] as $name) {
             $this->assertTrue($modules->install($name)['status'], $name);

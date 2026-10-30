@@ -16,7 +16,7 @@ use Throwable;
  * Module registry + hook bus (reference doc §1a, §1b).
  *
  * A module is ACTIVE only when both hold:
- *   - its code is enabled (nwidart, modules_statuses.json)
+ *   - it is switched on ("<alias>_enabled" in the system table; on unless set to "0")
  *   - it is installed: the system table has a "<lowername>_version" row
  *
  * Hooks: core calls hook('name', $args) at its extension points; every active
@@ -30,6 +30,9 @@ class ModuleManager extends BaseService
 
     /** @var array<string, array<string, mixed>> */
     private array $hookCache = [];
+
+    /** @var list<string> lower-case aliases switched off */
+    private array $disabled = [];
 
     /**
      * @return Collection<int, array{name: string, alias: string, description: string, enabled: bool, installed: bool, active: bool, installed_version: ?string, available_version: string, update_available: bool}>
@@ -56,7 +59,7 @@ class ModuleManager extends BaseService
     {
         $module = Module::find($name);
 
-        return $module !== null && $module->isEnabled() && $this->isInstalled($name);
+        return $module !== null && $this->isEnabled($name) && $this->isInstalled($name);
     }
 
     /**
@@ -64,8 +67,8 @@ class ModuleManager extends BaseService
      */
     public function activeModules(): array
     {
-        return collect(Module::allEnabled())
-            ->filter(fn (ModuleInstance $module) => $this->isInstalled($module->getName()))
+        return collect(Module::all())
+            ->filter(fn (ModuleInstance $module) => $this->isInstalled($module->getName()) && $this->isEnabled($module->getName()))
             ->map(fn (ModuleInstance $module) => $module->getName())
             ->values()
             ->all();
@@ -87,7 +90,7 @@ class ModuleManager extends BaseService
             return $this->failure(__('body.module_requires', ['name' => $module->getName(), 'modules' => implode(', ', $missing)]));
         }
 
-        $module->enable();
+        $this->setEnabled($module, true);
         $this->migrate($module);
         System::addProperty($this->versionKey($module), $this->availableVersion($module));
         $this->flush();
@@ -141,7 +144,7 @@ class ModuleManager extends BaseService
         }
 
         System::removeProperty($this->versionKey($module));
-        $module->disable();
+        System::removeProperty($module->getLowerName().'_enabled');
         $this->flush();
         $this->audit($purgeData ? 'purged' : 'uninstalled', $module);
 
@@ -171,7 +174,7 @@ class ModuleManager extends BaseService
 
         foreach ([...$affected, $module->getName()] as $target) {
             $instance = Module::find($target);
-            $enabled ? $instance->enable() : $instance->disable();
+            $this->setEnabled($instance, $enabled);
             $this->flush();
             $this->audit($enabled ? 'enabled' : 'disabled', $instance);
         }
@@ -218,7 +221,7 @@ class ModuleManager extends BaseService
     {
         return array_values(array_filter(
             array_diff($this->withRequirements([$name]), [$name]),
-            fn (string $required) => ! Module::find($required)?->isEnabled(),
+            fn (string $required) => ! $this->isEnabled($required),
         ));
     }
 
@@ -362,9 +365,26 @@ class ModuleManager extends BaseService
         return $this->installedVersions()[strtolower($name)] ?? null;
     }
 
+    /**
+     * Switched on? Stored as "<alias>_enabled" in the system table; on unless set to "0".
+     */
+    public function isEnabled(string $name): bool
+    {
+        $this->installedVersions();
+
+        return ! in_array(strtolower($name), $this->disabled, true);
+    }
+
+    private function setEnabled(ModuleInstance $module, bool $enabled): void
+    {
+        System::addProperty($module->getLowerName().'_enabled', $enabled ? '1' : '0');
+        $this->flush();
+    }
+
     public function flush(): void
     {
         $this->installed = null;
+        $this->disabled = [];
         $this->hookCache = [];
     }
 
@@ -388,10 +408,10 @@ class ModuleManager extends BaseService
             'alias' => $module->getLowerName(),
             'description' => (string) $module->getDescription(),
             'requires' => $this->requires($module->getName()),
-            'needed_by' => $installedVersion !== null && $module->isEnabled() ? $this->allDependents($module->getName()) : [],
-            'enabled' => $module->isEnabled(),
+            'needed_by' => $installedVersion !== null && $this->isEnabled($module->getName()) ? $this->allDependents($module->getName()) : [],
+            'enabled' => $this->isEnabled($module->getName()),
             'installed' => $installedVersion !== null,
-            'active' => $installedVersion !== null && $module->isEnabled(),
+            'active' => $installedVersion !== null && $this->isEnabled($module->getName()),
             'installed_version' => $installedVersion,
             'available_version' => $available,
             'update_available' => $installedVersion !== null && version_compare($available, $installedVersion, '>'),
@@ -439,8 +459,13 @@ class ModuleManager extends BaseService
             return $this->installed = [];
         }
 
-        return $this->installed = System::query()
-            ->pluck('value', 'key')
+        $properties = System::query()->pluck('value', 'key');
+
+        $this->disabled = $properties
+            ->filter(fn ($value, $key) => str_ends_with($key, '_enabled') && (string) $value === '0')
+            ->keys()->map(fn ($key) => substr($key, 0, -strlen('_enabled')))->values()->all();
+
+        return $this->installed = $properties
             ->filter(fn ($version, $key) => str_ends_with($key, '_version'))
             ->mapWithKeys(fn ($version, $key) => [substr($key, 0, -strlen('_version')) => (string) $version])
             ->all();
