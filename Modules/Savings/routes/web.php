@@ -98,4 +98,5 @@ Route::prefix('app/savings')->name('savings.')
 
         Route::get('/settings', [SettingsController::class, 'edit'])->middleware('permission:update savings.setting')->name('settings.edit');
         Route::put('/settings', [SettingsController::class, 'update'])->middleware('permission:update savings.setting')->name('settings.update');
+        Route::post('/settings/reset', [SettingsController::class, 'reset'])->middleware(['permission:update savings.setting', 'password.confirm.staff'])->name('settings.reset');
     });

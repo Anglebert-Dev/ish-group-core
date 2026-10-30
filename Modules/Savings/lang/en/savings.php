@@ -415,6 +415,13 @@ return [
     'alertopt_missed_contributions' => 'Missed goal contributions',
     'alertopt_shortfalls' => 'Projected shortfalls (30 days)',
     'settings_saved' => 'Settings saved.',
+    'reset' => 'Reset my finances',
+    'reset_hint' => 'Erases all of YOUR finances here: accounts, transactions, budgets, planned items, debts, goals, reconciliations, imports and your finance settings. Other people\'s finances are not touched. This cannot be undone, so download a backup first if you may need it.',
+    'reset_type' => 'Type RESET to confirm',
+    'reset_type_hint' => 'Type RESET in capital letters.',
+    'reset_button' => 'Erase everything',
+    'reset_done' => 'Your finances were erased. You can start again.',
+    'audit_reset' => 'Finances reset (:count records erased)',
     'starter_categories' => 'Add starter categories',
     'starter_done' => 'Starter categories added.',
 

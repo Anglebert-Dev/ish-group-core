@@ -219,6 +219,31 @@ class DataTransfer
         });
     }
 
+    /**
+     * Erase one person's finances in this business (everything, including their settings).
+     * Ledger rows are never edited one by one; this removes the whole book at once.
+     *
+     * @return int rows removed
+     */
+    public function wipe(int $businessId, int $ownerId): int
+    {
+        $removed = DB::transaction(function () use ($businessId, $ownerId) {
+            $count = 0;
+            DB::table('sav_alerts_sent')->where('business_id', $businessId)->where('owner_id', $ownerId)->delete();
+            DB::table('sav_import_batches')->where('business_id', $businessId)->where('owner_id', $ownerId)->delete();
+            foreach (array_reverse(array_keys(self::TABLES)) as $table) {
+                $count += DB::table($table)->where('business_id', $businessId)->where('owner_id', $ownerId)->delete();
+            }
+            DB::table('business_settings')->where('business_id', $businessId)->where('key', 'like', "savings.user.{$ownerId}.%")->delete();
+
+            return $count;
+        });
+
+        audit('savings_reset', __('savings::savings.audit_reset', ['count' => $removed]), null, [], $businessId);
+
+        return $removed;
+    }
+
     // ---- CSV statement import ----------------------------------------------------------
 
     /**

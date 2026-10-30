@@ -15,4 +15,5 @@ return [
     'savings_reconciliation' => 'Account reconciled',
     'savings_import' => 'Statement imported',
     'savings_restore' => 'Finance data restored',
+    'savings_reset' => 'Finances reset',
 ];

@@ -25,4 +25,15 @@
         </div>
         <x-common.button type="submit">{{ __('body.save') }}</x-common.button>
     </form>
+
+    <form action="{{ route('savings.settings.reset') }}" method="POST" class="mt-6 bg-white border border-danger/40 rounded-xl p-5 sm:p-6 space-y-4 max-w-2xl">
+        @csrf
+        <h2 class="font-display font-bold text-danger">{{ __('savings::savings.reset') }}</h2>
+        <p class="text-sm text-body">{{ __('savings::savings.reset_hint') }}</p>
+        @if (\App\Helpers\AuthHelper::can('read savings.data'))
+            <a href="{{ route('savings.data.backup') }}" class="inline-block text-sm font-semibold text-brand">{{ __('savings::savings.download_backup') }} →</a>
+        @endif
+        <x-common.input name="confirm" :label="__('savings::savings.reset_type')" :hint="__('savings::savings.reset_type_hint')" autocomplete="off" required />
+        <x-common.button type="submit" variant="secondary" size="sm" data-confirm data-confirm-title="{{ __('savings::savings.reset') }}?" data-confirm-variant="danger">{{ __('savings::savings.reset_button') }}</x-common.button>
+    </form>
 </x-layouts.app>

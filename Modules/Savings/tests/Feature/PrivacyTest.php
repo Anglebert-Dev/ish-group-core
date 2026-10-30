@@ -78,4 +78,30 @@ class PrivacyTest extends SavingsTestCase
         $this->assertTrue(Notification::query()->where('user_id', $colleague->id)->where('body', 'like', '%Their rent%')->exists());
         $this->assertFalse(Notification::query()->where('user_id', $this->owner->id)->where('body', 'like', '%Their rent%')->exists());
     }
+
+    public function test_reset_erases_only_my_finances(): void
+    {
+        $bank = $this->account('My bank', 100000);
+        $this->ops()->expense($bank, 5000, $this->category('Food'), ['effective_date' => $this->day()]);
+        $this->planning()->commit($bank, 'Rent', 1000);
+        $this->put(route('savings.settings.update'), ['currency' => 'RWF', 'period_type' => 'monthly', 'start_day' => 28, 'weekday' => 1, 'anchor' => $this->day()]);
+
+        $colleague = $this->makeMember($this->business);
+        app(CurrentOwner::class)->set($colleague->id);
+        $this->account('Colleague bank', 5000);
+        app(CurrentOwner::class)->set(null);
+
+        $this->withConfirmedPassword()->post(route('savings.settings.reset'), ['confirm' => 'reset'])->assertSessionHasErrors('confirm');
+        $this->assertSame(1, Account::query()->count(), 'nothing erased without typing RESET');
+
+        $this->withConfirmedPassword()->post(route('savings.settings.reset'), ['confirm' => 'RESET'])->assertRedirect(route('savings.overview'));
+
+        $this->assertSame(0, Account::query()->count());
+        $this->assertSame(0, Transaction::query()->count());
+        $this->assertSame(0, \Illuminate\Support\Facades\DB::table('sav_entries')->where('owner_id', $this->owner->id)->count());
+        $this->assertSame(1, app(Periods::class)->rule()['start_day'], 'my settings are back to the default');
+
+        app(CurrentOwner::class)->set($colleague->id);
+        $this->assertSame(['Colleague bank'], Account::query()->pluck('name')->all(), 'the colleague keeps theirs');
+    }
 }

@@ -43,4 +43,16 @@ class SettingsController extends Controller
 
         return back()->with('success', __('savings::savings.settings_saved'));
     }
+
+    /**
+     * Erase all of the signed-in user's finances. Password confirmed and "RESET" typed.
+     */
+    public function reset(Request $request, \Modules\Savings\Services\DataTransfer $data): RedirectResponse
+    {
+        $request->validate(['confirm' => ['required', 'in:RESET']], ['confirm.in' => __('savings::savings.reset_type_hint')]);
+
+        $data->wipe($request->user('staff')->business_id, $request->user('staff')->id);
+
+        return redirect()->route('savings.overview')->with('success', __('savings::savings.reset_done'));
+    }
 }
