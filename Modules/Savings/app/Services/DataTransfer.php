@@ -48,33 +48,35 @@ class DataTransfer
 
     // ---- Backup ------------------------------------------------------------------
 
-    public function export(int $businessId): array
+    public function export(int $businessId, int $ownerId): array
     {
         $uuidOf = [];
         $data = ['format' => 'ish-savings', 'version' => self::VERSION, 'exported_at' => now()->toIso8601String(), 'settings' => [], 'tables' => []];
 
         foreach (array_keys(self::TABLES) as $table) {
             $hasUuid = ! in_array($table, self::CHILDREN, true);
-            $rows = DB::table($table)->where('business_id', $businessId)->orderBy('id')->get();
+            $rows = DB::table($table)->where('business_id', $businessId)->where('owner_id', $ownerId)->orderBy('id')->get();
             if ($hasUuid) {
                 $uuidOf[$table] = $rows->pluck('uuid', 'id')->all();
             }
         }
 
         foreach (self::TABLES as $table => $refs) {
-            $data['tables'][$table] = DB::table($table)->where('business_id', $businessId)->orderBy('id')->get()
+            $data['tables'][$table] = DB::table($table)->where('business_id', $businessId)->where('owner_id', $ownerId)->orderBy('id')->get()
                 ->map(function ($row) use ($refs, $uuidOf) {
                     $row = (array) $row;
                     foreach ($refs as $column => $target) {
                         $row[$column] = $row[$column] !== null ? ($uuidOf[$target][$row[$column]] ?? null) : null;
                     }
-                    unset($row['id'], $row['business_id'], $row['insert_by'], $row['update_by'], $row['delete_by'], $row['user_id']);
+                    unset($row['id'], $row['business_id'], $row['owner_id'], $row['insert_by'], $row['update_by'], $row['delete_by'], $row['user_id']);
 
                     return $row;
                 })->all();
         }
 
-        $data['settings'] = DB::table('business_settings')->where('business_id', $businessId)->where('key', 'like', 'savings.%')->pluck('value', 'key')->all();
+        $prefix = "savings.user.{$ownerId}.";
+        $data['settings'] = DB::table('business_settings')->where('business_id', $businessId)->where('key', 'like', $prefix.'%')->pluck('value', 'key')
+            ->mapWithKeys(fn ($value, $key) => [substr($key, strlen($prefix)) => $value])->all();
 
         audit(\App\Enums\ActivityLogAction::Exported, __('savings::savings.audit_backup'), null, [], $businessId);
 
@@ -132,16 +134,27 @@ class DataTransfer
      *
      * @return array{added: array<string, int>, skipped: array<string, int>}
      */
-    public function restore(int $businessId, array $data, string $mode): array
+    public function restore(int $businessId, int $ownerId, array $data, string $mode): array
     {
         if ($errors = $this->validate($data)) {
             throw new LedgerException(implode(' ', array_slice($errors, 0, 3)));
         }
 
-        return DB::transaction(function () use ($businessId, $data, $mode) {
+        // Records in the file that belong to someone else are never touched.
+        foreach (self::TABLES as $table => $refs) {
+            if (in_array($table, self::CHILDREN, true)) {
+                continue;
+            }
+            $uuids = array_column((array) ($data['tables'][$table] ?? []), 'uuid');
+            if ($uuids && DB::table($table)->whereIn('uuid', $uuids)->where(fn ($q) => $q->where('business_id', '!=', $businessId)->orWhere('owner_id', '!=', $ownerId))->exists()) {
+                throw new LedgerException(__('savings::savings.backup_someone_else'));
+            }
+        }
+
+        return DB::transaction(function () use ($businessId, $ownerId, $data, $mode) {
             if ($mode === 'replace') {
                 foreach (array_reverse(array_keys(self::TABLES)) as $table) {
-                    DB::table($table)->where('business_id', $businessId)->delete();
+                    DB::table($table)->where('business_id', $businessId)->where('owner_id', $ownerId)->delete();
                 }
             }
 
@@ -152,7 +165,7 @@ class DataTransfer
 
             foreach (self::TABLES as $table => $refs) {
                 $isChild = in_array($table, self::CHILDREN, true);
-                $existing = $isChild ? [] : DB::table($table)->where('business_id', $businessId)->pluck('id', 'uuid')->all();
+                $existing = $isChild ? [] : DB::table($table)->where('business_id', $businessId)->where('owner_id', $ownerId)->pluck('id', 'uuid')->all();
                 $idOf[$table] = $existing;
 
                 foreach ((array) ($data['tables'][$table] ?? []) as $row) {
@@ -175,6 +188,7 @@ class DataTransfer
                         $row[$column] = $row[$column] !== null ? ($idOf[$target][$row[$column]] ?? null) : null;
                     }
                     $row['business_id'] = $businessId;
+                    $row['owner_id'] = $ownerId;
                     if (array_key_exists('tags', $row) && is_array($row['tags'])) {
                         $row['tags'] = json_encode($row['tags']);
                     }
@@ -193,6 +207,7 @@ class DataTransfer
             }
 
             foreach ((array) ($data['settings'] ?? []) as $key => $value) {
+                $key = "savings.user.{$ownerId}.".preg_replace('/^savings\./', '', (string) $key);
                 if ($mode === 'replace' || ! DB::table('business_settings')->where('business_id', $businessId)->where('key', $key)->exists()) {
                     DB::table('business_settings')->updateOrInsert(['business_id' => $businessId, 'key' => $key], ['value' => $value, 'updated_at' => now(), 'created_at' => now()]);
                 }

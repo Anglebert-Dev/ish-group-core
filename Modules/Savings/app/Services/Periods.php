@@ -18,7 +18,7 @@ class Periods
 
     public function rule(): array
     {
-        return array_merge(config('savings.period'), (array) $this->settings->get('savings.period', []));
+        return array_merge(config('savings.period'), (array) \Modules\Savings\Support\Settings::get('period', []));
     }
 
     /**

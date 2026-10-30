@@ -62,7 +62,7 @@ class DataTransferController extends Controller
 
     public function backup(Request $request): Response
     {
-        $json = json_encode($this->data->export($request->user('staff')->business_id), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        $json = json_encode($this->data->export($request->user('staff')->business_id, $request->user('staff')->id), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 
         return response($json, 200, [
             'Content-Type' => 'application/json',
@@ -79,7 +79,7 @@ class DataTransferController extends Controller
             return back()->with('error', __('savings::savings.backup_not_ours'));
         }
 
-        return $this->attempt(fn () => $this->data->restore($request->user('staff')->business_id, $data, $request->input('mode')), null,
+        return $this->attempt(fn () => $this->data->restore($request->user('staff')->business_id, $request->user('staff')->id, $data, $request->input('mode')), null,
             fn ($result) => back()->with('success', __('savings::savings.restored', ['count' => array_sum($result['added'])])));
     }
 }

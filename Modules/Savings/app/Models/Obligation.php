@@ -1,17 +1,17 @@
 <?php
 
 namespace Modules\Savings\Models;
-
 use App\Models\BaseModel;
 use App\Models\Concerns\BelongsToBusiness;
+use Modules\Savings\Support\BelongsToOwner;
 
 class Obligation extends BaseModel
 {
-    use BelongsToBusiness;
+    use BelongsToBusiness, BelongsToOwner;
 
     protected $table = 'sav_obligations';
 
-    protected $guarded = ['id', 'uuid', 'business_id'];
+    protected $guarded = ['id', 'uuid', 'business_id', 'owner_id'];
 
     protected function casts(): array
     {

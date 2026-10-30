@@ -224,7 +224,7 @@ class Obligations
     {
         $item = new ObligationItem;
         $item->forceFill([
-            'business_id' => $obligation->business_id, 'obligation_id' => $obligation->id, 'type' => $type, 'amount' => $amount,
+            'business_id' => $obligation->business_id, 'owner_id' => $obligation->owner_id, 'obligation_id' => $obligation->id, 'type' => $type, 'amount' => $amount,
             'transaction_id' => $tx?->id, 'note' => $note ? mb_substr($note, 0, 500) : null,
             'effective_date' => $tx?->effective_date ?? now()->toDateString(), 'user_id' => Auth::id(),
         ])->save();

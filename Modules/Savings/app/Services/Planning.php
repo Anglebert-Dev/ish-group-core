@@ -306,7 +306,7 @@ class Planning
      */
     public function available(Account $account): array
     {
-        $policy = array_merge(config('savings.available'), (array) app(\App\Support\Settings\BusinessSettings::class)->get('savings.available', []));
+        $policy = array_merge(config('savings.available'), (array) \Modules\Savings\Support\Settings::get('available', []));
         $balance = $this->balances->balance($account);
         $commitments = (int) Commitment::query()->where('account_id', $account->id)->where('status', 'open')->sum('amount');
         $earmarks = $policy['goal_earmarks']
@@ -336,7 +336,7 @@ class Planning
     {
         $allocation = new GoalAllocation;
         $allocation->forceFill([
-            'business_id' => $goal->business_id, 'goal_id' => $goal->id, 'kind' => $kind, 'amount' => $amount,
+            'business_id' => $goal->business_id, 'owner_id' => $goal->owner_id, 'goal_id' => $goal->id, 'kind' => $kind, 'amount' => $amount,
             'transaction_id' => $tx?->id, 'related_goal_id' => $related?->id, 'effective_date' => $tx?->effective_date ?? now()->toDateString(),
             'note' => $note, 'user_id' => auth()->id(),
         ])->save();

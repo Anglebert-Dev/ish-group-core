@@ -6,7 +6,6 @@ use App\Enums\NotificationType;
 use App\Models\Business\Business;
 use App\Services\Module\ModuleManager;
 use App\Services\Notification\NotificationService;
-use App\Support\Settings\BusinessSettings;
 use App\Support\Tenancy\CurrentBusiness;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -43,10 +42,14 @@ class SendAlertsCommand extends Command
             if (! $business->canUseModule('Savings')) {
                 continue;
             }
-            app(CurrentBusiness::class)->set($business);
-            app()->forgetScopedInstances();
-            app(CurrentBusiness::class)->set($business);
-            $sent += $this->forBusiness($business);
+            // Finances are private: each person gets alerts about their own.
+            $owners = DB::table('sav_accounts')->where('business_id', $business->id)->whereNull('deleted_at')->distinct()->pluck('owner_id')->filter();
+            foreach ($owners as $ownerId) {
+                app()->forgetScopedInstances();
+                app(CurrentBusiness::class)->set($business);
+                app(\Modules\Savings\Support\CurrentOwner::class)->set((int) $ownerId);
+                $sent += $this->forOwner($business, (int) $ownerId);
+            }
         }
 
         $this->info("Finance alerts sent: {$sent}");
@@ -54,12 +57,12 @@ class SendAlertsCommand extends Command
         return self::SUCCESS;
     }
 
-    private function forBusiness(Business $business): int
+    private function forOwner(Business $business, int $ownerId): int
     {
         $planning = app(Planning::class);
         RecurringRule::query()->where('is_active', true)->get()->each(fn ($rule) => $planning->regenerate($rule));
 
-        $on = array_merge(config('savings.alerts'), (array) app(BusinessSettings::class)->get('savings.alerts', []));
+        $on = array_merge(config('savings.alerts'), (array) \Modules\Savings\Support\Settings::get('alerts', []));
         $soon = now()->addDays((int) config('savings.upcoming_days', 3))->toDateString();
         $today = now()->toDateString();
         $alerts = [];
@@ -109,9 +112,9 @@ class SendAlertsCommand extends Command
 
         $sent = 0;
         foreach ($alerts as $key => $message) {
-            $inserted = DB::table('sav_alerts_sent')->insertOrIgnore(['business_id' => $business->id, 'key' => mb_substr($key, 0, 191), 'sent_at' => now()]);
+            $inserted = DB::table('sav_alerts_sent')->insertOrIgnore(['business_id' => $business->id, 'owner_id' => $ownerId, 'key' => mb_substr($key, 0, 191), 'sent_at' => now()]);
             if ($inserted) {
-                app(NotificationService::class)->notifyByPermission('list savings.overview', __('savings::savings.alert_title'), $message, NotificationType::Info, route('savings.overview'), null, $business->id);
+                app(NotificationService::class)->notify($ownerId, __('savings::savings.alert_title'), $message, NotificationType::Info, route('savings.overview'));
                 $sent++;
             }
         }

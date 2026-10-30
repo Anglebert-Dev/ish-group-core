@@ -73,10 +73,11 @@ class Ledger
             }
         }
 
-        $tx = DB::transaction(function () use ($spec, $lines, $currency, $businessId) {
+        $tx = DB::transaction(function () use ($spec, $lines, $currency, $businessId, $first) {
             $tx = new Transaction;
             $tx->forceFill([
                 'business_id' => $businessId,
+                'owner_id' => $first->owner_id,
                 'type' => $spec['type'],
                 'effective_date' => $spec['effective_date'],
                 'description' => mb_substr($spec['description'], 0, 255),
@@ -101,14 +102,14 @@ class Ledger
 
             foreach ($spec['entries'] as $entry) {
                 (new Entry)->forceFill([
-                    'business_id' => $businessId, 'transaction_id' => $tx->id, 'account_id' => $entry['account']->id,
+                    'business_id' => $businessId, 'owner_id' => $tx->owner_id, 'transaction_id' => $tx->id, 'account_id' => $entry['account']->id,
                     'amount' => $entry['amount'], 'effective_date' => $tx->effective_date,
                 ])->save();
             }
 
             foreach ($lines as $line) {
                 (new Line)->forceFill([
-                    'business_id' => $businessId, 'transaction_id' => $tx->id, 'nature' => $line['nature'],
+                    'business_id' => $businessId, 'owner_id' => $tx->owner_id, 'transaction_id' => $tx->id, 'nature' => $line['nature'],
                     'category_id' => ($line['category'] ?? null)?->id, 'obligation_id' => ($line['obligation'] ?? null)?->id,
                     'amount' => $line['amount'], 'effective_date' => $tx->effective_date, 'note' => $line['note'] ?? null,
                 ])->save();
@@ -168,13 +169,13 @@ class Ledger
             // Undo what other records took from it.
             ObligationItem::query()->withoutGlobalScope('business')->where('transaction_id', $tx->id)->whereIn('type', ['basis', 'settlement'])->get()
                 ->each(fn (ObligationItem $item) => (new ObligationItem)->forceFill([
-                    'business_id' => $item->business_id, 'obligation_id' => $item->obligation_id, 'type' => 'reversal',
+                    'business_id' => $item->business_id, 'owner_id' => $item->owner_id, 'obligation_id' => $item->obligation_id, 'type' => 'reversal',
                     'amount' => $item->type === 'basis' ? -$item->amount : $item->amount,
                     'transaction_id' => $reversal->id, 'note' => $reason, 'effective_date' => $tx->effective_date, 'user_id' => Auth::id(),
                 ])->save());
             GoalAllocation::query()->withoutGlobalScope('business')->where('transaction_id', $tx->id)->where('kind', 'contribution')->get()
                 ->each(fn (GoalAllocation $a) => (new GoalAllocation)->forceFill([
-                    'business_id' => $a->business_id, 'goal_id' => $a->goal_id, 'kind' => 'contribution', 'amount' => -$a->amount,
+                    'business_id' => $a->business_id, 'owner_id' => $a->owner_id, 'goal_id' => $a->goal_id, 'kind' => 'contribution', 'amount' => -$a->amount,
                     'transaction_id' => $reversal->id, 'effective_date' => $tx->effective_date, 'note' => $reason, 'user_id' => Auth::id(),
                 ])->save());
             Expected::query()->withoutGlobalScope('business')->where('transaction_id', $tx->id)->get()
@@ -210,6 +211,7 @@ class Ledger
 
         return Transaction::query()->withoutGlobalScope('business')
             ->where('business_id', $spec['entries'][0]['account']->business_id)
+            ->where('owner_id', $spec['entries'][0]['account']->owner_id)
             ->whereNull('reversed_at')->whereNull('reverses_id')
             ->whereDate('effective_date', '>=', $date->copy()->subDays(2)->toDateString())->whereDate('effective_date', '<=', $date->copy()->addDays(2)->toDateString())
             ->when(filled($spec['reference'] ?? null), fn ($q) => $q->where(fn ($w) => $w->whereNull('reference')->orWhere('reference', $spec['reference'])))
@@ -245,7 +247,7 @@ class Ledger
 
         foreach ($entries as $entry) {
             $account = $entry['account'];
-            if (! $account instanceof Account || $account->business_id !== $businessId) {
+            if (! $account instanceof Account || $account->business_id !== $businessId || $account->owner_id !== $entries[0]['account']->owner_id) {
                 throw new LedgerException(__('savings::savings.account_invalid'));
             }
             if ($account->isArchived()) {

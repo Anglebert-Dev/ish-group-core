@@ -1,18 +1,18 @@
 <?php
 
 namespace Modules\Savings\Models;
-
 use App\Models\Concerns\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Model;
+use Modules\Savings\Support\BelongsToOwner;
 use Modules\Savings\Support\HasPublicId;
 
 class Transaction extends Model
 {
-    use BelongsToBusiness, HasPublicId;
+    use BelongsToBusiness, BelongsToOwner, HasPublicId;
 
     protected $table = 'sav_transactions';
 
-    protected $guarded = ['id', 'uuid', 'business_id'];
+    protected $guarded = ['id', 'uuid', 'business_id', 'owner_id'];
 
     protected function casts(): array
     {

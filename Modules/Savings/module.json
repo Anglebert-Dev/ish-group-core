@@ -3,7 +3,7 @@
     "alias": "savings",
     "description": "Personal finance: accounts, a balanced ledger (income, expenses, transfers, refunds, repayments), budgets on any period, expected income and recurring bills, debts, money owed back and restoration targets, commitments, savings goals, available-to-spend, cash-flow forecast with shortfall warnings, reconciliation, reports, alerts, import, backup and restore.",
     "keywords": ["finance", "savings", "budget"],
-    "version": "1.0.0",
+    "version": "1.1.0",
     "menu_group": "Savings",
     "priority": 0,
     "providers": [

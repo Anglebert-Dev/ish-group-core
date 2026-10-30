@@ -2,7 +2,6 @@
 
 namespace Modules\Savings\Support;
 
-use App\Support\Settings\BusinessSettings;
 use InvalidArgumentException;
 
 /**
@@ -13,14 +12,14 @@ class Money
 {
     public static function decimals(string $currency): int
     {
-        $map = (array) app(BusinessSettings::class)->get('savings.decimals', config('savings.decimals', []));
+        $map = (array) Settings::get('decimals', config('savings.decimals', []));
 
         return (int) ($map[strtoupper($currency)] ?? config('savings.decimals.'.strtoupper($currency), 2));
     }
 
     public static function baseCurrency(): string
     {
-        return strtoupper((string) app(BusinessSettings::class)->get('savings.currency', config('savings.currency', 'RWF')));
+        return strtoupper((string) Settings::get('currency', config('savings.currency', 'RWF')));
     }
 
     /**

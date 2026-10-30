@@ -390,6 +390,7 @@ return [
     'restored' => 'Restored: :count records added.',
     'backup_not_ours' => 'This is not a Savings backup.',
     'backup_broken_link' => ':table row :row: :column points to a record that is not in the file.',
+    'backup_someone_else' => 'This backup contains records that belong to someone else; it can only be restored by its owner.',
     'backup_unbalanced' => 'Transaction ":description" does not balance.',
 
     // Settings

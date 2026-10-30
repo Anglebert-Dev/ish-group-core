@@ -23,6 +23,13 @@ class SavingsServiceProvider extends CoreModuleServiceProvider
         RouteServiceProvider::class,
     ];
 
+    public function register(): void
+    {
+        parent::register();
+
+        $this->app->scoped(\Modules\Savings\Support\CurrentOwner::class);
+    }
+
     protected function configureSchedules(Schedule $schedule): void
     {
         $schedule->command('savings:alerts')->dailyAt('06:00')->withoutOverlapping();

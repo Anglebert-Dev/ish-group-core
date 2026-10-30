@@ -110,16 +110,16 @@ class ForecastAndDataTest extends SavingsTestCase
         $owed = $this->obligations()->create(['direction' => 'receivable', 'counterparty' => 'Jean', 'description' => 'Jean', 'currency' => 'RWF'], 30000);
         $this->obligations()->repay($owed, $bank, 10000, ['effective_date' => $this->day()]);
 
-        $backup = json_decode(json_encode(app(DataTransfer::class)->export($this->business->id)), true);
+        $backup = json_decode(json_encode(app(DataTransfer::class)->export($this->business->id, $this->owner->id)), true);
         $this->assertSame([], app(DataTransfer::class)->validate($backup));
 
         // Merge into the same data: nothing added.
-        $result = app(DataTransfer::class)->restore($this->business->id, $backup, 'merge');
+        $result = app(DataTransfer::class)->restore($this->business->id, $this->owner->id, $backup, 'merge');
         $this->assertSame([], $result['added']);
         $this->assertSame(90000, $this->balance($bank));
 
         // Replace: wipe and load back, same position.
-        app(DataTransfer::class)->restore($this->business->id, $backup, 'replace');
+        app(DataTransfer::class)->restore($this->business->id, $this->owner->id, $backup, 'replace');
         $restoredBank = Account::query()->where('uuid', $bank->uuid)->firstOrFail();
         $this->assertSame(90000, $this->balance($restoredBank));
         $this->assertSame(20000, $this->balance(Account::query()->where('uuid', $savings->uuid)->firstOrFail()));
@@ -132,7 +132,7 @@ class ForecastAndDataTest extends SavingsTestCase
         $broken['tables']['sav_entries'][0]['account_id'] = 'nope';
         $this->assertNotEmpty(app(DataTransfer::class)->validate($broken));
         $this->expectException(\Modules\Savings\Exceptions\LedgerException::class);
-        app(DataTransfer::class)->restore($this->business->id, $broken, 'replace');
+        app(DataTransfer::class)->restore($this->business->id, $this->owner->id, $broken, 'replace');
     }
 
     public function test_finance_data_is_private_to_each_business(): void
