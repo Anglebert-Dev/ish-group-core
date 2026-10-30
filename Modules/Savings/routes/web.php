@@ -93,6 +93,8 @@ Route::prefix('app/savings')->name('savings.')
         Route::post('/data/import', [DataTransferController::class, 'preview'])->middleware(['permission:create savings.data', 'permission:create savings.transaction'])->name('data.preview');
         Route::get('/data/import/{batch}', [DataTransferController::class, 'showBatch'])->middleware('permission:create savings.data')->name('data.batch');
         Route::post('/data/import/{batch}', [DataTransferController::class, 'commit'])->middleware(['permission:create savings.data', 'permission:create savings.transaction'])->name('data.commit');
+        Route::get('/data/templates/{name}', [DataTransferController::class, 'template'])->middleware('permission:list savings.data')->name('data.template');
+        Route::post('/data/fill', [DataTransferController::class, 'fill'])->middleware(['permission:create savings.data', 'permission:create savings.transaction'])->name('data.fill');
         Route::get('/data/backup', [DataTransferController::class, 'backup'])->middleware(['permission:read savings.data', 'password.confirm.staff'])->name('data.backup');
         Route::post('/data/restore', [DataTransferController::class, 'restore'])->middleware(['permission:update savings.data', 'password.confirm.staff'])->name('data.restore');
 

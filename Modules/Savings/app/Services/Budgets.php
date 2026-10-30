@@ -74,7 +74,8 @@ class Budgets
 
     public function set(Category $category, Carbon $start, Carbon $end, int $amount): void
     {
-        $budget = Budget::query()->firstOrNew(['category_id' => $category->id, 'period_start' => $start->toDateString()]);
+        $budget = Budget::query()->where('category_id', $category->id)->whereDate('period_start', $start->toDateString())->first()
+            ?? new Budget(['category_id' => $category->id, 'period_start' => $start->toDateString()]);
         $budget->business_id = $category->business_id;
         $budget->period_end = $end->toDateString();
         $budget->amount = $amount;

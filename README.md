@@ -107,7 +107,8 @@ Then add **Savings** to a package (Super Admin → Billing → Packages); your o
 1. **Categories → Add starter categories** (or create your own).
 2. **Accounts**: add each bank, cash, mobile money or savings account with its balance on the opening date.
 3. **Finance settings**: currency, budget period (e.g. monthly from the 28th), alerts.
-4. Record transactions, or **Import & backup → Import a statement** (CSV: `date, description, amount` with minus for money out, or `debit`/`credit` columns; optional `reference`).
+4. Record transactions, or **Import & backup → Import a statement** (CSV; download the example file there).
+   Or **Import & backup → Fill from a file**: download the example JSON, replace the examples with your accounts, categories, past transactions, debts, budgets, recurring/expected items and goals, then upload. Nothing is saved if the file has a problem (each one is listed); uploading it again adds nothing twice.
 5. **Planned & recurring**: salary (in parts if needed), bills, rent. **Budgets**: set limits for the period.
 
 **Good to know**
