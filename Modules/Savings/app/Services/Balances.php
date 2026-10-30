@@ -19,7 +19,7 @@ class Balances
 
         return $account->opening_balance + (int) Entry::query()->withoutGlobalScope('business')
             ->where('account_id', $account->id)
-            ->when($asOf, fn ($q) => $q->where('effective_date', '<=', $asOf))
+            ->when($asOf, fn ($q) => $q->whereDate('effective_date', '<=', $asOf))
             ->sum('amount');
     }
 
@@ -33,7 +33,7 @@ class Balances
     {
         $sums = Entry::query()->withoutGlobalScope('business')
             ->whereIn('account_id', $accounts->pluck('id'))
-            ->when($asOf, fn ($q) => $q->where('effective_date', '<=', $asOf))
+            ->when($asOf, fn ($q) => $q->whereDate('effective_date', '<=', $asOf))
             ->selectRaw('account_id, SUM(amount) as total')->groupBy('account_id')->pluck('total', 'account_id');
 
         return $accounts->mapWithKeys(fn (Account $a) => [

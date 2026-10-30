@@ -211,7 +211,7 @@ class Ledger
         return Transaction::query()->withoutGlobalScope('business')
             ->where('business_id', $spec['entries'][0]['account']->business_id)
             ->whereNull('reversed_at')->whereNull('reverses_id')
-            ->whereBetween('effective_date', [$date->copy()->subDays(2)->toDateString(), $date->copy()->addDays(2)->toDateString()])
+            ->whereDate('effective_date', '>=', $date->copy()->subDays(2)->toDateString())->whereDate('effective_date', '<=', $date->copy()->addDays(2)->toDateString())
             ->when(filled($spec['reference'] ?? null), fn ($q) => $q->where(fn ($w) => $w->whereNull('reference')->orWhere('reference', $spec['reference'])))
             ->whereHas('entries', function ($q) use ($accounts) {
                 $q->where(function ($w) use ($accounts) {

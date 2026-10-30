@@ -1,13 +1,14 @@
 {
-    "Frontend": false,
+    "Frontend": true,
     "Billing": true,
-    "Inventory": false,
-    "SalesOrders": false,
-    "Production": false,
-    "Invoicing": false,
-    "Quotations": false,
-    "Delivery": false,
-    "Purchasing": false,
-    "GarmentPack": false,
-    "Reports": false
+    "Inventory": true,
+    "SalesOrders": true,
+    "Production": true,
+    "Invoicing": true,
+    "Quotations": true,
+    "Delivery": true,
+    "Purchasing": true,
+    "GarmentPack": true,
+    "Reports": true,
+    "Savings": true
 }
