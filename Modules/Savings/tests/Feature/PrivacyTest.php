@@ -91,6 +91,9 @@ class PrivacyTest extends SavingsTestCase
         $this->account('Colleague bank', 5000);
         app(CurrentOwner::class)->set(null);
 
+        $this->get(route('savings.settings.edit'))->assertOk()
+            ->assertSee('pattern="RESET"', false)
+            ->assertSee('disabled="disabled" data-reset-button', false);
         $this->withConfirmedPassword()->post(route('savings.settings.reset'), ['confirm' => 'reset'])->assertSessionHasErrors('confirm');
         $this->assertSame(1, Account::query()->count(), 'nothing erased without typing RESET');
 

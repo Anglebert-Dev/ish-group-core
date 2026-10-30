@@ -33,7 +33,23 @@
         @if (\App\Helpers\AuthHelper::can('read savings.data'))
             <a href="{{ route('savings.data.backup') }}" class="inline-block text-sm font-semibold text-brand">{{ __('savings::savings.download_backup') }} →</a>
         @endif
-        <x-common.input name="confirm" :label="__('savings::savings.reset_type')" :hint="__('savings::savings.reset_type_hint')" autocomplete="off" required />
-        <x-common.button type="submit" variant="secondary" size="sm" data-confirm data-confirm-title="{{ __('savings::savings.reset') }}?" data-confirm-variant="danger">{{ __('savings::savings.reset_button') }}</x-common.button>
+        <x-common.input name="confirm" :label="__('savings::savings.reset_type')" :hint="__('savings::savings.reset_type_hint')" autocomplete="off" required
+            pattern="RESET" :title="__('savings::savings.reset_type_hint')" data-reset-word />
+        <x-common.button type="submit" variant="secondary" size="sm" disabled data-reset-button class="disabled:opacity-40 disabled:cursor-not-allowed"
+            data-confirm data-confirm-title="{{ __('savings::savings.reset') }}?" data-confirm-variant="danger">{{ __('savings::savings.reset_button') }}</x-common.button>
     </form>
+
+    @push('scripts')
+        <script>
+            (function () {
+                // The button only works once the box says exactly RESET (capital letters).
+                var word = document.querySelector('[data-reset-word]');
+                var button = document.querySelector('[data-reset-button]');
+                if (!word || !button) return;
+                var check = function () { button.disabled = word.value !== 'RESET'; };
+                word.addEventListener('input', check);
+                check();
+            })();
+        </script>
+    @endpush
 </x-layouts.app>
