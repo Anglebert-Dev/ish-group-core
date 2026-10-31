@@ -1,0 +1,14 @@
+{
+    "name": "Distribution",
+    "alias": "distribution",
+    "description": "Self-hosting: customer servers (sites), which modules each gets, signed module releases, zip builds and the update API their servers check. Our server only; never shipped.",
+    "keywords": ["distribution", "self-hosting", "updates"],
+    "version": "1.0.0",
+    "billing_exempt": true,
+    "menu_group": "Platform",
+    "priority": 0,
+    "providers": [
+        "Modules\\Distribution\\Providers\\DistributionServiceProvider"
+    ],
+    "files": []
+}

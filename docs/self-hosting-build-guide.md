@@ -1,6 +1,6 @@
 # Self-hosting (shipping modules to a customer's server): Build Guide
 
-Created: 31/10/2026. Status: **Phases 0–1 done (31/10/2026)**; next is Phase 2 (Distribution module). Update the progress table in §9 after each phase, so work can pick up where it stopped.
+Created: 31/10/2026. Status: **Phases 0–2 done (31/10/2026)**; next is Phase 3 (zip builds). Update the progress table in §9 after each phase, so work can pick up where it stopped.
 
 ## 1. Goal
 
@@ -194,13 +194,27 @@ Commit after each phase. Run `php artisan test` before every commit.
 |---|---|---|---|
 | 0 | Groundwork | module fallback autoloader; `Installer` helper + `APP_INSTALLED`; `core:mark-installed`; `PlatformSetupService` pulled out of `InstallCoreCommand`; `core:install` writes the marker; `phpunit.xml` sets `APP_INSTALLED=true` | ✅ 31/10/2026: tests point the marker at a temp file (`Installer::useMarkerPath`, `tests/TestCase.php`); `storage/installed` is git-ignored |
 | 1 | Installer | `PreInstall`, `RedirectToInstaller`, install routes and views, `RequirementsChecker`, `EnvWriter`, `DatabaseProbe`, `MailProbe`, `InstallationService`, `core:setup`, queue-via-scheduler, root `.htaccess` | ✅ 31/10/2026: 15 tests; tried for real on a fresh copy with Postgres (web wizard → sign in → dashboard; `core:setup --no-interaction` with Savings, including resuming after a failure) |
-| 2 | Distribution basics | module scaffold, tables, sites, module assignment with requirements, tokens, `distribution:keygen`, releases + publish | ☐ |
+| 2 | Distribution basics | module scaffold, tables, sites, module assignment with requirements, tokens, `distribution:keygen`, releases + publish | ✅ 31/10/2026: 14 tests + core boundary test |
 | 3 | Zip builds | `BuildService` + job, builds page, install code | ☐ |
 | 4 | Update API (server) | check-in, download, report, offer logic, site status page | ☐ |
 | 5 | Update client | `UpdateClient`, `SignatureVerifier`, `SafeZipExtractor`, `ModulePackageInstaller`, `core:updates` + schedule, Updates page, auto/manual | ☐ |
 | 6 | Finishing | pruning, README "Self-hosting" section, end-to-end test (MySQL and Postgres) | ☐ |
 
 **Before deploying Phase 1 to our own server, run `php artisan core:mark-installed` there.** Otherwise our server will redirect to the installer.
+
+### Phase 2 notes
+
+- **Turn it on (our server only):** `php artisan core:module install Distribution`, then `php artisan distribution:keygen` once. Keygen writes `DISTRIBUTION_SIGNING_SECRET` and `DISTRIBUTION_PUBLIC_KEYS` to `.env`. **Back up the secret.** Without it, sites won't accept new releases. Screens: Super Admin → Self-hosting (sites, releases).
+- **Config:** `config('distribution.*')` merges core `config/distribution.php` (shipped: `never_ship`, `public_keys`) with the module's `config/config.php` (`signing_secret`, `disk`, `directory`).
+- **The signed text** is defined in core: `App\Support\Distribution\PackageSignature::message()` (`ish-module-v1\n{module}\n{version}\n{sha256}`), plus `verify()`. Phase 5 must use it as is.
+- **All seven tables already exist** (migration `2026_10_31_100000_create_distribution_tables.php`), so phases 3–4 need no schema changes.
+- **Releases:**
+  - stored at `storage/app/private/distribution/releases/{Module}/{Module}-{version}.zip`, with one top folder `{Module}/`
+  - left out: `tests`, `node_modules`, `.git`, symlinks
+  - a version must be greater than **every** earlier release of that module, withdrawn ones included, so a version number is never reused
+  - "latest" is decided by version number, not by date: `Release::latestFor()`
+- **Tokens:** `SiteService::issueToken()` returns `ish_` + 48 hex characters and stores only its sha256 and the last 4 characters. Phase 3 calls it once per build.
+- **Boundary guard:** `tests/Feature/ModuleBoundaryTest.php` fails if anything in core refers to Billing or Distribution. Exceptions: `bootstrap/cache` and `DemoFactorySeeder`; the build must strip the seeder.
 
 ### Phase 1 notes (what changed from the plan, and where things are)
 
