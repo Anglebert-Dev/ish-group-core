@@ -13,6 +13,7 @@ use Modules\Distribution\Enums\BuildStatus;
 use Modules\Distribution\Models\Build;
 use Modules\Distribution\Models\Site;
 use Modules\Distribution\Support\PlatformAudit;
+use Modules\Distribution\Support\ServerDetails;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
@@ -62,6 +63,11 @@ class BuildService extends BaseService
 
         if (! $this->keys->configured()) {
             return $this->failure(__('distribution::distribution.keys_missing'));
+        }
+
+        // What the customer told us rules their server out: no point building.
+        if ($problems = ServerDetails::problems((array) $site->server_details)) {
+            return $this->failure(__('distribution::distribution.build_blocked', ['problems' => implode(' ', $problems)]));
         }
 
         // A second click while one is being built would only make a duplicate.
@@ -276,6 +282,8 @@ class BuildService extends BaseService
             'modules' => array_values((array) $build->modules),
             'install_code_hash' => $build->install_code_hash,
             'build_id' => $build->uuid,
+            // The customer's answers: their installer starts filled in (never passwords).
+            'defaults' => ServerDetails::installerDefaults((array) $site->server_details, $site->name),
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES).PHP_EOL);
 
         $publicKeys = array_values(array_unique([$this->keys->publicKey(), ...(array) config('distribution.public_keys', [])]));
@@ -298,7 +306,7 @@ class BuildService extends BaseService
             'APP_ENV' => 'production',
             'APP_KEY' => '',
             'APP_DEBUG' => false,
-            'APP_URL' => $site->app_url ?: 'http://localhost',
+            'APP_URL' => $site->app_url ?: ($site->server_details['app_url'] ?? 'http://localhost'),
             'LOG_LEVEL' => 'warning',
             'DB_CONNECTION' => 'sqlite',
             'DB_DATABASE' => ':memory:',

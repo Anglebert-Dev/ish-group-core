@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Distribution\Http\Controllers\ReleaseController;
+use Modules\Distribution\Http\Controllers\ServerDetailsController;
 use Modules\Distribution\Http\Controllers\SiteController;
 
 /*
@@ -25,6 +26,11 @@ Route::prefix('app/super-admin/distribution')->name('superadmin.distribution.')-
     Route::put('/sites/{site}', [SiteController::class, 'update'])->name('sites.update');
     Route::post('/sites/{site}/modules', [SiteController::class, 'assign'])->name('sites.modules.assign');
     Route::delete('/sites/{site}/modules/{module}', [SiteController::class, 'unassign'])->middleware('password.confirm.staff')->name('sites.modules.unassign');
+    Route::get('/sites/{site}/server', [ServerDetailsController::class, 'edit'])->name('sites.server.edit');
+    Route::put('/sites/{site}/server', [ServerDetailsController::class, 'update'])->name('sites.server.update');
+    Route::post('/sites/{site}/server/csv', [ServerDetailsController::class, 'upload'])->name('sites.server.upload');
+    Route::get('/sites/{site}/server/template.csv', [ServerDetailsController::class, 'template'])->name('sites.server.template');
+    Route::get('/sites/{site}/guide', [ServerDetailsController::class, 'guide'])->name('sites.guide');
     Route::post('/sites/{site}/builds', [SiteController::class, 'build'])->name('sites.builds.store');
     Route::delete('/sites/{site}/builds/{build}', [SiteController::class, 'deleteBuild'])->name('sites.builds.destroy');
     Route::get('/sites/{site}/builds/{build}/download', [SiteController::class, 'download'])->middleware('password.confirm.staff')->name('sites.builds.download');

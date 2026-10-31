@@ -125,6 +125,7 @@ Full design and status: [docs/self-hosting-build-guide.md](docs/self-hosting-bui
 
 **A new customer** (Super Admin → Self-hosting):
 1. **Add site**, pick its modules (what they need comes along; Billing never ships), choose updates **Automatic** or **Manual**.
+   Send them the **Setup guide** (printable page) and the **CSV form** from the site page; upload the CSV they send back (or type their answers in). Their installer then opens pre-filled, and a server that can't run the app (e.g. old PHP) is refused before building. No passwords are ever collected.
 2. **Build zip**: ready in about 10 seconds (or `php artisan distribution:build "<site>"`). Only **committed** code ships. A zip made by mistake can be deleted on the same page. Note the **install code**: it is shown once.
 3. Send them the zip and the code.
 

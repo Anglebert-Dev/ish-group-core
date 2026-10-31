@@ -8,6 +8,7 @@ use App\Services\Install\InstallRules;
 use App\Services\Install\MailProbe;
 use App\Services\Install\RequirementsChecker;
 use App\Support\Installer\Installer;
+use App\Support\Installer\SiteManifest;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Validator;
 
@@ -134,7 +135,7 @@ class SetupCommand extends Command
         }
 
         $this->components->info(__('install.done').' '.__('install.finish_cron'));
-        $this->line('  * * * * * cd '.base_path().' && php artisan schedule:run >> /dev/null 2>&1');
+        $this->line('  '.app(SiteManifest::class)->cronLine(base_path()));
 
         if (! ($data['app']['queue_via_scheduler'] ?? false)) {
             $this->newLine();
@@ -150,26 +151,34 @@ class SetupCommand extends Command
 
     private function askDatabase(): array
     {
-        $driver = $this->value('db-driver', fn () => select(__('install.db_driver'), ['mysql' => 'MySQL / MariaDB', 'pgsql' => 'PostgreSQL'], 'mysql'));
+        $given = app(SiteManifest::class)->defaults('database');
+        $driver = $this->value('db-driver', fn () => select(__('install.db_driver'), ['mysql' => 'MySQL / MariaDB', 'pgsql' => 'PostgreSQL'], $given['driver'] ?? 'mysql'), $given['driver'] ?? null);
+        $port = (string) ($given['port'] ?? ($driver === 'pgsql' ? '5432' : '3306'));
 
         return [
             'driver' => $driver,
-            'host' => $this->value('db-host', fn () => text(__('install.db_host'), default: '127.0.0.1')),
-            'port' => $this->value('db-port', fn () => text(__('install.db_port'), default: $driver === 'pgsql' ? '5432' : '3306'), $driver === 'pgsql' ? '5432' : '3306'),
-            'database' => $this->value('db-database', fn () => text(__('install.db_database'), required: true)),
-            'username' => $this->value('db-username', fn () => text(__('install.db_username'), required: true)),
+            'host' => $this->value('db-host', fn () => text(__('install.db_host'), default: (string) ($given['host'] ?? '127.0.0.1')), $given['host'] ?? null),
+            'port' => $this->value('db-port', fn () => text(__('install.db_port'), default: $port), $port),
+            'database' => $this->value('db-database', fn () => text(__('install.db_database'), default: (string) ($given['database'] ?? ''), required: true), $given['database'] ?? null),
+            'username' => $this->value('db-username', fn () => text(__('install.db_username'), default: (string) ($given['username'] ?? ''), required: true), $given['username'] ?? null),
             'password' => $this->value('db-password', fn () => password(__('install.db_password')), ''),
         ];
     }
 
     private function askApp(): array
     {
+        $given = app(SiteManifest::class)->defaults('app');
+        $name = (string) ($given['name'] ?? config('app.name'));
+        $timezone = (string) ($given['timezone'] ?? config('app.timezone'));
+
         return [
-            'name' => $this->value('app-name', fn () => text(__('install.app_name'), default: (string) config('app.name')), (string) config('app.name')),
-            'url' => $this->value('app-url', fn () => text(__('install.app_url'), required: true, hint: __('install.app_url_hint'))),
-            'timezone' => $this->value('timezone', fn () => text(__('install.app_timezone'), default: (string) config('app.timezone')), (string) config('app.timezone')),
+            'name' => $this->value('app-name', fn () => text(__('install.app_name'), default: $name), $name),
+            'url' => $this->value('app-url', fn () => text(__('install.app_url'), default: (string) ($given['url'] ?? ''), required: true, hint: __('install.app_url_hint')), $given['url'] ?? null),
+            'timezone' => $this->value('timezone', fn () => text(__('install.app_timezone'), default: $timezone), $timezone),
             'queue_via_scheduler' => $this->option('queue-via-scheduler')
-                || ($this->input->isInteractive() && confirm(__('install.app_queue_via_scheduler'), default: false, hint: __('install.app_queue_via_scheduler_hint'))),
+                || ($this->input->isInteractive()
+                    ? confirm(__('install.app_queue_via_scheduler'), default: (bool) ($given['queue_via_scheduler'] ?? false), hint: __('install.app_queue_via_scheduler_hint'))
+                    : (bool) ($given['queue_via_scheduler'] ?? false)),
         ];
     }
 
@@ -178,24 +187,27 @@ class SetupCommand extends Command
      */
     private function askMail(): array|null|false
     {
+        $given = app(SiteManifest::class)->defaults('mail');
         $host = $this->option('mail-host');
 
         if (! $host && $this->input->isInteractive() && confirm(__('install.step_mail').'?', default: true, hint: __('install.mail_skip_hint'))) {
-            $host = text(__('install.mail_host'), required: true);
+            $host = text(__('install.mail_host'), default: (string) ($given['host'] ?? ''), required: true);
         }
 
         if (! $host) {
             return null;
         }
 
+        $port = (string) ($given['port'] ?? '587');
+
         $mail = [
             'host' => $host,
-            'port' => $this->value('mail-port', fn () => text(__('install.mail_port'), default: '587'), '587'),
-            'scheme' => $this->value('mail-scheme', fn () => select(__('install.mail_scheme'), ['' => __('install.mail_scheme_auto'), 'smtps' => __('install.mail_scheme_smtps')]), '') ?: null,
-            'username' => $this->value('mail-username', fn () => text(__('install.mail_username')), ''),
+            'port' => $this->value('mail-port', fn () => text(__('install.mail_port'), default: $port), $port),
+            'scheme' => $this->value('mail-scheme', fn () => select(__('install.mail_scheme'), ['' => __('install.mail_scheme_auto'), 'smtps' => __('install.mail_scheme_smtps')], (string) ($given['scheme'] ?? '')), (string) ($given['scheme'] ?? '')) ?: null,
+            'username' => $this->value('mail-username', fn () => text(__('install.mail_username'), default: (string) ($given['username'] ?? '')), (string) ($given['username'] ?? '')),
             'password' => $this->value('mail-password', fn () => password(__('install.mail_password')), ''),
-            'from_address' => $this->value('mail-from', fn () => text(__('install.mail_from_address'), required: true, hint: __('install.mail_from_address_hint'))),
-            'from_name' => $this->value('mail-from-name', fn () => text(__('install.mail_from_name')), ''),
+            'from_address' => $this->value('mail-from', fn () => text(__('install.mail_from_address'), default: (string) ($given['from_address'] ?? ''), required: true, hint: __('install.mail_from_address_hint')), $given['from_address'] ?? null),
+            'from_name' => $this->value('mail-from-name', fn () => text(__('install.mail_from_name'), default: (string) ($given['from_name'] ?? '')), (string) ($given['from_name'] ?? '')),
         ];
 
         return $this->section(InstallRules::mail(), $mail) ?? false;
@@ -203,10 +215,12 @@ class SetupCommand extends Command
 
     private function askAdmin(): array
     {
+        $given = app(SiteManifest::class)->defaults('admin');
+
         return [
-            'business' => $this->value('business', fn () => text(__('install.admin_business'), required: true)),
-            'name' => $this->value('admin-name', fn () => text(__('install.admin_name'), required: true)),
-            'email' => $this->value('admin-email', fn () => text(__('install.admin_email'), required: true)),
+            'business' => $this->value('business', fn () => text(__('install.admin_business'), default: (string) ($given['business'] ?? ''), required: true), $given['business'] ?? null),
+            'name' => $this->value('admin-name', fn () => text(__('install.admin_name'), default: (string) ($given['name'] ?? ''), required: true), $given['name'] ?? null),
+            'email' => $this->value('admin-email', fn () => text(__('install.admin_email'), default: (string) ($given['email'] ?? ''), required: true), $given['email'] ?? null),
             'password' => $this->value('admin-password', fn () => password(__('install.admin_password'), required: true, hint: __('install.admin_password_hint'))),
         ];
     }

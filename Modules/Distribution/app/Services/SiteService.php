@@ -117,6 +117,26 @@ class SiteService extends BaseService
     }
 
     /**
+     * What the customer told us about their server, already cleaned by
+     * ServerDetails::clean()/fromCsv(). Replaces what was there.
+     *
+     * @param  array<string, mixed>  $details
+     */
+    public function saveServerDetails(Site $site, array $details, string $source): array
+    {
+        $site->server_details = $details;
+
+        if (! $site->app_url && isset($details['app_url'])) {
+            $site->app_url = $details['app_url'];
+        }
+
+        $site->save();
+        PlatformAudit::log('distribution_server_details_saved', "Server details saved for site {$site->name} ({$source})", $site, ['fields' => array_keys($details), 'source' => $source]);
+
+        return $this->success($site, __('distribution::distribution.server_saved'));
+    }
+
+    /**
      * A new update-API token for the site. Returned once; only its hash is kept.
      */
     public function issueToken(Site $site, ?int $buildId = null): string

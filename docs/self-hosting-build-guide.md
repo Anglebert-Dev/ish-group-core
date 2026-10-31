@@ -202,6 +202,16 @@ Commit after each phase. Run `php artisan test` before every commit.
 
 **Before deploying Phase 1 to our own server, run `php artisan core:mark-installed` there.** Otherwise our server will redirect to the installer.
 
+### Customer server details (added 31/10/2026, Distribution 1.1.0)
+
+- **Why:** the customer's server, not our `.env`, decides things like their PHP path, folder, database and cron-only hosting. **Their server never needs Composer**, because the zip contains `vendor/`. `DISTRIBUTION_PHP`/`DISTRIBUTION_COMPOSER` are only for **our** server, the one that builds.
+- **Fields:** one list, `Modules/Distribution/app/Support/ServerDetails.php`. It covers hosting type, PHP version and path, app folder, whether the web root can point to `public/`, URL, timezone, cron-only, the database (driver, host, port, name, user), email (host, port, tls/ssl, account, from) and the first account (business, name, email). **No passwords**: they're typed into the installer on their server.
+- **Getting them:** on the site page, choose **Type in**, or **Download CSV form** (columns `field,value,what to write,example`) and later **Upload their CSV**. Answers like yes/no/oui/yego and postgres/mariadb are understood. A CSV with any invalid answer saves nothing. Unknown rows, such as a `db_password` someone added, are ignored and listed. Stored in `distribution_sites.server_details` (migration `2026_11_01_100000…`). Audited as `distribution_server_details_saved`.
+- **Setup guide:** a printable page per site (`/sites/{site}/guide`, Print → Save as PDF) covering requirements, the steps, their exact cron line with their PHP path and folder, and their answers.
+- **Used by the build:** it refuses when the given PHP version is older than `RequirementsChecker::MIN_PHP`. It writes `defaults` into `site.json` (sections `database`, `app`, `mail`, `admin`, `server`).
+- **Used on their side:** the web installer and `core:setup` start from those defaults (`SiteManifest::defaults()`), and the cron line shown uses their PHP path (`SiteManifest::cronLine()`).
+- **On an existing install of Distribution 1.0.0:** Super Admin → Modules → **Update** Distribution to add the column.
+
 ### Phase 5 notes (customer side)
 
 - **Files:** `app/Services/Updates/*`, `app/Console/Commands/CheckUpdatesCommand.php` (`core:updates [--install]`), `app/Http/Controllers/Web/SuperAdmin/UpdateController.php`, `resources/views/app/super-admin/updates.blade.php`, `resources/lang/en/updates.php`.

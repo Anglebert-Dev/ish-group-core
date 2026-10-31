@@ -84,6 +84,54 @@
         </form>
     </div>
 
+    {{-- Customer's server --}}
+    @php
+        $server = (array) $site->server_details;
+        $serverProblems = \Modules\Distribution\Support\ServerDetails::problems($server);
+    @endphp
+    <div class="bg-white border border-line rounded-xl overflow-hidden mb-6">
+        <div class="px-5 py-4 border-b border-line flex flex-wrap items-start justify-between gap-3">
+            <div>
+                <p class="font-semibold text-ink">{{ __('distribution::distribution.server_details') }}</p>
+                <p class="text-sm text-muted max-w-2xl">{{ __('distribution::distribution.server_details_hint') }}</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <x-common.button :href="route('superadmin.distribution.sites.guide', $site)" size="sm" variant="secondary" target="_blank">{{ __('distribution::distribution.setup_guide') }}</x-common.button>
+                <x-common.button :href="route('superadmin.distribution.sites.server.template', $site)" size="sm" variant="secondary">{{ __('distribution::distribution.server_template') }}</x-common.button>
+                <x-common.button :href="route('superadmin.distribution.sites.server.edit', $site)" size="sm" variant="secondary">{{ __('distribution::distribution.server_edit') }}</x-common.button>
+            </div>
+        </div>
+
+        @if ($serverProblems)
+            <div class="m-5 rounded-xl border border-red-200 bg-red-50 text-red-800 px-5 py-4 text-sm">
+                <p class="font-semibold">{{ __('distribution::distribution.server_problems') }}</p>
+                <ul class="list-disc pl-5 mt-1">@foreach ($serverProblems as $problem)<li>{{ $problem }}</li>@endforeach</ul>
+            </div>
+        @endif
+
+        @if ($server)
+            <dl class="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-2 p-5 text-sm">
+                @foreach ($server as $key => $answer)
+                    <div class="flex justify-between gap-3 border-b border-line/60 py-1">
+                        <dt class="text-muted">{{ __('distribution::distribution.server_'.$key) }}</dt>
+                        <dd class="text-ink text-right break-all">{{ \Modules\Distribution\Support\ServerDetails::display($key, $answer) }}</dd>
+                    </div>
+                @endforeach
+            </dl>
+        @else
+            <p class="p-5 text-sm text-muted">{{ __('distribution::distribution.server_none') }}</p>
+        @endif
+
+        <form method="POST" action="{{ route('superadmin.distribution.sites.server.upload', $site) }}" enctype="multipart/form-data" class="border-t border-line p-5 flex flex-wrap items-end gap-3">
+            @csrf
+            <div class="flex-1 min-w-[240px]">
+                <label class="block text-sm font-semibold text-ink mb-1.5" for="server-csv">{{ __('distribution::distribution.server_upload') }}</label>
+                <input id="server-csv" type="file" name="file" accept=".csv,text/csv" required class="block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border file:border-line file:bg-white file:px-3 file:py-2 file:text-sm file:font-semibold">
+            </div>
+            <x-common.button type="submit" size="sm">{{ __('distribution::distribution.server_upload') }}</x-common.button>
+        </form>
+    </div>
+
     {{-- Zips --}}
     <div class="bg-white border border-line rounded-xl overflow-hidden mb-6">
         <div class="px-5 py-4 border-b border-line flex flex-wrap items-start justify-between gap-3">

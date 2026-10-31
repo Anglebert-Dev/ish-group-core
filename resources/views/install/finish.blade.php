@@ -7,7 +7,7 @@
     <div class="space-y-5 text-sm">
         <div>
             <p class="mb-2">{{ __('install.finish_cron') }}</p>
-            <pre class="rounded-xl bg-gray-900 text-gray-100 p-3 overflow-x-auto text-xs">* * * * * cd {{ $basePath }} && php artisan schedule:run >> /dev/null 2>&1</pre>
+            <pre class="rounded-xl bg-gray-900 text-gray-100 p-3 overflow-x-auto text-xs">{{ $cronLine }}</pre>
         </div>
         <div>
             @if ($queueViaScheduler)

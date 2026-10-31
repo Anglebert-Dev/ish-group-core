@@ -76,11 +76,11 @@ class InstallController extends Controller
         return redirect()->route('install.database');
     }
 
-    public function database(RequirementsChecker $checker): View|RedirectResponse
+    public function database(RequirementsChecker $checker, SiteManifest $manifest): View|RedirectResponse
     {
         return $this->guard('database') ?? $this->page('database', [
             'drivers' => $checker->databaseDrivers(),
-            'values' => session('install.data.database', []),
+            'values' => session('install.data.database') ?? $manifest->defaults('database'),
         ]);
     }
 
@@ -103,15 +103,15 @@ class InstallController extends Controller
         return redirect()->route('install.app')->with('status', $result['message']);
     }
 
-    public function app(Request $request): View|RedirectResponse
+    public function app(Request $request, SiteManifest $manifest): View|RedirectResponse
     {
         return $this->guard('app') ?? $this->page('app', [
-            'values' => session('install.data.app', [
+            'values' => session('install.data.app') ?? $manifest->defaults('app') + [
                 'name' => config('app.name'),
                 'url' => $request->getSchemeAndHttpHost().rtrim($request->getBasePath(), '/'),
                 'timezone' => config('app.timezone'),
                 'queue_via_scheduler' => true,
-            ]),
+            ],
             'timezones' => DateTimeZone::listIdentifiers(),
         ]);
     }
@@ -129,10 +129,10 @@ class InstallController extends Controller
         return redirect()->route('install.mail');
     }
 
-    public function mail(): View|RedirectResponse
+    public function mail(SiteManifest $manifest): View|RedirectResponse
     {
         return $this->guard('mail') ?? $this->page('mail', [
-            'values' => session('install.data.mail') ?? ['port' => 587],
+            'values' => session('install.data.mail') ?? $manifest->defaults('mail') + ['port' => 587],
         ]);
     }
 
@@ -165,10 +165,10 @@ class InstallController extends Controller
         return redirect()->route('install.admin');
     }
 
-    public function admin(): View|RedirectResponse
+    public function admin(SiteManifest $manifest): View|RedirectResponse
     {
         return $this->guard('admin') ?? $this->page('admin', [
-            'values' => collect(session('install.data.admin', []))->except('password')->all(),
+            'values' => collect(session('install.data.admin') ?? $manifest->defaults('admin'))->except('password')->all(),
         ]);
     }
 
@@ -195,7 +195,7 @@ class InstallController extends Controller
         ]);
     }
 
-    public function run(Request $request, InstallationService $installer): View|RedirectResponse
+    public function run(Request $request, InstallationService $installer, SiteManifest $manifest): View|RedirectResponse
     {
         if ($redirect = $this->guard('review')) {
             return $redirect;
@@ -218,6 +218,7 @@ class InstallController extends Controller
             'steps' => self::STEPS,
             'current' => null,
             'basePath' => base_path(),
+            'cronLine' => $manifest->cronLine(base_path()),
             'queueViaScheduler' => (bool) ($data['app']['queue_via_scheduler'] ?? false),
             'loginUrl' => rtrim($data['app']['url'], '/').'/app/login',
         ]);

@@ -124,6 +124,36 @@ class InstallerTest extends TestCase
             ->assertSessionMissing('install.data');
     }
 
+    public function test_the_installer_starts_with_what_the_customer_told_us(): void
+    {
+        $this->withoutInstalledFlag();
+        $this->useManifest(['defaults' => [
+            'database' => ['driver' => 'mysql', 'host' => 'db.acme', 'database' => 'acme_fin', 'username' => 'acme_user'],
+            'app' => ['name' => 'Acme Finance', 'url' => 'https://finance.acme.com', 'timezone' => 'Africa/Kigali'],
+            'mail' => ['host' => 'mail.acme.com', 'from_address' => 'no-reply@acme.com'],
+            'admin' => ['business' => 'Acme Ltd', 'email' => 'jane@acme.com'],
+            'server' => ['php_path' => '/usr/local/bin/php'],
+        ]]);
+        $this->withSession(['install.done' => ['code', 'requirements', 'database', 'app', 'mail']]);
+
+        $this->get('/install/database')->assertOk()->assertSee('value="db.acme"', false)->assertSee('value="acme_fin"', false);
+        $this->get('/install/app')->assertOk()->assertSee('value="https://finance.acme.com"', false)->assertSee('value="Acme Finance"', false);
+        $this->get('/install/mail')->assertOk()->assertSee('value="mail.acme.com"', false);
+        $this->get('/install/admin')->assertOk()->assertSee('value="jane@acme.com"', false)->assertSee('value="Acme Ltd"', false);
+
+        $this->assertSame('* * * * * cd /srv/app && /usr/local/bin/php artisan schedule:run >> /dev/null 2>&1', app(SiteManifest::class)->cronLine('/srv/app'));
+    }
+
+    public function test_setup_command_takes_the_customers_answers(): void
+    {
+        $this->withoutInstalledFlag();
+        $this->useManifest(['modules' => ['Savings'], 'defaults' => ['admin' => ['business' => 'Acme Ltd', 'name' => 'Jane Doe', 'email' => 'jane@acme.com']]]);
+
+        $this->artisan('core:setup', ['--skip-env' => true, '--no-interaction' => true, '--admin-password' => self::TEST_PASSWORD])->assertSuccessful();
+
+        $this->assertTrue(User::query()->where('email', 'jane@acme.com')->exists());
+    }
+
     public function test_a_step_cannot_be_skipped(): void
     {
         $this->withoutInstalledFlag();

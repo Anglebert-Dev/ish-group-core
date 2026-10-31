@@ -39,6 +39,29 @@ class SiteManifest
         return array_values(array_filter((array) $this->get('modules', []), 'is_string'));
     }
 
+    /**
+     * What the customer told us before the build, to start the installer
+     * with (sections: database, app, mail, admin, server). Never passwords.
+     *
+     * @return array<string, mixed>
+     */
+    public function defaults(string $section): array
+    {
+        $defaults = $this->get('defaults', []);
+
+        return is_array($defaults[$section] ?? null) ? $defaults[$section] : [];
+    }
+
+    /**
+     * The cron line for this server, with the PHP path the customer gave us.
+     */
+    public function cronLine(string $basePath): string
+    {
+        $php = (string) ($this->defaults('server')['php_path'] ?? 'php');
+
+        return "* * * * * cd {$basePath} && {$php} artisan schedule:run >> /dev/null 2>&1";
+    }
+
     public function requiresCode(): bool
     {
         return filled($this->get('install_code_hash'));
