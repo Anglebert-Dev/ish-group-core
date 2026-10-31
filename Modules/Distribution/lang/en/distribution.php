@@ -80,6 +80,8 @@ return [
     'no_builds' => 'No zips yet.',
     'build_in_progress' => 'A zip for this site is being built right now. Wait for it to finish.',
     'build_deleted' => 'Zip deleted.',
+    'php_missing' => 'PHP could not be found for the build. Set DISTRIBUTION_PHP in .env to the full path of the php program (e.g. /usr/bin/php).',
+    'composer_missing' => 'Composer could not be found for the build. Install it, or set DISTRIBUTION_COMPOSER in .env to its full path (e.g. /usr/local/bin/composer).',
     'delete_build_confirm' => 'Delete this zip? A server already installed from it stops getting updates (its token is revoked).',
     'building_wait' => 'Building… this takes about 10 seconds.',
     'build_ready' => 'Zip ready.',

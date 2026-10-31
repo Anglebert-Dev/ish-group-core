@@ -16,6 +16,7 @@ use Modules\Distribution\Support\PlatformAudit;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
+use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\PhpExecutableFinder;
 use Throwable;
 use ZipArchive;
@@ -245,11 +246,17 @@ class BuildService extends BaseService
             File::copyDirectory(base_path('vendor'), $stage.'/vendor');
         }
 
-        // Web servers (php-fpm) often run without HOME, which Composer needs.
-        $env = getenv('HOME') || getenv('COMPOSER_HOME') ? [] : ['COMPOSER_HOME' => $this->disk()->path($this->directory().'/composer-home')];
+        // Run as "php composer …": a web request's environment may lack php
+        // on PATH and HOME, which Composer needs. It downloads nothing here
+        // (the packages come from our vendor), so its own home in storage is enough.
+        $env = [
+            'PATH' => dirname($this->php()).PATH_SEPARATOR.(getenv('PATH') ?: '/usr/bin:/bin'),
+            'COMPOSER_HOME' => getenv('COMPOSER_HOME') ?: $this->disk()->path($this->directory().'/composer-home'),
+        ];
+        File::ensureDirectoryExists($env['COMPOSER_HOME']);
 
         $this->mustRun([
-            (string) config('distribution.composer', 'composer'), 'install',
+            $this->php(), $this->composer(), 'install',
             '--no-dev', '--no-interaction', '--prefer-dist', '--optimize-autoloader', '--no-scripts', '--no-progress',
         ], $stage, 900, $env);
     }
@@ -305,9 +312,35 @@ class BuildService extends BaseService
 
     private function smokeTest(string $stage): void
     {
-        $php = (new PhpExecutableFinder)->find(false) ?: 'php';
+        $this->mustRun([$this->php(), 'artisan', '--version'], $stage, 120);
+    }
 
-        $this->mustRun([$php, 'artisan', '--version'], $stage, 120);
+    /** Folders PHP and Composer are usually installed in, beyond PATH. */
+    private const BIN_DIRS = ['/usr/local/bin', '/opt/homebrew/bin', '/usr/bin', '/bin'];
+
+    private function php(): string
+    {
+        $php = config('distribution.php')
+            ?: (new PhpExecutableFinder)->find(false)
+            ?: (new ExecutableFinder)->find('php', null, self::BIN_DIRS);
+
+        if (! $php || ! is_file($php)) {
+            throw new RuntimeException(__('distribution::distribution.php_missing'));
+        }
+
+        return $php;
+    }
+
+    private function composer(): string
+    {
+        $configured = (string) config('distribution.composer', 'composer');
+        $composer = is_file($configured) ? $configured : (new ExecutableFinder)->find($configured, null, self::BIN_DIRS);
+
+        if (! $composer) {
+            throw new RuntimeException(__('distribution::distribution.composer_missing'));
+        }
+
+        return $composer;
     }
 
     /**

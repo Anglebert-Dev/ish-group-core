@@ -246,7 +246,10 @@ Commit after each phase. Run `php artisan test` before every commit.
 
 ### Phase 3 notes
 
-- **Build a zip:** Super Admin → Self-hosting → a site → **Build zip**, which runs as a queued job (needs `queue:work`). Or run `php artisan distribution:build "<site name or uuid>"`, which runs in place. The **install code is shown once**: in the flash message on the site page, or printed by the command. Only its hash is stored, in the build row and in `site.json`. If the code is lost, build again.
+- **Build a zip:** Super Admin → Self-hosting → a site → **Build zip**. It builds **right away, inside the request** (about 10 seconds), with no queue worker needed. A second click while a build is running is refused. Or run `php artisan distribution:build "<site name or uuid>"`.
+  - The **install code is shown once**: on the site page, or printed by the command. Only its hash is stored, in the build row and in `site.json`. If it's lost, build again.
+  - **Delete** on a zip row removes the file and the row, and revokes that zip's token, so a server installed from it stops getting updates.
+- **PHP and Composer inside a web request:** the build runs `php composer install` with PHP's own folder added to PATH (otherwise Composer's `#!/usr/bin/env php` fails under a web server) and with `COMPOSER_HOME` in storage (web servers often have no HOME). PHP and Composer are also looked for in `/usr/local/bin`, `/opt/homebrew/bin` and `/usr/bin`. If they're elsewhere, set `DISTRIBUTION_PHP` / `DISTRIBUTION_COMPOSER` in `.env`. Both problems were found by pressing the real button on 31/10/2026.
 - **What's in it:** `git archive HEAD`, so **only committed code ships**. Commit first. Then:
   - unassigned modules, plus Billing and Distribution, are removed (the build fails if either is still there)
   - removed every time: `tests`, `docs`, `README.md`, `phpunit.xml`, `DemoFactorySeeder`, frontend build files
