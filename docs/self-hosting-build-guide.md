@@ -1,6 +1,6 @@
 # Self-hosting (shipping modules to a customer's server): Build Guide
 
-Created: 31/10/2026. Status: **All phases done (31/10/2026)**. Tested end to end on two real servers (Postgres). Open: a MySQL run (§12). Update the progress table in §9 after each phase, so work can pick up where it stopped.
+Created: 31/10/2026. Status: **All phases done (31/10/2026)**. Tested end to end on two real servers, on PostgreSQL and on MySQL 9.7. Update the progress table in §9 after each phase, so work can pick up where it stopped.
 
 ## 1. Goal
 
@@ -198,7 +198,7 @@ Commit after each phase. Run `php artisan test` before every commit.
 | 3 | Zip builds | `BuildService` + job, builds page, install code | ✅ 31/10/2026: 6 tests; real run: `distribution:build` (8 s, 15 MB zip with Savings) → extracted → web install with the code on Postgres → sign in, Savings pages work, Billing absent |
 | 4 | Update API (server) | check-in, download, report, offer logic, site status page | ✅ 31/10/2026: 9 tests |
 | 5 | Update client | `UpdateClient`, `SafeZipExtractor`, `ModulePackageInstaller`, `UpdateService`, `core:updates` + schedule, Updates page, auto/manual | ✅ 31/10/2026: 13 tests (real installs and rollbacks of a fixture module) |
-| 6 | Finishing | pruning, README "Self-hosting" section, end-to-end test | ✅ 31/10/2026: `distribution:prune` (daily 03:30), first check-in right after install, a failed version isn't retried automatically, end-to-end run below. MySQL not yet run (no local credentials) |
+| 6 | Finishing | pruning, README "Self-hosting" section, end-to-end test | ✅ 31/10/2026: `distribution:prune` (daily 03:30), first check-in right after install, a failed version isn't retried automatically, end-to-end runs below (PostgreSQL and MySQL) |
 
 **Before deploying Phase 1 to our own server, run `php artisan core:mark-installed` there.** Otherwise our server will redirect to the installer.
 
@@ -350,9 +350,21 @@ Commit after each phase. Run `php artisan test` before every commit.
 | Schedules | customer: `core:updates` hourly, queue every minute (cron-only mode), `savings:alerts`; ours: `distribution:prune` daily |
 | Revoke the site's token | customer's next check: "The update server answered 401. Invalid token." |
 
+### End-to-end run, 31/10/2026 (MySQL 9.7.1, our side done in the browser)
+
+| Step | Result |
+|---|---|
+| Ours, **all in the browser**: Create signing key (password confirmation, secret shown once), Publish Savings, Add site, Build zip (queue job, 7 s) | install code on the site page, zip ready to download |
+| Customer: web installer on MySQL | a wrong DB password shows MySQL's error; installed (38 tables, 1 admin); first check-in reached us (`db=mysql`) |
+| Manual 1.1.1 → automatic 1.1.2 | same as on Postgres |
+| Broken 1.1.3: migration 1 creates a table; migration 2 **adds a column to `sav_accounts`**, creates a table, then throws | `rolled_back`: still 1.1.2; migration 1's table rolled back; **the column and the half-made table removed** by the failed migration's `down()`; no 1.1.3 migrations left recorded; app works |
+| Next check | not retried automatically |
+| Delivery (+ SalesOrders, Inventory) and fixed 1.1.4 | all installed in order; pages work; our history lists all 7 results |
+| Revoke token | 401 on the next check |
+| Second copy of the same zip: `core:setup --no-interaction` on MySQL | installed even though its token was revoked (the check-in is non-fatal); running it again: "already installed" |
+
 ## 12. Open points
 
-- **MySQL end-to-end run:** the same steps on MySQL, pending database credentials (Postgres passed).
 - **HTTPS:** nothing enforces HTTPS for the update server address yet. Our `APP_URL` must be `https://` in production, because builds put it in every `site.json`.
 - **Core self-update** (app/, vendor) is a later phase. Until then, a core change means a new zip for each site.
 - Should a customer's admin be allowed to switch modules off on their server? They can today, through Super Admin → Modules, because they are superadmin there.
