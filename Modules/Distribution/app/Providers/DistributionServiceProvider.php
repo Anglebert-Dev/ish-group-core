@@ -3,6 +3,9 @@
 namespace Modules\Distribution\Providers;
 
 use App\Support\Modules\CoreModuleServiceProvider;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Modules\Distribution\Console\BuildSiteCommand;
 use Modules\Distribution\Console\KeygenCommand;
 use Modules\Distribution\Console\PublishReleaseCommand;
@@ -26,4 +29,12 @@ class DistributionServiceProvider extends CoreModuleServiceProvider
     protected array $providers = [
         RouteServiceProvider::class,
     ];
+
+    public function boot(): void
+    {
+        parent::boot();
+
+        // Per token: a site checks hourly, so this only stops runaway clients.
+        RateLimiter::for('distribution-api', fn (Request $request) => Limit::perMinute(30)->by(sha1((string) $request->bearerToken()).'|'.$request->ip()));
+    }
 }

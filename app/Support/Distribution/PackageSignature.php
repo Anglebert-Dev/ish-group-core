@@ -11,9 +11,20 @@ final class PackageSignature
 {
     public const CONTEXT = 'ish-module-v1';
 
+    /** Check-in answers are signed too, under their own context. */
+    public const RESPONSE_CONTEXT = 'ish-checkin-v1';
+
     public static function message(string $module, string $version, string $sha256): string
     {
         return self::CONTEXT."\n{$module}\n{$version}\n{$sha256}";
+    }
+
+    /**
+     * What the X-Ish-Signature header of a check-in answer covers: the raw body.
+     */
+    public static function responseMessage(string $body): string
+    {
+        return self::RESPONSE_CONTEXT."\n".$body;
     }
 
     /**

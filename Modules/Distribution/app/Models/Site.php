@@ -40,6 +40,16 @@ class Site extends BaseModel
         return $this->hasMany(Build::class)->latest('id');
     }
 
+    public function checkIns(): HasMany
+    {
+        return $this->hasMany(CheckIn::class)->latest('id');
+    }
+
+    public function updateReports(): HasMany
+    {
+        return $this->hasMany(UpdateReport::class)->latest('id');
+    }
+
     public function tokens(): HasMany
     {
         return $this->hasMany(SiteToken::class)->latest('id');

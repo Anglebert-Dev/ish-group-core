@@ -55,6 +55,8 @@ class SiteController extends Controller
     public function show(Site $site): View
     {
         $site->load('modules', 'tokens', 'builds');
+        $site->setRelation('updateReports', $site->updateReports()->limit(20)->get());
+        $site->setRelation('checkIns', $site->checkIns()->limit(10)->get());
 
         return view('distribution::sites.show', [
             'site' => $site,

@@ -132,6 +132,40 @@
         </div>
     </div>
 
+    {{-- Reported by the site --}}
+    <div class="grid gap-6 lg:grid-cols-2 mb-6">
+        <div class="bg-white border border-line rounded-xl overflow-hidden">
+            <div class="px-5 py-4 border-b border-line"><p class="font-semibold text-ink">{{ __('distribution::distribution.update_history') }}</p></div>
+            <ul class="divide-y divide-line text-sm">
+                @forelse ($site->updateReports as $report)
+                    <li class="px-5 py-3">
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="font-medium text-ink">{{ $report->module }} {{ $report->from_version ? $report->from_version.' → ' : '' }}{{ $report->to_version }}</span>
+                            <x-common.badge :color="$report->status === 'success' ? 'success' : 'danger'">{{ __('distribution::distribution.report_'.$report->status) }}</x-common.badge>
+                        </div>
+                        <div class="text-xs text-muted mt-0.5">{{ $report->created_at?->format('d M Y H:i') }}</div>
+                        @if ($report->error)<div class="text-xs text-danger mt-1 break-words">{{ $report->error }}</div>@endif
+                    </li>
+                @empty
+                    <li class="px-5 py-8 text-center text-muted">{{ __('distribution::distribution.no_update_history') }}</li>
+                @endforelse
+            </ul>
+        </div>
+        <div class="bg-white border border-line rounded-xl overflow-hidden">
+            <div class="px-5 py-4 border-b border-line"><p class="font-semibold text-ink">{{ __('distribution::distribution.recent_check_ins') }}</p></div>
+            <ul class="divide-y divide-line text-sm">
+                @forelse ($site->checkIns as $checkIn)
+                    <li class="px-5 py-3 flex items-center justify-between gap-3">
+                        <span class="text-muted whitespace-nowrap">{{ $checkIn->created_at?->format('d M Y H:i') }}</span>
+                        <span class="text-right">{{ $checkIn->offered ? __('distribution::distribution.offered').': '.implode(', ', $checkIn->offered) : __('distribution::distribution.nothing_offered') }}</span>
+                    </li>
+                @empty
+                    <li class="px-5 py-8 text-center text-muted">{{ __('distribution::distribution.no_check_ins') }}</li>
+                @endforelse
+            </ul>
+        </div>
+    </div>
+
     {{-- Tokens --}}
     <div class="bg-white border border-line rounded-xl overflow-hidden">
         <div class="px-5 py-4 border-b border-line">

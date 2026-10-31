@@ -95,6 +95,17 @@ return [
     'install_code_once' => 'Send this install code with the zip. It is shown only now; the installer asks for it.',
     'site_not_found' => 'No site with that name or id.',
 
+    // Updates (reported by the site)
+    'update_history' => 'Update history',
+    'no_update_history' => 'The site has not installed anything through updates yet.',
+    'recent_check_ins' => 'Recent check-ins',
+    'no_check_ins' => 'The site has not checked in yet. It does once installed, then every hour.',
+    'offered' => 'Offered',
+    'nothing_offered' => 'Nothing new',
+    'report_success' => 'Done',
+    'report_failed' => 'Failed',
+    'report_rolled_back' => 'Rolled back',
+
     // Releases
     'publish' => 'Publish',
     'publish_release' => 'Publish a release',

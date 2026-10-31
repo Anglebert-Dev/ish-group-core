@@ -381,6 +381,16 @@ class ModuleManager extends BaseService
         $this->flush();
     }
 
+    /**
+     * Forget the module list read from disk (nwidart keeps it for the whole
+     * process): needed after a module folder was replaced by an update.
+     */
+    public function rescan(): void
+    {
+        (new \ReflectionProperty(\Nwidart\Modules\FileRepository::class, 'modules'))->setValue(null, []);
+        $this->flush();
+    }
+
     public function flush(): void
     {
         $this->installed = null;
