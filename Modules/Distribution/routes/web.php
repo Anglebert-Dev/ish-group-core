@@ -26,6 +26,7 @@ Route::prefix('app/super-admin/distribution')->name('superadmin.distribution.')-
     Route::post('/sites/{site}/modules', [SiteController::class, 'assign'])->name('sites.modules.assign');
     Route::delete('/sites/{site}/modules/{module}', [SiteController::class, 'unassign'])->middleware('password.confirm.staff')->name('sites.modules.unassign');
     Route::post('/sites/{site}/builds', [SiteController::class, 'build'])->name('sites.builds.store');
+    Route::delete('/sites/{site}/builds/{build}', [SiteController::class, 'deleteBuild'])->name('sites.builds.destroy');
     Route::get('/sites/{site}/builds/{build}/download', [SiteController::class, 'download'])->middleware('password.confirm.staff')->name('sites.builds.download');
     Route::post('/sites/{site}/tokens/{token}/revoke', [SiteController::class, 'revokeToken'])->middleware('password.confirm.staff')->name('sites.tokens.revoke');
 

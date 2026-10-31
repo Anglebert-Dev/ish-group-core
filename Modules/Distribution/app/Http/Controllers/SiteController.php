@@ -9,7 +9,6 @@ use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Modules\Distribution\Enums\SiteStatus;
 use Modules\Distribution\Enums\UpdateMode;
-use Modules\Distribution\Jobs\BuildSiteJob;
 use Modules\Distribution\Models\Build;
 use Modules\Distribution\Models\Release;
 use Modules\Distribution\Models\Site;
@@ -92,18 +91,35 @@ class SiteController extends Controller
         return back()->with($result['status'] ? 'success' : 'error', $result['message']);
     }
 
+    /**
+     * Builds right away (about 10 seconds): no queue worker needed.
+     */
     public function build(Site $site, BuildService $builds): RedirectResponse
     {
-        $result = $builds->start($site);
+        $started = $builds->start($site);
+
+        if (! $started['status']) {
+            return back()->with('error', $started['message']);
+        }
+
+        @set_time_limit(0);
+        $result = $builds->run($started['data']['build']);
 
         if (! $result['status']) {
             return back()->with('error', $result['message']);
         }
 
-        BuildSiteJob::dispatch($result['data']['build']);
-
         // Shown once: only its hash is kept (and put in the zip).
-        return back()->with('success', $result['message'])->with('install_code', $result['data']['code']);
+        return back()->with('success', $result['message'])->with('install_code', $started['data']['code']);
+    }
+
+    public function deleteBuild(Site $site, Build $build, BuildService $builds): RedirectResponse
+    {
+        abort_unless($build->site_id === $site->id, 404);
+
+        $result = $builds->delete($build);
+
+        return back()->with($result['status'] ? 'success' : 'error', $result['message']);
     }
 
     public function download(Site $site, Build $build, BuildService $builds): BinaryFileResponse

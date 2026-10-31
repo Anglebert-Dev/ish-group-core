@@ -91,7 +91,8 @@
                 <p class="font-semibold text-ink">{{ __('distribution::distribution.builds') }}</p>
                 <p class="text-sm text-muted max-w-2xl">{{ __('distribution::distribution.builds_hint') }}</p>
             </div>
-            <form method="POST" action="{{ route('superadmin.distribution.sites.builds.store', $site) }}">
+            <form method="POST" action="{{ route('superadmin.distribution.sites.builds.store', $site) }}"
+                  onsubmit="var b=this.querySelector('button'); b.disabled=true; b.textContent=@js(__('distribution::distribution.building_wait'));">
                 @csrf
                 <x-common.button type="submit" size="sm">{{ __('distribution::distribution.build_zip') }}</x-common.button>
             </form>
@@ -120,6 +121,12 @@
                             <td class="px-5 py-3.5 text-right whitespace-nowrap">
                                 @if ($build->isDownloadable())
                                     <x-common.action-button :href="route('superadmin.distribution.sites.builds.download', [$site, $build])">{{ __('distribution::distribution.download') }}</x-common.action-button>
+                                @endif
+                                <x-common.action-button :action="route('superadmin.distribution.sites.builds.destroy', [$site, $build])" method="DELETE" color="danger"
+                                    data-confirm data-confirm-title="{{ __('distribution::distribution.delete_build_confirm') }}" data-confirm-variant="danger">
+                                    {{ __('body.delete') }}
+                                </x-common.action-button>
+                                @if ($build->isDownloadable())
                                     <div class="text-xs text-muted mt-1">{{ __('distribution::distribution.expires') }} {{ $build->expires_at->format('d M Y') }}</div>
                                 @endif
                             </td>

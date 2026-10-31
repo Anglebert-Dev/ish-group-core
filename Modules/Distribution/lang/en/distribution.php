@@ -75,10 +75,13 @@ return [
 
     // Builds
     'builds' => 'Zips',
-    'builds_hint' => 'A ready-to-extract copy for this site: the core from the last commit, its modules, and a link back here for updates. Kept 14 days.',
+    'builds_hint' => 'A ready-to-extract copy for this site: the core from the last commit, its modules, and a link back here for updates. Built right away (about 10 seconds); kept 14 days.',
     'build_zip' => 'Build zip',
     'no_builds' => 'No zips yet.',
-    'build_started' => 'Building the zip. It is ready in a minute or two — refresh this page.',
+    'build_in_progress' => 'A zip for this site is being built right now. Wait for it to finish.',
+    'build_deleted' => 'Zip deleted.',
+    'delete_build_confirm' => 'Delete this zip? A server already installed from it stops getting updates (its token is revoked).',
+    'building_wait' => 'Building… this takes about 10 seconds.',
     'build_ready' => 'Zip ready.',
     'build_failed' => 'The build failed: :error',
     'build_needs_modules' => 'Give the site at least one module first.',

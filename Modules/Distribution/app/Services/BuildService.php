@@ -25,8 +25,8 @@ use ZipArchive;
  * the last commit of the core, only that site's modules, production vendor,
  * our public key, and a site.json linking it back to us.
  *
- * start() is instant (the install code is shown once, right away);
- * run() does the work, usually from BuildSiteJob.
+ * start() records the build and makes the install code (shown once);
+ * run() does the work, right after, in the same request (about 10 s).
  */
 class BuildService extends BaseService
 {
@@ -63,6 +63,11 @@ class BuildService extends BaseService
             return $this->failure(__('distribution::distribution.keys_missing'));
         }
 
+        // A second click while one is being built would only make a duplicate.
+        if ($site->builds()->where('status', BuildStatus::Building)->where('updated_at', '>', now()->subMinutes(30))->exists()) {
+            return $this->failure(__('distribution::distribution.build_in_progress'));
+        }
+
         $code = $this->installCode();
 
         $build = Build::query()->create([
@@ -74,7 +79,29 @@ class BuildService extends BaseService
 
         PlatformAudit::log('distribution_build_started', "Zip build started for site {$site->name}", $build, ['modules' => $build->modules]);
 
-        return $this->success(['build' => $build, 'code' => $code], __('distribution::distribution.build_started'));
+        return $this->success(['build' => $build, 'code' => $code], __('distribution::distribution.build_ready'));
+    }
+
+    /**
+     * Remove a build: its zip file, the row, and the update token made for
+     * it (a server already installed from this zip stops getting updates).
+     */
+    public function delete(Build $build): array
+    {
+        if ($build->status === BuildStatus::Building && $build->updated_at?->gt(now()->subMinutes(30))) {
+            return $this->failure(__('distribution::distribution.build_in_progress'));
+        }
+
+        if ($build->path) {
+            $this->disk()->delete($build->path);
+        }
+
+        $build->site->tokens()->where('build_id', $build->id)->whereNull('revoked_at')->update(['revoked_at' => now()]);
+        $build->delete();
+
+        PlatformAudit::log('distribution_build_deleted', "Zip deleted for site {$build->site->name}", $build, ['file' => $build->filename, 'status' => $build->status->value]);
+
+        return $this->success(null, __('distribution::distribution.build_deleted'));
     }
 
     /**
@@ -218,10 +245,13 @@ class BuildService extends BaseService
             File::copyDirectory(base_path('vendor'), $stage.'/vendor');
         }
 
+        // Web servers (php-fpm) often run without HOME, which Composer needs.
+        $env = getenv('HOME') || getenv('COMPOSER_HOME') ? [] : ['COMPOSER_HOME' => $this->disk()->path($this->directory().'/composer-home')];
+
         $this->mustRun([
             (string) config('distribution.composer', 'composer'), 'install',
             '--no-dev', '--no-interaction', '--prefer-dist', '--optimize-autoloader', '--no-scripts', '--no-progress',
-        ], $stage, 900);
+        ], $stage, 900, $env);
     }
 
     /**
@@ -331,9 +361,9 @@ class BuildService extends BaseService
     /**
      * @param  list<string>  $command
      */
-    private function mustRun(array $command, ?string $cwd = null, int $timeout = 300): string
+    private function mustRun(array $command, ?string $cwd = null, int $timeout = 300, array $env = []): string
     {
-        $result = Process::path($cwd ?? base_path())->timeout($timeout)->run($command);
+        $result = Process::path($cwd ?? base_path())->timeout($timeout)->env($env)->run($command);
 
         if ($result->failed()) {
             throw new RuntimeException(basename($command[0]).' '.($command[1] ?? '').' failed: '.Str::limit(trim($result->errorOutput() ?: $result->output()), 1500));

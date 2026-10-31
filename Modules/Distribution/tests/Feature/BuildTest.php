@@ -7,16 +7,15 @@ use App\Services\Module\ModuleManager;
 use App\Support\Installer\SiteManifest;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
-use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Modules\Distribution\Enums\BuildStatus;
-use Modules\Distribution\Jobs\BuildSiteJob;
 use Modules\Distribution\Models\Build;
 use Modules\Distribution\Models\Site;
 use Modules\Distribution\Models\SiteToken;
 use Modules\Distribution\Services\BuildService;
 use Modules\Distribution\Services\SigningKeys;
 use Modules\Distribution\Services\SiteService;
+use Mockery;
 use Tests\TestCase;
 use ZipArchive;
 
@@ -139,18 +138,55 @@ class BuildTest extends TestCase
         $this->assertSame(0, $site->tokens()->whereNull('revoked_at')->count());
     }
 
-    public function test_build_button_queues_the_job_and_shows_the_code(): void
+    public function test_build_button_builds_right_away_and_shows_the_code(): void
     {
-        Queue::fake();
+        // The real build (git + Composer) is covered above; here only the page flow.
+        $builds = Mockery::mock(BuildService::class, [app(SiteService::class), app(SigningKeys::class)])->makePartial();
+        $builds->shouldReceive('run')->once()->andReturnUsing(function (Build $build) {
+            $build->update(['status' => BuildStatus::Ready, 'expires_at' => now()->addDays(14), 'path' => 'distribution/builds/x.zip', 'filename' => 'x.zip']);
+
+            return ['status' => true, 'data' => $build, 'message' => __('distribution::distribution.build_ready')];
+        });
+        $this->app->instance(BuildService::class, $builds);
+
         $this->actingAs($this->root, 'staff');
         $site = $this->site(['Savings']);
 
         $this->post(route('superadmin.distribution.sites.builds.store', $site))
-            ->assertSessionHas('success')
+            ->assertSessionHas('success', __('distribution::distribution.build_ready'))
             ->assertSessionHas('install_code');
 
-        Queue::assertPushed(BuildSiteJob::class);
-        $this->get(route('superadmin.distribution.sites.show', $site))->assertOk()->assertSee(__('distribution::distribution.build_status_queued'));
+        $this->assertSame(BuildStatus::Ready, Build::query()->firstOrFail()->status);
+        $this->get(route('superadmin.distribution.sites.show', $site))->assertOk()->assertSee(__('distribution::distribution.download'));
+    }
+
+    public function test_a_second_build_is_refused_while_one_is_running(): void
+    {
+        $site = $this->site(['Savings']);
+        Build::query()->create(['site_id' => $site->id, 'modules' => ['Savings'], 'status' => BuildStatus::Building]);
+
+        $result = app(BuildService::class)->start($site);
+
+        $this->assertFalse($result['status']);
+        $this->assertSame(__('distribution::distribution.build_in_progress'), $result['message']);
+    }
+
+    public function test_a_build_can_be_deleted_with_its_file_and_token(): void
+    {
+        $this->actingAs($this->root, 'staff');
+        $site = $this->site(['Savings']);
+        Storage::disk('local')->put('distribution/builds/site.zip', 'zip');
+        $build = Build::query()->create(['site_id' => $site->id, 'modules' => ['Savings'], 'status' => BuildStatus::Ready, 'path' => 'distribution/builds/site.zip', 'filename' => 'site.zip', 'expires_at' => now()->addDay()]);
+        app(SiteService::class)->issueToken($site, $build->id);
+        $waiting = Build::query()->create(['site_id' => $site->id, 'modules' => ['Savings'], 'status' => BuildStatus::Queued]);
+
+        $this->delete(route('superadmin.distribution.sites.builds.destroy', [$site, $build]))->assertSessionHas('success');
+        $this->delete(route('superadmin.distribution.sites.builds.destroy', [$site, $waiting]))->assertSessionHas('success');
+
+        $this->assertSame(0, Build::query()->count());
+        Storage::disk('local')->assertMissing('distribution/builds/site.zip');
+        $this->assertSame(0, $site->tokens()->whereNull('revoked_at')->count(), 'its token no longer works');
+        $this->assertTrue(\App\Models\ActivityLog\ActivityLog::query()->where('action', 'distribution_build_deleted')->exists());
     }
 
     public function test_download_needs_a_ready_unexpired_build(): void

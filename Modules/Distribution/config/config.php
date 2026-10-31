@@ -7,6 +7,10 @@ return [
     // answers. Only ever in our .env — `php artisan distribution:keygen`.
     'signing_secret' => env('DISTRIBUTION_SIGNING_SECRET'),
 
+    // Composer used by builds. Builds run inside a web request, whose PATH
+    // may not include it: set the full path here if "Build zip" says so.
+    'composer' => env('DISTRIBUTION_COMPOSER', 'composer'),
+
     // Where release zips and builds are kept, on the private "local" disk.
     'disk' => 'local',
     'directory' => 'distribution',

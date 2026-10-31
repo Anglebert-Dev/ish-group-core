@@ -125,7 +125,7 @@ Full design and status: [docs/self-hosting-build-guide.md](docs/self-hosting-bui
 
 **A new customer** (Super Admin → Self-hosting):
 1. **Add site**, pick its modules (what they need comes along; Billing never ships), choose updates **Automatic** or **Manual**.
-2. **Build zip** (needs `queue:work`; or `php artisan distribution:build "<site>"`). Only **committed** code ships. Note the **install code**: it is shown once.
+2. **Build zip**: ready in about 10 seconds (or `php artisan distribution:build "<site>"`). Only **committed** code ships. A zip made by mistake can be deleted on the same page. Note the **install code**: it is shown once.
 3. Send them the zip and the code.
 
 **The customer** extracts it on any PHP 8.3 host (web root = `public/`, or the folder itself on shared hosting), creates an empty MySQL/PostgreSQL database and opens the site: the installer asks for the code, database, email and their admin account. Or from a terminal:
