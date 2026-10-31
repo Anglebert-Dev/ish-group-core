@@ -117,6 +117,17 @@ class UpdateApiTest extends TestCase
         $this->assertSame(SiteModuleStatus::PendingInstall, $statuses['SalesOrders']);
     }
 
+    public function test_a_module_is_not_offered_while_something_it_needs_is_unreleased(): void
+    {
+        Release::query()->create(['module' => 'SalesOrders', 'version' => '1.0.0', 'sha256' => str_repeat('a', 64), 'signature' => 'sig', 'size' => 1, 'path' => 'x', 'requires' => ['Inventory'], 'published_at' => now()]);
+        $check = fn () => array_column($this->withToken($this->token)->postJson(route('distribution.api.check-in'), $this->checkIn())->json('offers'), 'module');
+
+        $this->assertNotContains('SalesOrders', $check(), 'Inventory is not installed and not released');
+
+        $this->release('Inventory', '1.0.0');
+        $this->assertSame(['Inventory', 'SalesOrders'], array_values(array_intersect($check(), ['Inventory', 'SalesOrders'])), 'offered together, requirement first');
+    }
+
     public function test_withdrawn_and_older_releases_are_not_offered(): void
     {
         $this->release('Savings', '1.2.0')->update(['yanked_at' => now()]);

@@ -204,6 +204,8 @@ Commit after each phase. Run `php artisan test` before every commit.
 
 ### Test sites, link keys, plain errors (added 31/10/2026, Distribution 1.3.0)
 
+- **Offers wait for requirements.** A release isn't offered while a module it needs is neither installed on the site nor offered with it, for example when a requirement was given but never published. The customer is told "it will be offered as soon as your provider publishes it", and the site page shows **Publish now** on the missing one. Found in the end-to-end run below.
+
 - **Test sites:** edit a site and tick **Test site**. When any test site exists, Publish offers **Test sites first** (ticked by default): the release (`distribution_releases.test_only`) is offered and downloadable only for test sites. Click **Release to everyone** on the Releases page when it's checked. `distribution:publish X --test` does the same from the terminal.
 - **Link keys:** on the site page, Update tokens → **New link key**, with an optional email and "revoke all older keys" (ticked by default). The key is `ISH1-` plus base64url `{u: our APP_URL, s: site uuid, t: new token}` (`App\Support\Distribution\LinkKey`), shown once. On their side: Super Admin → **Updates** → **Link to your provider**, or `php artisan core:link <key>`. It's saved only if a check-in with it succeeds; otherwise the old link stays. The Updates page now opens on unlinked servers too, showing only the link form; the tab still appears only on linked servers.
 - **Plain errors on their Updates page:**
@@ -400,6 +402,22 @@ Commit after each phase. Run `php artisan test` before every commit.
 | Delivery (+ SalesOrders, Inventory) and fixed 1.1.4 | all installed in order; pages work; our history lists all 7 results |
 | Revoke token | 401 on the next check |
 | Second copy of the same zip: `core:setup --no-interaction` on MySQL | installed even though its token was revoked (the check-in is non-fatal); running it again: "already installed" |
+
+### End-to-end run 3, 31/10/2026 (two servers, PostgreSQL; everything since run 2)
+
+| Step | Result |
+|---|---|
+| "Prepare" email | sent with the CSV form attached |
+| "Package" email | contains the install code; the customer downloads through the signed link without a login; a tampered link gets 403 |
+| Install from the downloaded zip | done; first check-in reached us |
+| Test site | gets a "test sites first" release; a normal site doesn't, until **Release to everyone** |
+| Broken release | undone; no half-made table left |
+| Give Reports, whose requirement Inventory isn't published | **bug found and fixed**: it was offered and failed. Now it isn't offered and the customer is told why. After publishing Inventory, both installed in order |
+| Take away / give back | switched off / on, notifications on both sides |
+| Revoked token | "Your provider has stopped updates for this server…" |
+| Link key | emailed; a wrong key is refused clearly; the right one relinks and checks work |
+| Our server down | "Could not reach your provider's update server…" |
+| `distribution:prune` | runs |
 
 ## 12. Open points
 

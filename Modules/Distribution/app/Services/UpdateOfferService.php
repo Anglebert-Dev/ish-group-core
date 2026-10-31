@@ -96,6 +96,14 @@ class UpdateOfferService
                 continue;
             }
 
+            // Not while something it needs can't be installed with it (e.g. a
+            // required module given but never published): it would only fail.
+            $missing = array_filter((array) $release->requires, fn (string $required) => ! isset($installed[strtolower($required)]) && ! in_array($required, array_column($offers, 'module'), true));
+
+            if ($missing !== []) {
+                continue;
+            }
+
             $offers[] = [
                 'module' => $name,
                 'action' => $current === null ? 'install' : 'update',
