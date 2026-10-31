@@ -29,5 +29,6 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 /PROGRESS.md
-/docs/
+/docs/*
+!/docs/self-hosting-build-guide.md
 /modules_statuses.json

@@ -1,0 +1,269 @@
+# Self-hosting (shipping modules to a customer's server): Build Guide
+
+Created: 31/10/2026. Status: **Phases 0–1 done (31/10/2026)**; next is Phase 2 (Distribution module). Update the progress table in §9 after each phase, so work can pick up where it stopped.
+
+## 1. Goal
+
+Some customers want a module (e.g. Savings) running **on their own server**, with no subscription. We need to:
+
+1. **Choose what they get** in our app (only the modules we select, plus what those modules need) and build a ready-to-extract zip for them.
+2. Let them **install it without a developer**: after extracting, a web install page asks for the database (MySQL or PostgreSQL), app details, email, and the first admin, then sets everything up. The same can be done **from the terminal** by their developer or by us.
+3. **Keep them updated**: when we change a module, their server gets the new version from ours.
+
+Customers can host the code however they want: shared hosting (cPanel, no terminal), a VPS, or Docker.
+
+## 2. Decisions made (31/10/2026)
+
+| Question | Decision |
+|---|---|
+| Does the core need changes to run without Billing? | **No.** Without Billing, `bindIf(Entitlements, UnlimitedEntitlements)` (`app/Providers/AppServiceProvider.php`) unlocks every module. Nothing outside `Modules/Billing` refers to Billing. |
+| Who picks the modules? | **We do**, in our app. The customer can't add modules. |
+| How do updates travel? | **Their server asks ours** (pull). It works behind firewalls and on shared hosting. We never connect to their server. |
+| Install updates automatically? | **Set per customer** in our app: `auto` (installs on the next check) or `manual` (their admin clicks **Update**). New customers start on `manual`. |
+| What can be updated? | **Modules only** for now. A core change goes out as a new full zip (core self-update could be a later phase). |
+| Where do our screens live? | A new module, **`Modules/Distribution`** (Super Admin only). It is **never shipped**, and neither is Billing. |
+| Licence | Not in scope for now. |
+
+## 3. How it fits together
+
+```
+OUR SERVER (Distribution module)                CUSTOMER SERVER (core + chosen modules)
+────────────────────────────────                ───────────────────────────────────────
+Sites: customer, modules, update mode
+Build zip ──────── zip + install code ────────▶ extract → /install (or core:setup)
+                                                 → .env, migrate, admin, modules
+Publish module version (signed)
+/api/distribution/v1/check-in ◀──── hourly ──── core:updates (or "Check now")
+        offers (signed) ──────────────────────▶ auto: install │ manual: show "Update"
+/api/distribution/v1/releases/{id}/download ◀── download, verify, swap folder, migrate
+/api/distribution/v1/report ◀─────────────────── result (success / rolled back)
+```
+
+What lives where:
+
+| Piece | Where | Shipped? |
+|---|---|---|
+| Installer (web + `core:setup`), update client, Updates page | Core (`app/`) | Yes |
+| Sites, module assignment, builds, releases, update API | `Modules/Distribution` | **Never** |
+
+## 4. Facts found in the code that shape the design
+
+- **Modules load through Composer.** The merge plugin writes fixed entries in `vendor/composer/autoload_psr4.php`, so a module added later on their server wouldn't load. Fix: a fallback autoloader in `app/Support/helpers.php` that maps `Modules\{Name}\` to `Modules/{Name}/app/`.
+- **Every page touches the database.** `View::composer('*')` in `AppServiceProvider` calls `SettingService::current()`. Before install, those composers are skipped.
+- **There is no Vite build.** `resources/js` doesn't exist, and the real assets are already in `public/`. The build copies `public/` as is.
+- **`.env.example` assumes things a fresh server doesn't have yet.** It has `SESSION_ENCRYPT=true`, `SESSION_SECURE_COOKIE=true`, and database sessions and cache. Before install, these are forced to file sessions and cache, with secure cookies only on HTTPS.
+- **Our server and the tests must never end up in the installer.** "Installed" means `storage/installed` exists **or** `APP_INSTALLED=true`.
+
+## 5. Customer side (core, shipped)
+
+### 5.1 Installer
+
+- **Before Laravel starts** (`app/Support/Installer/PreInstall.php`, called from `bootstrap/app.php`), while the site isn't installed:
+  - create `.env` from `.env.example`
+  - **generate the APP_KEY on their server** (we never ship or know it)
+  - force file session and cache, the sync queue, and a sqlite `:memory:` placeholder database
+- **Middleware `RedirectToInstaller`:** before install, every URL goes to `/install`; after install, `/install` returns 404.
+- **Wizard steps:**
+  1. install code (sent with the zip; only its hash is in the zip)
+  2. requirements
+  3. database (test connection)
+  4. app name, URL and timezone
+  5. email (test send)
+  6. first business and admin
+  7. install
+  8. finish page: cron line, queue setup, login link
+- **Terminal:** `php artisan core:setup`, interactive or fully by flags:
+  - `--db-*`, `--app-*`, `--mail-*`
+  - `--business --admin-name --admin-email --admin-password`
+  - `--modules`
+  - `--skip-env` (Docker, where env comes from outside)
+  - `--no-interaction`
+- **`InstallationService`** is shared by the web and terminal installs. It resumes after a failure and takes a file lock. Steps:
+  1. write `.env` (values quoted, newlines rejected, file mode 0640)
+  2. migrate and set up permissions
+  3. create the first business and superadmin
+  4. install the shipped modules (requirements first)
+  5. store the site token encrypted in the database
+  6. `storage:link`
+  7. write `storage/installed`
+  8. first check-in with our server
+  9. `audit('platform_installed')`
+- **Shared hosting:**
+  - `QUEUE_VIA_SCHEDULER=true` makes `schedule:run` also process the queue
+  - a root `.htaccess` and `index.php` send requests to `public/` and block `.env`, `storage`, `vendor` and `Modules`
+
+### 5.2 Updates
+
+- `php artisan core:updates [--install]` runs hourly from the scheduler. The Super Admin → **Updates** page has the same "Check now" and "Update" buttons, plus the history.
+- **Each download is checked before use:**
+  - sha256 of the file
+  - ed25519 signature (our public key ships in `config/distribution.php`)
+  - the module name and version inside the zip must match the offer
+  - Billing and Distribution are refused
+- **Safe extraction:** rejects `..`, absolute paths, symlinks, more than one top folder, and oversized archives. Files are extracted to `storage/app/updates/staging` first.
+- **Install steps:**
+  1. optional database backup (`BackupService`)
+  2. move the old folder to a backup
+  3. put the new folder in place
+  4. clear `bootstrap/cache/modules.php` and opcache
+  5. run `core:module install|update X` in a fresh process
+- **If it fails:** roll back the migrations, restore the old folder, and report `rolled_back`. The last 3 backups are kept.
+- **Module migrations must be additive.** MySQL can't undo schema changes inside a transaction.
+
+## 6. Our side (`Modules/Distribution`, never shipped)
+
+### Tables
+
+These are platform-level, with no `business_id`.
+
+| Table | Holds |
+|---|---|
+| `distribution_sites` | uuid, name, customer, contact, app_url, `update_mode` (auto/manual), status, last reported core/PHP/database, `modules_writable`, `last_check_in_at` |
+| `distribution_site_tokens` | **sha256 hash only**, last4, revoked_at (a new token per build) |
+| `distribution_site_modules` | site, module, installed_version, status (pending_install, installed, update_available, failed), last_error |
+| `distribution_releases` | module, version, sha256, signature, file, requires, changelog, published_at, yanked_at |
+| `distribution_builds` | site, modules, core git sha, file, sha256, status, expires_at (14 days) |
+| `distribution_check_ins` | each check-in (kept 90 days) |
+| `distribution_update_reports` | each install or update result from their side |
+
+### Rules
+
+- **Assigning modules:** assigning a module also assigns what it requires. A module another assigned module needs can't be removed. Billing and Distribution can never be assigned.
+- **Signing keys:** `distribution:keygen` makes an ed25519 key pair. The **secret stays only in our `.env`** (`DISTRIBUTION_SIGNING_SECRET`). The public key list goes in `config/distribution.php`, which ships.
+- **Publishing:** `distribution:publish {module}`, or the button. It takes the version from `module.json`, refuses a version that already exists, zips the module without tests, then hashes and signs it.
+
+### Building a zip
+
+`distribution:build {site}`, or the button. It runs as a queued job:
+
+1. `git archive HEAD`. Only committed files are included, so no `.env`, `vendor` or `docs`.
+2. Remove:
+   - modules not chosen, and Billing and Distribution always
+   - tests, `phpunit.xml`, the demo seeder, `bootstrap/cache/*.php`
+3. `composer install --no-dev --optimize-autoloader --no-scripts` with `platform.php=8.3`, then `composer check-platform-reqs`.
+4. Copy `public/`.
+5. Write:
+   - `.env.example` (production, no secrets)
+   - `storage/app/distribution/site.json` (site uuid, server URL, token, modules, install-code hash)
+   - `config/core.php` (version)
+6. Zip with one top folder, then sha256. Smoke test with `php artisan --version`.
+7. Show the **install code once**, with an expiring download link.
+
+Every action is logged with `audit()`.
+
+## 7. Update API (our server)
+
+Base path: `/api/distribution/v1`. Bearer token, checked by its hash. HTTPS only, rate-limited, no session.
+
+| Endpoint | Request | Response |
+|---|---|---|
+| `POST /check-in` | site uuid, nonce, core/PHP version, database driver, `modules_writable`, installed modules and versions | `update_mode`, offers (assigned modules only; the newest non-yanked release newer than installed; `install` for newly assigned modules, requirements first). The body is signed (`X-Ish-Signature`) and includes the echoed nonce and the server time. |
+| `GET /releases/{id}/download` | — | the zip; 404 unless the module is assigned to the site |
+| `POST /report` | results: module, action, from/to version, status, error, duration | updates `site_modules` and logs the report |
+
+The client rejects a check-in response if:
+
+- the signature is wrong
+- the nonce or uuid doesn't match
+- the server time is more than 10 minutes off
+
+## 8. Security checklist
+
+- **Installer:**
+  - marker file plus a lock file
+  - install code required
+  - refuses a database that already has users
+  - 404 once installed
+  - CSRF and rate limits
+- **APP_KEY:** generated on their server.
+- **Tokens:**
+  - our side stores only hashes
+  - their side stores the token encrypted and deletes it from `site.json`
+- **Signing secret:** only in our `.env`.
+- **Updates:**
+  - signed responses and packages, plus sha256
+  - protection against path traversal (zip slip), symlinks and zip bombs
+  - Billing and Distribution refused on both sides
+- **Shared hosting:** the root `.htaccess` blocks `.env`, `storage`, `vendor` and `Modules`.
+
+## 9. Phases and progress
+
+Commit after each phase. Run `php artisan test` before every commit.
+
+| # | Phase | Content | Status |
+|---|---|---|---|
+| 0 | Groundwork | module fallback autoloader; `Installer` helper + `APP_INSTALLED`; `core:mark-installed`; `PlatformSetupService` pulled out of `InstallCoreCommand`; `core:install` writes the marker; `phpunit.xml` sets `APP_INSTALLED=true` | ✅ 31/10/2026: tests point the marker at a temp file (`Installer::useMarkerPath`, `tests/TestCase.php`); `storage/installed` is git-ignored |
+| 1 | Installer | `PreInstall`, `RedirectToInstaller`, install routes and views, `RequirementsChecker`, `EnvWriter`, `DatabaseProbe`, `MailProbe`, `InstallationService`, `core:setup`, queue-via-scheduler, root `.htaccess` | ✅ 31/10/2026: 15 tests; tried for real on a fresh copy with Postgres (web wizard → sign in → dashboard; `core:setup --no-interaction` with Savings, including resuming after a failure) |
+| 2 | Distribution basics | module scaffold, tables, sites, module assignment with requirements, tokens, `distribution:keygen`, releases + publish | ☐ |
+| 3 | Zip builds | `BuildService` + job, builds page, install code | ☐ |
+| 4 | Update API (server) | check-in, download, report, offer logic, site status page | ☐ |
+| 5 | Update client | `UpdateClient`, `SignatureVerifier`, `SafeZipExtractor`, `ModulePackageInstaller`, `core:updates` + schedule, Updates page, auto/manual | ☐ |
+| 6 | Finishing | pruning, README "Self-hosting" section, end-to-end test (MySQL and Postgres) | ☐ |
+
+**Before deploying Phase 1 to our own server, run `php artisan core:mark-installed` there.** Otherwise our server will redirect to the installer.
+
+### Phase 1 notes (what changed from the plan, and where things are)
+
+- **Files:** `app/Support/Installer/{Installer,PreInstall,SiteManifest}.php`, `app/Services/Install/*` (`InstallRules` holds the validation shared by web and CLI), `app/Http/Controllers/Install/InstallController.php`, `routes/install.php`, `resources/views/install/*`, `resources/lang/en/install.php`, `app/Console/Commands/SetupCommand.php`, `config/core.php` (version, `dev` in the repo).
+- **Servers set up before the installer existed** (ours, and every developer's machine) don't need `core:mark-installed`. On the first web request, `RedirectToInstaller` sees users in the database and writes `storage/installed` itself. `core:mark-installed` is still there for doing it by hand.
+- **HTTPS:** `SecurityHeaders` now forces HTTPS only when `APP_ENV=production` **and** `APP_URL` starts with `https://`. A self-hosted copy on plain http (and any fresh copy reaching `/install`) is no longer redirected to an https address that may not exist.
+- **Before install, only the web path forces file sessions and cache.** `PreInstall` skips the CLI. `InstallationService::applyRuntime()` switches the process to the `array` cache, because a terminal install starts before `.env` exists and the default cache store points at a SQLite file. Found in the real terminal run.
+- **No symlinks:** `config/filesystems.php` reads `PUBLIC_DISK_IN_PUBLIC`. The installer sets it when `storage:link` fails.
+- **Shared hosting:** `config('queue.via_scheduler')` (`QUEUE_VIA_SCHEDULER`) adds `queue:work --stop-when-empty` to the every-minute schedule. The web installer has this ticked by default; `core:setup` needs `--queue-via-scheduler`.
+- **Resuming:** progress is saved in `storage/app/installing.json`. While it exists, a database that already has users is accepted (`InstallationService::resuming()`), because those users come from the stopped run.
+- **The install code** is checked against `install_code_hash` in `site.json` with `password_verify` (upper-cased, trimmed). Phase 3 must hash it with `password_hash(strtoupper($code), PASSWORD_DEFAULT)`.
+- **site.json fields read so far:** `site_uuid`, `server_url`, `token`, `modules`, `install_code_hash`. The install stores the first three as `distribution_site_uuid`, `distribution_server_url` and `distribution_token` (encrypted) in the `system` table, then deletes `token` from the file.
+- **Not done in Phase 1:** the first check-in at the end of install. It needs the update client and comes with Phase 5.
+
+## 10. Tests to write
+
+**Core**
+
+- Installer redirect before install and 404 after.
+- `EnvWriter`: quoting, newline injection, keeps the key.
+- `InstallationService` (sqlite):
+  - migrates and creates the superadmin
+  - installs modules in requirement order
+  - writes the marker
+  - refuses a database that already has users
+  - resumes after a failure
+- `core:setup --no-interaction`.
+- Install code required.
+- `SignatureVerifier`: tampered package, wrong sha, mismatched name or version.
+- `SafeZipExtractor`: `../`, absolute paths, symlinks, more than one top folder.
+- `ModulePackageInstaller` with a fixture module: install, update, rollback when a migration throws.
+- `UpdateClient` with `Http::fake`: forged signature and wrong nonce rejected; auto vs manual.
+- Guard: no core file references `Modules\Distribution` or `Modules\Billing`.
+
+**Distribution**
+
+- Superadmin only.
+- Assigning a module adds its requirements; Billing and Distribution can't be assigned.
+- Only token hashes are stored.
+- API:
+  - revoked or suspended token returns 401
+  - only assigned and newer releases are offered
+  - newly assigned modules are offered as `install`
+  - downloading an unassigned release returns 404
+  - reports update site modules
+- A published release verifies against the public key.
+- The build leaves out Billing, Distribution, tests and `.env`.
+
+## 11. End-to-end check (when everything is built)
+
+1. `distribution:keygen`.
+2. Create a site with Savings, then `distribution:build`.
+3. Unzip it into an empty folder and run `php -S` from `public/`.
+4. Go through `/install` against MySQL. Log in and confirm Savings works and Billing is absent.
+5. Do the same with `core:setup --no-interaction` against Postgres.
+6. Bump Savings to 1.1.1 and run `distribution:publish Savings`.
+   - In manual mode, **Update** appears and installs it.
+   - In auto mode, `core:updates` installs it.
+   - Our site page shows the new version and the report.
+7. Publish a release with a broken migration. Confirm it rolls back to the old folder and version.
+
+## 12. Open points
+
+- Core self-update (app/, vendor) is a later phase.
+- Should a customer's admin be allowed to switch modules off on their server? They can today, through Super Admin → Modules, because they are superadmin there.
+- Docker: `storage/` and `Modules/` must be persistent volumes for updates to survive a container restart. Otherwise use `manual` mode and ship new images.
