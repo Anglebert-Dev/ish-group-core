@@ -48,7 +48,18 @@
                         <tr>
                             <td class="px-5 py-3.5 font-medium text-ink">{{ $row->module }}</td>
                             <td class="px-5 py-3.5">{{ $row->installed_version ?: '—' }}</td>
-                            <td class="px-5 py-3.5">{{ $latest[$row->module]->version ?? __('distribution::distribution.not_released') }}</td>
+                            <td class="px-5 py-3.5">
+                                @if (isset($latest[$row->module]))
+                                    {{ $latest[$row->module]->version }}
+                                @else
+                                    <span class="text-warning font-medium">{{ __('distribution::distribution.not_released') }}</span>
+                                    <div class="text-xs text-muted mt-0.5 max-w-xs">{{ __('distribution::distribution.not_released_yet') }}</div>
+                                    <x-common.action-button :action="route('superadmin.distribution.releases.store')" class="mt-1">
+                                        <x-slot:fields><input type="hidden" name="module" value="{{ $row->module }}"></x-slot:fields>
+                                        {{ __('distribution::distribution.publish_now') }}
+                                    </x-common.action-button>
+                                @endif
+                            </td>
                             <td class="px-5 py-3.5">
                                 <x-common.badge :color="$row->status->color()">{{ $row->status->label() }}</x-common.badge>
                                 @if ($row->last_error)<div class="text-xs text-danger mt-1">{{ $row->last_error }}</div>@endif
@@ -195,7 +206,7 @@
                 @forelse ($site->updateReports as $report)
                     <li class="px-5 py-3">
                         <div class="flex items-center justify-between gap-3">
-                            <span class="font-medium text-ink">{{ $report->module }} {{ $report->from_version ? $report->from_version.' → ' : '' }}{{ $report->to_version }}</span>
+                            <span class="font-medium text-ink">{{ $report->module }} {{ in_array($report->action, ['disable', 'enable'], true) ? __('distribution::distribution.action_'.$report->action) : ($report->from_version ? $report->from_version.' → ' : '').$report->to_version }}</span>
                             <x-common.badge :color="$report->status === 'success' ? 'success' : 'danger'">{{ __('distribution::distribution.report_'.$report->status) }}</x-common.badge>
                         </div>
                         <div class="text-xs text-muted mt-0.5">{{ $report->created_at?->format('d M Y H:i') }}</div>

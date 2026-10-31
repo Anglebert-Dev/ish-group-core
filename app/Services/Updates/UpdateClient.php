@@ -36,7 +36,7 @@ class UpdateClient
 
     /**
      * @param  array<string, mixed>  $payload  everything but site_uuid and nonce
-     * @return array{update_mode: string, poll_minutes: int, offers: list<array<string, mixed>>}
+     * @return array{update_mode: string, poll_minutes: int, offers: list<array<string, mixed>>, assigned: list<string>|null}
      */
     public function checkIn(array $payload): array
     {
@@ -74,6 +74,10 @@ class UpdateClient
             'update_mode' => ($answer['update_mode'] ?? 'manual') === 'auto' ? 'auto' : 'manual',
             'poll_minutes' => (int) ($answer['poll_minutes'] ?? 60),
             'offers' => array_values(array_filter((array) ($answer['offers'] ?? []), fn ($offer) => $this->validOffer($offer))),
+            // The modules this site is entitled to (null from an older update server).
+            'assigned' => isset($answer['assigned']) && is_array($answer['assigned'])
+                ? array_values(array_filter($answer['assigned'], fn ($name) => is_string($name) && preg_match('/^[A-Z][A-Za-z0-9]{0,63}$/', $name)))
+                : null,
         ];
     }
 

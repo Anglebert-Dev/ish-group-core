@@ -9,6 +9,7 @@ use App\Libraries\GeneralLibrary;
 use App\Libraries\ListExport;
 use App\Models\Notification\Notification;
 use App\Models\User;
+use App\Notifications\BrandedNotification;
 use App\Repositories\Notification\NotificationRepository;
 use App\Services\BaseService;
 use App\Support\Tenancy\CurrentBusiness;
@@ -138,6 +139,24 @@ class NotificationService extends BaseService
         $this->notifications->save($notification);
 
         return $this->success($notification, __('body.notification_created'));
+    }
+
+    /**
+     * Platform events (self-hosting: modules given, taken away, updated):
+     * every active superadmin, in the app and by email.
+     *
+     * @return int how many were told
+     */
+    public function notifySuperadmins(string $title, ?string $body = null, NotificationType $type = NotificationType::Info, ?string $actionUrl = null): int
+    {
+        $admins = User::query()->where('is_superadmin', true)->where('status', UserStatus::Active->value)->get();
+
+        foreach ($admins as $admin) {
+            $this->notify($admin, $title, $body, $type, $actionUrl);
+            $admin->notify(new BrandedNotification(null, $title, array_values(array_filter([$body])), $actionUrl ? __('body.view') : null, $actionUrl ? url($actionUrl) : null));
+        }
+
+        return $admins->count();
     }
 
     /**

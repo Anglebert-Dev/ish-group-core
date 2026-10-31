@@ -4,6 +4,7 @@ namespace Modules\Distribution\Tests\Feature;
 
 use App\Services\Module\ModuleManager;
 use App\Support\Distribution\PackageSignature;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Illuminate\Support\Facades\Storage;
 use Modules\Distribution\Enums\SiteModuleStatus;
 use Modules\Distribution\Models\CheckIn;
@@ -164,6 +165,42 @@ class UpdateApiTest extends TestCase
 
         $this->withToken($this->token)->postJson(route('distribution.api.report'), ['site_uuid' => $this->site->uuid, 'results' => [['module' => 'Savings']]])
             ->assertUnprocessable();
+    }
+
+    public function test_the_answer_lists_the_sites_modules(): void
+    {
+        $assigned = $this->withToken($this->token)->postJson(route('distribution.api.check-in'), $this->checkIn())->assertOk()->json('assigned');
+
+        $this->assertEqualsCanonicalizing(['Savings', 'SalesOrders', 'Inventory'], $assigned);
+    }
+
+    public function test_we_are_told_when_a_site_switched_a_module_off_or_a_new_one_on(): void
+    {
+        NotificationFacade::fake();
+
+        $this->withToken($this->token)->postJson(route('distribution.api.report'), [
+            'site_uuid' => $this->site->uuid,
+            'results' => [
+                ['module' => 'Delivery', 'action' => 'disable', 'from_version' => '1.0.0', 'to_version' => '1.0.0', 'status' => 'success'],
+                ['module' => 'SalesOrders', 'action' => 'install', 'to_version' => '1.1.0', 'status' => 'success'],
+                ['module' => 'Savings', 'action' => 'update', 'from_version' => '1.1.0', 'to_version' => '1.1.1', 'status' => 'success'],
+            ],
+        ])->assertOk();
+
+        $titles = \App\Models\Notification\Notification::query()->pluck('title')->all();
+        $this->assertContains('Kigali Finance switched off Delivery', $titles);
+        $this->assertContains('Kigali Finance installed SalesOrders 1.1.0', $titles);
+        $this->assertCount(2, $titles, 'a plain successful update is not announced');
+        NotificationFacade::assertSentTimes(\App\Notifications\BrandedNotification::class, 2);
+    }
+
+    public function test_a_given_module_without_a_release_says_so_on_the_site_page(): void
+    {
+        $this->actingAs($this->makeSuperAdmin(['email' => 'root2@example.com']), 'staff');
+
+        $this->get(route('superadmin.distribution.sites.show', $this->site))->assertOk()
+            ->assertSee(__('distribution::distribution.not_released_yet'))
+            ->assertSee(__('distribution::distribution.publish_now'));
     }
 
     public function test_site_page_shows_history(): void

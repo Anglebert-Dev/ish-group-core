@@ -59,8 +59,9 @@
                     @forelse ($history as $item)
                         <li class="px-5 py-3">
                             <div class="flex items-center justify-between gap-3">
-                                <span class="font-medium text-ink">{{ $item['module'] }} <span class="font-mono text-muted">{{ $item['from_version'] ? $item['from_version'].' → ' : '' }}{{ $item['to_version'] }}</span></span>
-                                <x-common.badge :color="$item['status'] === 'success' ? 'success' : 'danger'">{{ __('updates.result_'.$item['status']) }}</x-common.badge>
+                                @php $switch = in_array($item['action'] ?? null, ['disable', 'enable'], true); @endphp
+                                <span class="font-medium text-ink">{{ $item['module'] }} <span class="font-mono text-muted">{{ $switch ? '' : ($item['from_version'] ? $item['from_version'].' → ' : '').$item['to_version'] }}</span></span>
+                                <x-common.badge :color="$item['status'] === 'success' ? ($item['action'] === 'disable' ? 'warning' : 'success') : 'danger'">{{ __('updates.result_'.($switch && $item['status'] === 'success' ? $item['action'] : $item['status'])) }}</x-common.badge>
                             </div>
                             <div class="text-xs text-muted mt-0.5">@datetime(\Carbon\Carbon::parse($item['at']))</div>
                             @if ($item['error'])<div class="text-xs text-danger mt-1 break-words">{{ $item['error'] }}</div>@endif

@@ -14,6 +14,7 @@ use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 use ZipArchive;
@@ -31,6 +32,11 @@ class ModuleUpdatesTest extends TestCase
     private string $secret;
 
     private string $tmp;
+
+    /** What the faked server answers right now (read at each request). */
+    private ?array $plan = null;
+
+    private array $liveOffers = [];
 
     protected function setUp(): void
     {
@@ -244,6 +250,52 @@ class ModuleUpdatesTest extends TestCase
         $this->assertSame('1.1.0', app(ModuleManager::class)->installedVersion('UpdProbe'));
     }
 
+    public function test_a_module_taken_away_is_switched_off_and_given_back_switched_on(): void
+    {
+        NotificationFacade::fake();
+        $this->installFixture('1.0.0');
+        $root = \App\Models\User::query()->where('email', 'root@example.com')->firstOrFail();
+        $this->fakeServer();
+
+        // First check: only remembers the plan.
+        $this->plan = ['UpdProbe'];
+        app(UpdateService::class)->check();
+        $this->assertSame(0, \App\Models\Notification\Notification::query()->count());
+
+        // Taken away.
+        $this->plan = [];
+        $this->assertTrue(app(UpdateService::class)->check()['status']);
+
+        $this->assertFalse(app(ModuleManager::class)->isEnabled('UpdProbe'));
+        $this->assertTrue(app(ModuleManager::class)->isInstalled('UpdProbe'), 'data and install kept');
+        $this->assertSame(__('updates.module_taken_away', ['module' => 'UpdProbe']), \App\Models\Notification\Notification::query()->latest('id')->value('title'));
+        Http::assertSent(fn (Request $request) => str_ends_with($request->url(), '/report') && $request['results'][0]['action'] === 'disable' && $request['results'][0]['status'] === 'success');
+        $this->assertSame('disable', app(UpdateService::class)->history()[0]['action']);
+
+        // Given back.
+        $this->plan = ['UpdProbe'];
+        app(UpdateService::class)->check();
+
+        $this->assertTrue(app(ModuleManager::class)->isEnabled('UpdProbe'));
+        $this->assertSame(__('updates.module_given_back', ['module' => 'UpdProbe']), \App\Models\Notification\Notification::query()->latest('id')->value('title'));
+        NotificationFacade::assertSentTo($root, \App\Notifications\BrandedNotification::class);
+    }
+
+    public function test_a_newly_given_module_is_announced_with_what_happens_next(): void
+    {
+        $this->fakeServer();
+        $this->plan = [];
+        app(UpdateService::class)->check();
+
+        $this->plan = ['UpdProbeTwo'];
+        $this->liveOffers = [$this->offer('UpdProbeTwo', '1.0.0', 'install')];
+        app(UpdateService::class)->check();
+
+        $note = \App\Models\Notification\Notification::query()->latest('id')->first();
+        $this->assertSame(__('updates.module_given', ['module' => 'UpdProbeTwo']), $note->title);
+        $this->assertSame(__('updates.module_given_manual'), $note->body);
+    }
+
     public function test_updates_page_only_exists_on_linked_servers(): void
     {
         System::removeProperty('distribution_token');
@@ -270,9 +322,9 @@ class ModuleUpdatesTest extends TestCase
     /**
      * Our update server, faked: signs its answers (unless told to forge).
      */
-    private function fakeServer(array $offers = [], string $mode = 'manual', array $downloads = [], bool $forge = false, ?string $nonce = null, ?int $time = null): void
+    private function fakeServer(array $offers = [], string $mode = 'manual', array $downloads = [], bool $forge = false, ?string $nonce = null, ?int $time = null, ?array $assigned = null): void
     {
-        Http::fake(function (Request $request) use ($offers, $mode, $downloads, $forge, $nonce, $time) {
+        Http::fake(function (Request $request) use ($offers, $mode, $downloads, $forge, $nonce, $time, $assigned) {
             if (str_ends_with($request->url(), '/check-in')) {
                 $body = json_encode([
                     'site_uuid' => 'site-1',
@@ -280,8 +332,8 @@ class ModuleUpdatesTest extends TestCase
                     'server_time' => $time ?? time(),
                     'update_mode' => $mode,
                     'poll_minutes' => 60,
-                    'offers' => $offers,
-                ]);
+                    'offers' => $offers ?: $this->liveOffers,
+                ] + (($assigned ?? $this->plan) !== null ? ['assigned' => $assigned ?? $this->plan] : []));
                 $key = $forge ? sodium_crypto_sign_secretkey(sodium_crypto_sign_keypair()) : $this->secret;
 
                 return Http::response($body, 200, ['X-Ish-Signature' => base64_encode(sodium_crypto_sign_detached(PackageSignature::responseMessage($body), $key))]);

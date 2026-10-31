@@ -4,7 +4,9 @@ namespace App\Services\Updates;
 
 use App\Models\System\System;
 use App\Services\BaseService;
+use App\Enums\NotificationType;
 use App\Services\Module\ModuleManager;
+use App\Services\Notification\NotificationService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -18,7 +20,8 @@ use Throwable;
  * offers (all, or the ones named), tell our server how it went.
  *
  * Kept in the system table: distribution_update_mode, distribution_offers,
- * distribution_last_check_at, distribution_last_error, distribution_update_history.
+ * distribution_last_check_at, distribution_last_error, distribution_update_history,
+ * distribution_assigned (the plan at the last check).
  */
 class UpdateService extends BaseService
 {
@@ -59,6 +62,10 @@ class UpdateService extends BaseService
         System::addProperty('distribution_offers', json_encode($answer['offers']));
         System::addProperty('distribution_last_check_at', now()->toIso8601String());
         System::addProperty('distribution_last_error', '');
+
+        if ($answer['assigned'] !== null) {
+            $this->followPlan($answer['assigned'], $answer['offers'], $answer['update_mode']);
+        }
 
         return $this->success($answer, $answer['offers'] === []
             ? __('updates.up_to_date')
@@ -206,6 +213,88 @@ class UpdateService extends BaseService
                 ->values()
                 ->all(),
         ];
+    }
+
+    /**
+     * Modules given or taken away since the last check (docs/self-hosting-build-guide.md §5.2):
+     * taken away → switched off (data kept); given back → switched on again;
+     * newly given → the admins are told (it installs like any update).
+     * The first check only remembers the plan.
+     *
+     * @param  list<string>  $assigned
+     * @param  list<array<string, mixed>>  $offers
+     */
+    private function followPlan(array $assigned, array $offers, string $mode): void
+    {
+        $previous = json_decode((string) System::getProperty('distribution_assigned', 'null'), true);
+        System::addProperty('distribution_assigned', json_encode(array_values($assigned)));
+
+        if (! is_array($previous)) {
+            return;
+        }
+
+        $results = [];
+
+        foreach (array_diff($previous, $assigned) as $module) {
+            $results[] = $this->modules->isInstalled($module) && $this->modules->isEnabled($module)
+                ? $this->switchModule($module, false)
+                : null;
+            $this->tellAdmins('module_taken_away', $module, $this->modules->isInstalled($module) ? 'module_taken_away_body' : 'module_taken_away_not_installed');
+        }
+
+        foreach (array_diff($assigned, $previous) as $module) {
+            if ($this->modules->isInstalled($module)) {
+                $results[] = $this->modules->isEnabled($module) ? null : $this->switchModule($module, true);
+                $this->tellAdmins('module_given_back', $module, 'module_given_back_body');
+
+                continue;
+            }
+
+            $offered = in_array($module, array_column($offers, 'module'), true);
+            $this->tellAdmins('module_given', $module, ! $offered ? 'module_given_not_released' : ($mode === 'auto' ? 'module_given_auto' : 'module_given_manual'));
+        }
+
+        $results = array_values(array_filter($results));
+
+        if ($results === []) {
+            return;
+        }
+
+        $this->remember($results);
+
+        try {
+            $this->client->report($results);
+        } catch (Throwable $e) {
+            report($e);
+        }
+    }
+
+    private function switchModule(string $module, bool $on): array
+    {
+        $outcome = $this->modules->toggle($module, $on);
+        $result = [
+            'module' => $module,
+            'action' => $on ? 'enable' : 'disable',
+            'from_version' => $this->modules->installedVersion($module),
+            'to_version' => (string) $this->modules->installedVersion($module),
+            'status' => $outcome['status'] ? 'success' : 'failed',
+            'error' => $outcome['status'] ? null : $outcome['message'],
+            'duration_ms' => 0,
+        ];
+
+        audit('module_'.($on ? 'given_back' : 'taken_away'), "{$module} switched ".($on ? 'on' : 'off').' by the provider', null, $result, (int) System::getProperty('primary_business_id') ?: null);
+
+        return $result;
+    }
+
+    private function tellAdmins(string $title, string $module, string $body): void
+    {
+        app(NotificationService::class)->notifySuperadmins(
+            __("updates.{$title}", ['module' => $module]),
+            __("updates.{$body}", ['module' => $module]),
+            $title === 'module_taken_away' ? NotificationType::Warning : NotificationType::Info,
+            route('superadmin.updates.index', [], false),
+        );
     }
 
     private function installOne(array $offer): array

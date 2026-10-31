@@ -2,7 +2,9 @@
 
 namespace Modules\Distribution\Services;
 
+use App\Enums\NotificationType;
 use App\Services\Module\ModuleManager;
+use App\Services\Notification\NotificationService;
 use Illuminate\Support\Facades\DB;
 use Modules\Distribution\Enums\SiteModuleStatus;
 use Modules\Distribution\Models\CheckIn;
@@ -129,8 +131,11 @@ class UpdateOfferService
             ]);
 
             $row = $site->modules()->where('module', $result['module'])->first();
+            $this->tellUs($site, $result);
 
-            if ($row) {
+            if ($row && in_array($result['action'], ['disable', 'enable'], true)) {
+                $row->forceFill(['last_reported_at' => now()])->save();
+            } elseif ($row) {
                 $ok = $result['status'] === 'success';
                 $row->forceFill([
                     'installed_version' => $ok ? $result['to_version'] : $row->installed_version,
@@ -147,6 +152,29 @@ class UpdateOfferService
                 $result,
             );
         }
+    }
+
+    /**
+     * Our superadmins hear when a site acted on a module given or taken away,
+     * and when anything failed there.
+     */
+    private function tellUs(Site $site, array $result): void
+    {
+        $failed = $result['status'] !== 'success';
+
+        if (! $failed && $result['action'] === 'update') {
+            return;
+        }
+
+        $key = $failed ? 'notify_us_failed' : 'notify_us_'.$result['action'];
+        $replace = ['site' => $site->name, 'module' => $result['module'], 'version' => $result['to_version']];
+
+        app(NotificationService::class)->notifySuperadmins(
+            __("distribution::distribution.{$key}", $replace),
+            $failed ? ($result['error'] ?? null) : __("distribution::distribution.{$key}_body", $replace),
+            $failed ? NotificationType::Warning : NotificationType::Info,
+            route('superadmin.distribution.sites.show', $site, false),
+        );
     }
 
     private function statusFor(SiteModule $row, ?string $current, ?Release $release): SiteModuleStatus

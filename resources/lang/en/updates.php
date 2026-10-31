@@ -24,6 +24,19 @@ return [
     'no_history' => 'No updates installed yet.',
     'modules_not_writable' => 'The Modules folder cannot be written by the web server, so updates cannot be installed. Ask your host to make it writable.',
 
+    // Modules given or taken away by the provider
+    'module_given' => ':module was added to your plan',
+    'module_given_auto' => 'It is being installed automatically; it will appear in the menu shortly.',
+    'module_given_manual' => 'Install it from Super Admin → Updates when you are ready.',
+    'module_given_not_released' => 'It will be offered under Super Admin → Updates as soon as your provider publishes it.',
+    'module_given_back' => ':module is back in your plan',
+    'module_given_back_body' => 'It has been switched on again, with all its data.',
+    'module_taken_away' => ':module was removed from your plan',
+    'module_taken_away_body' => 'It has been switched off. Your data is kept; if it is added back, it switches on again with everything still there.',
+    'module_taken_away_not_installed' => 'It was not installed here, so nothing changed.',
+    'result_disable' => 'switched off',
+    'result_enable' => 'switched on',
+
     'result_success' => 'installed',
     'result_failed' => 'failed',
     'result_rolled_back' => 'failed and was undone',

@@ -49,6 +49,8 @@ class UpdateApiController extends Controller
             'update_mode' => $site->update_mode->value,
             'poll_minutes' => UpdateOfferService::POLL_MINUTES,
             'offers' => $offers->checkIn($site, collect($data)->except(['site_uuid', 'nonce'])->all(), $request->ip()),
+            // The site's plan: modules given are announced there, modules taken away are switched off.
+            'assigned' => $site->moduleNames(),
         ], JSON_UNESCAPED_SLASHES);
 
         // Signed, so a site only acts on answers that really come from us.
@@ -78,7 +80,7 @@ class UpdateApiController extends Controller
             'site_uuid' => ['required', 'string'],
             'results' => ['required', 'array', 'max:100'],
             'results.*.module' => ['required', 'string', 'max:100'],
-            'results.*.action' => ['required', 'in:install,update'],
+            'results.*.action' => ['required', 'in:install,update,disable,enable'],
             'results.*.from_version' => ['nullable', 'string', 'max:32'],
             'results.*.to_version' => ['required', 'string', 'max:32'],
             'results.*.status' => ['required', 'in:success,failed,rolled_back'],
