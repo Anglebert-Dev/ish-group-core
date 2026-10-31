@@ -31,6 +31,14 @@
     <div class="bg-white border border-line rounded-xl overflow-hidden mb-6">
         <div class="px-5 py-4 border-b border-line">
             <p class="font-semibold text-ink">{{ __('distribution::distribution.modules') }}</p>
+            <p class="text-sm text-muted">
+                {{ $site->last_check_in_at
+                    ? __('distribution::distribution.reported_at', ['time' => $site->last_check_in_at->format('d M Y H:i')])
+                    : __('distribution::distribution.not_reported_yet') }}
+            </p>
+            @if ($site->last_check_in_at && $site->builds->first(fn ($build) => $build->status->value === 'ready' && $build->created_at->gt($site->last_check_in_at)))
+                <p class="text-sm text-warning mt-1">{{ __('distribution::distribution.reported_before_zip') }}</p>
+            @endif
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
@@ -51,6 +59,9 @@
                             <td class="px-5 py-3.5">
                                 @if (isset($latest[$row->module]))
                                     {{ $latest[$row->module]->version }}
+                                @elseif ($row->installed_version)
+                                    <span class="text-muted">{{ __('distribution::distribution.no_release_needed') }}</span>
+                                    <div class="text-xs text-muted mt-0.5 max-w-xs">{{ __('distribution::distribution.no_release_needed_hint') }}</div>
                                 @else
                                     <span class="text-warning font-medium">{{ __('distribution::distribution.not_released') }}</span>
                                     <div class="text-xs text-muted mt-0.5 max-w-xs">{{ __('distribution::distribution.not_released_yet') }}</div>
@@ -149,6 +160,11 @@
             <div>
                 <p class="font-semibold text-ink">{{ __('distribution::distribution.builds') }}</p>
                 <p class="text-sm text-muted max-w-2xl">{{ __('distribution::distribution.builds_hint') }}</p>
+                <p class="text-sm mt-2">
+                    {{ __('distribution::distribution.zip_contacts') }}
+                    <span class="font-mono font-semibold text-ink">{{ rtrim((string) config('app.url'), '/') }}</span>
+                </p>
+                <p class="text-xs text-muted max-w-2xl">{{ __('distribution::distribution.zip_contacts_hint') }}</p>
             </div>
             <form method="POST" action="{{ route('superadmin.distribution.sites.builds.store', $site) }}"
                   onsubmit="var b=this.querySelector('button'); b.disabled=true; b.textContent=@js(__('distribution::distribution.building_wait'));">

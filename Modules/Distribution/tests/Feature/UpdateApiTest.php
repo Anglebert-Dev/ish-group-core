@@ -200,7 +200,15 @@ class UpdateApiTest extends TestCase
 
         $this->get(route('superadmin.distribution.sites.show', $this->site))->assertOk()
             ->assertSee(__('distribution::distribution.not_released_yet'))
-            ->assertSee(__('distribution::distribution.publish_now'));
+            ->assertSee(__('distribution::distribution.publish_now'))
+            ->assertSee(__('distribution::distribution.not_reported_yet'))
+            ->assertSee(__('distribution::distribution.zip_contacts'));
+
+        // Installed from the zip: no warning, nothing to publish.
+        $this->site->modules()->update(['installed_version' => '1.0.0', 'status' => 'installed']);
+        $this->get(route('superadmin.distribution.sites.show', $this->site))->assertOk()
+            ->assertSee(__('distribution::distribution.no_release_needed_hint'))
+            ->assertDontSee(__('distribution::distribution.not_released_yet'));
     }
 
     public function test_site_page_shows_history(): void
