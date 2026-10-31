@@ -49,6 +49,7 @@ php artisan module:make <Name>     # new module; see Modules/Frontend as the exa
 | **Purchasing** | Suppliers, purchase orders, goods received at cost, supplier balances, reorder list. | Inventory |
 | **GarmentPack** | Styles with bill of materials and costing, piece-rate pay, subcontracting (CMT), bundles, measurements. | Production, Inventory |
 | **Reports** | Sales, production, stock value, movements and purchases for any period; PDF/Excel. | Inventory |
+| **Distribution** | Self-hosting, **our server only, never shipped**: customer sites, which modules each gets, zips to install, signed module releases, updates. | — |
 | **Savings** | Personal finance, **private to each user** (colleagues and the business owner never see it): accounts, a balanced ledger, budgets on any period (e.g. 28th→27th), expected income and recurring bills, money owed and to put back, commitments, goals, available to spend, cash-flow forecast with shortfall warnings, reconciliation, reports, alerts, CSV import, backup/restore. Daily `savings:alerts` (scheduler). | — |
 
 On/off is stored in the database (not in a file), so switching modules on a server or on your machine never changes the code.
@@ -115,6 +116,34 @@ Then add **Savings** to a package (Super Admin → Billing → Packages); your o
 - Finances are private: each user sees only their own; roles decide who may use which parts.
 - Nothing is edited after it is recorded: use **Reverse** (and correct) on a transaction.
 - **Import & backup → Download backup** gives one JSON file of the user's finances; **Restore** merges (nothing duplicated) or replaces.
+
+## Self-hosting (a customer runs it on their own server)
+
+Full design and status: [docs/self-hosting-build-guide.md](docs/self-hosting-build-guide.md).
+
+**Our server, once:**
+
+```bash
+php artisan core:module install Distribution
+php artisan distribution:keygen     # writes the signing key to .env — back up DISTRIBUTION_SIGNING_SECRET
+```
+
+**A new customer** (Super Admin → Self-hosting):
+1. **Add site**, pick its modules (what they need comes along; Billing never ships), choose updates **Automatic** or **Manual**.
+2. **Build zip** (needs `queue:work`; or `php artisan distribution:build "<site>"`). Only **committed** code ships. Note the **install code**: it is shown once.
+3. Send them the zip and the code.
+
+**The customer** extracts it on any PHP 8.3 host (web root = `public/`, or the folder itself on shared hosting), creates an empty MySQL/PostgreSQL database and opens the site: the installer asks for the code, database, email and their admin account. Or from a terminal:
+
+```bash
+php artisan core:setup        # asks; or --no-interaction with --db-* --app-url= --admin-* … (see --help)
+```
+
+Then cron `* * * * * php artisan schedule:run` (and `queue:work`, unless they ticked "cron only").
+
+**Updates:** raise the module's `version` in its `module.json`, commit, then **Releases → Publish** (or `php artisan distribution:publish <Module>`). Sites check hourly: automatic ones install, manual ones show it under **Super Admin → Updates**. A failed update is undone. Write module migrations so they only add things.
+
+**Docker:** `php artisan core:setup --skip-env --no-interaction …` with the environment set by the container; keep `storage/` and `Modules/` on volumes, or use manual updates and ship new images.
 
 ## Audit log
 

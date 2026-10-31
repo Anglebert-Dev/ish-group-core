@@ -8,6 +8,7 @@ use App\Services\BaseService;
 use App\Services\Business\PlatformSetupService;
 use App\Services\Module\ModuleManager;
 use App\Services\Permission\PermissionService;
+use App\Services\Updates\UpdateService;
 use App\Support\Installer\Installer;
 use App\Support\Installer\SiteManifest;
 use Illuminate\Support\Facades\Artisan;
@@ -88,6 +89,14 @@ class InstallationService extends BaseService
             }
 
             @unlink($this->progressPath());
+
+            // Say hello to our update server (shows the site as installed
+            // there). Never fails the install; the hourly check retries.
+            $updates = app(UpdateService::class);
+
+            if ($updates->linked()) {
+                $updates->check();
+            }
 
             return $this->success([
                 'business_id' => (int) System::getProperty('primary_business_id') ?: null,

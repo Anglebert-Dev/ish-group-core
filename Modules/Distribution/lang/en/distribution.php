@@ -94,6 +94,7 @@ return [
     'install_code' => 'Install code',
     'install_code_once' => 'Send this install code with the zip. It is shown only now; the installer asks for it.',
     'site_not_found' => 'No site with that name or id.',
+    'pruned' => 'Deleted :builds expired zip(s), :check_ins old check-in(s), :folders leftover folder(s).',
 
     // Updates (reported by the site)
     'update_history' => 'Update history',

@@ -12,6 +12,7 @@ use App\Support\Installer\Installer;
 use App\Support\Installer\SiteManifest;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;
 use Mockery;
 use Tests\TestCase;
@@ -137,6 +138,7 @@ class InstallerTest extends TestCase
     public function test_installation_creates_platform_modules_link_and_marker(): void
     {
         $this->useManifest(['site_uuid' => 'site-1', 'server_url' => 'https://updates.example.com', 'token' => 'secret-token', 'modules' => ['Quotations']]);
+        Http::fake(['updates.example.com/*' => Http::response('down', 503)]);
 
         $result = $this->installer()->run($this->data());
 
@@ -154,6 +156,9 @@ class InstallerTest extends TestCase
         $this->assertFileExists(Installer::markerPath());
         $this->assertTrue(ActivityLog::query()->where('action', 'platform_installed')->exists());
         $this->assertFileDoesNotExist(storage_path('app/installing.json'));
+
+        // First check-in tried; our server being down doesn't fail the install.
+        Http::assertSent(fn ($request) => str_ends_with($request->url(), '/api/distribution/v1/check-in') && $request->hasHeader('Authorization', 'Bearer secret-token'));
     }
 
     public function test_installation_refuses_a_database_with_users(): void
