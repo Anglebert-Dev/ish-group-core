@@ -1,6 +1,6 @@
 # Self-hosting (shipping modules to a customer's server): Build Guide
 
-Created: 31/10/2026. Status: **Phases 0–2 done (31/10/2026)**; next is Phase 3 (zip builds). Update the progress table in §9 after each phase, so work can pick up where it stopped.
+Created: 31/10/2026. Status: **Phases 0–3 done (31/10/2026)**: we can build a customer's zip and they can install it. Next is Phase 4 (update API on our server). Update the progress table in §9 after each phase, so work can pick up where it stopped.
 
 ## 1. Goal
 
@@ -195,12 +195,25 @@ Commit after each phase. Run `php artisan test` before every commit.
 | 0 | Groundwork | module fallback autoloader; `Installer` helper + `APP_INSTALLED`; `core:mark-installed`; `PlatformSetupService` pulled out of `InstallCoreCommand`; `core:install` writes the marker; `phpunit.xml` sets `APP_INSTALLED=true` | ✅ 31/10/2026: tests point the marker at a temp file (`Installer::useMarkerPath`, `tests/TestCase.php`); `storage/installed` is git-ignored |
 | 1 | Installer | `PreInstall`, `RedirectToInstaller`, install routes and views, `RequirementsChecker`, `EnvWriter`, `DatabaseProbe`, `MailProbe`, `InstallationService`, `core:setup`, queue-via-scheduler, root `.htaccess` | ✅ 31/10/2026: 15 tests; tried for real on a fresh copy with Postgres (web wizard → sign in → dashboard; `core:setup --no-interaction` with Savings, including resuming after a failure) |
 | 2 | Distribution basics | module scaffold, tables, sites, module assignment with requirements, tokens, `distribution:keygen`, releases + publish | ✅ 31/10/2026: 14 tests + core boundary test |
-| 3 | Zip builds | `BuildService` + job, builds page, install code | ☐ |
+| 3 | Zip builds | `BuildService` + job, builds page, install code | ✅ 31/10/2026: 6 tests; real run: `distribution:build` (8 s, 15 MB zip with Savings) → extracted → web install with the code on Postgres → sign in, Savings pages work, Billing absent |
 | 4 | Update API (server) | check-in, download, report, offer logic, site status page | ☐ |
 | 5 | Update client | `UpdateClient`, `SignatureVerifier`, `SafeZipExtractor`, `ModulePackageInstaller`, `core:updates` + schedule, Updates page, auto/manual | ☐ |
 | 6 | Finishing | pruning, README "Self-hosting" section, end-to-end test (MySQL and Postgres) | ☐ |
 
 **Before deploying Phase 1 to our own server, run `php artisan core:mark-installed` there.** Otherwise our server will redirect to the installer.
+
+### Phase 3 notes
+
+- **Build a zip:** Super Admin → Self-hosting → a site → **Build zip**, which runs as a queued job (needs `queue:work`). Or run `php artisan distribution:build "<site name or uuid>"`, which runs in place. The **install code is shown once**: in the flash message on the site page, or printed by the command. Only its hash is stored, in the build row and in `site.json`. If the code is lost, build again.
+- **What's in it:** `git archive HEAD`, so **only committed code ships**. Commit first. Then:
+  - unassigned modules, plus Billing and Distribution, are removed (the build fails if either is still there)
+  - removed every time: `tests`, `docs`, `README.md`, `phpunit.xml`, `DemoFactorySeeder`, frontend build files
+  - `vendor/` is copied from ours, then `composer install --no-dev --optimize-autoloader --no-scripts` runs in the staging folder. Offline and fast; the autoloader lists only the modules in the zip.
+  - written per site: `storage/app/distribution/site.json`, `config/distribution.php` (our public keys as a literal list), `config/core.php` (`git describe --tags --always`), and `.env.example` with production placeholders (sqlite `:memory:`, file session and cache, no APP_KEY)
+  - smoke test: `php artisan --version` inside the staging folder
+- **The zip:** one top folder named after the site's slug, with Unix permissions (`artisan` is 0755). Stored at `storage/app/private/distribution/builds/`. It can be downloaded for 14 days (download requires a password confirmation). **Expired files aren't deleted yet**; pruning is Phase 6.
+- **Install code:** 10 characters with no 0/O or 1/I/L, shown as `XXXXX-XXXXX`. The installer ignores case, dashes and spaces (`SiteManifest::normalizeCode`).
+- **Tokens:** each build issues its own token (`build_id` on the token, `token_id` on the build). A failed build revokes its token.
 
 ### Phase 2 notes
 

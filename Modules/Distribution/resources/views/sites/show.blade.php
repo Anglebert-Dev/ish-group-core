@@ -84,6 +84,54 @@
         </form>
     </div>
 
+    {{-- Zips --}}
+    <div class="bg-white border border-line rounded-xl overflow-hidden mb-6">
+        <div class="px-5 py-4 border-b border-line flex flex-wrap items-start justify-between gap-3">
+            <div>
+                <p class="font-semibold text-ink">{{ __('distribution::distribution.builds') }}</p>
+                <p class="text-sm text-muted max-w-2xl">{{ __('distribution::distribution.builds_hint') }}</p>
+            </div>
+            <form method="POST" action="{{ route('superadmin.distribution.sites.builds.store', $site) }}">
+                @csrf
+                <x-common.button type="submit" size="sm">{{ __('distribution::distribution.build_zip') }}</x-common.button>
+            </form>
+        </div>
+
+        @if (session('install_code'))
+            <div class="m-5 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
+                <p class="text-sm text-amber-900">{{ __('distribution::distribution.install_code_once') }}</p>
+                <p class="mt-2 font-mono text-2xl font-bold tracking-widest text-ink">{{ session('install_code') }}</p>
+            </div>
+        @endif
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <tbody class="divide-y divide-line">
+                    @forelse ($site->builds as $build)
+                        <tr>
+                            <td class="px-5 py-3.5 whitespace-nowrap text-muted">{{ $build->created_at?->format('d M Y H:i') }}</td>
+                            <td class="px-5 py-3.5">{{ implode(', ', (array) $build->modules) }}</td>
+                            <td class="px-5 py-3.5 font-mono text-xs">{{ $build->core_version ?: '—' }}</td>
+                            <td class="px-5 py-3.5 whitespace-nowrap text-muted">{{ $build->size ? number_format($build->size / 1048576, 1).' MB' : '' }}</td>
+                            <td class="px-5 py-3.5">
+                                <x-common.badge :color="$build->status->color()">{{ $build->status->label() }}</x-common.badge>
+                                @if ($build->error)<div class="text-xs text-danger mt-1 max-w-md break-words">{{ $build->error }}</div>@endif
+                            </td>
+                            <td class="px-5 py-3.5 text-right whitespace-nowrap">
+                                @if ($build->isDownloadable())
+                                    <x-common.action-button :href="route('superadmin.distribution.sites.builds.download', [$site, $build])">{{ __('distribution::distribution.download') }}</x-common.action-button>
+                                    <div class="text-xs text-muted mt-1">{{ __('distribution::distribution.expires') }} {{ $build->expires_at->format('d M Y') }}</div>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td class="px-5 py-8 text-center text-muted">{{ __('distribution::distribution.no_builds') }}</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     {{-- Tokens --}}
     <div class="bg-white border border-line rounded-xl overflow-hidden">
         <div class="px-5 py-4 border-b border-line">

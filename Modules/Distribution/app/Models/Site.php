@@ -35,6 +35,11 @@ class Site extends BaseModel
         return $this->hasMany(SiteModule::class)->orderBy('module');
     }
 
+    public function builds(): HasMany
+    {
+        return $this->hasMany(Build::class)->latest('id');
+    }
+
     public function tokens(): HasMany
     {
         return $this->hasMany(SiteToken::class)->latest('id');

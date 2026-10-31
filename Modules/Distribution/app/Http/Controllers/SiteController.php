@@ -9,10 +9,15 @@ use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Modules\Distribution\Enums\SiteStatus;
 use Modules\Distribution\Enums\UpdateMode;
+use Modules\Distribution\Jobs\BuildSiteJob;
+use Modules\Distribution\Models\Build;
 use Modules\Distribution\Models\Release;
 use Modules\Distribution\Models\Site;
 use Modules\Distribution\Models\SiteToken;
+use Modules\Distribution\Services\BuildService;
 use Modules\Distribution\Services\SiteService;
+use Modules\Distribution\Support\PlatformAudit;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class SiteController extends Controller
 {
@@ -49,7 +54,7 @@ class SiteController extends Controller
 
     public function show(Site $site): View
     {
-        $site->load('modules', 'tokens');
+        $site->load('modules', 'tokens', 'builds');
 
         return view('distribution::sites.show', [
             'site' => $site,
@@ -83,6 +88,29 @@ class SiteController extends Controller
         $result = $this->sites->unassign($site, $module);
 
         return back()->with($result['status'] ? 'success' : 'error', $result['message']);
+    }
+
+    public function build(Site $site, BuildService $builds): RedirectResponse
+    {
+        $result = $builds->start($site);
+
+        if (! $result['status']) {
+            return back()->with('error', $result['message']);
+        }
+
+        BuildSiteJob::dispatch($result['data']['build']);
+
+        // Shown once: only its hash is kept (and put in the zip).
+        return back()->with('success', $result['message'])->with('install_code', $result['data']['code']);
+    }
+
+    public function download(Site $site, Build $build, BuildService $builds): BinaryFileResponse
+    {
+        abort_unless($build->site_id === $site->id && $build->isDownloadable(), 404);
+
+        PlatformAudit::log('distribution_build_downloaded', "Zip downloaded for site {$site->name}", $build, ['file' => $build->filename]);
+
+        return response()->download($builds->absolutePath($build), $build->filename);
     }
 
     public function revokeToken(Site $site, SiteToken $token): RedirectResponse

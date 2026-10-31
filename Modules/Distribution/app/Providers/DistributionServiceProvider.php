@@ -3,6 +3,7 @@
 namespace Modules\Distribution\Providers;
 
 use App\Support\Modules\CoreModuleServiceProvider;
+use Modules\Distribution\Console\BuildSiteCommand;
 use Modules\Distribution\Console\KeygenCommand;
 use Modules\Distribution\Console\PublishReleaseCommand;
 
@@ -17,6 +18,7 @@ class DistributionServiceProvider extends CoreModuleServiceProvider
     protected string $nameLower = 'distribution';
 
     protected array $commands = [
+        BuildSiteCommand::class,
         KeygenCommand::class,
         PublishReleaseCommand::class,
     ];

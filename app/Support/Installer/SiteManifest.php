@@ -48,7 +48,15 @@ class SiteManifest
     {
         $hash = (string) $this->get('install_code_hash', '');
 
-        return $hash !== '' && password_verify(strtoupper(trim($code)), $hash);
+        return $hash !== '' && password_verify(self::normalizeCode($code), $hash);
+    }
+
+    /**
+     * "abcde-fghjk " → "ABCDEFGHJK": dashes and spaces are only for reading.
+     */
+    public static function normalizeCode(string $code): string
+    {
+        return strtoupper((string) preg_replace('/[^A-Za-z0-9]/', '', $code));
     }
 
     public function forgetToken(): void

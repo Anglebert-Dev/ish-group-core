@@ -73,6 +73,28 @@ return [
     'token_revoked' => 'Token revoked.',
     'token_already_revoked' => 'This token was already revoked.',
 
+    // Builds
+    'builds' => 'Zips',
+    'builds_hint' => 'A ready-to-extract copy for this site: the core from the last commit, its modules, and a link back here for updates. Kept 14 days.',
+    'build_zip' => 'Build zip',
+    'no_builds' => 'No zips yet.',
+    'build_started' => 'Building the zip. It is ready in a minute or two — refresh this page.',
+    'build_ready' => 'Zip ready.',
+    'build_failed' => 'The build failed: :error',
+    'build_needs_modules' => 'Give the site at least one module first.',
+    'building' => 'Building the zip for :site (:modules)…',
+    'build_file' => 'File',
+    'build_status_queued' => 'Waiting',
+    'build_status_building' => 'Building',
+    'build_status_ready' => 'Ready',
+    'build_status_failed' => 'Failed',
+    'build_status_expired' => 'Expired',
+    'download' => 'Download',
+    'expires' => 'Expires',
+    'install_code' => 'Install code',
+    'install_code_once' => 'Send this install code with the zip. It is shown only now; the installer asks for it.',
+    'site_not_found' => 'No site with that name or id.',
+
     // Releases
     'publish' => 'Publish',
     'publish_release' => 'Publish a release',
