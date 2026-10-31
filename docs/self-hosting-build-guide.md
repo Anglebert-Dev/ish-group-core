@@ -1,6 +1,6 @@
 # Self-hosting (shipping modules to a customer's server): Build Guide
 
-Created: 31/10/2026. Status: **Phases 0–5 done (31/10/2026)**: zips, installer and module updates all built. Left: Phase 6 (pruning, README, full end-to-end run). Update the progress table in §9 after each phase, so work can pick up where it stopped.
+Created: 31/10/2026. Status: **All phases done (31/10/2026)**. Tested end to end on two real servers (Postgres). Open: a MySQL run (§12). Update the progress table in §9 after each phase, so work can pick up where it stopped.
 
 ## 1. Goal
 
@@ -198,7 +198,7 @@ Commit after each phase. Run `php artisan test` before every commit.
 | 3 | Zip builds | `BuildService` + job, builds page, install code | ✅ 31/10/2026: 6 tests; real run: `distribution:build` (8 s, 15 MB zip with Savings) → extracted → web install with the code on Postgres → sign in, Savings pages work, Billing absent |
 | 4 | Update API (server) | check-in, download, report, offer logic, site status page | ✅ 31/10/2026: 9 tests |
 | 5 | Update client | `UpdateClient`, `SafeZipExtractor`, `ModulePackageInstaller`, `UpdateService`, `core:updates` + schedule, Updates page, auto/manual | ✅ 31/10/2026: 13 tests (real installs and rollbacks of a fixture module) |
-| 6 | Finishing | pruning, README "Self-hosting" section, end-to-end test (MySQL and Postgres) | ☐ |
+| 6 | Finishing | pruning, README "Self-hosting" section, end-to-end test | ✅ 31/10/2026: `distribution:prune` (daily 03:30), first check-in right after install, a failed version isn't retried automatically, end-to-end run below. MySQL not yet run (no local credentials) |
 
 **Before deploying Phase 1 to our own server, run `php artisan core:mark-installed` there.** Otherwise our server will redirect to the installer.
 
@@ -331,8 +331,24 @@ Commit after each phase. Run `php artisan test` before every commit.
    - Our site page shows the new version and the report.
 7. Publish a release with a broken migration. Confirm it rolls back to the old folder and version.
 
+### End-to-end run, 31/10/2026 (Postgres, two real servers on localhost)
+
+| Step | Result |
+|---|---|
+| Ours: Distribution on, keygen, site "Acme Finance" with Savings, publish, `distribution:build` | zip and install code |
+| Customer: extract, web installer with the code, Postgres | installed; **first check-in reached us at once** (site shows pgsql, its URL, Savings 1.1.0 installed) |
+| Publish Savings 1.1.1 (adds a table); site on **manual** | hourly check: "One update available", nothing installed; Updates page shows the changelog; admin clicks Install (with a password confirmation): 1.1.1 installed, table created, old version backed up; our side: `1.1.0 → 1.1.1 success (460 ms)` |
+| Switch the site to **automatic**, publish 1.1.2 | installed by `core:updates` with no one clicking |
+| Publish a **broken** 1.1.3 (second migration throws) | `rolled_back`: still 1.1.2, folder restored, **no table left from either new migration**, app still works, our side shows the error |
+| Next hourly check | 1.1.3 is **not** retried automatically (`updates.not_retried`) |
+| Give Delivery (brings SalesOrders and Inventory); publish them and a fixed Savings 1.1.4 | all four installed in order Inventory → SalesOrders → Delivery → Savings; modules that weren't in the zip load (fallback autoloader); their pages work |
+| Schedules | customer: `core:updates` hourly, queue every minute (cron-only mode), `savings:alerts`; ours: `distribution:prune` daily |
+| Revoke the site's token | customer's next check: "The update server answered 401. Invalid token." |
+
 ## 12. Open points
 
-- Core self-update (app/, vendor) is a later phase.
+- **MySQL end-to-end run:** the same steps on MySQL, pending database credentials (Postgres passed).
+- **HTTPS:** nothing enforces HTTPS for the update server address yet. Our `APP_URL` must be `https://` in production, because builds put it in every `site.json`.
+- **Core self-update** (app/, vendor) is a later phase. Until then, a core change means a new zip for each site.
 - Should a customer's admin be allowed to switch modules off on their server? They can today, through Super Admin → Modules, because they are superadmin there.
 - Docker: `storage/` and `Modules/` must be persistent volumes for updates to survive a container restart. Otherwise use `manual` mode and ship new images.

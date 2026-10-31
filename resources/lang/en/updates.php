@@ -36,6 +36,7 @@ return [
     'some_failed' => 'Some updates failed; see the history below. Nothing else was changed.',
     'nothing_to_install' => 'There is nothing to install. Check again first.',
     'already_running' => 'Updates are already being installed. Try again in a few minutes.',
+    'not_retried' => 'The available update already failed on this server, so it is not installed automatically again. Install it by hand, or wait for a newer version.',
     'requirement_failed' => 'Skipped: a module it needs failed to update.',
     'check_failed' => 'Could not check for updates: :error',
     'server_said' => 'The update server answered :status. :message',

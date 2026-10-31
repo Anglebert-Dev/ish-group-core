@@ -76,9 +76,28 @@ class UpdateService extends BaseService
             return $checked;
         }
 
-        return $force || $checked['data']['update_mode'] === 'auto'
-            ? $this->install()
-            : $checked;
+        if ($force) {
+            return $this->install();
+        }
+
+        if ($checked['data']['update_mode'] !== 'auto') {
+            return $checked;
+        }
+
+        // A version that already failed here is not retried every hour;
+        // the admin can still install it by hand, or we publish a fix.
+        $retry = array_values(array_filter($checked['data']['offers'], fn (array $offer) => ! $this->failedBefore($offer)));
+
+        return $retry === []
+            ? $this->failure(__('updates.not_retried'))
+            : $this->install(array_column($retry, 'module'));
+    }
+
+    private function failedBefore(array $offer): bool
+    {
+        return collect($this->history())->contains(fn (array $item) => $item['module'] === $offer['module']
+            && $item['to_version'] === $offer['version']
+            && $item['status'] !== 'success');
     }
 
     /**

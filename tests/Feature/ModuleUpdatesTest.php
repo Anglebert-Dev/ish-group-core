@@ -213,6 +213,19 @@ class ModuleUpdatesTest extends TestCase
             && $request['results'][0]['status'] === 'success' && $request['results'][0]['to_version'] === '1.1.0');
     }
 
+    public function test_a_version_that_failed_is_not_retried_automatically(): void
+    {
+        $this->installFixture('1.0.0');
+        [$offer, $zip] = $this->package('1.1.0', ['2026_11_01_000002_break.php' => $this->migration('upd_probe_never', fail: true)]);
+        $this->fakeServer(offers: [$offer], mode: 'auto', downloads: [$offer['download_url'] => File::get($zip)]);
+
+        $this->artisan('core:updates')->assertFailed();
+        $this->assertSame('rolled_back', app(UpdateService::class)->history()[0]['status']);
+
+        $this->artisan('core:updates')->expectsOutputToContain(__('updates.not_retried'))->assertFailed();
+        $this->assertCount(1, app(UpdateService::class)->history(), 'not tried a second time');
+    }
+
     public function test_manual_sites_wait_for_the_admin(): void
     {
         $this->installFixture('1.0.0');
