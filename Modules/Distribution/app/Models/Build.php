@@ -15,10 +15,10 @@ class Build extends BaseModel
 
     protected $fillable = [
         'site_id', 'token_id', 'core_version', 'modules', 'filename', 'path', 'sha256', 'size',
-        'install_code_hash', 'status', 'error', 'expires_at',
+        'install_code_hash', 'install_code', 'status', 'error', 'expires_at', 'emailed_to', 'emailed_at',
     ];
 
-    protected $hidden = ['install_code_hash'];
+    protected $hidden = ['install_code_hash', 'install_code'];
 
     protected function casts(): array
     {
@@ -27,6 +27,8 @@ class Build extends BaseModel
             'size' => 'integer',
             'status' => BuildStatus::class,
             'expires_at' => 'datetime',
+            'install_code' => 'encrypted',
+            'emailed_at' => 'datetime',
         ];
     }
 

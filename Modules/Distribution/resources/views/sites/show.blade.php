@@ -152,6 +152,14 @@
             </div>
             <x-common.button type="submit" size="sm">{{ __('distribution::distribution.server_upload') }}</x-common.button>
         </form>
+
+        <form method="POST" action="{{ route('superadmin.distribution.sites.email.preparation', $site) }}" class="border-t border-line p-5 flex flex-wrap items-end gap-3">
+            @csrf
+            <div class="flex-1 min-w-[240px]">
+                <x-common.input name="email" type="email" :label="__('distribution::distribution.email_label')" :value="old('email', $site->contact_email)" :hint="__('distribution::distribution.email_prepare_hint')" required />
+            </div>
+            <x-common.button type="submit" size="sm" variant="secondary">{{ __('distribution::distribution.email_prepare_button') }}</x-common.button>
+        </form>
     </div>
 
     {{-- Zips --}}
@@ -192,6 +200,12 @@
                             <td class="px-5 py-3.5">
                                 <x-common.badge :color="$build->status->color()">{{ $build->status->label() }}</x-common.badge>
                                 @if ($build->error)<div class="text-xs text-danger mt-1 max-w-md break-words">{{ $build->error }}</div>@endif
+                                @if ($build->isDownloadable() && $build->install_code)
+                                    <div class="text-xs text-muted mt-1">{{ __('distribution::distribution.install_code_label') }}: <span class="font-mono font-semibold text-ink select-all">{{ $build->install_code }}</span></div>
+                                @endif
+                                @if ($build->emailed_at)
+                                    <div class="text-xs text-success mt-1">{{ __('distribution::distribution.emailed', ['email' => $build->emailed_to, 'time' => $build->emailed_at->format('d M Y H:i')]) }}</div>
+                                @endif
                             </td>
                             <td class="px-5 py-3.5 text-right whitespace-nowrap">
                                 @if ($build->isDownloadable())
@@ -203,6 +217,14 @@
                                 </x-common.action-button>
                                 @if ($build->isDownloadable())
                                     <div class="text-xs text-muted mt-1">{{ __('distribution::distribution.expires') }} {{ $build->expires_at->format('d M Y') }}</div>
+                                    @if ($build->install_code)
+                                        <form method="POST" action="{{ route('superadmin.distribution.sites.builds.email', [$site, $build]) }}" class="mt-2 flex items-center justify-end gap-2">
+                                            @csrf
+                                            <input type="email" name="email" value="{{ $build->emailed_to ?: $site->contact_email }}" required placeholder="{{ __('distribution::distribution.email_label') }}"
+                                                   class="h-8 w-48 rounded-lg border border-line px-2 text-xs" aria-label="{{ __('distribution::distribution.email_label') }}">
+                                            <x-common.button type="submit" size="sm" title="{{ __('distribution::distribution.email_package_hint') }}">{{ __('distribution::distribution.email_package_button') }}</x-common.button>
+                                        </form>
+                                    @endif
                                 @endif
                             </td>
                         </tr>

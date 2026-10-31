@@ -27,7 +27,7 @@ use ZipArchive;
  * the last commit of the core, only that site's modules, production vendor,
  * our public key, and a site.json linking it back to us.
  *
- * start() records the build and makes the install code (shown once);
+ * start() records the build and makes the install code (kept encrypted, to email it);
  * run() does the work, right after, in the same request (about 10 s).
  */
 class BuildService extends BaseService
@@ -81,6 +81,7 @@ class BuildService extends BaseService
             'site_id' => $site->id,
             'modules' => $site->moduleNames(),
             'install_code_hash' => password_hash(SiteManifest::normalizeCode($code), PASSWORD_DEFAULT),
+            'install_code' => $code, // encrypted; emailed to the customer with the download link
             'status' => BuildStatus::Queued,
         ]);
 

@@ -202,6 +202,14 @@ Commit after each phase. Run `php artisan test` before every commit.
 
 **Before deploying Phase 1 to our own server, run `php artisan core:mark-installed` there.** Otherwise our server will redirect to the installer.
 
+### Emails to the customer (added 31/10/2026, Distribution 1.2.0)
+
+- **Step 1, "Email the guide and form"** (server details card): a signed link to the setup guide (30 days, no account needed) and the server form as a CSV attachment.
+- **Step 2, "Email zip and code"** (each downloadable zip row): a signed download link (valid until the zip expires), the install code, the steps (their folder and address from the server details), their cron line, and the guide link. The row then shows "Emailed to … at …".
+- **Install codes** are now kept **encrypted** on the build (`install_code`, `encrypted` cast) and shown on the zip row, so they can be emailed. Zips built before 1.2.0 have no stored code; build again to email them.
+- Sent as `CustomerEmail` (queued; needs `queue:work`) in the primary business's name, with replies to it. Audited as `distribution_preparation_emailed`, `distribution_package_emailed` and `distribution_build_downloaded_by_customer`.
+- **Public routes:** `/self-hosting/guide/{site}` and `/self-hosting/download/{build}`, with `signed` and `throttle:30,1`. A changed or expired signature returns 403; an expired zip returns 404.
+
 ### Customer server details (added 31/10/2026, Distribution 1.1.0)
 
 - **Why:** the customer's server, not our `.env`, decides things like their PHP path, folder, database and cron-only hosting. **Their server never needs Composer**, because the zip contains `vendor/`. `DISTRIBUTION_PHP`/`DISTRIBUTION_COMPOSER` are only for **our** server, the one that builds.

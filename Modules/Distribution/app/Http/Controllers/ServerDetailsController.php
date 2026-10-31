@@ -79,6 +79,14 @@ class ServerDetailsController extends Controller
     {
         PlatformAudit::log('distribution_guide_opened', "Setup guide opened for site {$site->name}", $site);
 
+        return self::guideView($site);
+    }
+
+    /**
+     * The guide page; also opened by the customer from a signed email link.
+     */
+    public static function guideView(Site $site): View
+    {
         $details = (array) $site->server_details;
 
         return view('distribution::guide', [
