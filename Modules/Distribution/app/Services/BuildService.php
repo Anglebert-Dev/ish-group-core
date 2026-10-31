@@ -243,10 +243,15 @@ class BuildService extends BaseService
 
         $publicKeys = array_values(array_unique([$this->keys->publicKey(), ...(array) config('distribution.public_keys', [])]));
 
-        File::put($stage.'/config/distribution.php', "<?php\n\n// Written by the build for this site. docs/self-hosting-build-guide.md\n\nreturn ".var_export([
-            'never_ship' => array_values((array) config('distribution.never_ship', [])),
-            'public_keys' => $publicKeys,
-        ], true).";\n");
+        // Only the key list changes; the rest of the shipped config stays as written.
+        $config = File::get($stage.'/config/distribution.php');
+        $written = preg_replace("/^(\s*)'public_keys' => .*$/m", "\\1'public_keys' => ".var_export($publicKeys, true).',', $config, 1, $count);
+
+        if ($count !== 1) {
+            throw new RuntimeException('config/distribution.php has no public_keys line to fill in.');
+        }
+
+        File::put($stage.'/config/distribution.php', $written);
 
         File::put($stage.'/config/core.php', "<?php\n\nreturn ".var_export(['version' => $coreVersion], true).";\n");
 

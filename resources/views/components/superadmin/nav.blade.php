@@ -12,6 +12,10 @@
     }
     $tabs[] = ['label' => __('body.audit_logs'), 'route' => 'superadmin.audit.index', 'active' => 'superadmin.audit.*'];
     $tabs[] = ['label' => __('body.backups'), 'route' => 'superadmin.backups.index', 'active' => 'superadmin.backups.*'];
+    // Self-hosted copies linked to our update server.
+    if (app(\App\Services\Updates\UpdateClient::class)->linked()) {
+        $tabs[] = ['label' => __('updates.title'), 'route' => 'superadmin.updates.index', 'active' => 'superadmin.updates.*'];
+    }
     $tabs[] = ['label' => __('body.communicator'), 'route' => 'superadmin.communicator.index', 'active' => 'superadmin.communicator.*'];
     $tabs[] = ['label' => __('body.platform_settings'), 'route' => 'superadmin.settings.index', 'active' => 'superadmin.settings.*'];
 @endphp

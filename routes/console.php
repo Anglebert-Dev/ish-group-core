@@ -19,3 +19,7 @@ Schedule::command('core:backup --scheduled')->dailyAt('02:00')->withoutOverlappi
 if (config('queue.via_scheduler')) {
     Schedule::command('queue:work --stop-when-empty --max-time=50 --tries=3')->everyMinute()->withoutOverlapping();
 }
+
+// Self-hosted servers: check our update server hourly (a minute of their
+// own, so sites don't all call at once). Does nothing when not linked.
+Schedule::command('core:updates')->hourlyAt(crc32((string) config('app.key')) % 60)->withoutOverlapping()->runInBackground();

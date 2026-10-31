@@ -17,6 +17,7 @@ use App\Http\Controllers\Web\SuperAdmin\ImpersonationController;
 use App\Http\Controllers\Web\SuperAdmin\ModuleController;
 use App\Http\Controllers\Web\SuperAdmin\PlatformSettingController;
 use App\Http\Controllers\Web\SuperAdmin\SuperAdminDashboardController;
+use App\Http\Controllers\Web\SuperAdmin\UpdateController;
 use App\Http\Controllers\Web\User\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -192,6 +193,10 @@ Route::prefix('app')->middleware(['auth:staff', 'auth.session', 'exclusive.porta
         Route::put('/backups/settings', [BackupController::class, 'settings'])->name('backups.settings');
         Route::get('/backups/{backup}', [BackupController::class, 'download'])->middleware('password.confirm.staff')->where('backup', '[A-Za-z0-9._-]+')->name('backups.download');
         Route::delete('/backups/{backup}', [BackupController::class, 'destroy'])->middleware('password.confirm.staff')->where('backup', '[A-Za-z0-9._-]+')->name('backups.destroy');
+
+        Route::get('/updates', [UpdateController::class, 'index'])->name('updates.index');
+        Route::post('/updates/check', [UpdateController::class, 'check'])->middleware('throttle:10,1')->name('updates.check');
+        Route::post('/updates/install', [UpdateController::class, 'install'])->middleware(['password.confirm.staff', 'throttle:5,1'])->name('updates.install');
 
         Route::get('/communicator', [CommunicatorController::class, 'index'])->name('communicator.index');
         Route::post('/communicator', [CommunicatorController::class, 'send'])->middleware('throttle:10,1')->name('communicator.send');

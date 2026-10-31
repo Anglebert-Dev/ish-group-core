@@ -1,6 +1,6 @@
 # Self-hosting (shipping modules to a customer's server): Build Guide
 
-Created: 31/10/2026. Status: **Phases 0–3 done (31/10/2026)**: we can build a customer's zip and they can install it. Next is Phase 4 (update API on our server). Update the progress table in §9 after each phase, so work can pick up where it stopped.
+Created: 31/10/2026. Status: **Phases 0–5 done (31/10/2026)**: zips, installer and module updates all built. Left: Phase 6 (pruning, README, full end-to-end run). Update the progress table in §9 after each phase, so work can pick up where it stopped.
 
 ## 1. Goal
 
@@ -196,11 +196,53 @@ Commit after each phase. Run `php artisan test` before every commit.
 | 1 | Installer | `PreInstall`, `RedirectToInstaller`, install routes and views, `RequirementsChecker`, `EnvWriter`, `DatabaseProbe`, `MailProbe`, `InstallationService`, `core:setup`, queue-via-scheduler, root `.htaccess` | ✅ 31/10/2026: 15 tests; tried for real on a fresh copy with Postgres (web wizard → sign in → dashboard; `core:setup --no-interaction` with Savings, including resuming after a failure) |
 | 2 | Distribution basics | module scaffold, tables, sites, module assignment with requirements, tokens, `distribution:keygen`, releases + publish | ✅ 31/10/2026: 14 tests + core boundary test |
 | 3 | Zip builds | `BuildService` + job, builds page, install code | ✅ 31/10/2026: 6 tests; real run: `distribution:build` (8 s, 15 MB zip with Savings) → extracted → web install with the code on Postgres → sign in, Savings pages work, Billing absent |
-| 4 | Update API (server) | check-in, download, report, offer logic, site status page | ☐ |
-| 5 | Update client | `UpdateClient`, `SignatureVerifier`, `SafeZipExtractor`, `ModulePackageInstaller`, `core:updates` + schedule, Updates page, auto/manual | ☐ |
+| 4 | Update API (server) | check-in, download, report, offer logic, site status page | ✅ 31/10/2026: 9 tests |
+| 5 | Update client | `UpdateClient`, `SafeZipExtractor`, `ModulePackageInstaller`, `UpdateService`, `core:updates` + schedule, Updates page, auto/manual | ✅ 31/10/2026: 13 tests (real installs and rollbacks of a fixture module) |
 | 6 | Finishing | pruning, README "Self-hosting" section, end-to-end test (MySQL and Postgres) | ☐ |
 
 **Before deploying Phase 1 to our own server, run `php artisan core:mark-installed` there.** Otherwise our server will redirect to the installer.
+
+### Phase 5 notes (customer side)
+
+- **Files:** `app/Services/Updates/*`, `app/Console/Commands/CheckUpdatesCommand.php` (`core:updates [--install]`), `app/Http/Controllers/Web/SuperAdmin/UpdateController.php`, `resources/views/app/super-admin/updates.blade.php`, `resources/lang/en/updates.php`.
+- **Linked or not:** a server counts as linked when the `system` table holds `distribution_token` and `distribution_server_url`, which the installer copies from `site.json`. Unlinked servers (ours, developers' machines) have no Updates tab, and `core:updates` does nothing on them.
+- **Schedule:** `core:updates` runs hourly at a minute derived from `crc32(APP_KEY) % 60`, so sites don't all call at once. Automatic sites install straight away; manual sites store the offers for Super Admin → Updates, where the admin clicks Install (with a password confirmation).
+- **Stored in `system`:**
+  - `distribution_update_mode`, set by our server on each check-in
+  - `distribution_offers` (JSON)
+  - `distribution_last_check_at`, `distribution_last_error`
+  - `distribution_update_history` (last 30)
+- **An answer from our server is trusted only if:**
+  - it's signed (`X-Ish-Signature` over `ish-checkin-v1\n` + body)
+  - its nonce and site uuid match
+  - its server time is within 10 minutes of ours
+- **Offers are dropped if:**
+  - the download URL isn't on our server
+  - the module is Billing or Distribution
+  - the module name or version doesn't have the expected shape
+- **Package checks, in order:** sha256, then the signature, then (after safe extraction) that `module.json` has the offered name and version, then that the modules it requires are installed.
+- **Install:**
+  1. database backup, if `UPDATES_BACKUP_FIRST` is set (on by default; never blocks the update)
+  2. the old folder moves to `storage/app/updates/backups/{Module}-{version}-{time}`, and the last 3 are kept
+  3. the new folder goes in place
+  4. `bootstrap/cache/modules.php` and opcache are cleared
+  5. `php artisan core:module install|update X` runs in a **fresh process**. In-process is used when `UPDATES_IN_PROCESS=true` or `proc_open` is unavailable; it calls `ModuleManager::rescan()`, because nwidart caches the module list for the whole process.
+- **Rollback:**
+  1. roll back the update's recorded migrations
+  2. run the failed migration's own `down()`, since it was never recorded (errors ignored)
+  3. restore the old folder
+  4. report `rolled_back`
+
+  If a module fails, any later offer that requires it is skipped. Module migrations should still be written to be additive.
+- **Reporting:** results go to `/report`. If that call fails, our server catches up at the next check-in, from the versions the site reports. Each result is also audited as `module_update_{status}` on the site's primary business.
+
+### Phase 4 notes (our server)
+
+- **Routes** are in `Modules/Distribution/routes/api.php`, under `/api/distribution/v1` with middleware `api` + `AuthenticateSite` + `throttle:distribution-api` (30 per minute per token). No session or CSRF.
+- **Authentication:** `AuthenticateSite` looks up the bearer token by its hash and refuses revoked tokens (401), suspended sites, and a `site_uuid` that doesn't match (403). It also updates the token's `last_used_at`.
+- **Offers** (`UpdateOfferService`): only assigned modules, ordered with requirements first. The latest available release is offered if it's newer than the installed version, or as an `install` when the site doesn't report the module. Each check-in also refreshes each site module's status and stores a `distribution_check_ins` row.
+- **Without a signing key**, check-in answers 503 instead of an unsigned response.
+- **Reports** update the site module's version and status (`failed` keeps `last_error` until the module succeeds) and write a `distribution_update_reports` row. The site page shows the update history and recent check-ins.
 
 ### Phase 3 notes
 
