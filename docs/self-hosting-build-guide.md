@@ -259,7 +259,12 @@ Commit after each phase. Run `php artisan test` before every commit.
 
 ### Phase 2 notes
 
-- **Turn it on (our server only):** `php artisan core:module install Distribution`, then `php artisan distribution:keygen` once. Keygen writes `DISTRIBUTION_SIGNING_SECRET` and `DISTRIBUTION_PUBLIC_KEYS` to `.env`. **Back up the secret.** Without it, sites won't accept new releases. Screens: Super Admin → Self-hosting (sites, releases).
+- **Turn it on (our server only), all from the web:**
+  1. Super Admin → Modules → install Distribution.
+  2. Self-hosting → Releases → **Create signing key** (password confirmation). This writes `DISTRIBUTION_SIGNING_SECRET` and `DISTRIBUTION_PUBLIC_KEYS` to `.env`, rebuilds the config cache if there is one, and **shows the secret once for backup**. Without the secret, sites won't accept new releases.
+  3. If `.env` isn't writable, the page shows the two lines to add by hand.
+  4. Terminal equivalents: `core:module install Distribution`, `distribution:keygen`. Both paths use `SigningKeys::create()`.
+  5. **Replacing a key is terminal only** (`distribution:keygen --force`), on purpose: sites built with the old key would stop accepting updates.
 - **Config:** `config('distribution.*')` merges core `config/distribution.php` (shipped: `never_ship`, `public_keys`) with the module's `config/config.php` (`signing_secret`, `disk`, `directory`).
 - **The signed text** is defined in core: `App\Support\Distribution\PackageSignature::message()` (`ish-module-v1\n{module}\n{version}\n{sha256}`), plus `verify()`. Phase 5 must use it as is.
 - **All seven tables already exist** (migration `2026_10_31_100000_create_distribution_tables.php`), so phases 3–4 need no schema changes.

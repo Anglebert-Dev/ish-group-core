@@ -121,12 +121,7 @@ Then add **Savings** to a package (Super Admin → Billing → Packages); your o
 
 Full design and status: [docs/self-hosting-build-guide.md](docs/self-hosting-build-guide.md).
 
-**Our server, once:**
-
-```bash
-php artisan core:module install Distribution
-php artisan distribution:keygen     # writes the signing key to .env — back up DISTRIBUTION_SIGNING_SECRET
-```
+**Our server, once** (all from the browser): Super Admin → Modules → install **Distribution**, then Self-hosting → Releases → **Create signing key**. Back up the secret it shows (it is saved in `.env` as `DISTRIBUTION_SIGNING_SECRET`). Terminal equivalents: `php artisan core:module install Distribution`, `php artisan distribution:keygen`.
 
 **A new customer** (Super Admin → Self-hosting):
 1. **Add site**, pick its modules (what they need comes along; Billing never ships), choose updates **Automatic** or **Manual**.

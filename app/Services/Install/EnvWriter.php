@@ -37,7 +37,11 @@ class EnvWriter
         }
 
         $temp = $this->path.'.tmp-'.bin2hex(random_bytes(4));
-        file_put_contents($temp, $contents, LOCK_EX);
+
+        if (! is_writable(dirname($this->path)) || @file_put_contents($temp, $contents, LOCK_EX) === false) {
+            throw new InvalidArgumentException(__('install.env_not_writable'));
+        }
+
         @chmod($temp, 0640);
 
         if (! @rename($temp, $this->path)) {

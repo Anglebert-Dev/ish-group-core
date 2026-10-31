@@ -3,8 +3,25 @@
 
     <x-common.page-header :title="__('distribution::distribution.releases')" :description="__('distribution::distribution.releases_description')" />
 
+    @if (session('signing_secret'))
+        <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
+            <p class="font-semibold text-amber-900">{{ __('distribution::distribution.secret_backup_title') }}</p>
+            <p class="text-sm text-amber-900 mt-1">{{ __('distribution::distribution.secret_backup_hint') }}</p>
+            <p class="mt-3 font-mono text-xs break-all bg-white border border-amber-200 rounded-lg p-3 select-all">{{ session('signing_secret') }}</p>
+        </div>
+    @endif
+    @if (session('signing_env_lines'))
+        <pre class="mb-6 rounded-xl border border-line bg-surface p-4 font-mono text-xs whitespace-pre-wrap break-all select-all">{{ session('signing_env_lines') }}</pre>
+    @endif
+
     @unless ($keysConfigured)
-        <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 px-5 py-4 text-sm">{{ __('distribution::distribution.keys_missing') }}</div>
+        <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 px-5 py-4 text-sm flex flex-wrap items-center justify-between gap-3">
+            <span>{{ __('distribution::distribution.keys_missing') }}</span>
+            <form method="POST" action="{{ route('superadmin.distribution.releases.key') }}">
+                @csrf
+                <x-common.button type="submit" size="sm" data-confirm data-confirm-title="{{ __('distribution::distribution.create_key_confirm') }}">{{ __('distribution::distribution.create_key') }}</x-common.button>
+            </form>
+        </div>
     @endunless
 
     <div class="grid gap-6 lg:grid-cols-3 mb-6">
@@ -26,7 +43,11 @@
                 <p class="text-muted">{{ __('distribution::distribution.public_key_hint') }}</p>
                 <p class="font-mono text-xs break-all bg-surface border border-line rounded-lg p-3">{{ $publicKey }}</p>
             @else
-                <p class="text-muted">{{ __('distribution::distribution.keys_missing') }}</p>
+                <p class="text-muted">{{ __('distribution::distribution.create_key_hint') }}</p>
+                <form method="POST" action="{{ route('superadmin.distribution.releases.key') }}">
+                    @csrf
+                    <x-common.button type="submit" size="sm" data-confirm data-confirm-title="{{ __('distribution::distribution.create_key_confirm') }}">{{ __('distribution::distribution.create_key') }}</x-common.button>
+                </form>
             @endif
         </div>
     </div>

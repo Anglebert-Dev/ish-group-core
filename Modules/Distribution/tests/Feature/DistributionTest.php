@@ -210,6 +210,49 @@ class DistributionTest extends TestCase
         $this->assertSame('1.10.0', Release::latestFor(['Savings'])['Savings']->version);
     }
 
+    public function test_the_signing_key_can_be_created_from_the_web(): void
+    {
+        $env = sys_get_temp_dir().'/ish-env-'.uniqid();
+        file_put_contents($env, "APP_NAME=Test\n");
+        $this->app->bind(\App\Services\Install\EnvWriter::class, fn () => new \App\Services\Install\EnvWriter($env));
+        config(['distribution.signing_secret' => null, 'distribution.public_keys' => []]);
+        $this->actingAs($this->root, 'staff');
+
+        $this->get(route('superadmin.distribution.releases.index'))->assertOk()->assertSee(__('distribution::distribution.create_key'));
+
+        try {
+            $this->withConfirmedPassword()->post(route('superadmin.distribution.releases.key'))
+                ->assertSessionHas('success')
+                ->assertSessionHas('signing_secret');
+
+            $this->assertTrue(app(SigningKeys::class)->configured());
+            $written = file_get_contents($env);
+            $this->assertStringContainsString('DISTRIBUTION_SIGNING_SECRET='.config('distribution.signing_secret'), $written);
+            $this->assertStringContainsString('DISTRIBUTION_PUBLIC_KEYS='.app(SigningKeys::class)->publicKey(), $written);
+            $this->assertTrue(ActivityLog::query()->where('action', 'distribution_keys_generated')->exists());
+
+            // A second press never replaces it.
+            $secret = config('distribution.signing_secret');
+            $this->withConfirmedPassword()->post(route('superadmin.distribution.releases.key'))->assertSessionHas('error');
+            $this->assertSame($secret, config('distribution.signing_secret'));
+        } finally {
+            @unlink($env);
+        }
+    }
+
+    public function test_an_unwritable_env_gets_the_lines_to_add_by_hand(): void
+    {
+        $this->app->bind(\App\Services\Install\EnvWriter::class, fn () => new \App\Services\Install\EnvWriter('/nonexistent-dir/.env'));
+        config(['distribution.signing_secret' => null]);
+        $this->actingAs($this->root, 'staff');
+
+        $this->withConfirmedPassword()->post(route('superadmin.distribution.releases.key'))
+            ->assertSessionHas('error', __('distribution::distribution.keys_env_not_writable'))
+            ->assertSessionHas('signing_env_lines', fn (string $lines) => str_contains($lines, 'DISTRIBUTION_SIGNING_SECRET='));
+
+        $this->assertFalse(app(SigningKeys::class)->configured());
+    }
+
     public function test_keygen_reports_an_existing_key_without_replacing_it(): void
     {
         $this->artisan('distribution:keygen')->expectsOutputToContain($this->publicKey)->assertSuccessful();

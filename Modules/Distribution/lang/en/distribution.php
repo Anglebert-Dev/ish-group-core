@@ -131,7 +131,15 @@ return [
 
     // Keys
     'signing_key' => 'Signing key',
-    'keys_missing' => 'No signing key yet. Run "php artisan distribution:keygen" on this server.',
+    'keys_missing' => 'No signing key yet. Create one on Self-hosting → Releases before publishing or building zips.',
+    'create_key' => 'Create signing key',
+    'create_key_hint' => 'Signs every release and update answer. Made once; sites only trust what it signs.',
+    'create_key_confirm' => 'Create the signing key now?',
+    'keys_created_web' => 'Signing key created and saved in .env.',
+    'keys_exist_web' => 'A signing key already exists. Replacing it is done from the terminal (php artisan distribution:keygen --force), because sites built with the old key would stop accepting updates.',
+    'keys_env_not_writable' => 'The .env file cannot be written. Add these two lines to .env yourself, then reload this page:',
+    'secret_backup_title' => 'Back up this secret now — it is shown only once',
+    'secret_backup_hint' => 'It is saved in .env (DISTRIBUTION_SIGNING_SECRET). Keep a copy somewhere safe: if it is lost, sites will not accept new releases until they get a new zip.',
     'keys_exist' => 'A signing key already exists. Its public key:',
     'keys_created' => 'Signing key created and saved in .env. Public key:',
     'keys_backup' => 'Back up DISTRIBUTION_SIGNING_SECRET from .env somewhere safe. Without it, sites will not accept new releases.',

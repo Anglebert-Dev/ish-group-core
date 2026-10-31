@@ -2,13 +2,12 @@
 
 namespace Modules\Distribution\Console;
 
-use App\Services\Install\EnvWriter;
 use Illuminate\Console\Command;
 use Modules\Distribution\Services\SigningKeys;
-use Modules\Distribution\Support\PlatformAudit;
 
 /**
- * Makes our signing key pair and writes it to .env. Run once on our server.
+ * Terminal twin of Self-hosting → Releases → Create signing key: makes our
+ * key pair and writes it to .env. Run once on our server.
  * Replacing a key (--force) means sites need the new public key (a new zip)
  * before they accept anything signed with it.
  */
@@ -27,16 +26,7 @@ class KeygenCommand extends Command
             return self::SUCCESS;
         }
 
-        $pair = SigningKeys::generate();
-        $public = array_values(array_unique([$pair['public'], ...(array) config('distribution.public_keys', [])]));
-
-        (new EnvWriter)->set([
-            'DISTRIBUTION_SIGNING_SECRET' => $pair['secret'],
-            'DISTRIBUTION_PUBLIC_KEYS' => implode(',', $public),
-        ]);
-
-        config(['distribution.signing_secret' => $pair['secret'], 'distribution.public_keys' => $public]);
-        PlatformAudit::log('distribution_keys_generated', 'Release signing key created', null, ['public_key' => $pair['public']]);
+        $pair = $keys->create();
 
         $this->components->info(__('distribution::distribution.keys_created'));
         $this->line('  '.$pair['public']);

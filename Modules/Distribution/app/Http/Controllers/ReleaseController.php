@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use InvalidArgumentException;
 use Modules\Distribution\Models\Release;
 use Modules\Distribution\Services\ReleaseService;
 use Modules\Distribution\Services\SigningKeys;
@@ -41,6 +42,31 @@ class ReleaseController extends Controller
         $result = $releases->publish($data['module'], $data['changelog'] ?? null);
 
         return back()->with($result['status'] ? 'success' : 'error', $result['message']);
+    }
+
+    /**
+     * Create the signing key from the web. Only when there is none: replacing
+     * a key breaks updates for sites built with the old one, so that stays a
+     * deliberate terminal step (distribution:keygen --force).
+     */
+    public function createKey(SigningKeys $keys): RedirectResponse
+    {
+        if ($keys->configured()) {
+            return back()->with('error', __('distribution::distribution.keys_exist_web'));
+        }
+
+        try {
+            $pair = $keys->create();
+        } catch (InvalidArgumentException) {
+            $pair = SigningKeys::generate();
+
+            // .env not writable: hand over the lines to add by hand.
+            return back()->with('error', __('distribution::distribution.keys_env_not_writable'))
+                ->with('signing_env_lines', "DISTRIBUTION_SIGNING_SECRET={$pair['secret']}\nDISTRIBUTION_PUBLIC_KEYS={$pair['public']}");
+        }
+
+        // Shown once, so it can be backed up.
+        return back()->with('success', __('distribution::distribution.keys_created_web'))->with('signing_secret', $pair['secret']);
     }
 
     public function yank(Release $release, ReleaseService $releases): RedirectResponse

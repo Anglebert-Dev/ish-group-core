@@ -31,5 +31,6 @@ Route::prefix('app/super-admin/distribution')->name('superadmin.distribution.')-
 
     Route::get('/releases', [ReleaseController::class, 'index'])->name('releases.index');
     Route::post('/releases', [ReleaseController::class, 'store'])->name('releases.store');
+    Route::post('/releases/signing-key', [ReleaseController::class, 'createKey'])->middleware('password.confirm.staff')->name('releases.key');
     Route::post('/releases/{release}/yank', [ReleaseController::class, 'yank'])->middleware('password.confirm.staff')->name('releases.yank');
 });
