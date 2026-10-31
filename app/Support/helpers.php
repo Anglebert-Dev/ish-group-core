@@ -4,6 +4,36 @@ use App\Enums\ActivityLogAction;
 use App\Services\ActivityLog\ActivityLogService;
 use Illuminate\Database\Eloquent\Model;
 
+/*
+ * Modules\{Name}\... → Modules/{Name}/app/... without Composer. A module
+ * added after the vendor folder was built (an update on a self-hosted
+ * server, where Composer can't run) still loads. Prepended so a module
+ * swapped in by an update wins over a stale optimized classmap entry.
+ */
+spl_autoload_register(function (string $class): void {
+    if (! str_starts_with($class, 'Modules\\')) {
+        return;
+    }
+
+    $parts = explode('\\', $class);
+
+    if (count($parts) < 3 || in_array('..', $parts, true)) {
+        return;
+    }
+
+    [, $module] = $parts;
+    $rest = array_slice($parts, 2);
+
+    // Module tests live outside app/ (Modules\X\Tests\... → Modules/X/tests/...).
+    $file = $rest[0] === 'Tests'
+        ? dirname(__DIR__, 2)."/Modules/{$module}/tests/".implode('/', array_slice($rest, 1)).'.php'
+        : dirname(__DIR__, 2)."/Modules/{$module}/app/".implode('/', $rest).'.php';
+
+    if (is_file($file)) {
+        require_once $file;
+    }
+}, prepend: true);
+
 if (! function_exists('money')) {
     /**
      * An amount in the current business's currency: money(15000) → "RWF 15,000".

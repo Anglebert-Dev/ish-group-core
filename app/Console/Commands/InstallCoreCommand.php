@@ -2,10 +2,10 @@
 
 namespace App\Console\Commands;
 
-use App\Models\System\System;
 use App\Models\User;
-use App\Services\Business\BusinessSetupService;
+use App\Services\Business\PlatformSetupService;
 use App\Services\Permission\PermissionService;
+use App\Support\Installer\Installer;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
@@ -26,13 +26,14 @@ class InstallCoreCommand extends Command
 
     protected $description = 'Migrate the database and create the first business with a superadmin';
 
-    public function handle(BusinessSetupService $setup, PermissionService $permissions): int
+    public function handle(PlatformSetupService $setup, PermissionService $permissions): int
     {
         $this->call('migrate', ['--force' => (bool) $this->option('force')]);
 
         $permissions->initPermissions(true);
 
         if (User::query()->withTrashed()->exists()) {
+            Installer::markInstalled();
             $this->components->info('Already installed — users exist. Nothing else to do.');
 
             return self::SUCCESS;
@@ -60,12 +61,8 @@ class InstallCoreCommand extends Command
             return self::FAILURE;
         }
 
-        $result = $setup->createWithOwner(
-            ['name' => $data['business']],
-            ['name' => $data['name'], 'email' => $data['email'], 'password' => $data['password'], 'is_superadmin' => true],
-        );
-
-        System::addProperty('primary_business_id', $result['data']['business']->id);
+        $setup->createFirstPlatform($data);
+        Installer::markInstalled();
 
         $this->components->info('Installed. Sign in at '.url('/app/login')." as {$data['email']}.");
 

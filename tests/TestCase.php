@@ -8,6 +8,7 @@ use App\Models\Role\Role;
 use App\Models\User;
 use App\Services\Business\BusinessSetupService;
 use App\Services\Permission\PermissionService;
+use App\Support\Installer\Installer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\Hash;
@@ -19,6 +20,22 @@ abstract class TestCase extends BaseTestCase
     public const TEST_PASSWORD = 'SecurePass1!';
 
     private static int $seq = 0;
+
+    protected function setUp(): void
+    {
+        // Never read or write the real storage/installed marker.
+        Installer::useMarkerPath(sys_get_temp_dir().'/ish-installed-'.getmypid().'-'.uniqid());
+
+        parent::setUp();
+    }
+
+    protected function tearDown(): void
+    {
+        @unlink(Installer::markerPath());
+        Installer::useMarkerPath(null);
+
+        parent::tearDown();
+    }
 
     protected function nextSeq(): int
     {
