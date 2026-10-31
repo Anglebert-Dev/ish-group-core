@@ -37,11 +37,13 @@ Route::prefix('app/super-admin/distribution')->name('superadmin.distribution.')-
     Route::post('/sites/{site}/builds/{build}/email', [CustomerController::class, 'emailPackage'])->middleware('throttle:10,1')->name('sites.builds.email');
     Route::post('/sites/{site}/email/preparation', [CustomerController::class, 'emailPreparation'])->middleware('throttle:10,1')->name('sites.email.preparation');
     Route::get('/sites/{site}/builds/{build}/download', [SiteController::class, 'download'])->middleware('password.confirm.staff')->name('sites.builds.download');
+    Route::post('/sites/{site}/link-key', [SiteController::class, 'linkKey'])->middleware(['password.confirm.staff', 'throttle:10,1'])->name('sites.link-key');
     Route::post('/sites/{site}/tokens/{token}/revoke', [SiteController::class, 'revokeToken'])->middleware('password.confirm.staff')->name('sites.tokens.revoke');
 
     Route::get('/releases', [ReleaseController::class, 'index'])->name('releases.index');
     Route::post('/releases', [ReleaseController::class, 'store'])->name('releases.store');
     Route::post('/releases/signing-key', [ReleaseController::class, 'createKey'])->middleware('password.confirm.staff')->name('releases.key');
+    Route::post('/releases/{release}/everyone', [ReleaseController::class, 'toEveryone'])->name('releases.everyone');
     Route::post('/releases/{release}/yank', [ReleaseController::class, 'yank'])->middleware('password.confirm.staff')->name('releases.yank');
 });
 

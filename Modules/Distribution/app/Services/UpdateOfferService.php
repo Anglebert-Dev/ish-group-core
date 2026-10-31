@@ -77,7 +77,7 @@ class UpdateOfferService
     public function offers(Site $site, array $installed): array
     {
         $rows = $site->modules()->get()->keyBy('module');
-        $latest = Release::latestFor($rows->keys()->all());
+        $latest = Release::latestFor($rows->keys()->all(), $site->is_test);
         $offers = [];
 
         foreach ($this->installOrder($rows->keys()->all()) as $name) {

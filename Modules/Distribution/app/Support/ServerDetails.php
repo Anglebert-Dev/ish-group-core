@@ -39,7 +39,7 @@ final class ServerDetails
             'db_username' => [['nullable', 'string', 'max:128'], 'acme_finance'],
             'mail_host' => [['nullable', 'string', 'max:255'], 'mail.acme.com'],
             'mail_port' => [['nullable', 'integer', 'between:1,65535'], '587'],
-            'mail_encryption' => [['nullable', 'in:tls,ssl'], 'tls'],
+            'mail_encryption' => [['nullable', 'in:tls,ssl,none'], 'tls'],
             'mail_username' => [['nullable', 'string', 'max:255'], 'no-reply@acme.com'],
             'mail_from_address' => [['nullable', 'email', 'max:255'], 'no-reply@acme.com'],
             'business_name' => [['nullable', 'string', 'max:255'], 'Acme Ltd'],

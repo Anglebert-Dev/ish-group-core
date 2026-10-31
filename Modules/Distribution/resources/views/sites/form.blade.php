@@ -24,6 +24,9 @@
                 :hint="__('distribution::distribution.status_hint')" />
         </div>
 
+        <input type="hidden" name="is_test" value="0">
+        <x-common.checkbox name="is_test" value="1" :label="__('distribution::distribution.is_test')" :description="__('distribution::distribution.is_test_hint')" :checked="(bool) old('is_test', $site->is_test)" />
+
         <x-common.textarea name="notes" :label="__('distribution::distribution.notes')" :value="old('notes', $site->notes)" :rows="3" />
 
         @if ($isNew)

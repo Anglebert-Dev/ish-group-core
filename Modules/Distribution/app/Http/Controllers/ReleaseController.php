@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 use InvalidArgumentException;
 use Modules\Distribution\Models\Release;
+use Modules\Distribution\Models\Site;
 use Modules\Distribution\Services\ReleaseService;
 use Modules\Distribution\Services\SigningKeys;
 use Modules\Distribution\Services\SiteService;
@@ -22,6 +23,7 @@ class ReleaseController extends Controller
 
         return view('distribution::releases.index', [
             'releases' => Release::query()->latest('id')->paginate(25),
+            'testSites' => Site::query()->where('is_test', true)->count(),
             'modules' => collect($modules)->map(fn (string $name) => [
                 'name' => $name,
                 'version' => (string) Module::find($name)?->get('version', '1.0.0'),
@@ -39,7 +41,7 @@ class ReleaseController extends Controller
             'changelog' => ['nullable', 'string', 'max:5000'],
         ]);
 
-        $result = $releases->publish($data['module'], $data['changelog'] ?? null);
+        $result = $releases->publish($data['module'], $data['changelog'] ?? null, $request->boolean('test_only'));
 
         return back()->with($result['status'] ? 'success' : 'error', $result['message']);
     }
@@ -67,6 +69,13 @@ class ReleaseController extends Controller
 
         // Shown once, so it can be backed up.
         return back()->with('success', __('distribution::distribution.keys_created_web'))->with('signing_secret', $pair['secret']);
+    }
+
+    public function toEveryone(Release $release, ReleaseService $releases): RedirectResponse
+    {
+        $result = $releases->releaseToEveryone($release);
+
+        return back()->with($result['status'] ? 'success' : 'error', $result['message']);
     }
 
     public function yank(Release $release, ReleaseService $releases): RedirectResponse

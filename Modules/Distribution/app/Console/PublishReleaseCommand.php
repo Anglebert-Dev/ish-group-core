@@ -12,13 +12,13 @@ use Modules\Distribution\Services\ReleaseService;
  */
 class PublishReleaseCommand extends Command
 {
-    protected $signature = 'distribution:publish {module} {--changelog= : What changed, shown to sites}';
+    protected $signature = 'distribution:publish {module} {--changelog= : What changed, shown to sites} {--test : Offer it to test sites first}';
 
     protected $description = 'Publish a signed release of a module for self-hosted sites';
 
     public function handle(ReleaseService $releases): int
     {
-        $result = $releases->publish($this->argument('module'), $this->option('changelog'));
+        $result = $releases->publish($this->argument('module'), $this->option('changelog'), (bool) $this->option('test'));
 
         $result['status'] ? $this->components->info($result['message']) : $this->components->error($result['message']);
 

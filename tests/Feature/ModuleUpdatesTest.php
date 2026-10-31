@@ -296,13 +296,66 @@ class ModuleUpdatesTest extends TestCase
         $this->assertSame(__('updates.module_given_manual'), $note->body);
     }
 
-    public function test_updates_page_only_exists_on_linked_servers(): void
+    public function test_an_unlinked_server_only_sees_the_link_form(): void
     {
         System::removeProperty('distribution_token');
         $this->actingAs(\App\Models\User::query()->where('email', 'root@example.com')->firstOrFail(), 'staff');
 
-        $this->get(route('superadmin.updates.index'))->assertNotFound();
+        $this->get(route('superadmin.updates.index'))->assertOk()->assertSee(__('updates.link_title'))->assertSee(__('updates.not_linked_hint'))->assertDontSee(__('updates.check_now'));
+        $this->post(route('superadmin.updates.check'))->assertNotFound();
         $this->artisan('core:updates')->expectsOutputToContain(__('updates.not_linked'))->assertSuccessful();
+    }
+
+    public function test_customers_get_plain_messages_when_updates_cannot_happen(): void
+    {
+        Http::fake(['*' => fn () => throw new \Illuminate\Http\Client\ConnectionException('cURL error 7: Failed to connect')]);
+        $this->assertSame(__('updates.cannot_reach', ['url' => self::SERVER]), app(UpdateService::class)->check()['message']);
+
+        foreach ([401 => 'access_revoked', 403 => 'access_paused', 503 => 'server_unavailable'] as $status => $message) {
+            Http::swap(new \Illuminate\Http\Client\Factory);
+            Http::fake(['*' => Http::response(['message' => 'x'], $status)]);
+            $this->assertSame(__('updates.'.$message), app(UpdateService::class)->check()['message'], "HTTP {$status}");
+        }
+    }
+
+    public function test_a_link_key_relinks_the_server_after_checking_it(): void
+    {
+        $uuid = '11111111-2222-3333-4444-555555555555';
+        $key = \App\Support\Distribution\LinkKey::encode(self::SERVER, $uuid, 'ish_'.str_repeat('cd', 24));
+        $this->fakeServer();
+
+        $this->assertFalse(app(UpdateService::class)->link('not a key')['status']);
+
+        $result = app(UpdateService::class)->link($key);
+
+        $this->assertTrue($result['status'], $result['message']);
+        $this->assertSame($uuid, System::getProperty('distribution_site_uuid'));
+        $this->assertSame('ish_'.str_repeat('cd', 24), Crypt::decryptString(System::getProperty('distribution_token')));
+        Http::assertSent(fn (Request $request) => $request->hasHeader('Authorization', 'Bearer ish_'.str_repeat('cd', 24)));
+        $this->assertTrue(ActivityLog::query()->where('action', 'update_server_linked')->exists());
+    }
+
+    public function test_a_link_key_that_does_not_work_changes_nothing(): void
+    {
+        Http::fake(['*' => Http::response(['message' => 'Invalid token.'], 401)]);
+        $key = \App\Support\Distribution\LinkKey::encode(self::SERVER, '11111111-2222-3333-4444-555555555555', 'ish_'.str_repeat('ef', 24));
+
+        $result = app(UpdateService::class)->link($key);
+
+        $this->assertFalse($result['status']);
+        $this->assertStringContainsString(__('updates.access_revoked'), $result['message']);
+        $this->assertSame('site-1', System::getProperty('distribution_site_uuid'), 'the old link is kept');
+        $this->assertSame('ish_secret', Crypt::decryptString(System::getProperty('distribution_token')));
+    }
+
+    public function test_the_link_form_and_command(): void
+    {
+        $this->fakeServer();
+        $key = \App\Support\Distribution\LinkKey::encode(self::SERVER, '11111111-2222-3333-4444-555555555555', 'ish_'.str_repeat('ab', 24));
+        $this->actingAs(\App\Models\User::query()->where('email', 'root@example.com')->firstOrFail(), 'staff');
+
+        $this->withConfirmedPassword()->post(route('superadmin.updates.link'), ['key' => $key])->assertSessionHas('success');
+        $this->artisan('core:link', ['key' => 'ISH1-nope'])->assertFailed();
     }
 
     // ── Helpers ──────────────────────────────────────────────────
@@ -327,7 +380,7 @@ class ModuleUpdatesTest extends TestCase
         Http::fake(function (Request $request) use ($offers, $mode, $downloads, $forge, $nonce, $time, $assigned) {
             if (str_ends_with($request->url(), '/check-in')) {
                 $body = json_encode([
-                    'site_uuid' => 'site-1',
+                    'site_uuid' => $request['site_uuid'],
                     'nonce' => $nonce ?? $request['nonce'],
                     'server_time' => $time ?? time(),
                     'update_mode' => $mode,

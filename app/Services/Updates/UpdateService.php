@@ -7,6 +7,8 @@ use App\Services\BaseService;
 use App\Enums\NotificationType;
 use App\Services\Module\ModuleManager;
 use App\Services\Notification\NotificationService;
+use App\Support\Distribution\LinkKey;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -70,6 +72,45 @@ class UpdateService extends BaseService
         return $this->success($answer, $answer['offers'] === []
             ? __('updates.up_to_date')
             : trans_choice('updates.n_available', count($answer['offers']), ['count' => count($answer['offers'])]));
+    }
+
+    /**
+     * (Re)connect to the update server with a link key from the provider
+     * (after a revoked or lost token). Saved only if a check-in with it
+     * works; otherwise everything stays as it was.
+     */
+    public function link(string $key): array
+    {
+        $link = LinkKey::decode($key);
+
+        if (! $link) {
+            return $this->failure(__('updates.link_invalid'));
+        }
+
+        $names = ['distribution_server_url', 'distribution_site_uuid', 'distribution_token', 'distribution_assigned', 'distribution_last_error'];
+        $before = System::getProperties($names);
+
+        if (($before['distribution_site_uuid'] ?? null) !== $link['site_uuid']) {
+            System::removeProperty('distribution_assigned'); // another site's plan: start a new baseline
+        }
+
+        System::addProperty('distribution_server_url', $link['server_url']);
+        System::addProperty('distribution_site_uuid', $link['site_uuid']);
+        System::addProperty('distribution_token', Crypt::encryptString($link['token']));
+
+        $checked = $this->check();
+
+        if (! $checked['status']) {
+            foreach ($names as $name) {
+                isset($before[$name]) ? System::addProperty($name, $before[$name]) : System::removeProperty($name);
+            }
+
+            return $this->failure(__('updates.link_failed', ['error' => $checked['message']]));
+        }
+
+        audit('update_server_linked', 'Linked to the update server at '.$link['server_url'], null, ['server_url' => $link['server_url'], 'site_uuid' => $link['site_uuid']], (int) System::getProperty('primary_business_id') ?: null);
+
+        return $this->success($checked['data'], __('updates.linked').' '.$checked['message']);
     }
 
     /**

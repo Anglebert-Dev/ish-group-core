@@ -4,6 +4,7 @@ namespace Modules\Distribution\Services;
 
 use App\Services\BaseService;
 use App\Services\Module\ModuleManager;
+use App\Support\Distribution\LinkKey;
 use Illuminate\Support\Facades\DB;
 use Modules\Distribution\Enums\SiteModuleStatus;
 use Modules\Distribution\Models\Site;
@@ -152,6 +153,23 @@ class SiteService extends BaseService
         PlatformAudit::log('distribution_token_issued', "Update token issued for site {$site->name}", $site, ['last4' => substr($token, -4)]);
 
         return $token;
+    }
+
+    /**
+     * A link key: reconnects an installed site to updates without a new zip
+     * (after a revoked or lost token). Optionally revokes its other tokens.
+     */
+    public function issueLinkKey(Site $site, bool $revokeOthers): string
+    {
+        $token = $this->issueToken($site);
+
+        if ($revokeOthers) {
+            $site->tokens()->whereNull('revoked_at')->where('token_hash', '!=', SiteToken::hash($token))->update(['revoked_at' => now()]);
+        }
+
+        PlatformAudit::log('distribution_link_key_issued', "Link key issued for site {$site->name}".($revokeOthers ? ' (older keys revoked)' : ''), $site, ['last4' => substr($token, -4), 'revoked_others' => $revokeOthers]);
+
+        return LinkKey::encode(rtrim((string) config('app.url'), '/'), $site->uuid, $token);
     }
 
     public function revokeToken(SiteToken $token): array

@@ -59,6 +59,15 @@ class ServerDetailsTest extends TestCase
         $this->assertTrue(ActivityLog::query()->where('action', 'distribution_server_details_saved')->exists());
     }
 
+    public function test_email_without_encryption_is_a_valid_answer(): void
+    {
+        $this->put(route('superadmin.distribution.sites.server.update', $this->site), ['mail_host' => 'mailpit', 'mail_port' => '1025', 'mail_encryption' => 'none'])
+            ->assertRedirect();
+
+        $this->assertSame('none', $this->site->fresh()->server_details['mail_encryption']);
+        $this->assertArrayNotHasKey('scheme', \Modules\Distribution\Support\ServerDetails::installerDefaults($this->site->fresh()->server_details, 'x')['mail']);
+    }
+
     public function test_unsafe_or_wrong_answers_are_refused(): void
     {
         $this->put(route('superadmin.distribution.sites.server.update', $this->site), ['php_path' => '/usr/bin/php; rm -rf /', 'db_driver' => 'oracle'])

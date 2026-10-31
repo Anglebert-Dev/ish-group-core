@@ -31,7 +31,10 @@ class ReleaseService extends BaseService
     ) {
     }
 
-    public function publish(string $name, ?string $changelog = null): array
+    /**
+     * @param  bool  $testOnly  offer it to test sites only, until releaseToEveryone()
+     */
+    public function publish(string $name, ?string $changelog = null, bool $testOnly = false): array
     {
         $module = Module::find($name);
 
@@ -82,11 +85,27 @@ class ReleaseService extends BaseService
             'requires' => $this->modules->requires($name),
             'changelog' => $changelog ?: null,
             'published_at' => now(),
+            'test_only' => $testOnly,
         ]);
 
-        PlatformAudit::log('distribution_release_published', "{$name} {$version} published", $release, ['sha256' => $sha256]);
+        PlatformAudit::log('distribution_release_published', "{$name} {$version} published".($testOnly ? ' to test sites' : ''), $release, ['sha256' => $sha256, 'test_only' => $testOnly]);
 
-        return $this->success($release, __('distribution::distribution.release_published', ['module' => $name, 'version' => $version]));
+        return $this->success($release, __($testOnly ? 'distribution::distribution.release_published_test' : 'distribution::distribution.release_published', ['module' => $name, 'version' => $version]));
+    }
+
+    /**
+     * A release tried on test sites goes out to every site that has the module.
+     */
+    public function releaseToEveryone(Release $release): array
+    {
+        if (! $release->test_only || $release->yanked_at) {
+            return $this->failure(__('distribution::distribution.release_already_everyone'));
+        }
+
+        $release->update(['test_only' => false]);
+        PlatformAudit::log('distribution_release_to_everyone', "{$release->module} {$release->version} released to every site", $release);
+
+        return $this->success($release, __('distribution::distribution.release_to_everyone_done', ['module' => $release->module, 'version' => $release->version]));
     }
 
     /**

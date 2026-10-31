@@ -15,7 +15,7 @@ class Site extends BaseModel
     protected $table = 'distribution_sites';
 
     protected $fillable = [
-        'name', 'customer_name', 'contact_email', 'app_url', 'update_mode', 'status', 'notes', 'server_details',
+        'name', 'customer_name', 'contact_email', 'app_url', 'update_mode', 'status', 'is_test', 'notes', 'server_details',
         'core_version', 'php_version', 'db_driver', 'modules_writable', 'last_check_in_at', 'last_ip', 'installed_at',
     ];
 
@@ -25,6 +25,7 @@ class Site extends BaseModel
             'update_mode' => UpdateMode::class,
             'status' => SiteStatus::class,
             'modules_writable' => 'boolean',
+            'is_test' => 'boolean',
             'server_details' => 'array',
             'last_check_in_at' => 'datetime',
             'installed_at' => 'datetime',

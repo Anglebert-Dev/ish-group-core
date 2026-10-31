@@ -29,6 +29,7 @@
                             <tr class="hover:bg-surface">
                                 <td class="px-5 py-3.5 font-medium text-ink">
                                     {{ $site->name }}
+                                    @if ($site->is_test)<x-common.badge color="warning">{{ __('distribution::distribution.test_site') }}</x-common.badge>@endif
                                     @if ($site->app_url)<div class="text-xs text-muted">{{ $site->app_url }}</div>@endif
                                 </td>
                                 <td class="px-5 py-3.5">{{ $site->customer_name ?: '—' }}</td>

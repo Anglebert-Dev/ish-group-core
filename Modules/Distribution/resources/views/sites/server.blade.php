@@ -8,7 +8,7 @@
     $choices = [
         'hosting_type' => ['shared' => 'Shared (cPanel/Plesk)', 'vps' => 'VPS / own server', 'docker' => 'Docker'],
         'db_driver' => ['mysql' => 'MySQL / MariaDB', 'pgsql' => 'PostgreSQL'],
-        'mail_encryption' => ['tls' => 'TLS (587)', 'ssl' => 'SSL (465)'],
+        'mail_encryption' => ['tls' => 'TLS (587)', 'ssl' => 'SSL (465)', 'none' => __('distribution::distribution.mail_encryption_none')],
         'web_root_is_public' => ['1' => __('distribution::distribution.yes'), '0' => __('distribution::distribution.no')],
         'cron_only' => ['1' => __('distribution::distribution.yes'), '0' => __('distribution::distribution.no')],
     ];

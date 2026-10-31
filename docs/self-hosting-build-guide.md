@@ -202,6 +202,23 @@ Commit after each phase. Run `php artisan test` before every commit.
 
 **Before deploying Phase 1 to our own server, run `php artisan core:mark-installed` there.** Otherwise our server will redirect to the installer.
 
+### Test sites, link keys, plain errors (added 31/10/2026, Distribution 1.3.0)
+
+- **Test sites:** edit a site and tick **Test site**. When any test site exists, Publish offers **Test sites first** (ticked by default): the release (`distribution_releases.test_only`) is offered and downloadable only for test sites. Click **Release to everyone** on the Releases page when it's checked. `distribution:publish X --test` does the same from the terminal.
+- **Link keys:** on the site page, Update tokens → **New link key**, with an optional email and "revoke all older keys" (ticked by default). The key is `ISH1-` plus base64url `{u: our APP_URL, s: site uuid, t: new token}` (`App\Support\Distribution\LinkKey`), shown once. On their side: Super Admin → **Updates** → **Link to your provider**, or `php artisan core:link <key>`. It's saved only if a check-in with it succeeds; otherwise the old link stays. The Updates page now opens on unlinked servers too, showing only the link form; the tab still appears only on linked servers.
+- **Plain errors on their Updates page:**
+  - can't reach the server → `updates.cannot_reach`
+  - HTTP 401 → "access revoked"
+  - HTTP 403 → "paused"
+  - HTTP 5xx → "not available"
+
+  The technical details go to their log.
+- **Smaller changes:**
+  - email encryption accepts `none`
+  - the port hint no longer suggests only 587 or 465 are allowed
+  - no install-code box after building (the code is on the zip row)
+  - in production, the Zips section warns when `APP_URL` isn't https
+
 ### Emails to the customer (added 31/10/2026, Distribution 1.2.0)
 
 - **Step 1, "Email the guide and form"** (server details card): a signed link to the setup guide (30 days, no account needed) and the server form as a CSV attachment.
@@ -387,6 +404,6 @@ Commit after each phase. Run `php artisan test` before every commit.
 ## 12. Open points
 
 - **HTTPS:** nothing enforces HTTPS for the update server address yet. Our `APP_URL` must be `https://` in production, because builds put it in every `site.json`.
-- **Core self-update** (app/, vendor) is a later phase. Until then, a core change means a new zip for each site.
+- **Core self-update** (app/, vendor) is a later phase. Until then, a core change means a new zip for each site. A server installed from an older zip also lacks newer core features (link form, plan changes) until it gets a new zip.
 - Should a customer's admin be allowed to switch modules off on their server? They can today, through Super Admin → Modules, because they are superadmin there.
 - Docker: `storage/` and `Modules/` must be persistent volumes for updates to survive a container restart. Otherwise use `manual` mode and ship new images.

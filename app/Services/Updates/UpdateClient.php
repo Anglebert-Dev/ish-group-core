@@ -4,6 +4,7 @@ namespace App\Services\Updates;
 
 use App\Models\System\System;
 use App\Support\Distribution\PackageSignature;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
@@ -42,13 +43,23 @@ class UpdateClient
     {
         $nonce = bin2hex(random_bytes(16));
 
-        $response = $this->request()->post($this->serverUrl().'/api/distribution/v1/check-in', $payload + [
-            'site_uuid' => $this->siteUuid(),
-            'nonce' => $nonce,
-        ]);
+        try {
+            $response = $this->request()->post($this->serverUrl().'/api/distribution/v1/check-in', $payload + [
+                'site_uuid' => $this->siteUuid(),
+                'nonce' => $nonce,
+            ]);
+        } catch (ConnectionException $e) {
+            report($e); // the technical detail stays in the log
+            throw new UpdateException(__('updates.cannot_reach', ['url' => $this->serverUrl()]));
+        }
 
         if (! $response->successful()) {
-            throw new UpdateException(__('updates.server_said', ['status' => $response->status(), 'message' => $response->json('message') ?? '']));
+            throw new UpdateException(match (true) {
+                $response->status() === 401 => __('updates.access_revoked'),
+                $response->status() === 403 => __('updates.access_paused'),
+                $response->serverError() => __('updates.server_unavailable'),
+                default => __('updates.server_said', ['status' => $response->status(), 'message' => $response->json('message') ?? '']),
+            });
         }
 
         $body = $response->body();
@@ -86,7 +97,8 @@ class UpdateClient
         try {
             $response = $this->request()->timeout(300)->sink($target)->get($offer['download_url']);
         } catch (Throwable $e) {
-            throw new UpdateException(__('updates.download_failed', ['error' => $e->getMessage()]));
+            report($e);
+            throw new UpdateException(__('updates.cannot_reach', ['url' => $this->serverUrl()]));
         }
 
         if (! $response->successful()) {

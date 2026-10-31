@@ -2,12 +2,14 @@
     <x-superadmin.nav />
 
     <x-common.page-header :title="__('updates.title')" :description="__('updates.description')">
-        <x-slot:actions>
-            <form action="{{ route('superadmin.updates.check') }}" method="POST">
-                @csrf
-                <x-common.button type="submit" size="sm" variant="secondary">{{ __('updates.check_now') }}</x-common.button>
-            </form>
-        </x-slot:actions>
+        @if ($linked)
+            <x-slot:actions>
+                <form action="{{ route('superadmin.updates.check') }}" method="POST">
+                    @csrf
+                    <x-common.button type="submit" size="sm" variant="secondary">{{ __('updates.check_now') }}</x-common.button>
+                </form>
+            </x-slot:actions>
+        @endif
     </x-common.page-header>
 
     @if ($lastError)
@@ -15,6 +17,10 @@
     @endif
     @unless ($writable)
         <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 px-5 py-4 text-sm">{{ __('updates.modules_not_writable') }}</div>
+    @endunless
+
+    @unless ($linked)
+        <div class="mb-6 rounded-xl border border-line bg-white px-5 py-4 text-sm text-muted">{{ __('updates.not_linked_hint') }}</div>
     @endunless
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
@@ -87,6 +93,13 @@
                 <p class="text-muted">{{ __('updates.version') }}</p>
                 <p class="font-mono text-ink">{{ $version }}</p>
             </div>
+            <form action="{{ route('superadmin.updates.link') }}" method="POST" class="pt-3 border-t border-line space-y-2">
+                @csrf
+                <p class="font-medium text-ink">{{ __('updates.link_title') }}</p>
+                <p class="text-xs text-muted">{{ __('updates.link_hint') }}</p>
+                <x-common.textarea name="key" :rows="3" :placeholder="'ISH1-…'" required />
+                <x-common.button type="submit" size="sm" variant="secondary">{{ __('updates.link_button') }}</x-common.button>
+            </form>
         </div>
     </div>
 </x-layouts.app>

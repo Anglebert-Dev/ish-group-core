@@ -11,6 +11,9 @@
         <div class="bg-white border border-line rounded-xl p-5 space-y-2 text-sm">
             <div class="flex justify-between gap-3"><span class="text-muted">{{ __('body.status') }}</span><x-common.badge :color="$site->status->color()">{{ $site->status->label() }}</x-common.badge></div>
             <div class="flex justify-between gap-3"><span class="text-muted">{{ __('distribution::distribution.update_mode') }}</span><span>{{ $site->update_mode->label() }}</span></div>
+            @if ($site->is_test)
+                <div class="flex justify-between gap-3"><span class="text-muted">{{ __('distribution::distribution.is_test') }}</span><x-common.badge color="warning">{{ __('distribution::distribution.test_site') }}</x-common.badge></div>
+            @endif
             <div class="flex justify-between gap-3"><span class="text-muted">{{ __('distribution::distribution.app_url') }}</span><span class="truncate">{{ $site->app_url ?: '—' }}</span></div>
             <div class="flex justify-between gap-3"><span class="text-muted">{{ __('distribution::distribution.contact_email') }}</span><span class="truncate">{{ $site->contact_email ?: '—' }}</span></div>
         </div>
@@ -173,6 +176,9 @@
                     <span class="font-mono font-semibold text-ink">{{ rtrim((string) config('app.url'), '/') }}</span>
                 </p>
                 <p class="text-xs text-muted max-w-2xl">{{ __('distribution::distribution.zip_contacts_hint') }}</p>
+                @if (app()->environment('production') && ! str_starts_with((string) config('app.url'), 'https://'))
+                    <p class="text-sm text-danger mt-1 max-w-2xl">{{ __('distribution::distribution.zip_contacts_not_https') }}</p>
+                @endif
             </div>
             <form method="POST" action="{{ route('superadmin.distribution.sites.builds.store', $site) }}"
                   onsubmit="var b=this.querySelector('button'); b.disabled=true; b.textContent=@js(__('distribution::distribution.building_wait'));">
@@ -181,12 +187,6 @@
             </form>
         </div>
 
-        @if (session('install_code'))
-            <div class="m-5 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
-                <p class="text-sm text-amber-900">{{ __('distribution::distribution.install_code_once') }}</p>
-                <p class="mt-2 font-mono text-2xl font-bold tracking-widest text-ink">{{ session('install_code') }}</p>
-            </div>
-        @endif
 
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
@@ -276,12 +276,32 @@
             <p class="font-semibold text-ink">{{ __('distribution::distribution.tokens') }}</p>
             <p class="text-sm text-muted">{{ __('distribution::distribution.tokens_hint') }}</p>
         </div>
+
+        @if (session('link_key'))
+            <div class="m-5 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
+                <p class="text-sm text-amber-900">{{ __('distribution::distribution.link_key_once') }}</p>
+                <p class="mt-2 font-mono text-xs break-all text-ink select-all bg-white border border-amber-200 rounded-lg p-3">{{ session('link_key') }}</p>
+            </div>
+        @endif
+
+        <form method="POST" action="{{ route('superadmin.distribution.sites.link-key', $site) }}" class="p-5 border-b border-line space-y-3">
+            @csrf
+            <p class="text-sm text-muted">{{ __('distribution::distribution.link_key_hint') }}</p>
+            <div class="flex flex-wrap items-end gap-3">
+                <div class="flex-1 min-w-[240px]">
+                    <x-common.input name="email" type="email" :label="__('distribution::distribution.email_label')" :value="$site->contact_email" :hint="__('distribution::distribution.link_key_email_hint')" />
+                </div>
+                <x-common.button type="submit" size="sm" variant="secondary">{{ __('distribution::distribution.link_key') }}</x-common.button>
+            </div>
+            <input type="hidden" name="revoke_others" value="0">
+            <x-common.checkbox name="revoke_others" value="1" :checked="true" inline :label="__('distribution::distribution.link_key_revoke_others')" />
+        </form>
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <tbody class="divide-y divide-line">
                     @forelse ($site->tokens as $token)
                         <tr>
-                            <td class="px-5 py-3.5 font-mono">ish_…{{ $token->last4 }}</td>
+                            <td class="px-5 py-3.5"><span class="font-mono">ish_…{{ $token->last4 }}</span> <span class="text-xs text-muted">({{ $token->build_id ? __('distribution::distribution.token_from_zip') : __('distribution::distribution.token_from_link') }})</span></td>
                             <td class="px-5 py-3.5 text-muted whitespace-nowrap">{{ __('distribution::distribution.issued') }} {{ $token->created_at?->format('d M Y') }}</td>
                             <td class="px-5 py-3.5 text-muted whitespace-nowrap">{{ __('distribution::distribution.last_used') }}: {{ $token->last_used_at?->diffForHumans() ?? __('distribution::distribution.never') }}</td>
                             <td class="px-5 py-3.5 text-right">

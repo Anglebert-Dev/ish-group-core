@@ -95,6 +95,29 @@ class CustomerMailer extends BaseService
         return $this->success(null, __('distribution::distribution.email_package_sent', ['email' => $email]));
     }
 
+    public function sendLinkKey(Site $site, string $key, string $email): array
+    {
+        $updatesPage = ($site->app_url ?: ($site->server_details['app_url'] ?? null));
+
+        $this->send($email, new CustomerEmail(
+            $this->businessId(),
+            __('distribution::distribution.email_link_subject', ['site' => $site->name]),
+            [
+                __('distribution::distribution.email_hello', ['name' => $site->customer_name ?: '']),
+                __('distribution::distribution.email_link_intro', ['site' => $site->name, 'provider' => $this->provider()]),
+                __('distribution::distribution.email_link_key', ['key' => $key]),
+                __('distribution::distribution.email_link_steps'),
+            ],
+            $updatesPage ? __('distribution::distribution.email_link_open') : null,
+            $updatesPage ? rtrim($updatesPage, '/').'/app/super-admin/updates' : null,
+            [__('distribution::distribution.email_package_keep_code'), __('distribution::distribution.email_reply_questions')],
+        ));
+
+        PlatformAudit::log('distribution_link_key_emailed', "Link key emailed to {$email} for site {$site->name}", $site, ['email' => $email]);
+
+        return $this->success(null, __('distribution::distribution.email_link_sent', ['email' => $email]));
+    }
+
     public function guideUrl(Site $site): string
     {
         return URL::temporarySignedRoute('distribution.customer.guide', now()->addDays(self::LINK_DAYS), ['site' => $site]);

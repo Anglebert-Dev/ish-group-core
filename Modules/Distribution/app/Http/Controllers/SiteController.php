@@ -14,6 +14,7 @@ use Modules\Distribution\Models\Release;
 use Modules\Distribution\Models\Site;
 use Modules\Distribution\Models\SiteToken;
 use Modules\Distribution\Services\BuildService;
+use Modules\Distribution\Services\CustomerMailer;
 use Modules\Distribution\Services\SiteService;
 use Modules\Distribution\Support\PlatformAudit;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -41,6 +42,7 @@ class SiteController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $request->merge(['is_test' => $request->boolean('is_test')]);
         $data = $request->validate($this->rules() + ['modules' => ['array'], 'modules.*' => ['string']]);
         $result = $this->sites->create(collect($data)->except('modules')->all(), $data['modules'] ?? []);
 
@@ -59,7 +61,7 @@ class SiteController extends Controller
 
         return view('distribution::sites.show', [
             'site' => $site,
-            'latest' => Release::latestFor($site->moduleNames()),
+            'latest' => Release::latestFor($site->moduleNames(), $site->is_test),
             'assignable' => array_values(array_diff($this->sites->assignableModules(), $site->moduleNames())),
         ]);
     }
@@ -71,6 +73,7 @@ class SiteController extends Controller
 
     public function update(Request $request, Site $site): RedirectResponse
     {
+        $request->merge(['is_test' => $request->boolean('is_test')]);
         $result = $this->sites->update($site, $request->validate($this->rules()));
 
         return redirect()->route('superadmin.distribution.sites.show', $site)->with('success', $result['message']);
@@ -109,8 +112,7 @@ class SiteController extends Controller
             return back()->with('error', $result['message']);
         }
 
-        // Shown once: only its hash is kept (and put in the zip).
-        return back()->with('success', $result['message'])->with('install_code', $started['data']['code']);
+        return back()->with('success', $result['message']);
     }
 
     public function deleteBuild(Site $site, Build $build, BuildService $builds): RedirectResponse
@@ -131,6 +133,20 @@ class SiteController extends Controller
         return response()->download($builds->absolutePath($build), $build->filename);
     }
 
+    public function linkKey(Request $request, Site $site, CustomerMailer $mailer): RedirectResponse
+    {
+        $data = $request->validate(['email' => ['nullable', 'email', 'max:255']]);
+        $key = $this->sites->issueLinkKey($site, $request->boolean('revoke_others'));
+        $message = __('distribution::distribution.link_key_created');
+
+        if (! empty($data['email'])) {
+            $message .= ' '.$mailer->sendLinkKey($site, $key, $data['email'])['message'];
+        }
+
+        // Shown once here; only its hash is kept.
+        return back()->with('success', $message)->with('link_key', $key);
+    }
+
     public function revokeToken(Site $site, SiteToken $token): RedirectResponse
     {
         abort_unless($token->site_id === $site->id, 404);
@@ -149,6 +165,7 @@ class SiteController extends Controller
             'app_url' => ['nullable', 'url:http,https', 'max:255'],
             'update_mode' => ['required', Rule::enum(UpdateMode::class)],
             'status' => ['required', Rule::enum(SiteStatus::class)],
+            'is_test' => ['boolean'],
             'notes' => ['nullable', 'string', 'max:5000'],
         ];
     }

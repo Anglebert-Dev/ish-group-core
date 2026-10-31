@@ -222,6 +222,45 @@ class UpdateApiTest extends TestCase
         $this->get(route('superadmin.distribution.sites.show', $this->site))->assertOk()->assertSee('1.1.0 → 1.2.0');
     }
 
+    public function test_releases_for_test_sites_first_reach_only_test_sites_until_released_to_everyone(): void
+    {
+        $other = app(SiteService::class)->create(['name' => 'Pilot', 'is_test' => true], ['Savings'])['data'];
+        $pilotToken = app(SiteService::class)->issueToken($other);
+        $release = app(ReleaseService::class)->publish('Savings', 'try me', testOnly: true)['data'];
+        $installed = ['modules' => [['name' => 'Savings', 'installed_version' => '0.9.0']]];
+
+        $offered = fn (string $token, Site $site) => array_column($this->withToken($token)->postJson(route('distribution.api.check-in'), $this->checkIn(['site_uuid' => $site->uuid] + $installed))->json('offers'), 'module');
+
+        $this->assertContains('Savings', $offered($pilotToken, $other), 'test site gets it');
+        $this->assertNotContains('Savings', $offered($this->token, $this->site), 'others wait');
+        $this->withToken($this->token)->getJson(route('distribution.api.download', $release))->assertNotFound();
+
+        $this->actingAs($this->makeSuperAdmin(['email' => 'root3@example.com']), 'staff');
+        $this->get(route('superadmin.distribution.releases.index'))->assertSee(__('distribution::distribution.test_sites_only'))->assertSee(__('distribution::distribution.publish_test_first'));
+        $this->post(route('superadmin.distribution.releases.everyone', $release))->assertSessionHas('success');
+
+        $this->assertContains('Savings', $offered($this->token, $this->site), 'everyone now');
+    }
+
+    public function test_a_link_key_reconnects_a_site_and_can_retire_old_tokens(): void
+    {
+        NotificationFacade::fake();
+        $this->actingAs($this->makeSuperAdmin(['email' => 'root4@example.com']), 'staff');
+
+        $this->withConfirmedPassword()->post(route('superadmin.distribution.sites.link-key', $this->site), ['email' => 'it@acme.test', 'revoke_others' => '1'])
+            ->assertSessionHas('success')
+            ->assertSessionHas('link_key');
+
+        $link = \App\Support\Distribution\LinkKey::decode(session('link_key'));
+        $this->assertSame($this->site->uuid, $link['site_uuid']);
+
+        $this->withToken($this->token)->postJson(route('distribution.api.check-in'), $this->checkIn())->assertUnauthorized();
+        $this->withToken($link['token'])->postJson(route('distribution.api.check-in'), $this->checkIn())->assertOk();
+
+        NotificationFacade::assertSentOnDemand(\Modules\Distribution\Notifications\CustomerEmail::class, fn ($mail) => str_contains(implode(' ', $mail->lines), session('link_key')));
+        $this->assertTrue(\App\Models\ActivityLog\ActivityLog::query()->where('action', 'distribution_link_key_issued')->exists());
+    }
+
     private function checkIn(array $overrides = []): array
     {
         return $overrides + [

@@ -65,7 +65,7 @@ class UpdateApiController extends Controller
         $site = $this->site($request);
         $assigned = $site->modules()->where('module', $release->module)->exists();
 
-        if (! $assigned || $release->yanked_at || ! $release->published_at || ! is_file($releases->absolutePath($release))) {
+        if (! $assigned || $release->yanked_at || ! $release->published_at || ($release->test_only && ! $site->is_test) || ! is_file($releases->absolutePath($release))) {
             return response()->json(['message' => 'Not found.'], 404);
         }
 

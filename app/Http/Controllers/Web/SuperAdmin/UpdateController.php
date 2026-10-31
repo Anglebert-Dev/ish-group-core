@@ -19,11 +19,13 @@ class UpdateController extends Controller
     {
     }
 
+    /**
+     * Open on any server: unlinked ones only see "Link to your provider".
+     */
     public function index(): View
     {
-        abort_unless($this->updates->linked(), 404);
-
         return view('app.super-admin.updates', [
+            'linked' => $this->updates->linked(),
             'offers' => $this->updates->offers(),
             'history' => $this->updates->history(),
             'mode' => System::getProperty('distribution_update_mode', 'manual'),
@@ -39,6 +41,14 @@ class UpdateController extends Controller
         abort_unless($this->updates->linked(), 404);
 
         $result = $this->updates->check();
+
+        return back()->with($result['status'] ? 'success' : 'error', $result['message']);
+    }
+
+    public function link(Request $request): RedirectResponse
+    {
+        $key = $request->validate(['key' => ['required', 'string', 'max:2000']])['key'];
+        $result = $this->updates->link($key);
 
         return back()->with($result['status'] ? 'success' : 'error', $result['message']);
     }

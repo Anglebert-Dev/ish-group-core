@@ -35,7 +35,7 @@ class SubscriptionLifecycleTest extends BillingTestCase
 
         $subscription->refresh();
         $this->assertSame(SubscriptionStatus::Active, $subscription->status);
-        $this->assertTrue($subscription->current_period_end->between(now()->addMonth()->subMinute(), now()->addMonth()->addMinute()));
+        $this->assertTrue($subscription->current_period_end->between(now()->addMonthNoOverflow()->subMinute(), now()->addMonthNoOverflow()->addMinute()), "one month on, month-end safe (31 Oct → 30 Nov)");
         $this->assertTrue($business->fresh()->canUseModule('Frontend'));
     }
 

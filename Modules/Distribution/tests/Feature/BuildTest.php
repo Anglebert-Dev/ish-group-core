@@ -154,7 +154,7 @@ class BuildTest extends TestCase
 
         $this->post(route('superadmin.distribution.sites.builds.store', $site))
             ->assertSessionHas('success', __('distribution::distribution.build_ready'))
-            ->assertSessionHas('install_code');
+            ->assertSessionMissing('install_code');
 
         $this->assertSame(BuildStatus::Ready, Build::query()->firstOrFail()->status);
         $this->get(route('superadmin.distribution.sites.show', $site))->assertOk()->assertSee(__('distribution::distribution.download'));

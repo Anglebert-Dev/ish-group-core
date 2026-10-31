@@ -34,6 +34,12 @@
             <x-common.select name="module" :label="__('distribution::distribution.module')" hide-placeholder required
                 :options="collect($modules)->mapWithKeys(fn ($m) => [$m['name'] => $m['name'].' — '.__('distribution::distribution.in_code').' '.$m['version'].' · '.__('distribution::distribution.published_version').' '.($m['published'] ?? '—')])->all()" />
             <x-common.textarea name="changelog" :label="__('distribution::distribution.changelog')" :rows="3" />
+            @if ($testSites)
+                <x-common.checkbox name="test_only" value="1" :checked="true" :label="__('distribution::distribution.publish_test_first')"
+                    :description="trans_choice('distribution::distribution.publish_test_first_hint', $testSites, ['count' => $testSites])" />
+            @else
+                <p class="text-xs text-muted">{{ __('distribution::distribution.publish_no_test_sites') }}</p>
+            @endif
             <x-common.button type="submit" :disabled="! $keysConfigured">{{ __('distribution::distribution.publish') }}</x-common.button>
         </form>
 
@@ -76,10 +82,17 @@
                                 <td class="px-5 py-3.5 whitespace-nowrap text-muted">{{ $release->published_at?->format('d M Y H:i') }}</td>
                                 <td class="px-5 py-3.5 whitespace-nowrap text-muted">{{ number_format($release->size / 1024, 0) }} KB</td>
                                 <td class="px-5 py-3.5 text-muted">{{ $release->changelog ?: '—' }}</td>
-                                <td class="px-5 py-3.5">
+                                <td class="px-5 py-3.5 whitespace-nowrap">
                                     @if ($release->yanked_at)
                                         <x-common.badge color="muted">{{ __('distribution::distribution.withdrawn') }}</x-common.badge>
                                     @else
+                                        @if ($release->test_only)
+                                            <x-common.badge color="warning">{{ __('distribution::distribution.test_sites_only') }}</x-common.badge>
+                                            <x-common.action-button :action="route('superadmin.distribution.releases.everyone', $release)" color="success"
+                                                data-confirm data-confirm-title="{{ __('distribution::distribution.release_to_everyone_confirm', ['module' => $release->module, 'version' => $release->version]) }}">
+                                                {{ __('distribution::distribution.release_to_everyone') }}
+                                            </x-common.action-button>
+                                        @endif
                                         <x-common.action-button :action="route('superadmin.distribution.releases.yank', $release)" color="danger"
                                             data-confirm data-confirm-title="{{ __('distribution::distribution.yank_confirm', ['module' => $release->module, 'version' => $release->version]) }}" data-confirm-variant="danger">
                                             {{ __('distribution::distribution.yank') }}

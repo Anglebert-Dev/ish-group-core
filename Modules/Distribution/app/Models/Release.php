@@ -14,7 +14,7 @@ class Release extends BaseModel
 
     protected $fillable = [
         'module', 'version', 'sha256', 'signature', 'size', 'path', 'requires',
-        'min_core_version', 'changelog', 'published_at', 'yanked_at',
+        'min_core_version', 'changelog', 'published_at', 'test_only', 'yanked_at',
     ];
 
     protected function casts(): array
@@ -23,6 +23,7 @@ class Release extends BaseModel
             'size' => 'integer',
             'requires' => 'array',
             'published_at' => 'datetime',
+            'test_only' => 'boolean',
             'yanked_at' => 'datetime',
         ];
     }
@@ -35,13 +36,16 @@ class Release extends BaseModel
 
     /**
      * The newest available release of each of $modules (version order, not date).
+     * Releases still "for test sites first" count only when $testSite.
      *
      * @param  list<string>  $modules
      * @return array<string, self> module => release
      */
-    public static function latestFor(array $modules): array
+    public static function latestFor(array $modules, bool $testSite = true): array
     {
-        return static::query()->available()->whereIn('module', $modules)->get()
+        return static::query()->available()->whereIn('module', $modules)
+            ->when(! $testSite, fn (Builder $query) => $query->where('test_only', false))
+            ->get()
             ->groupBy('module')
             ->map(fn ($releases) => $releases->sort(fn (self $a, self $b) => version_compare($b->version, $a->version))->first())
             ->all();
