@@ -1,0 +1,16 @@
+# Only used when the host's web root is this folder instead of public/
+# (common on shared hosting). Sends every request into public/ and never
+# serves the app's own files (.env, storage, vendor, Modules, …).
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteRule ^(\.env|\.git|storage|vendor|Modules|bootstrap|config|database|app|routes|resources|tests)(/|$) - [F,L]
+    RewriteRule ^(artisan|composer\.(json|lock)|package(-lock)?\.json|phpunit\.xml)$ - [F,L]
+
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>

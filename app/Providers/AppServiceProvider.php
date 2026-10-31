@@ -10,6 +10,7 @@ use App\Support\Mail\BrandedMail;
 use App\Services\Module\ModuleManager;
 use App\Services\Notification\NotificationService;
 use App\Services\Setting\SettingService;
+use App\Support\Installer\Installer;
 use App\Support\Menu\AdminMenu;
 use App\Support\Entitlements\Quota;
 use App\Support\Entitlements\UnlimitedEntitlements;
@@ -124,7 +125,24 @@ class AppServiceProvider extends ServiceProvider
             );
         });
 
+        $this->registerViewComposers();
+
+        Blade::directive('datetime', function ($expression) {
+            $expression = trim($expression) !== '' ? $expression : 'null';
+
+            return "<?php echo \\App\\Libraries\\GeneralLibrary::formatDateTime($expression); ?>";
+        });
+    }
+
+    private function registerViewComposers(): void
+    {
         View::composer('*', function ($view) {
+            // Before install there is no database to read branding from.
+            // Asked at render time, after RedirectToInstaller has run.
+            if (! Installer::isInstalled()) {
+                return;
+            }
+
             $branding = app(SettingService::class)->current();
             $view->with('branding', $branding);
             $view->with('company', $branding->companyName());
@@ -141,12 +159,6 @@ class AppServiceProvider extends ServiceProvider
 
             $view->with('headerNotifications', $notifications->recentForHeader($user));
             $view->with('headerUnreadCount', $notifications->unreadCount($user));
-        });
-
-        Blade::directive('datetime', function ($expression) {
-            $expression = trim($expression) !== '' ? $expression : 'null';
-
-            return "<?php echo \\App\\Libraries\\GeneralLibrary::formatDateTime($expression); ?>";
         });
     }
 

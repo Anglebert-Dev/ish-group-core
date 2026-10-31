@@ -40,7 +40,9 @@ return [
 
         'public' => [
             'driver' => 'local',
-            'root' => storage_path('app/public'),
+            // Hosts that forbid symlinks (no storage:link): the installer sets
+            // PUBLIC_DISK_IN_PUBLIC and uploads go straight to public/storage.
+            'root' => env('PUBLIC_DISK_IN_PUBLIC', false) ? public_path('storage') : storage_path('app/public'),
             'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
             'visibility' => 'public',
             'throw' => false,

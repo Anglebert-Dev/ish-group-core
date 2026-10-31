@@ -15,6 +15,10 @@ return [
 
     'default' => env('QUEUE_CONNECTION', 'database'),
 
+    // Shared hosting with cron only (no Supervisor): schedule:run also works
+    // through the queue every minute (routes/console.php).
+    'via_scheduler' => (bool) env('QUEUE_VIA_SCHEDULER', false),
+
     /*
     |--------------------------------------------------------------------------
     | Queue Connections

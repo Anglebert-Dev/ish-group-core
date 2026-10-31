@@ -11,7 +11,11 @@ class SecurityHeaders
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (app()->environment('production')) {
+        // Only when the app's own URL is https: a self-hosted copy may run on
+        // plain http (and must, to reach the installer on a fresh server).
+        $https = app()->environment('production') && str_starts_with((string) config('app.url'), 'https://');
+
+        if ($https) {
             URL::forceScheme('https');
 
             if (! $request->secure() && ! $request->is('up')) {
@@ -26,7 +30,7 @@ class SecurityHeaders
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
-        if (app()->environment('production')) {
+        if ($https) {
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
         }
 
