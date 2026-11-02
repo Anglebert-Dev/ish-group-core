@@ -10,11 +10,14 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class Release extends BaseModel
 {
+    /** Releases of the core itself use this reserved name. */
+    public const CORE = 'Core';
+
     protected $table = 'distribution_releases';
 
     protected $fillable = [
         'module', 'version', 'sha256', 'signature', 'size', 'path', 'requires',
-        'min_core_version', 'changelog', 'published_at', 'test_only', 'yanked_at',
+        'min_core_version', 'min_php', 'changelog', 'published_at', 'test_only', 'yanked_at',
     ];
 
     protected function casts(): array
@@ -32,6 +35,15 @@ class Release extends BaseModel
     public function scopeAvailable(Builder $query): Builder
     {
         return $query->whereNotNull('published_at')->whereNull('yanked_at');
+    }
+
+    /**
+     * A comparable version from what a site reports ("1.2.0+abc123" → "1.2.0");
+     * anything else (an old zip's git commit, "dev") counts as 0.0.0.
+     */
+    public static function plainVersion(?string $version): string
+    {
+        return preg_match('/^(\d+\.\d+(\.\d+)?)/', (string) $version, $match) ? $match[1] : '0.0.0';
     }
 
     /**

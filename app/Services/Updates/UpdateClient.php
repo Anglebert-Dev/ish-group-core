@@ -128,7 +128,8 @@ class UpdateClient
         return is_array($offer)
             && preg_match('/^[A-Z][A-Za-z0-9]{0,63}$/', (string) ($offer['module'] ?? '')) === 1
             && ! in_array(strtolower($offer['module']), $neverShip, true)
-            && in_array($offer['action'] ?? null, ['install', 'update'], true)
+            && in_array($offer['action'] ?? null, ['install', 'update', 'core'], true)
+            && (($offer['action'] === 'core') === ($offer['module'] === 'Core'))
             && preg_match('/^\d+(\.\d+){0,3}([-+][A-Za-z0-9.]+)?$/', (string) ($offer['version'] ?? '')) === 1
             && preg_match('/^[a-f0-9]{64}$/', (string) ($offer['sha256'] ?? '')) === 1
             && filled($offer['signature'] ?? null)

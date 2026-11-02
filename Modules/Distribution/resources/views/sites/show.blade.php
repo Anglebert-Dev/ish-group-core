@@ -21,7 +21,13 @@
             <p class="font-semibold text-ink mb-1">{{ __('distribution::distribution.reported') }}</p>
             <div class="grid sm:grid-cols-2 gap-x-8 gap-y-2">
                 <div class="flex justify-between gap-3"><span class="text-muted">{{ __('distribution::distribution.last_check_in') }}</span><span>{{ $site->last_check_in_at?->diffForHumans() ?? __('distribution::distribution.never') }}</span></div>
-                <div class="flex justify-between gap-3"><span class="text-muted">{{ __('distribution::distribution.core_version') }}</span><span>{{ $site->core_version ?: '—' }}</span></div>
+                @php $latestCore = \Modules\Distribution\Models\Release::latestFor([\Modules\Distribution\Models\Release::CORE], $site->is_test)[\Modules\Distribution\Models\Release::CORE] ?? null; @endphp
+                <div class="flex justify-between gap-3"><span class="text-muted">{{ __('distribution::distribution.core_version') }}</span>
+                    <span>{{ $site->core_version ?: '—' }}
+                        @if ($latestCore && version_compare($latestCore->version, \Modules\Distribution\Models\Release::plainVersion($site->core_version), '>'))
+                            <span class="text-warning">→ {{ $latestCore->version }} {{ __('distribution::distribution.core_available') }}</span>
+                        @endif
+                    </span></div>
                 <div class="flex justify-between gap-3"><span class="text-muted">{{ __('distribution::distribution.php_version') }}</span><span>{{ $site->php_version ?: '—' }}</span></div>
                 <div class="flex justify-between gap-3"><span class="text-muted">{{ __('distribution::distribution.db_driver') }}</span><span>{{ $site->db_driver ?: '—' }}</span></div>
                 <div class="flex justify-between gap-3"><span class="text-muted">{{ __('distribution::distribution.modules_writable') }}</span>

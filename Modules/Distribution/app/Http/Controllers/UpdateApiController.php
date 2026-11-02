@@ -63,7 +63,7 @@ class UpdateApiController extends Controller
     public function download(Request $request, Release $release, ReleaseService $releases): BinaryFileResponse|JsonResponse
     {
         $site = $this->site($request);
-        $assigned = $site->modules()->where('module', $release->module)->exists();
+        $assigned = $release->module === Release::CORE || $site->modules()->where('module', $release->module)->exists();
 
         if (! $assigned || $release->yanked_at || ! $release->published_at || ($release->test_only && ! $site->is_test) || ! is_file($releases->absolutePath($release))) {
             return response()->json(['message' => 'Not found.'], 404);
@@ -80,7 +80,7 @@ class UpdateApiController extends Controller
             'site_uuid' => ['required', 'string'],
             'results' => ['required', 'array', 'max:100'],
             'results.*.module' => ['required', 'string', 'max:100'],
-            'results.*.action' => ['required', 'in:install,update,disable,enable'],
+            'results.*.action' => ['required', 'in:install,update,disable,enable,core'],
             'results.*.from_version' => ['nullable', 'string', 'max:32'],
             'results.*.to_version' => ['required', 'string', 'max:32'],
             'results.*.status' => ['required', 'in:success,failed,rolled_back'],

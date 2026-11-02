@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Modules\Distribution\Console\BuildSiteCommand;
 use Modules\Distribution\Console\KeygenCommand;
 use Modules\Distribution\Console\PruneCommand;
+use Modules\Distribution\Console\PublishCoreCommand;
 use Modules\Distribution\Console\PublishReleaseCommand;
 
 /**
@@ -26,6 +27,7 @@ class DistributionServiceProvider extends CoreModuleServiceProvider
         BuildSiteCommand::class,
         KeygenCommand::class,
         PruneCommand::class,
+        PublishCoreCommand::class,
         PublishReleaseCommand::class,
     ];
 

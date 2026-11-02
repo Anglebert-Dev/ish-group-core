@@ -58,6 +58,25 @@
         </div>
     </div>
 
+    <form method="POST" action="{{ route('superadmin.distribution.releases.core') }}" class="bg-white border border-line rounded-xl p-5 space-y-4 mb-6"
+          onsubmit="var b=this.querySelector('button[type=submit]'); b.disabled=true; b.textContent=@js(__('distribution::distribution.building_wait'));">
+        @csrf
+        <div>
+            <p class="font-semibold text-ink">{{ __('distribution::distribution.publish_core') }}</p>
+            <p class="text-sm text-muted">{{ __('distribution::distribution.publish_core_hint') }}</p>
+            <p class="text-sm mt-2">
+                {{ __('distribution::distribution.core_in_code') }} <span class="font-mono font-semibold">{{ $coreVersion }}</span>
+                · {{ __('distribution::distribution.published_version') }} <span class="font-mono font-semibold">{{ $corePublished ?? '—' }}</span>
+            </p>
+        </div>
+        <x-common.textarea name="changelog" :label="__('distribution::distribution.changelog')" :rows="2" />
+        @if ($testSites)
+            <x-common.checkbox name="test_only" value="1" :checked="true" :label="__('distribution::distribution.publish_test_first')"
+                :description="trans_choice('distribution::distribution.publish_test_first_hint', $testSites, ['count' => $testSites])" />
+        @endif
+        <x-common.button type="submit" :disabled="! $keysConfigured" variant="secondary">{{ __('distribution::distribution.publish_core') }}</x-common.button>
+    </form>
+
     @if ($releases->isEmpty())
         <x-common.empty-state :title="__('distribution::distribution.no_releases')" :description="__('distribution::distribution.no_releases_hint')" />
     @else

@@ -30,6 +30,8 @@ class ReleaseController extends Controller
                 'published' => $latest[$name]->version ?? null,
             ])->all(),
             'keysConfigured' => $keys->configured(),
+            'coreVersion' => (string) config('core.version'),
+            'corePublished' => Release::latestFor([Release::CORE])[Release::CORE]->version ?? null,
             'publicKey' => $keys->configured() ? $keys->publicKey() : null,
         ]);
     }
@@ -69,6 +71,16 @@ class ReleaseController extends Controller
 
         // Shown once, so it can be backed up.
         return back()->with('success', __('distribution::distribution.keys_created_web'))->with('signing_secret', $pair['secret']);
+    }
+
+    public function storeCore(Request $request, ReleaseService $releases): RedirectResponse
+    {
+        $data = $request->validate(['changelog' => ['nullable', 'string', 'max:5000']]);
+        @set_time_limit(0);
+
+        $result = $releases->publishCore($data['changelog'] ?? null, $request->boolean('test_only'));
+
+        return back()->with($result['status'] ? 'success' : 'error', $result['message']);
     }
 
     public function toEveryone(Release $release, ReleaseService $releases): RedirectResponse

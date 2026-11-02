@@ -123,19 +123,12 @@ class BuildService extends BaseService
         $root = Str::slug($site->name) ?: 'site';
 
         try {
-            File::deleteDirectory($stage);
-            File::ensureDirectoryExists($stage);
-
-            $coreVersion = $this->export($stage);
-            $this->strip($stage, (array) $build->modules);
-
-            if ($vendor) {
-                $this->vendor($stage);
-            }
+            $commit = $this->stage($stage, (array) $build->modules, $vendor);
+            $coreVersion = $this->seal($stage, $commit).'+'.$commit;
 
             $token = $this->sites->issueToken($site, $build->id);
             $tokenId = $site->tokens()->where('build_id', $build->id)->value('id');
-            $this->personalise($stage, $site, $build, $token, $coreVersion);
+            $this->personalise($stage, $site, $build, $token);
 
             if ($vendor) {
                 $this->smokeTest($stage);
@@ -269,10 +262,97 @@ class BuildService extends BaseService
     }
 
     /**
-     * What makes this zip this site's: site.json, our public key, the core
-     * version and a production .env.example.
+     * The core package for core updates (docs/self-hosting-build-guide.md §5.3):
+     * the last commit, no modules, production vendor, our keys and the core
+     * version — nothing site-specific. One top folder "core/".
+     *
+     * @return array{path: string, version: string, commit: string, min_php: ?string}
      */
-    private function personalise(string $stage, Site $site, Build $build, string $token, string $coreVersion): void
+    public function corePackage(bool $vendor = true): array
+    {
+        $stage = $this->disk()->path($this->directory().'/work/core-'.Str::uuid());
+
+        try {
+            $commit = $this->stage($stage, [], $vendor);
+            File::deleteDirectory($stage.'/Modules');
+            File::deleteDirectory($stage.'/storage');
+            $version = $this->seal($stage, $commit);
+
+            if ($vendor) {
+                File::ensureDirectoryExists($stage.'/Modules');
+                File::ensureDirectoryExists($stage.'/storage/framework/cache');
+                File::ensureDirectoryExists($stage.'/storage/framework/views');
+                $this->smokeTest($stage);
+                File::deleteDirectory($stage.'/Modules');
+                File::deleteDirectory($stage.'/storage');
+                foreach (File::glob($stage.'/bootstrap/cache/*.php') as $file) {
+                    File::delete($file);
+                }
+            }
+
+            $path = $this->directory()."/releases/Core/core-{$version}.zip";
+            File::ensureDirectoryExists(dirname($this->disk()->path($path)));
+            $this->zip($stage, 'core', $this->disk()->path($path));
+
+            $require = (string) (json_decode((string) File::get($stage.'/composer.json'), true)['require']['php'] ?? '');
+            $minPhp = preg_match('/(\d+\.\d+(\.\d+)?)/', $require, $match) ? $match[1] : null;
+
+            return ['path' => $path, 'version' => $version, 'commit' => $commit, 'min_php' => $minPhp];
+        } finally {
+            File::deleteDirectory($stage);
+        }
+    }
+
+    /**
+     * Committed code, stripped to $modules, with production vendor.
+     *
+     * @param  list<string>  $modules
+     * @return string the git commit
+     */
+    private function stage(string $stage, array $modules, bool $vendor): string
+    {
+        File::deleteDirectory($stage);
+        File::ensureDirectoryExists($stage);
+
+        $commit = $this->export($stage);
+        $this->strip($stage, $modules);
+
+        if ($vendor) {
+            $this->vendor($stage);
+        }
+
+        return $commit;
+    }
+
+    /**
+     * Our public keys into config/distribution.php, the commit into
+     * config/core.php. Returns the core version (from config/core.php).
+     */
+    private function seal(string $stage, string $commit): string
+    {
+        $publicKeys = array_values(array_unique([$this->keys->publicKey(), ...(array) config('distribution.public_keys', [])]));
+
+        // Only the key list changes; the rest of the shipped config stays as written.
+        $config = File::get($stage.'/config/distribution.php');
+        $written = preg_replace("/^(\s*)'public_keys' => .*$/m", "\\1'public_keys' => ".var_export($publicKeys, true).',', $config, 1, $count);
+
+        if ($count !== 1) {
+            throw new RuntimeException('config/distribution.php has no public_keys line to fill in.');
+        }
+
+        File::put($stage.'/config/distribution.php', $written);
+
+        $core = (array) require $stage.'/config/core.php';
+        $version = (string) ($core['version'] ?? '0.0.0');
+        File::put($stage.'/config/core.php', "<?php\n\n// Written by the build. docs/self-hosting-build-guide.md\n\nreturn ".var_export(['version' => $version, 'build' => $commit], true).";\n");
+
+        return $version;
+    }
+
+    /**
+     * What makes this zip this site's: site.json and a production .env.example.
+     */
+    private function personalise(string $stage, Site $site, Build $build, string $token): void
     {
         File::ensureDirectoryExists($stage.'/storage/app/distribution');
         File::put($stage.'/storage/app/distribution/site.json', json_encode([
@@ -286,20 +366,6 @@ class BuildService extends BaseService
             // The customer's answers: their installer starts filled in (never passwords).
             'defaults' => ServerDetails::installerDefaults((array) $site->server_details, $site->name),
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES).PHP_EOL);
-
-        $publicKeys = array_values(array_unique([$this->keys->publicKey(), ...(array) config('distribution.public_keys', [])]));
-
-        // Only the key list changes; the rest of the shipped config stays as written.
-        $config = File::get($stage.'/config/distribution.php');
-        $written = preg_replace("/^(\s*)'public_keys' => .*$/m", "\\1'public_keys' => ".var_export($publicKeys, true).',', $config, 1, $count);
-
-        if ($count !== 1) {
-            throw new RuntimeException('config/distribution.php has no public_keys line to fill in.');
-        }
-
-        File::put($stage.'/config/distribution.php', $written);
-
-        File::put($stage.'/config/core.php', "<?php\n\nreturn ".var_export(['version' => $coreVersion], true).";\n");
 
         // Placeholders only: the installer writes the real values.
         (new EnvWriter($stage.'/.env.example'))->set([

@@ -7,6 +7,7 @@ use App\Services\Module\ModuleManager;
 use App\Support\Distribution\PackageSignature;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Modules\Distribution\Models\Release;
 use Modules\Distribution\Support\PlatformAudit;
 use Nwidart\Modules\Facades\Module;
@@ -43,6 +44,10 @@ class ReleaseService extends BaseService
         }
 
         $name = $module->getName();
+
+        if (strcasecmp($name, Release::CORE) === 0) {
+            return $this->failure(__('distribution::distribution.core_name_reserved'));
+        }
 
         if (in_array(strtolower($name), array_map('strtolower', (array) config('distribution.never_ship', [])), true)) {
             return $this->failure(__('distribution::distribution.module_not_assignable', ['module' => $name]));
@@ -83,6 +88,8 @@ class ReleaseService extends BaseService
             'size' => filesize($absolute),
             'path' => $path,
             'requires' => $this->modules->requires($name),
+            // module.json "core": "1.2.0" → only offered to sites on that core or newer.
+            'min_core_version' => $module->get('core') ? (string) $module->get('core') : null,
             'changelog' => $changelog ?: null,
             'published_at' => now(),
             'test_only' => $testOnly,
@@ -91,6 +98,58 @@ class ReleaseService extends BaseService
         PlatformAudit::log('distribution_release_published', "{$name} {$version} published".($testOnly ? ' to test sites' : ''), $release, ['sha256' => $sha256, 'test_only' => $testOnly]);
 
         return $this->success($release, __($testOnly ? 'distribution::distribution.release_published_test' : 'distribution::distribution.release_published', ['module' => $name, 'version' => $version]));
+    }
+
+    /**
+     * Publish the core as it is in the last commit, at the version in
+     * config/core.php (docs/self-hosting-build-guide.md §5.3).
+     *
+     * @param  bool  $vendor  false skips Composer and the smoke test (tests)
+     */
+    public function publishCore(?string $changelog = null, bool $testOnly = false, bool $vendor = true): array
+    {
+        if (! $this->keys->configured()) {
+            return $this->failure(__('distribution::distribution.keys_missing'));
+        }
+
+        try {
+            $package = app(BuildService::class)->corePackage($vendor);
+        } catch (Throwable $e) {
+            report($e);
+
+            return $this->failure(__('distribution::distribution.zip_failed', ['error' => Str::limit($e->getMessage(), 300)]));
+        }
+
+        $version = $package['version'];
+        $latest = Release::query()->where('module', Release::CORE)->pluck('version')
+            ->sort(fn (string $a, string $b) => version_compare($b, $a))->first();
+
+        if (! preg_match('/^\d+\.\d+\.\d+$/', $version) || ($latest !== null && ! version_compare($version, $latest, '>'))) {
+            $this->disk()->delete($package['path']);
+
+            return $this->failure(__('distribution::distribution.core_version_not_newer', ['version' => $version, 'latest' => $latest ?? '—']));
+        }
+
+        $absolute = $this->disk()->path($package['path']);
+        $sha256 = hash_file('sha256', $absolute);
+
+        $release = Release::query()->create([
+            'module' => Release::CORE,
+            'version' => $version,
+            'sha256' => $sha256,
+            'signature' => $this->keys->sign(PackageSignature::message(Release::CORE, $version, $sha256)),
+            'size' => filesize($absolute),
+            'path' => $package['path'],
+            'requires' => [],
+            'min_php' => $package['min_php'],
+            'changelog' => $changelog ?: null,
+            'published_at' => now(),
+            'test_only' => $testOnly,
+        ]);
+
+        PlatformAudit::log('distribution_core_published', "Core {$version} published".($testOnly ? ' to test sites' : ''), $release, ['sha256' => $sha256, 'commit' => $package['commit']]);
+
+        return $this->success($release, __($testOnly ? 'distribution::distribution.release_published_test' : 'distribution::distribution.release_published', ['module' => Release::CORE, 'version' => $version]));
     }
 
     /**

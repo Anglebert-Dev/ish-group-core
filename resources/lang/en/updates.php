@@ -50,6 +50,19 @@ return [
     'link_failed' => 'The link key was not saved: :error',
     'not_linked_hint' => 'This server is not linked to an update server. If your provider sent you a link key, paste it under "Link to your provider".',
 
+    // Core updates
+    'core_title' => 'Core update',
+    'core_hint' => 'Updates the application itself. The site shows a short maintenance page while it installs (about a minute); a database backup is made first, and if anything goes wrong the previous version is put back.',
+    'core_confirm' => 'Install the core update now? The site is unavailable for about a minute.',
+    'core_installed' => 'Core updated to :version',
+    'core_installed_body' => 'The application was updated. Everything else (your data, settings and modules) is unchanged.',
+    'core_failed_title' => 'Core update :version failed',
+    'core_failed' => 'The core update failed and the previous version was put back: :error',
+    'core_needs_processes' => 'This server cannot start background PHP processes (proc_open is disabled), which core updates need. Ask your host to enable it, or ask your provider for a new package.',
+    'core_php_too_old' => 'This server runs PHP :version; the update needs PHP :min or newer. Ask your host to switch PHP, then try again.',
+    'core_not_writable' => 'The web server cannot write to ":path", which a core update replaces. Ask your host to make the app\'s folders writable.',
+    'result_core' => 'core',
+
     // Messages
     'not_linked' => 'This server is not linked to an update server.',
     'up_to_date' => 'Everything is up to date.',

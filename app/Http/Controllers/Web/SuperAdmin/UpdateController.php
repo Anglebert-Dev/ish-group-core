@@ -26,7 +26,8 @@ class UpdateController extends Controller
     {
         return view('app.super-admin.updates', [
             'linked' => $this->updates->linked(),
-            'offers' => $this->updates->offers(),
+            'offers' => array_values(array_filter($this->updates->offers(), fn (array $offer) => $offer['action'] !== 'core')),
+            'coreOffer' => $this->updates->coreOffer(),
             'history' => $this->updates->history(),
             'mode' => System::getProperty('distribution_update_mode', 'manual'),
             'lastCheck' => System::getProperty('distribution_last_check_at'),
@@ -43,6 +44,17 @@ class UpdateController extends Controller
         $result = $this->updates->check();
 
         return back()->with($result['status'] ? 'success' : 'error', $result['message']);
+    }
+
+    public function installCore(): RedirectResponse
+    {
+        abort_unless($this->updates->linked(), 404);
+
+        @set_time_limit(0);
+        ignore_user_abort(true);
+        $result = $this->updates->installCore();
+
+        return redirect()->route('superadmin.updates.index')->with($result['status'] ? 'success' : 'error', $result['message']);
     }
 
     public function link(Request $request): RedirectResponse

@@ -25,6 +25,23 @@
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         <div class="xl:col-span-2 space-y-6">
+            @if ($coreOffer)
+                <div class="bg-white border border-amber-200 rounded-xl overflow-hidden">
+                    <div class="px-5 py-4 bg-amber-50 border-b border-amber-200 flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <p class="font-semibold text-ink">{{ __('updates.core_title') }}
+                                <span class="font-mono text-muted">{{ $coreOffer['from_version'] ? $coreOffer['from_version'].' → ' : '' }}{{ $coreOffer['version'] }}</span></p>
+                            <p class="text-sm text-amber-900 mt-1 max-w-2xl">{{ __('updates.core_hint') }}</p>
+                            @if (! empty($coreOffer['changelog']))<p class="text-sm text-muted mt-2 whitespace-pre-line">{{ $coreOffer['changelog'] }}</p>@endif
+                        </div>
+                        <form action="{{ route('superadmin.updates.install-core') }}" method="POST">
+                            @csrf
+                            <x-common.button type="submit" size="sm" data-confirm data-confirm-title="{{ __('updates.core_confirm') }}">{{ __('updates.install') }}</x-common.button>
+                        </form>
+                    </div>
+                </div>
+            @endif
+
             <div class="bg-white border border-line rounded-xl overflow-hidden">
                 <div class="px-5 py-4 border-b border-line flex items-center justify-between gap-3">
                     <p class="font-semibold text-ink">{{ __('updates.available') }}</p>
@@ -66,6 +83,7 @@
                         <li class="px-5 py-3">
                             <div class="flex items-center justify-between gap-3">
                                 @php $switch = in_array($item['action'] ?? null, ['disable', 'enable'], true); @endphp
+                                @if (($item['action'] ?? null) === 'core')<x-common.badge color="brand">{{ __('updates.core_title') }}</x-common.badge>@endif
                                 <span class="font-medium text-ink">{{ $item['module'] }} <span class="font-mono text-muted">{{ $switch ? '' : ($item['from_version'] ? $item['from_version'].' → ' : '').$item['to_version'] }}</span></span>
                                 <x-common.badge :color="$item['status'] === 'success' ? ($item['action'] === 'disable' ? 'warning' : 'success') : 'danger'">{{ __('updates.result_'.($switch && $item['status'] === 'success' ? $item['action'] : $item['status'])) }}</x-common.badge>
                             </div>

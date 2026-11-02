@@ -125,7 +125,7 @@ class UpdateService extends BaseService
         }
 
         if ($force) {
-            return $this->install();
+            return $this->installEverything($checked['data']['offers']);
         }
 
         if ($checked['data']['update_mode'] !== 'auto') {
@@ -138,7 +138,91 @@ class UpdateService extends BaseService
 
         return $retry === []
             ? $this->failure(__('updates.not_retried'))
-            : $this->install(array_column($retry, 'module'));
+            : $this->installEverything($retry);
+    }
+
+    /**
+     * Modules first (they run on the current core), the core last: after it
+     * the rest of this process is old code, so nothing else may follow.
+     */
+    private function installEverything(array $offers): array
+    {
+        $modules = array_values(array_filter($offers, fn (array $offer) => $offer['action'] !== 'core'));
+        $result = $modules === [] ? null : $this->install(array_column($modules, 'module'));
+
+        if (! collect($offers)->contains('action', 'core')) {
+            return $result ?? $this->failure(__('updates.nothing_to_install'));
+        }
+
+        $core = $this->installCore();
+
+        return $result && ! $result['status'] ? $result : $core;
+    }
+
+    /**
+     * The core update on offer, if any.
+     */
+    public function coreOffer(): ?array
+    {
+        return collect($this->offers())->firstWhere('action', 'core');
+    }
+
+    /**
+     * Install the core update on offer (docs/self-hosting-build-guide.md §5.3).
+     */
+    public function installCore(): array
+    {
+        $offer = $this->coreOffer();
+
+        if (! $offer) {
+            return $this->failure(__('updates.nothing_to_install'));
+        }
+
+        $lock = Cache::lock('module-updates', 1800);
+
+        if (! $lock->get()) {
+            return $this->failure(__('updates.already_running'));
+        }
+
+        try {
+            $updater = app(CoreUpdater::class);
+            $outcome = $updater->install($offer, storage_path("app/updates/downloads/core-{$offer['version']}.zip"));
+            File::delete(storage_path("app/updates/downloads/core-{$offer['version']}.zip"));
+
+            // Recorded by a fresh process: after a successful swap, this one runs old code.
+            $updater->finish($outcome);
+        } finally {
+            $lock->release();
+        }
+
+        return $outcome['status'] === 'success'
+            ? $this->success([$outcome], __('updates.core_installed', ['version' => $outcome['to_version']]))
+            : $this->failure(__('updates.core_failed', ['error' => $outcome['error']]), [$outcome]);
+    }
+
+    /**
+     * History, report to our server, audit and notification for a core update.
+     * Runs in core:finish-core-update.
+     */
+    public function recordCore(array $outcome): void
+    {
+        $this->remember([$outcome]);
+
+        try {
+            $this->client->report([$outcome]);
+        } catch (Throwable $e) {
+            report($e);
+        }
+
+        $ok = $outcome['status'] === 'success';
+        audit('core_update_'.$outcome['status'], "Core {$outcome['to_version']}: ".__('updates.result_'.$outcome['status']), null, $outcome, (int) System::getProperty('primary_business_id') ?: null);
+
+        app(NotificationService::class)->notifySuperadmins(
+            __($ok ? 'updates.core_installed' : 'updates.core_failed_title', ['version' => $outcome['to_version']]),
+            $ok ? __('updates.core_installed_body') : __('updates.core_failed', ['error' => $outcome['error']]),
+            $ok ? NotificationType::Success : NotificationType::Warning,
+            route('superadmin.updates.index', [], false),
+        );
     }
 
     private function failedBefore(array $offer): bool
@@ -167,7 +251,7 @@ class UpdateService extends BaseService
         }
 
         try {
-            $offers = array_values(array_filter($this->offers(), fn (array $offer) => $modules === null || in_array($offer['module'], $modules, true)));
+            $offers = array_values(array_filter($this->offers(), fn (array $offer) => $offer['action'] !== 'core' && ($modules === null || in_array($offer['module'], $modules, true))));
 
             if ($offers === []) {
                 return $this->failure(__('updates.nothing_to_install'));

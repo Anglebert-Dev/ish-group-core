@@ -53,7 +53,7 @@ class UpdateOfferService
                 ->mapWithKeys(fn ($module) => [strtolower($module['name']) => $module['installed_version'] ?? null])
                 ->all();
 
-            $offers = $this->offers($site, $installed);
+            $offers = $this->offers($site, $installed, Release::plainVersion($reported['core_version'] ?? null));
 
             CheckIn::query()->create([
                 'site_id' => $site->id,
@@ -74,11 +74,19 @@ class UpdateOfferService
      * @param  array<string, ?string>  $installed  lower-case name => version
      * @return list<array<string, mixed>>
      */
-    public function offers(Site $site, array $installed): array
+    public function offers(Site $site, array $installed, string $core = '0.0.0'): array
     {
         $rows = $site->modules()->get()->keyBy('module');
         $latest = Release::latestFor($rows->keys()->all(), $site->is_test);
         $offers = [];
+
+        // The core first: a newer one is offered to every site (test sites
+        // first when published that way). Installed apart from modules.
+        $coreRelease = Release::latestFor([Release::CORE], $site->is_test)[Release::CORE] ?? null;
+
+        if ($coreRelease && version_compare($coreRelease->version, $core, '>')) {
+            $offers[] = $this->offer(Release::CORE, 'core', $core, $coreRelease);
+        }
 
         foreach ($this->installOrder($rows->keys()->all()) as $name) {
             /** @var SiteModule $row */
@@ -104,21 +112,32 @@ class UpdateOfferService
                 continue;
             }
 
-            $offers[] = [
-                'module' => $name,
-                'action' => $current === null ? 'install' : 'update',
-                'from_version' => $current,
-                'version' => $release->version,
-                'requires' => array_values((array) $release->requires),
-                'changelog' => $release->changelog,
-                'size' => $release->size,
-                'sha256' => $release->sha256,
-                'signature' => $release->signature,
-                'download_url' => route('distribution.api.download', $release),
-            ];
+            // Needs a newer core than the site runs: offered once it has it.
+            if ($release->min_core_version && version_compare($core, $release->min_core_version, '<')) {
+                continue;
+            }
+
+            $offers[] = $this->offer($name, $current === null ? 'install' : 'update', $current, $release);
         }
 
         return $offers;
+    }
+
+    private function offer(string $module, string $action, ?string $from, Release $release): array
+    {
+        return [
+            'module' => $module,
+            'action' => $action,
+            'from_version' => $from,
+            'version' => $release->version,
+            'requires' => array_values((array) $release->requires),
+            'min_php' => $release->min_php,
+            'changelog' => $release->changelog,
+            'size' => $release->size,
+            'sha256' => $release->sha256,
+            'signature' => $release->signature,
+            'download_url' => route('distribution.api.download', $release),
+        ];
     }
 
     /**
@@ -138,8 +157,12 @@ class UpdateOfferService
                 'duration_ms' => $result['duration_ms'] ?? null,
             ]);
 
-            $row = $site->modules()->where('module', $result['module'])->first();
+            $row = $result['action'] === 'core' ? null : $site->modules()->where('module', $result['module'])->first();
             $this->tellUs($site, $result);
+
+            if ($result['action'] === 'core' && $result['status'] === 'success') {
+                $site->forceFill(['core_version' => $result['to_version']])->saveQuietly();
+            }
 
             if ($row && in_array($result['action'], ['disable', 'enable'], true)) {
                 $row->forceFill(['last_reported_at' => now()])->save();
@@ -171,7 +194,7 @@ class UpdateOfferService
         $failed = $result['status'] !== 'success';
 
         if (! $failed && $result['action'] === 'update') {
-            return;
+            return; // module updates are routine; core updates are always announced
         }
 
         $key = $failed ? 'notify_us_failed' : 'notify_us_'.$result['action'];

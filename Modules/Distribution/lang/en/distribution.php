@@ -309,6 +309,16 @@ return [
     'version_not_newer' => ':module :version is not newer than :latest. Raise the version in its module.json first.',
     'zip_failed' => 'Could not package the module: :error',
 
+    // Core updates
+    'publish_core' => 'Publish core update',
+    'publish_core_hint' => 'Packages the core (everything except modules) from the last commit at the version in config/core.php — raise that version and commit first. Every site is offered it; their server switches to maintenance for about a minute while it installs, and undoes it if anything fails.',
+    'core_in_code' => 'Core in code:',
+    'core_available' => 'available',
+    'core_name_reserved' => '"Core" is reserved for core updates: use Publish core update.',
+    'core_version_not_newer' => 'Core :version is not newer than the last published core (:latest). Raise the version in config/core.php and commit first.',
+    'notify_us_core' => ':site updated its core to :version',
+    'notify_us_core_body' => 'The core update installed on :site.',
+
     // Keys
     'signing_key' => 'Signing key',
     'keys_missing' => 'No signing key yet. Create one on Self-hosting → Releases before publishing or building zips.',
