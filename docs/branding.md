@@ -1,6 +1,6 @@
 # Branding & Appearance: Plan
 
-Created: 02/11/2026. Status: **B0–B8 and B10 done (02/11/2026); B9 (QA) next.** Update §8 after each phase, so work can pick up where it stopped.
+Created: 02/11/2026. Status: **All phases done (02/11/2026).** Update §8 after each phase, so work can pick up where it stopped.
 
 This takes the full "Branding & Appearance Module" requirements and sets out, section by section, **what we already have**, **what we build**, and **what we leave out and why**. Printing and document branding are already built (`docs/branding-print-build-guide.md`); this plan builds on them.
 
@@ -355,6 +355,14 @@ Off by default. Needs package feature `branding.custom_css` and permission `publ
 - **Left out:** custom domains (DNS, SSL, routing: its own project), loading screens, sounds, QR logos.
 - **Run** `php artisan core:module update Billing` on servers with Billing (new `capabilities` column).
 
+**B9 notes (QA):**
+- **How:** a headless-Chrome crawl (Docker `ghcr.io/puppeteer/puppeteer`) on a throwaway database with the demo factory, signed in as the owner. It visits every page in the menu plus a detail page of each main record (38 pages) at 390px and 1280px, in light and dark (160 page views). For each it records the HTTP status, JavaScript errors, sideways scrolling on phones, and **text under 3:1 against the background actually behind it**.
+- **Found and fixed:** in light mode, status colours used as text (badges such as Active, Paid and Delivered, amber dates, "Make inactive") were 2–3:1. `text-success`, `text-warning`, `text-danger` and `text-info` now use readable **ink** shades (`*_ink` tokens: the same hue, fitted to 4.5:1 on their own tint), while fills keep the bright colour. Locked in by `ThemeTokensTest`.
+- **Clean:** no HTTP or JavaScript errors, no sideways scrolling on phones, dark mode without findings.
+- **Known, not a bug:** the website's white logo name over its dark hero picture (the crawl can't see pictures behind text). Occasional timeouts came from PHP's one-process test server under the crawl; those pages load normally.
+- **Earlier phases' visual checks** (screenshots looked at): fonts, tokens, dark mode, brand per mode, layout, studio, login, dashboard, emails, error pages, Advanced tab.
+- README: Branding section rewritten.
+
 ## 4. What the B1 clean-up involves
 
 **B1 notes:**
@@ -436,5 +444,5 @@ For each phase:
 | B6 | Dashboard (welcome, banner, widgets, per role), navigation overrides, landing page, announcement banner, presets | P1 | ✅ 02/11/2026 |
 | B7 | Emails: header, footer, signature, contacts, sender name/Reply-To, every mail on the template, previews | P2 | ✅ 02/11/2026 |
 | B8 | Documents extras, branded error pages, footer/copyright/support links, date and number formats | P2 | ✅ 02/11/2026 |
-| B9 | QA: every module page at three widths, light and dark, with presets; README | P2 | ☐ |
+| B9 | QA: every module page at three widths, light and dark, with presets; README | P2 | ✅ 02/11/2026 |
 | B10 | Advanced: custom CSS (sanitised, scoped), uploaded fonts, terminology, PWA manifest | P3 | ✅ 02/11/2026 |

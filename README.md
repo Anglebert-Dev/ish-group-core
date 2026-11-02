@@ -27,7 +27,13 @@ php artisan schedule:work    # daily jobs (billing renewals, suspensions)
 - **Users & roles**: per-business roles built from module permissions.
 - **Customers** (Management → Customers): every business has them; a customer with linked orders or invoices can't be deleted (make them inactive).
 - **Audit log**, **notifications**, **backups**, **Communicator** (announcements to business admins).
-- **Branding** (Management → Branding): business details (legal name, TIN, contacts), colours, font and logos, a private stamp and signature, and bank/mobile money details. The **Documents** tab designs every printout (Classic, Modern or Compact; paper, logo, tagline, footer, per-document terms) with a live preview.
+- **Branding** (Management → Branding; plan and notes: [docs/branding.md](docs/branding.md)):
+  - **Identity:** business details (legal name, TIN, contacts, short name, slogan, description, language, date and number formats, support links, footer), logos (main, dark backgrounds, login page, phone), one **font for the whole system** (12 bundled, or your own).
+  - **Theme and Layout:** every colour (light and dark), light, dark or follow the device (each person may choose, if allowed), presets, menu width and style, spacing, corners, buttons, text size, heading font. All drafted with a **live preview** (phone, tablet, desktop, light and dark), **published** by someone with approve rights, and kept in **History**. The platform's published look is every business's default. A readability check blocks unreadable colours, and the brand colour is fitted per mode so buttons always stand out.
+  - **Dashboard, Menu, Login page, Emails:** welcome card, block order and per-role hiding, an announcement banner, the landing page after sign-in; rename, move, reorder or hide menu items (never reveals anything); a business login link `/app/login/{name}` that dresses the sign-in pages; email header, sender name, reply-to, signature, footer.
+  - **Documents:** every printout (Classic, Modern or Compact; paper, logo, tagline, footer, per-document terms and layout, watermark text, tint) with a live preview.
+  - **Advanced** (per package): sanitised custom CSS (scoped to page content; the platform can switch it off), your own font, your own words for chosen terms.
+  - **For module builders:** use the colour names (`bg-card`, `text-ink`, `text-muted`, `border-line`, `bg-brand` with `text-on-brand`, `text-success`…). A test fails on fixed colours, so a new module gets every business's theme and dark mode automatically.
 - **Printing**: one engine for every document and list: **PDF**, **Print** (browser) and branded **Excel**. Each business's documents carry its brand.
 
 ## Modules

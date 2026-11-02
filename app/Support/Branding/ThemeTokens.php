@@ -109,6 +109,13 @@ final class ThemeTokens
         $tokens['accent'] = $valid($overrides['accent'] ?? null) ?? $brand;
         $tokens['link'] = $valid($overrides['link'] ?? null) ?? ColorLibrary::fit($brand, $tokens['card'], 4.5);
 
+        // Status colours as text (badges, notes): the same hue, deepened (light) or
+        // lifted (dark) until it reads on a light tint of itself over the card.
+        foreach (['success', 'warning', 'danger', 'info'] as $key) {
+            $tint = ColorLibrary::mix($tokens['card'], $tokens[$key], 0.12);
+            $tokens[$key.'_ink'] = ColorLibrary::fit($tokens[$key], $tint, 4.5);
+        }
+
         // Text on a filled colour: white or near-black, whichever reads better.
         foreach (self::FILLED as $key) {
             $tokens['on_'.$key] = self::textOn($tokens[$key]);
@@ -192,6 +199,9 @@ final class ThemeTokens
                 'chart' => collect(range(1, 6))->mapWithKeys(fn ($i) => [(string) $i => $color('chart_'.$i)])->all(),
             ],
             'boxShadow' => ['card' => '0 1px 2px 0 rgba(17, 24, 39, 0.04)'],
+            // text-success / -warning / -danger / -info use the readable ink shade;
+            // bg-, border- and ring- keep the bright colour.
+            'textColor' => collect(['success', 'warning', 'danger', 'info'])->mapWithKeys(fn ($key) => [$key => $color($key.'_ink')])->all(),
         ]]];
     }
 

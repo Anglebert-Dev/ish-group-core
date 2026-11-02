@@ -86,6 +86,19 @@ class ThemeTokensTest extends TestCase
         $this->assertSame('#FF00AA', ThemeTokens::resolve('#080231', ['brand' => '#FF00AA'], dark: true)['brand']);
     }
 
+    public function test_status_text_reads_on_its_own_tint_in_every_mode(): void
+    {
+        // Found by the B9 browser check: bright status colours as text (badges) were 2–3:1.
+        foreach ([false, true] as $dark) {
+            $tokens = ThemeTokens::resolve('#124EB0', [], $dark);
+            foreach (['success', 'warning', 'danger', 'info'] as $key) {
+                $tint = ColorLibrary::mix($tokens['card'], $tokens[$key], 0.12);
+                $this->assertGreaterThanOrEqual(4.5, ColorLibrary::contrast($tokens[$key.'_ink'], $tint), $key.($dark ? ' dark' : ' light'));
+            }
+        }
+        $this->assertSame('rgb(var(--c-success-ink) / <alpha-value>)', ThemeTokens::tailwind()['theme']['extend']['textColor']['success']);
+    }
+
     public function test_tokens_follow_the_brand_and_ignore_bad_overrides(): void
     {
         $tokens = ThemeTokens::resolve('#0a7a4b', ['card' => '#fafafa', 'ink' => 'red', 'nope' => '#000000']);
