@@ -10,7 +10,7 @@
         <button
             type="button"
             data-image-lightbox-backdrop
-            class="absolute inset-0 bg-ink/55 border-0 cursor-pointer"
+            class="absolute inset-0 bg-black/55 border-0 cursor-pointer"
             aria-label="{{ __('body.close') }}"
         ></button>
 

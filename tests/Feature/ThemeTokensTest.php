@@ -36,7 +36,9 @@ class ThemeTokensTest extends TestCase
             if (collect(self::ALLOWED)->contains(fn ($allowed) => str_starts_with($path, $allowed))) {
                 continue;
             }
-            if (preg_match_all($raw, $file->getContents(), $matches)) {
+            // Text colours flip in dark mode, so they never make a background (use bg-night or bg-black/50).
+            if (preg_match_all($raw, $file->getContents(), $matches) | preg_match_all('/(?<![\w\/-])(?:[a-z-]+:)*bg-(?:ink|body)(?:\/\d+)?(?![\w-])/', $file->getContents(), $inverse)) {
+                $matches[0] = [...$matches[0], ...$inverse[0]];
                 $found[] = $path.': '.implode(', ', array_unique($matches[0]));
             }
         }

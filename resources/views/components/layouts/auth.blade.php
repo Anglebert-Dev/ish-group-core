@@ -145,7 +145,7 @@
 
             {{-- Visual panel --}}
             <div class="relative p-4 sm:p-5 lg:p-6 order-first lg:order-none">
-                <div class="auth-panel-frame h-44 sm:h-56 lg:h-full bg-ink">
+                <div class="auth-panel-frame h-44 sm:h-56 lg:h-full bg-night">
                     @if ($panelImage)
                         <img
                             src="{{ $panelImage }}"

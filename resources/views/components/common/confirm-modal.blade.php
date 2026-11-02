@@ -1,5 +1,5 @@
 <div id="confirm-modal" class="fixed inset-0 z-[100] hidden">
-    <div class="absolute inset-0 bg-ink/50" data-confirm-cancel></div>
+    <div class="absolute inset-0 bg-black/50" data-confirm-cancel></div>
     <div class="relative min-h-full flex items-end sm:items-center justify-center p-4 sm:p-6">
         <div class="bg-card rounded-t-2xl sm:rounded-xl shadow-xl max-w-sm w-full p-5 sm:p-6">
             <h3 id="confirm-modal-title" class="font-display font-bold text-lg text-ink"></h3>

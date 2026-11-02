@@ -165,6 +165,8 @@ final class ThemeTokens
                 'info' => $color('info'),
                 'sidebar' => ['DEFAULT' => $color('sidebar'), 'ink' => $color('sidebar_ink')],
                 'header' => ['DEFAULT' => $color('header'), 'ink' => $color('header_ink')],
+                // Fixed, not themed: things dark on purpose in both modes (banners, footers).
+                'night' => '#111827',
                 'chart' => collect(range(1, 6))->mapWithKeys(fn ($i) => [(string) $i => $color('chart_'.$i)])->all(),
             ],
             'boxShadow' => ['card' => '0 1px 2px 0 rgba(17, 24, 39, 0.04)'],

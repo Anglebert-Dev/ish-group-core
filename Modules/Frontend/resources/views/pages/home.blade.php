@@ -73,7 +73,7 @@
     @endif
 
     @if ($about['show'])
-    <section id="about" class="scroll-mt-24 bg-ink text-white">
+    <section id="about" class="scroll-mt-24 bg-night text-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-24">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-end">
                 <div class="lg:col-span-7">

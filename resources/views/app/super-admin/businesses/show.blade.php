@@ -174,7 +174,7 @@
     </div>
 
     {{-- One password dialog shared by every "Update password" button. --}}
-    <dialog id="password-dialog" class="rounded-2xl p-0 w-[min(28rem,calc(100vw-2rem))] backdrop:bg-ink/50">
+    <dialog id="password-dialog" class="rounded-2xl p-0 w-[min(28rem,calc(100vw-2rem))] backdrop:bg-black/50">
         <form method="POST" class="p-6 space-y-4" data-password-form>
             @csrf @method('PUT')
             <div>

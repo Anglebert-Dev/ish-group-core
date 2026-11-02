@@ -4,7 +4,7 @@
      sent the user back here; on success the original action is re-submitted. --}}
 @auth('staff')
 <div id="password-confirm-modal" class="fixed inset-0 z-[70] {{ $open ? '' : 'hidden' }}" role="dialog" aria-modal="true" aria-labelledby="password-confirm-title">
-    <div class="absolute inset-0 bg-ink/50" data-password-confirm-close></div>
+    <div class="absolute inset-0 bg-black/50" data-password-confirm-close></div>
     <div class="relative flex min-h-full items-center justify-center p-4">
         <form action="{{ route('staff.password.confirm.store') }}" method="POST" class="w-full max-w-md bg-card rounded-2xl shadow-xl p-6 sm:p-8" data-password-confirm-form>
             @csrf
