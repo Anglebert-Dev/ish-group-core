@@ -11,6 +11,7 @@
                     <th class="px-5 py-3 font-semibold">{{ __('body.module') }}</th>
                     <th class="px-5 py-3 font-semibold">{{ __('body.version') }}</th>
                     <th class="px-5 py-3 font-semibold">{{ __('body.status') }}</th>
+                    <th class="px-5 py-3 font-semibold">{{ __('body.module_billing') }}</th>
                     <th class="px-5 py-3 font-semibold">{{ __('body.actions') }}</th>
                 </tr>
             </thead>
@@ -48,6 +49,19 @@
                                 <x-common.badge color="muted">{{ __('body.not_installed') }}</x-common.badge>
                             @endif
                         </td>
+                        <td class="px-5 py-4 whitespace-nowrap">
+                            <div class="flex flex-col items-start gap-1.5">
+                                <x-common.badge :color="$module['billable'] ? 'brand' : 'muted'">{{ $module['billable'] ? __('body.module_in_packages') : __('body.module_free') }}</x-common.badge>
+                                @if ($module['billable_locked'])
+                                    <span class="text-xs text-muted">{{ __('body.module_free_always') }}</span>
+                                @else
+                                    <x-common.action-button :action="route('superadmin.modules.billable', $module['name'])" color="brand">
+                                        <x-slot:fields><input type="hidden" name="billable" value="{{ $module['billable'] ? 0 : 1 }}"></x-slot:fields>
+                                        {{ $module['billable'] ? __('body.module_make_free') : __('body.module_make_billable') }}
+                                    </x-common.action-button>
+                                @endif
+                            </div>
+                        </td>
                         <td class="px-5 py-4">
                             <div class="flex flex-col items-start gap-1.5">
                                 @if (! $module['installed'])
@@ -78,12 +92,13 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="4" class="px-5 py-10 text-center text-muted">{{ __('body.no_modules_found') }}</td></tr>
+                    <tr><td colspan="5" class="px-5 py-10 text-center text-muted">{{ __('body.no_modules_found') }}</td></tr>
                 @endforelse
             </tbody>
         </table>
         </div>
     </div>
 
-    <p class="text-sm text-muted mt-4">{{ __('body.modules_cli_hint') }}</p>
+    <p class="text-sm text-muted mt-4">{{ __('body.module_billing_hint') }}</p>
+    <p class="text-sm text-muted mt-2">{{ __('body.modules_cli_hint') }}</p>
 </x-layouts.app>

@@ -25,7 +25,7 @@ class BrandingService extends BaseService
     public const MAX_PAYMENT_METHODS = 6;
 
     /** Text fields of the Business details tab. */
-    public const DETAILS = ['legal_name', 'short_name', 'slogan', 'description', 'tax_id', 'registration_no', 'address', 'phone', 'website'];
+    public const DETAILS = ['legal_name', 'short_name', 'slogan', 'description', 'locale', 'tax_id', 'registration_no', 'address', 'phone', 'website'];
 
     /** Optional logos, each falling back to the main logo (setting key => upload field). */
     public const EXTRA_LOGOS = ['logo_login_path' => 'logo_login', 'logo_mobile_path' => 'logo_mobile'];

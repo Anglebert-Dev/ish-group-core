@@ -91,6 +91,7 @@
                     <x-common.input name="legal_name" :label="__('body.brand_legal_name')" :value="old('legal_name', $brand->legalName)" :hint="__('body.brand_legal_name_hint')" />
                     <x-common.input name="short_name" :label="__('body.brand_short_name')" :value="old('short_name', $details['short_name'])" :hint="__('body.brand_short_name_hint')" maxlength="30" />
                     <x-common.input name="slogan" :label="__('body.brand_slogan')" :value="old('slogan', $details['slogan'])" :hint="__('body.brand_slogan_hint')" maxlength="120" />
+                    <x-common.select name="locale" :label="__('body.brand_locale')" :value="old('locale', $details['locale'] ?? config('app.locale'))" :options="\App\Support\Locale\Locales::available()" hide-placeholder :hint="__('body.brand_locale_hint')" />
                     <x-common.input name="tax_id" :label="__('body.brand_tax_id')" :value="old('tax_id', $brand->taxId)" />
                     <x-common.input name="registration_no" :label="__('body.brand_registration_no')" :value="old('registration_no', $brand->registrationNo)" />
                     <x-common.input type="email" name="email" :label="__('body.business_email')" :value="old('email', $setting->email)" :hint="__('body.business_email_hint')" />

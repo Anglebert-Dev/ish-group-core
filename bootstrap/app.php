@@ -1,14 +1,35 @@
 <?php
 
+use App\Http\Middleware\CheckPermission;
+use App\Http\Middleware\ConfirmStaffPassword;
+use App\Http\Middleware\EnsureBusinessActive;
+use App\Http\Middleware\EnsureExclusivePortalSession;
+use App\Http\Middleware\EnsureModuleActive;
+use App\Http\Middleware\EnsureSuperAdmin;
+use App\Http\Middleware\EnsureWithinQuota;
+use App\Http\Middleware\NormalizeFormattedAmounts;
+use App\Http\Middleware\PreventBackHistoryCache;
+use App\Http\Middleware\PreventWhileImpersonating;
+use App\Http\Middleware\RedirectToInstaller;
+use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\SetLocale;
+use App\Support\Installer\PreInstall;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Middleware\SubstituteBindings;
+use Illuminate\Session\Middleware\AuthenticateSession;
+use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Route;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 // A fresh copy (not installed yet): .env, APP_KEY and file sessions before
 // Laravel reads its configuration. Does nothing once installed.
-App\Support\Installer\PreInstall::prepare(dirname(__DIR__));
+PreInstall::prepare(dirname(__DIR__));
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -20,31 +41,32 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->prepend(\App\Http\Middleware\RedirectToInstaller::class);
-        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+        $middleware->prepend(RedirectToInstaller::class);
+        $middleware->append(SecurityHeaders::class);
 
         // The installer runs before there is a database: session and CSRF only.
         $middleware->group('install', [
-            \Illuminate\Cookie\Middleware\EncryptCookies::class,
-            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
-            \Illuminate\Session\Middleware\StartSession::class,
-            \Illuminate\View\Middleware\ShareErrorsFromSession::class,
-            \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
-            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            EncryptCookies::class,
+            AddQueuedCookiesToResponse::class,
+            StartSession::class,
+            ShareErrorsFromSession::class,
+            ValidateCsrfToken::class,
+            SubstituteBindings::class,
         ]);
-        $middleware->appendToGroup('web', \App\Http\Middleware\NormalizeFormattedAmounts::class);
+        $middleware->appendToGroup('web', NormalizeFormattedAmounts::class);
+        $middleware->appendToGroup('web', SetLocale::class);
 
         $middleware->alias([
-            'business.active' => \App\Http\Middleware\EnsureBusinessActive::class,
-            'superadmin' => \App\Http\Middleware\EnsureSuperAdmin::class,
-            'not.impersonating' => \App\Http\Middleware\PreventWhileImpersonating::class,
-            'module' => \App\Http\Middleware\EnsureModuleActive::class,
-            'quota' => \App\Http\Middleware\EnsureWithinQuota::class,
-            'permission' => \App\Http\Middleware\CheckPermission::class,
-            'no-back-cache' => \App\Http\Middleware\PreventBackHistoryCache::class,
-            'exclusive.portal' => \App\Http\Middleware\EnsureExclusivePortalSession::class,
-            'password.confirm.staff' => \App\Http\Middleware\ConfirmStaffPassword::class,
-            'auth.session' => \Illuminate\Session\Middleware\AuthenticateSession::class,
+            'business.active' => EnsureBusinessActive::class,
+            'superadmin' => EnsureSuperAdmin::class,
+            'not.impersonating' => PreventWhileImpersonating::class,
+            'module' => EnsureModuleActive::class,
+            'quota' => EnsureWithinQuota::class,
+            'permission' => CheckPermission::class,
+            'no-back-cache' => PreventBackHistoryCache::class,
+            'exclusive.portal' => EnsureExclusivePortalSession::class,
+            'password.confirm.staff' => ConfirmStaffPassword::class,
+            'auth.session' => AuthenticateSession::class,
         ]);
 
         // Customer routes only exist while the Frontend module is installed;

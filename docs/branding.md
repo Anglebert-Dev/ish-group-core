@@ -252,6 +252,17 @@ Off by default. Needs package feature `branding.custom_css` and permission `publ
 | PWA name and icon (manifest per business) | **B10, P3** |
 | Loading screen, notification sound, custom domains, QR logo | **Leave out**: no loading screen, sounds or QR codes today. Custom domains are an infrastructure project (DNS, SSL, routing); they get their own plan if wanted. |
 
+**Also done (02/11/2026, asked during B1):**
+- **Billable modules:** Super Admin → Modules has a **Billing** column. "In packages" modules are sold through packages; "Free for all" ones are open to every business and left out of the package form. Stored as `<alias>_billable` in the system table, read by `ModuleManager::isBillingExempt()`. `module.json` `billing_exempt` (Billing, Distribution) means always free and can't be changed. Audited, with the terminal twin `core:module billable|free <Name>`.
+- **Pricing link:** "See plans & pricing" on the login page shows only while Billing is on. Its routes stay registered when it's off, so `Route::has()` wasn't enough.
+- **Languages** (`App\Support\Locale\Locales`, `SetLocale` middleware):
+  - a language is offered once `resources/lang/{code}` exists; names are in `config/app.php` `locales`
+  - order: the user's choice (`users.locale`) → the business default (Branding → Business details → Default language) → `APP_LOCALE`; guests pick for their session
+  - switcher: the user menu always lists the languages; the login pages show a selector only when there are two or more
+  - `<html lang>` follows the language; changes are audited
+  - adding French = copy `resources/lang/en` to `resources/lang/fr` (and each module's `lang/en` to `lang/fr`) and translate
+- **Run `php artisan migrate`** after pulling (`users.locale`).
+
 ## 4. What the B1 clean-up involves
 
 **B1 notes:**

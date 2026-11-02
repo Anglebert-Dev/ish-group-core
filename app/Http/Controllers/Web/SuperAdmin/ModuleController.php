@@ -18,8 +18,7 @@ class ModuleController extends Controller
     public function __construct(
         protected ModuleManager $modules,
         protected PermissionService $permissions,
-    ) {
-    }
+    ) {}
 
     public function index(): View
     {
@@ -46,6 +45,12 @@ class ModuleController extends Controller
     public function toggle(Request $request, string $module): RedirectResponse
     {
         return $this->respond($this->modules->toggle($module, $request->boolean('enabled')));
+    }
+
+    /** Sold in packages, or free for every business. */
+    public function billable(Request $request, string $module): RedirectResponse
+    {
+        return $this->respond($this->modules->setBillable($module, $request->boolean('billable')));
     }
 
     private function respond(array $result): RedirectResponse

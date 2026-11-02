@@ -6,6 +6,7 @@ use App\Http\Controllers\Web\Auth\ProfileController;
 use App\Http\Controllers\Web\Customer\CustomerController;
 use App\Http\Controllers\Web\Dashboard\DashboardController;
 use App\Http\Controllers\Web\Landing\LandingController;
+use App\Http\Controllers\Web\Locale\LocaleController;
 use App\Http\Controllers\Web\Notification\NotificationController;
 use App\Http\Controllers\Web\Print\PrintController;
 use App\Http\Controllers\Web\Role\RoleController;
@@ -30,6 +31,8 @@ use Illuminate\Support\Facades\Route;
 | public landing page through its landing_page() hook.
 */
 Route::get('/', LandingController::class)->name('home');
+// Language switcher: staff (saved on the user) and guests (session).
+Route::post('/locale', [LocaleController::class, 'update'])->middleware('throttle:30,1')->name('locale.update');
 
 /*
 |--------------------------------------------------------------------------
@@ -196,6 +199,7 @@ Route::prefix('app')->middleware(['auth:staff', 'auth.session', 'exclusive.porta
         Route::post('/modules/{module}/update', [ModuleController::class, 'update'])->middleware('password.confirm.staff')->name('modules.update');
         Route::post('/modules/{module}/uninstall', [ModuleController::class, 'uninstall'])->middleware('password.confirm.staff')->name('modules.uninstall');
         Route::post('/modules/{module}/toggle', [ModuleController::class, 'toggle'])->middleware('password.confirm.staff')->name('modules.toggle');
+        Route::post('/modules/{module}/billable', [ModuleController::class, 'billable'])->middleware('password.confirm.staff')->name('modules.billable');
 
         Route::get('/audit', [AuditController::class, 'index'])->name('audit.index');
         Route::get('/audit/export/{format}', [AuditController::class, 'export'])->whereIn('format', ['pdf', 'excel'])->name('audit.export');

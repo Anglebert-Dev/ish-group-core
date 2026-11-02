@@ -13,7 +13,7 @@
 @endphp
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -138,6 +138,9 @@
                         </div>
                     @endif
                 @endisset
+
+                {{-- Shows only when more than one language is installed. --}}
+                <x-common.language-switcher class="mt-6" />
             </div>
 
             {{-- Visual panel --}}

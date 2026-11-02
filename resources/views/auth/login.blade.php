@@ -30,7 +30,8 @@
 
     <x-slot:footer>
         <div class="space-y-2">
-            @if (Route::has('pricing'))
+            {{-- Plans exist only while Billing is on (its routes stay registered when it's off). --}}
+            @if (Route::has('pricing') && app(\App\Services\Module\ModuleManager::class)->isActive('Billing'))
                 <p>
                     {{ __('body.auth_see_plans') }}
                     <a href="{{ route('pricing') }}" class="font-semibold text-brand hover:text-brand-dark">{{ __('body.auth_pricing') }}</a>

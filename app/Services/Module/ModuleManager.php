@@ -2,13 +2,16 @@
 
 namespace App\Services\Module;
 
+use App\Enums\ActivityLogAction;
 use App\Models\System\System;
+use App\Services\ActivityLog\ActivityLogService;
 use App\Services\BaseService;
 use App\Support\Tenancy\CurrentBusiness;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schema;
 use Nwidart\Modules\Facades\Module;
+use Nwidart\Modules\FileRepository;
 use Nwidart\Modules\Module as ModuleInstance;
 use Throwable;
 
@@ -283,11 +286,6 @@ class ModuleManager extends BaseService
             ->all();
     }
 
-   
-    /**
-     * module.json "billing_exempt": true — always available, never sold
-     * (e.g. the billing module itself, so a locked business can still pay).
-     */
     /**
      * Modules this one needs, from "requires" in its module.json.
      *
@@ -350,9 +348,44 @@ class ModuleManager extends BaseService
         return $all;
     }
 
+    /**
+     * Free for every business, never sold in packages. module.json
+     * "billing_exempt": true fixes it (e.g. Billing itself, so a locked
+     * business can still pay); for any other module the superadmin decides
+     * (Super Admin → Modules), stored as "<alias>_billable" = "0".
+     */
     public function isBillingExempt(string $name): bool
     {
+        $module = Module::find($name);
+
+        return $this->billableLocked($name) || ($module && System::getProperty($module->getLowerName().'_billable') === '0');
+    }
+
+    /** Free by its own module.json: can't be sold. */
+    public function billableLocked(string $name): bool
+    {
         return (bool) Module::find($name)?->get('billing_exempt', false);
+    }
+
+    /**
+     * Sell this module in packages (true) or give it to everyone (false).
+     */
+    public function setBillable(string $name, bool $billable): array
+    {
+        $module = Module::find($name);
+
+        if (! $module) {
+            return $this->failure(__('body.module_not_found'));
+        }
+        if ($this->billableLocked($module->getName())) {
+            return $this->failure(__('body.module_billable_locked', ['name' => $module->getName()]));
+        }
+
+        System::addProperty($module->getLowerName().'_billable', $billable ? '1' : '0');
+        $this->flush();
+        $this->audit($billable ? 'billable' : 'free', $module);
+
+        return $this->success($module->getName(), __($billable ? 'body.module_now_billable' : 'body.module_now_free', ['name' => $module->getName()]));
     }
 
     public function menuGroup(string $name): string
@@ -387,7 +420,7 @@ class ModuleManager extends BaseService
      */
     public function rescan(): void
     {
-        (new \ReflectionProperty(\Nwidart\Modules\FileRepository::class, 'modules'))->setValue(null, []);
+        (new \ReflectionProperty(FileRepository::class, 'modules'))->setValue(null, []);
         $this->flush();
     }
 
@@ -400,8 +433,8 @@ class ModuleManager extends BaseService
 
     private function audit(string $event, ModuleInstance $module): void
     {
-        app(\App\Services\ActivityLog\ActivityLogService::class)->log(
-            \App\Enums\ActivityLogAction::ModuleChanged,
+        app(ActivityLogService::class)->log(
+            ActivityLogAction::ModuleChanged,
             __('body.audit_log_module_'.$event, ['name' => $module->getName()]),
             null,
             ['module' => $module->getName(), 'event' => $event, 'version' => $this->availableVersion($module)],
@@ -425,6 +458,8 @@ class ModuleManager extends BaseService
             'installed_version' => $installedVersion,
             'available_version' => $available,
             'update_available' => $installedVersion !== null && version_compare($available, $installedVersion, '>'),
+            'billable' => ! $this->isBillingExempt($module->getName()),
+            'billable_locked' => $this->billableLocked($module->getName()),
         ];
     }
 

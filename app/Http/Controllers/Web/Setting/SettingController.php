@@ -11,6 +11,7 @@ use App\Services\Printing\PrintService;
 use App\Services\Setting\SettingService;
 use App\Support\Branding\Fonts;
 use App\Support\Branding\ThemeTokens;
+use App\Support\Locale\Locales;
 use App\Support\Printing\PrintDesign;
 use App\Support\Printing\PrintRegistry;
 use App\Support\Printing\SampleDocument;
@@ -58,7 +59,7 @@ class SettingController extends Controller
             'versions' => $tab === 'history' ? $this->themes->history($business) : collect(),
             'previewing' => $this->branding->previewing($business),
             'extraLogos' => collect(BrandingService::EXTRA_LOGOS)->mapWithKeys(fn ($field, $key) => [$field => $this->branding->logoFor($business, str_replace(['logo_', '_path'], '', $key))])->all(),
-            'details' => collect(['short_name', 'slogan', 'description'])->mapWithKeys(fn ($key) => [$key => $this->branding->detail($business, $key)])->all(),
+            'details' => collect(['short_name', 'slogan', 'description', 'locale'])->mapWithKeys(fn ($key) => [$key => $this->branding->detail($business, $key)])->all(),
         ]);
     }
 
@@ -75,6 +76,7 @@ class SettingController extends Controller
                 'short_name' => ['nullable', 'string', 'max:30'],
                 'slogan' => ['nullable', 'string', 'max:120'],
                 'description' => ['nullable', 'string', 'max:500'],
+                'locale' => ['nullable', Rule::in(array_keys(Locales::available()))],
                 'tax_id' => ['nullable', 'string', 'max:64'],
                 'registration_no' => ['nullable', 'string', 'max:64'],
                 'address' => ['nullable', 'string', 'max:500'],
