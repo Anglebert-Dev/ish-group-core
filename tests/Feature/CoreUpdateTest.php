@@ -59,15 +59,18 @@ class CoreUpdateTest extends TestCase
     {
         $this->oldApp();
         $source = $this->newCore('1.1.0');
+        $publicFolder = fileinode($this->base.'/public');
 
         [$code, $result] = $this->apply($source);
 
         $this->assertSame(0, $code);
+        $this->assertSame($publicFolder, fileinode($this->base.'/public'), 'public/ itself stays (web servers serve from it)');
         $this->assertSame('success', $result['status']);
         $this->assertSame('new', trim(File::get($this->base.'/app/marker.txt')));
         $this->assertSame('new', trim(File::get($this->base.'/public/index.php')));
         $this->assertFileDoesNotExist($this->base.'/app/old-only.txt', 'files gone from the new core are gone');
-        $this->assertSame('photo', File::get($this->base.'/public/storage/upload.jpg'), 'uploads carried over');
+        $this->assertSame('photo', File::get($this->base.'/public/storage/upload.jpg'), 'uploads untouched');
+        $this->assertFileDoesNotExist($this->tmp.'/backup/public/storage', 'uploads were never moved');
         $this->assertSame('APP_KEY=keep', File::get($this->base.'/.env'));
         $this->assertSame('data', File::get($this->base.'/storage/app/keep.txt'));
         $this->assertFileExists($this->base.'/Modules/Savings/module.json');
@@ -90,6 +93,7 @@ class CoreUpdateTest extends TestCase
         $this->assertFileExists($this->base.'/app/old-only.txt');
         $this->assertSame('old', trim(File::get($this->base.'/public/index.php')));
         $this->assertSame('photo', File::get($this->base.'/public/storage/upload.jpg'), 'uploads still there');
+        $this->assertFileDoesNotExist($this->tmp.'/backup/public/storage', 'uploads were never moved');
         $this->assertSame('APP_KEY=keep', File::get($this->base.'/.env'));
         $this->assertSame(['old down', 'new core:after-update', 'old up'], $this->artisanCalls(), 'back out of maintenance on the old code');
     }

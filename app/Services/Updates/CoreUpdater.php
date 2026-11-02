@@ -77,9 +77,11 @@ class CoreUpdater
             app(ModulePackageInstaller::class)->backupDatabase();
         }
 
-        // The script runs from storage: the copy in app/ is about to be replaced.
+        // The new package's own script (verified with the package), so a fix
+        // to the updater applies at once; run from storage, since app/ is
+        // about to be replaced.
         $script = $work.'/apply-core.php';
-        File::copy($this->base.'/app/Support/Updates/apply-core.php', $script);
+        File::copy(is_file($source.'/app/Support/Updates/apply-core.php') ? $source.'/app/Support/Updates/apply-core.php' : $this->base.'/app/Support/Updates/apply-core.php', $script);
         $backup = $this->base.'/storage/app/updates/core-backups/'.(config('core.version') ?: 'unknown').'-'.now()->format('YmdHis');
         $resultFile = $work.'/result.json';
 

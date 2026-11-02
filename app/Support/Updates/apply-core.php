@@ -10,8 +10,9 @@
  *   php apply-core.php <base> <new core folder> <backup folder> <result.json> <php binary>
  *
  *  1. maintenance mode (old code)
- *  2. move each core path to the backup, the new one into place; keep
- *     what the package doesn't have in public/ (public/storage: uploads)
+ *  2. move each core path to the backup, the new one into place. public/
+ *     itself stays (web servers serve from it); only what the package ships
+ *     inside it is swapped, so public/storage (uploads) is never touched
  *  3. "artisan core:after-update" in the new code (migrations; it rolls
  *     back its own migrations if one fails)
  *  4. on any failure: put every old path back
@@ -32,8 +33,7 @@ if (! $base || ! $source || ! $backup || ! $resultFile || ! $php) {
     exit(2);
 }
 
-$moved = [];        // core paths swapped, in order
-$carried = [];      // public/ entries brought over from the old public/
+$moved = [];        // paths swapped, in order ("public/<entry>" inside public/)
 
 $artisan = function (array $args) use ($php, $base): array {
     $process = proc_open(array_merge([$php, $base.'/artisan'], $args, ['--no-interaction']), [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $base);
@@ -91,21 +91,19 @@ try {
             continue;
         }
 
-        if (file_exists($base.'/'.$path) || is_link($base.'/'.$path)) {
-            $move($base.'/'.$path, $backup.'/'.$path);
-        }
+        // The web root keeps its folder (a server may be holding on to it);
+        // only the entries the package ships are swapped.
+        $swap = $path === 'public' && is_dir($base.'/public')
+            ? array_map(fn ($entry) => 'public/'.$entry, array_values(array_diff((array) scandir($source.'/public'), ['.', '..'])))
+            : [$path];
 
-        $move($source.'/'.$path, $base.'/'.$path);
-        $moved[] = $path;
-    }
-
-    // Uploads (public/storage) and anything else the package doesn't ship.
-    if (in_array('public', $moved, true) && is_dir($backup.'/public')) {
-        foreach (array_diff((array) scandir($backup.'/public'), ['.', '..']) as $entry) {
-            if (! file_exists($base.'/public/'.$entry) && ! is_link($base.'/public/'.$entry)) {
-                $move($backup.'/public/'.$entry, $base.'/public/'.$entry);
-                $carried[] = $entry;
+        foreach ($swap as $item) {
+            if (file_exists($base.'/'.$item) || is_link($base.'/'.$item)) {
+                $move($base.'/'.$item, $backup.'/'.$item);
             }
+
+            $move($source.'/'.$item, $base.'/'.$item);
+            $moved[] = $item;
         }
     }
 
@@ -122,10 +120,6 @@ try {
     $result['error'] = $e->getMessage();
 
     try {
-        foreach ($carried as $entry) {
-            $move($base.'/public/'.$entry, $backup.'/public/'.$entry);
-        }
-
         foreach (array_reverse($moved) as $path) {
             $remove($base.'/'.$path);
 
