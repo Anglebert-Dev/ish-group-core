@@ -56,26 +56,6 @@
                 min-height: 100%;
                 border-radius: 1.75rem;
             }
-            .auth-panel-frame::before,
-            .auth-panel-frame::after {
-                content: '';
-                position: absolute;
-                z-index: 2;
-                width: 3.25rem;
-                height: 3.25rem;
-                background: #fff;
-                pointer-events: none;
-            }
-            .auth-panel-frame::before {
-                top: -0.05rem;
-                left: -0.05rem;
-                border-bottom-right-radius: 2rem;
-            }
-            .auth-panel-frame::after {
-                right: -0.05rem;
-                bottom: -0.05rem;
-                border-top-left-radius: 2rem;
-            }
         }
         .auth-input-soft input:not([type="checkbox"]):not([type="radio"]):not(.date-field),
         .auth-input-soft textarea,
