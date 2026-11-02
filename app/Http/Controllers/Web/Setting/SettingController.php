@@ -12,6 +12,7 @@ use App\Services\Branding\ThemeService;
 use App\Services\Printing\PrintService;
 use App\Services\Setting\SettingService;
 use App\Support\Branding\Fonts;
+use App\Support\Branding\ThemeSchema;
 use App\Support\Branding\ThemeTokens;
 use App\Support\Locale\Locales;
 use App\Support\Printing\PrintDesign;
@@ -31,7 +32,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class SettingController extends Controller
 {
-    public const TABS = ['details', 'look', 'theme', 'stamp', 'payments', 'documents', 'history'];
+    public const TABS = ['details', 'look', 'theme', 'layout', 'stamp', 'payments', 'documents', 'history'];
 
     public function __construct(
         protected SettingService $settings,
@@ -107,6 +108,7 @@ class SettingController extends Controller
             ])['methods'] ?? []),
             'documents' => $this->branding->saveDesign($business, $this->designInput($request)),
             'theme' => $this->saveTheme($request, $business),
+            'layout' => $this->saveLayout($request, $business),
             default => $this->legacy(app(UpdateSettingRequest::class)),
         };
 
@@ -176,6 +178,18 @@ class SettingController extends Controller
             'mode' => $data['mode'] ?? null,
             'user_mode' => $request->has('user_mode') ? $request->boolean('user_mode') : null,
         ], fn ($value) => $value !== null));
+    }
+
+    private function saveLayout(Request $request, Business $business): array
+    {
+        $rules = collect(ThemeSchema::LAYOUT)->mapWithKeys(fn ($allowed, $key) => ["layout.{$key}" => ['required', Rule::in($allowed)]])->all();
+        $data = $request->validate($rules + ['heading_font' => ['required', Rule::in(['same', ...array_keys(Fonts::LIST)])]]);
+
+        return $this->themes->saveDraft($business, [
+            'layout' => $data['layout'],
+            'heading_font' => $data['heading_font'] === 'same' ? null : $data['heading_font'],
+            'switches' => collect(ThemeSchema::SWITCHES)->mapWithKeys(fn ($default, $key) => [$key => $request->boolean("switches.{$key}")])->all(),
+        ]);
     }
 
     private function back(array $result, ?string $tab = null): RedirectResponse

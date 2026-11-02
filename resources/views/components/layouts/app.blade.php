@@ -1,6 +1,9 @@
+@php $appLayout = app(\App\Services\Branding\BrandingService::class)->layout($branding); @endphp
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" {!! $appLayout->attributes() !!}>
 <head>
+    {{-- Collapsed sidebar: this person's choice (this browser), else the business's start state. Before paint, so nothing jumps. --}}
+    <script>(function () { try { var saved = localStorage.getItem('sidebar-collapsed'); if (saved === '1' || (saved === null && document.documentElement.dataset.sidebarStart === 'collapsed')) document.documentElement.classList.add('sidebar-collapsed'); } catch (e) {} })();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <x-common.brand-head :title="$title ?? 'Dashboard'" />
@@ -27,13 +30,15 @@
 
         <x-dashboard.sidebar />
 
-        <div class="flex-1 min-w-0 lg:pl-64">
+        <div class="app-main flex-1 min-w-0 lg:pl-[var(--sidebar-w)]">
             <x-dashboard.impersonation-banner />
             <x-dashboard.preview-banner />
             <x-dashboard.header :title="$title ?? 'Dashboard'" />
 
-            <main class="p-4 sm:p-5 lg:p-8">
-                {{ $slot }}
+            <main class="app-content p-4 sm:p-5 lg:p-8">
+                <div class="mx-auto w-full max-w-[var(--content-max)]">
+                    {{ $slot }}
+                </div>
             </main>
         </div>
     </div>
@@ -116,6 +121,36 @@
     <script src="{{ asset('js/datetime-split.js') }}"></script>
     <script src="{{ asset('js/searchable-select.js') }}{{ file_exists(public_path('js/searchable-select.js')) ? '?v='.filemtime(public_path('js/searchable-select.js')) : '' }}"></script>
     <script src="{{ asset('js/form-wizard.js') }}{{ file_exists(public_path('js/form-wizard.js')) ? '?v='.filemtime(public_path('js/form-wizard.js')) : '' }}"></script>
+    @if ($appLayout->on('loading_bar'))
+        <div id="page-loading-bar" aria-hidden="true"></div>
+        <script>
+            (function () {
+                var bar = document.getElementById('page-loading-bar');
+                function start() { bar.classList.add('is-loading'); }
+                document.addEventListener('click', function (e) {
+                    var link = e.target.closest('a[href]');
+                    if (!link || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || link.target === '_blank' || link.hasAttribute('download')) return;
+                    var href = link.getAttribute('href');
+                    if (!href || href.charAt(0) === '#' || href.indexOf('javascript:') === 0 || link.origin !== location.origin) return;
+                    start();
+                });
+                document.addEventListener('submit', function (e) { if (!e.defaultPrevented && e.target.target !== '_blank') start(); });
+                window.addEventListener('pageshow', function () { bar.classList.remove('is-loading'); });
+            })();
+        </script>
+    @endif
+    @if ($appLayout->on('back_to_top'))
+        <button type="button" id="back-to-top" aria-label="{{ __('body.back_to_top') }}" onclick="window.scrollTo({ top: 0, behavior: 'smooth' })"
+                class="h-10 w-10 rounded-full bg-card border border-line shadow-lg text-body hover:text-brand flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/></svg>
+        </button>
+        <script>
+            (function () {
+                var button = document.getElementById('back-to-top');
+                window.addEventListener('scroll', function () { button.classList.toggle('is-visible', window.scrollY > 600); }, { passive: true });
+            })();
+        </script>
+    @endif
     @stack('scripts')
 </body>
 </html>

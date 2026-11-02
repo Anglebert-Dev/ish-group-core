@@ -166,7 +166,9 @@ final class ThemeTokens
         $color = fn (string $key) => 'rgb(var(--c-'.str_replace('_', '-', $key).') / <alpha-value>)';
 
         return ['theme' => ['extend' => [
-            'fontFamily' => ['display' => ['var(--font-body)'], 'sans' => ['var(--font-body)']],
+            'fontFamily' => ['display' => ['var(--font-heading, var(--font-body))'], 'sans' => ['var(--font-body)']],
+            // Corners follow the business's choice (sharp / slightly rounded / rounded).
+            'borderRadius' => ['md' => 'var(--radius-md, 0.375rem)', 'lg' => 'var(--radius-lg, 0.5rem)', 'xl' => 'var(--radius-xl, 0.75rem)', '2xl' => 'var(--radius-2xl, 1rem)', 'button' => 'var(--radius-button, 0.5rem)'],
             'colors' => [
                 'brand' => ['DEFAULT' => $color('brand'), 'dark' => $color('brand_dark'), 'light' => $color('brand_light')],
                 'accent' => $color('accent'),

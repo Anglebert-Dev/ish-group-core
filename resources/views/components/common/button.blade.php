@@ -5,7 +5,7 @@
 ])
 
 @php
-    $base = 'inline-flex items-center justify-center gap-2 font-semibold rounded-lg transition-colors whitespace-nowrap';
+    $base = 'inline-flex items-center justify-center gap-2 font-semibold rounded-button transition-colors whitespace-nowrap';
 
     $variants = [
         'primary'   => 'bg-brand text-on-brand hover:bg-brand-dark',

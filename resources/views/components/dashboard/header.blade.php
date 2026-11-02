@@ -11,7 +11,7 @@
     $headerUnreadCount = $headerUnreadCount ?? 0;
 @endphp
 
-<header class="h-16 bg-header text-header-ink border-b border-header-ink/10 flex items-center justify-between gap-3 px-4 sm:px-5 lg:px-8 sticky top-0 z-20">
+<header class="h-[var(--header-h)] bg-header text-header-ink border-b border-header-ink/10 flex items-center justify-between gap-3 px-4 sm:px-5 lg:px-8 sticky top-0 z-20">
 
     <div class="flex items-center gap-3 min-w-0">
         <button type="button" onclick="toggleSidebar(true)" class="lg:hidden text-header-ink p-2 -ml-2 rounded-lg hover:bg-header-ink/5" aria-label="Open menu">

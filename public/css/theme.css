@@ -1,0 +1,60 @@
+/*
+ * Layout & typography rules (docs/branding.md §3.4–3.5). They read the
+ * variables and <html data-…> attributes written per business by
+ * App\Support\Branding\ThemeLayout, so no view needs its own copy.
+ */
+
+body { line-height: var(--line-height, 1.5); }
+h1, h2, h3, .font-display { font-family: var(--font-heading, var(--font-body)); }
+
+/* Sidebar width: open, or icons only when collapsed (desktop). */
+:root { --sidebar-w: var(--sidebar-w-open, 16rem); }
+html.sidebar-collapsed { --sidebar-w: 4.5rem; }
+#dashboard-sidebar, .app-main { transition: width .2s ease, padding-left .2s ease; }
+
+@media (min-width: 1024px) {
+    html.sidebar-collapsed #dashboard-sidebar .sidebar-label,
+    html.sidebar-collapsed #dashboard-sidebar .logo-name,
+    html.sidebar-collapsed #dashboard-sidebar .sidebar-note { display: none; }
+    html.sidebar-collapsed #dashboard-sidebar nav a,
+    html.sidebar-collapsed #dashboard-sidebar .sidebar-foot button { justify-content: center; padding-left: 0; padding-right: 0; }
+    html.sidebar-collapsed #dashboard-sidebar .sidebar-head { justify-content: center; padding-left: 0; padding-right: 0; }
+    html.sidebar-collapsed #sidebar-collapse svg { transform: rotate(180deg); }
+
+    /* Floating: an inset card instead of a full-height panel. */
+    [data-sidebar="floating"] #dashboard-sidebar { top: .75rem; bottom: .75rem; left: .75rem; height: auto; border-radius: var(--radius-2xl, 1rem); border: 1px solid rgb(var(--c-line)); box-shadow: 0 1px 3px rgb(0 0 0 / .06); }
+    [data-sidebar="floating"] .app-main { padding-left: calc(var(--sidebar-w) + 1.5rem); }
+}
+
+/* Minimal: no dividing lines. */
+[data-sidebar="minimal"] #dashboard-sidebar,
+[data-sidebar="minimal"] #dashboard-sidebar .sidebar-head,
+[data-sidebar="minimal"] #dashboard-sidebar .sidebar-foot { border-color: transparent; }
+
+/* Cards. */
+[data-cards="flat"] main .bg-card.rounded-xl { border-color: transparent; box-shadow: none; }
+[data-cards="elevated"] main .bg-card.rounded-xl { box-shadow: 0 1px 2px rgb(0 0 0 / .04), 0 4px 14px rgb(0 0 0 / .06); }
+
+/* Density: tighter tables, fields and menu. Touch targets stay ≥ 40px. */
+[data-density="compact"] main :is(td, th) { padding-top: .45rem; padding-bottom: .45rem; }
+[data-density="compact"] main :is(input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="hidden"]), select) { height: 2.5rem; min-height: 2.5rem; }
+[data-density="compact"] #dashboard-sidebar nav a { padding-top: .45rem; padding-bottom: .45rem; }
+[data-density="compact"] #dashboard-sidebar nav { row-gap: 1rem; }
+[data-density="compact"] main.app-content { padding-top: 1rem; padding-bottom: 1rem; }
+
+/* Page subtitles off. */
+[data-subtitles="off"] .page-subtitle { display: none; }
+
+/* Animations off (also when the device asks for less motion). */
+[data-motion="off"] *, [data-motion="off"] *::before, [data-motion="off"] *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}
+
+/* Loading bar on navigation. */
+#page-loading-bar { position: fixed; top: 0; left: 0; height: 3px; width: 0; z-index: 60; background: rgb(var(--c-brand)); box-shadow: 0 0 8px rgb(var(--c-brand) / .5); transition: width 8s cubic-bezier(.1, .7, .2, 1), opacity .3s; opacity: 0; pointer-events: none; }
+#page-loading-bar.is-loading { width: 85%; opacity: 1; }
+
+/* Back to top. */
+#back-to-top { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 40; opacity: 0; transform: translateY(.5rem); pointer-events: none; transition: opacity .2s, transform .2s; }
+#back-to-top.is-visible { opacity: 1; transform: none; pointer-events: auto; }

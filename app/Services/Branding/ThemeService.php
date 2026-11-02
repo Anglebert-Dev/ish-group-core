@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\BaseService;
 use App\Services\Setting\SettingService;
 use App\Support\Branding\ThemeContrast;
+use App\Support\Branding\ThemeLayout;
 use App\Support\Branding\ThemeSchema;
 use App\Support\Branding\ThemeTokens;
 use Illuminate\Database\Eloquent\Builder;
@@ -57,6 +58,11 @@ class ThemeService extends BaseService
         $theme = $this->effective($business, $withDraft);
 
         return ThemeTokens::resolve($business->brandColor(), $theme[$dark ? 'colors_dark' : 'colors'] ?? [], $dark);
+    }
+
+    public function layout(Business $business, bool $withDraft = false): ThemeLayout
+    {
+        return new ThemeLayout($this->effective($business, $withDraft));
     }
 
     /** The business's mode: light, dark or system. */

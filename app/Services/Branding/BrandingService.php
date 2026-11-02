@@ -8,6 +8,7 @@ use App\Models\Business\Business;
 use App\Services\BaseService;
 use App\Support\Branding\Brand;
 use App\Support\Branding\Fonts;
+use App\Support\Branding\ThemeLayout;
 use App\Support\Branding\ThemeTokens;
 use App\Support\Printing\PrintDesign;
 use App\Support\Settings\BusinessSettings;
@@ -119,6 +120,12 @@ class BrandingService extends BaseService
         $user = auth('staff')->user();
 
         return app(ThemeService::class)->css($business, $user?->business_id === $business->id ? $user : null, $this->previewing($business));
+    }
+
+    /** Layout & typography for this business's pages (draft while previewing). */
+    public function layout(Business $business): ThemeLayout
+    {
+        return app(ThemeService::class)->layout($business, $this->previewing($business));
     }
 
     /**

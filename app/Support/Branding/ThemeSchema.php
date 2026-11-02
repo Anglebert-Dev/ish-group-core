@@ -21,6 +21,32 @@ final class ThemeSchema
     public const DEFAULT_MODE = 'light';
 
     /**
+     * Layout & typography (docs/branding.md §3.4–3.5). The first value of each
+     * is the default: today's look.
+     */
+    public const LAYOUT = [
+        'sidebar_width' => ['standard', 'compact', 'wide'],
+        'sidebar_style' => ['solid', 'minimal', 'floating'],
+        'sidebar_start' => ['expanded', 'collapsed'],
+        'header' => ['standard', 'compact'],
+        'density' => ['comfortable', 'compact'],
+        'content_width' => ['full', 'wide', 'standard'],
+        'cards' => ['bordered', 'flat', 'elevated'],
+        'corners' => ['rounded', 'slight', 'sharp'],
+        'buttons' => ['rounded', 'square', 'pill'],
+        'font_size' => ['normal', 'small', 'large'],
+        'line_height' => ['normal', 'relaxed'],
+    ];
+
+    /** On/off parts of the interface, with their defaults. */
+    public const SWITCHES = [
+        'page_subtitles' => true,
+        'back_to_top' => true,
+        'motion' => true,
+        'loading_bar' => true,
+    ];
+
+    /**
      * Ready-made colour sets for the Theme tab (light colours; blank = default).
      * Applying one fills the form; nothing is saved until "Save draft".
      */
@@ -47,6 +73,16 @@ final class ThemeSchema
         return array_filter([
             'colors' => $colors($payload['colors'] ?? null),
             'colors_dark' => $colors($payload['colors_dark'] ?? null) + array_filter(['brand' => ColorLibrary::parse(is_string($payload['colors_dark']['brand'] ?? null) ? $payload['colors_dark']['brand'] : null)]),
+            'layout' => collect(self::LAYOUT)
+                ->mapWithKeys(fn ($allowed, $key) => [$key => in_array($payload['layout'][$key] ?? null, $allowed, true) ? $payload['layout'][$key] : null])
+                ->filter()
+                ->all(),
+            // "same" = the system font.
+            'heading_font' => is_string($payload['heading_font'] ?? null) && array_key_exists($payload['heading_font'], Fonts::LIST) ? $payload['heading_font'] : null,
+            'switches' => collect(self::SWITCHES)
+                ->mapWithKeys(fn ($default, $key) => [$key => array_key_exists($key, (array) ($payload['switches'] ?? [])) ? (bool) $payload['switches'][$key] : null])
+                ->filter(fn ($value) => $value !== null)
+                ->all(),
             // Light, dark, or follow each device.
             'mode' => in_array($payload['mode'] ?? null, ThemeTokens::MODES, true) ? $payload['mode'] : null,
             // May each person pick their own light/dark? (Unset = yes.)

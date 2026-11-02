@@ -127,7 +127,7 @@ a,
 @media (min-width: 1024px) {
     #dashboard-sidebar,
     #account-sidebar {
-        width: 16rem;
+        width: var(--sidebar-w, 16rem);
         max-width: none;
         transform: none !important;
         height: 100vh;

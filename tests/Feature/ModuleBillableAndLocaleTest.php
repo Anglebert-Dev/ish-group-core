@@ -83,7 +83,7 @@ class ModuleBillableAndLocaleTest extends TestCase
         $this->post(route('locale.update'), ['locale' => 'fr'])->assertRedirect();
         $this->assertSame('fr', $owner->fresh()->locale);
         $this->assertTrue(ActivityLog::query()->where('description', 'Language changed to fr')->exists());
-        $this->get(route('dashboard'))->assertOk()->assertSee('<html lang="fr">', false)->assertSee('Langue');
+        $this->get(route('dashboard'))->assertOk()->assertSee('<html lang="fr"', false)->assertSee('Langue');
 
         $this->post(route('locale.update'), ['locale' => 'xx'])->assertSessionHasErrors('locale');
 
@@ -92,7 +92,7 @@ class ModuleBillableAndLocaleTest extends TestCase
         $colleague = $this->makeMember($owner->business, ['list users.user']);
         $this->flushSession();
         $this->actingAs($colleague, 'staff');
-        $this->get(route('dashboard'))->assertOk()->assertSee('<html lang="fr">', false);
+        $this->get(route('dashboard'))->assertOk()->assertSee('<html lang="fr"', false);
     }
 
     public function test_guests_switch_for_their_session(): void
@@ -101,7 +101,7 @@ class ModuleBillableAndLocaleTest extends TestCase
 
         $this->get(route('staff.login'))->assertOk()->assertSee('id="language-switcher"', false);
         $this->post(route('locale.update'), ['locale' => 'fr']);
-        $this->get(route('staff.login'))->assertOk()->assertSee('<html lang="fr">', false);
+        $this->get(route('staff.login'))->assertOk()->assertSee('<html lang="fr"', false);
     }
 
     private function addFrench(): void

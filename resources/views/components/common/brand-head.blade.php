@@ -10,7 +10,15 @@
 <link rel="apple-touch-icon" href="{{ $favicon }}">
 <link rel="stylesheet" href="{{ asset('css/responsive.css') }}{{ file_exists(public_path('css/responsive.css')) ? '?v='.filemtime(public_path('css/responsive.css')) : '' }}">
 <x-common.brand-font />
+<link rel="stylesheet" href="{{ asset('css/theme.css') }}{{ file_exists(public_path('css/theme.css')) ? '?v='.filemtime(public_path('css/theme.css')) : '' }}">
+@php
+    $brandingService = app(\App\Services\Branding\BrandingService::class);
+    $themeLayout = $brandingService->layout($branding);
+    $bodyFont = $brandingService->font($branding);
+@endphp
 <style>
+    {!! $themeLayout->headingFaces($bodyFont) !!}
+    {!! $themeLayout->css($bodyFont) !!}
     {!! app(\App\Services\Branding\BrandingService::class)->themeCss($branding) !!}
 
     /* Shared date / datetime fields */

@@ -4,7 +4,7 @@
     <div class="min-w-0">
         <h1 class="text-xl sm:text-2xl font-display font-bold text-ink break-words">{{ $title }}</h1>
         @if ($description)
-            <p class="text-muted text-sm mt-1">{{ $description }}</p>
+            <p class="page-subtitle text-muted text-sm mt-1">{{ $description }}</p>
         @endif
     </div>
     @isset($actions)

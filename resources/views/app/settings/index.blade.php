@@ -291,6 +291,36 @@
             </script>
         @endif
 
+        @if ($tab === 'layout')
+            @php $themeLayout = new \App\Support\Branding\ThemeLayout($theme); @endphp
+            <div class="bg-card border border-line rounded-xl p-4 sm:p-6 space-y-6">
+                <p class="text-sm text-muted">{{ __('body.layout_hint') }}</p>
+                @foreach (\App\Support\Branding\ThemeSchema::LAYOUT as $key => $options)
+                    <fieldset class="space-y-2">
+                        <legend class="text-sm font-bold text-ink">{{ __('body.layout_'.$key) }}</legend>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            @foreach ($options as $option)
+                                <label class="rounded-xl border border-line px-4 py-2.5 cursor-pointer has-[:checked]:border-brand has-[:checked]:bg-brand-light">
+                                    <input type="radio" name="layout[{{ $key }}]" value="{{ $option }}" class="sr-only" @checked(old('layout.'.$key, $themeLayout->get($key)) === $option)>
+                                    <span class="block text-sm font-semibold text-ink">{{ __('body.layout_'.$key.'_'.$option) }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                    </fieldset>
+                @endforeach
+
+                <x-common.select name="heading_font" :label="__('body.layout_heading_font')" :value="old('heading_font', $themeLayout->headingFont() ?? 'same')"
+                    :options="['same' => __('body.layout_heading_font_same')] + \App\Support\Branding\Fonts::options()" hide-placeholder :hint="__('body.layout_heading_font_hint')" />
+
+                <fieldset class="space-y-2">
+                    <legend class="text-sm font-bold text-ink">{{ __('body.layout_switches') }}</legend>
+                    @foreach (array_keys(\App\Support\Branding\ThemeSchema::SWITCHES) as $switch)
+                        <x-common.checkbox :name="'switches['.$switch.']'" value="1" :checked="(bool) old('switches.'.$switch, $themeLayout->on($switch))" :label="__('body.layout_switch_'.$switch)" />
+                    @endforeach
+                </fieldset>
+            </div>
+        @endif
+
         @if ($tab === 'stamp')
             <div class="bg-card border border-line rounded-xl p-4 sm:p-6 space-y-5">
                 <p class="text-sm text-muted">{{ __('body.brand_stamp_hint') }}</p>
@@ -440,7 +470,7 @@
         @endif
 
         <div class="flex [&>*]:w-full sm:[&>*]:w-auto sm:justify-end">
-            <x-common.button type="submit">{{ $tab === 'theme' ? __('body.theme_save_draft') : __('body.save_changes') }}</x-common.button>
+            <x-common.button type="submit">{{ in_array($tab, ['theme', 'layout'], true) ? __('body.theme_save_draft') : __('body.save_changes') }}</x-common.button>
         </div>
     </form>
     @endif
