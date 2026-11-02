@@ -303,6 +303,24 @@
     </div>
 
     {{-- Zips --}}
+    @if (session('signing_secret'))
+        <div class="rounded-xl border border-warning/30 bg-warning/10 p-4 mb-3 text-sm text-ink">
+            <p class="font-semibold">{{ __('distribution::distribution.keys_created_web') }}</p>
+            <p class="mt-2 font-mono text-xs break-all select-all bg-card border border-warning/30 rounded-lg p-3">{{ session('signing_secret') }}</p>
+        </div>
+    @endif
+    @unless ($signingReady)
+        <div class="rounded-xl border border-warning/30 bg-warning/10 p-4 mb-3 flex flex-wrap items-center justify-between gap-3">
+            <div class="text-sm text-ink max-w-2xl">
+                <p class="font-semibold">{{ __('distribution::distribution.signing_needed_title') }}</p>
+                <p>{{ __('distribution::distribution.signing_needed_body') }}</p>
+            </div>
+            <form method="POST" action="{{ route('superadmin.distribution.releases.key') }}">
+                @csrf
+                <x-common.button type="submit" size="sm">{{ __('distribution::distribution.signing_create') }}</x-common.button>
+            </form>
+        </div>
+    @endunless
     <div class="bg-card border border-line rounded-xl overflow-hidden mb-6">
         <div class="px-5 py-4 border-b border-line flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -427,6 +445,9 @@
             </div>
         @endif
 
+        @unless ($site->canReceiveLinkKey())
+            <p class="p-5 border-b border-line text-sm text-muted">{{ __('distribution::distribution.link_key_too_early') }}</p>
+        @else
         <form method="POST" action="{{ route('superadmin.distribution.sites.link-key', $site) }}" class="p-5 border-b border-line space-y-3">
             @csrf
             <p class="text-sm text-muted">{{ __('distribution::distribution.link_key_hint') }}</p>
@@ -439,6 +460,7 @@
             <input type="hidden" name="revoke_others" value="0">
             <x-common.checkbox name="revoke_others" value="1" :checked="true" inline :label="__('distribution::distribution.link_key_revoke_others')" />
         </form>
+        @endunless
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <tbody class="divide-y divide-line">

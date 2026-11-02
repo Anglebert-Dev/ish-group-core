@@ -114,7 +114,7 @@ class CustomerMailer extends BaseService
             ],
             $updatesPage ? __('distribution::distribution.email_link_open') : null,
             $updatesPage ? rtrim($updatesPage, '/').'/app/super-admin/updates' : null,
-            [__('distribution::distribution.email_package_keep_code'), __('distribution::distribution.email_reply_questions')],
+            [__('distribution::distribution.email_link_keep_key'), __('distribution::distribution.email_reply_questions')],
         ));
 
         PlatformAudit::log('distribution_link_key_emailed', "Link key emailed to {$email} for site {$site->name}", $site, ['email' => $email]);

@@ -457,4 +457,9 @@ return [
     'build_developer_hint' => 'For customers who keep developing their copy: keeps the tests, phpunit.xml, README, guides and the developer packages (tests needing modules they do not have are left out).',
     'build_developer_badge' => 'Developer',
     'module_held' => 'Customised (updates held)',
+    'link_key_too_early' => 'A link key reconnects a server that is already installed. Build and send the zip first; a link key is only needed later (a moved server, a lost connection).',
+    'email_link_keep_key' => 'Keep this key private: it connects a server to your updates.',
+    'signing_needed_title' => 'First, create your signing key',
+    'signing_needed_body' => 'Needed once for this server, before any zip can be built: it proves that zips and updates really come from you. (Not the same as a link key, which reconnects one customer\'s server later.)',
+    'signing_create' => 'Create signing key',
 ];

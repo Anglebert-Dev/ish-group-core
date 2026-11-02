@@ -263,6 +263,12 @@ class UpdateApiTest extends TestCase
         NotificationFacade::fake();
         $this->actingAs($this->makeSuperAdmin(['email' => 'root4@example.com']), 'staff');
 
+        // Not before there is a server to reconnect.
+        $this->withConfirmedPassword()->post(route('superadmin.distribution.sites.link-key', $this->site), ['email' => 'it@acme.test'])
+            ->assertSessionHas('error', __('distribution::distribution.link_key_too_early'));
+        NotificationFacade::assertNothingSent();
+        $this->site->forceFill(['installed_at' => now()])->save();
+
         $this->withConfirmedPassword()->post(route('superadmin.distribution.sites.link-key', $this->site), ['email' => 'it@acme.test', 'revoke_others' => '1'])
             ->assertSessionHas('success')
             ->assertSessionHas('link_key');

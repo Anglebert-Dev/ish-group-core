@@ -72,6 +72,11 @@ class Site extends BaseModel
         return $this->status === SiteStatus::Active;
     }
 
+    public function canReceiveLinkKey(): bool
+    {
+        return $this->installed_at !== null || $this->builds()->where('status', 'ready')->exists();
+    }
+
     public function charges(): HasMany
     {
         return $this->hasMany(Charge::class)->latest('id');

@@ -16,6 +16,7 @@ use Modules\Distribution\Models\SiteToken;
 use Modules\Distribution\Services\BuildService;
 use Modules\Distribution\Services\CustomerMailer;
 use Modules\Distribution\Services\LicenceService;
+use Modules\Distribution\Services\SigningKeys;
 use Modules\Distribution\Services\SiteService;
 use Modules\Distribution\Support\PlatformAudit;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -63,6 +64,7 @@ class SiteController extends Controller
             'site' => $site,
             'latest' => Release::latestFor($site->moduleNames(), $site->is_test),
             'assignable' => array_values(array_diff($this->sites->assignableModules(), $site->moduleNames())),
+            'signingReady' => app(SigningKeys::class)->configured(),
         ]);
     }
 
@@ -135,6 +137,10 @@ class SiteController extends Controller
 
     public function linkKey(Request $request, Site $site, CustomerMailer $mailer): RedirectResponse
     {
+        if (! $site->canReceiveLinkKey()) {
+            return back()->with('error', __('distribution::distribution.link_key_too_early'));
+        }
+
         $data = $request->validate(['email' => ['nullable', 'email', 'max:255']]);
         $key = $this->sites->issueLinkKey($site, $request->boolean('revoke_others'));
         $message = __('distribution::distribution.link_key_created');
