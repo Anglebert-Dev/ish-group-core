@@ -1,6 +1,6 @@
 # Self-hosting (shipping modules to a customer's server): Build Guide
 
-Created: 31/10/2026. Status: **All phases done (31/10/2026)**. Tested end to end on two real servers, on PostgreSQL and on MySQL 9.7. Update the progress table in §9 after each phase, so work can pick up where it stopped.
+Created: 31/10/2026. Status: **All phases done (31/10/2026); core updates added 02/11/2026**. Tested end to end on two real servers, on PostgreSQL and on MySQL 9.7. Update the progress table in §9 after each phase, so work can pick up where it stopped.
 
 ## 1. Goal
 
@@ -91,6 +91,28 @@ What lives where:
 - **Shared hosting:**
   - `QUEUE_VIA_SCHEDULER=true` makes `schedule:run` also process the queue
   - a root `.htaccess` and `index.php` send requests to `public/` and block `.env`, `storage`, `vendor` and `Modules`
+
+### 5.3 Core updates (added 02/11/2026, Distribution 1.4.0)
+
+- **Versioning:** `config/core.php` holds a semantic `version` (starting at `1.0.0`; raise it before publishing a core update) and `build` (the git commit, written by builds). Sites report `version+commit`, and offers compare the version only. Old zips report a git commit as their version, which counts as `0.0.0`.
+- **Publishing:** Self-hosting → Releases → **Publish core update** (password confirmation; test sites first if any), or `php artisan distribution:publish-core [--test]`. `BuildService::corePackage()` builds from the last commit: no `Modules/`, no `storage/`, production vendor (autoloader without modules; modules load through the fallback autoloader), our public keys, the core version and commit, one top folder `core/`. Signed as `PackageSignature::message('Core', version, sha256)`. Stored as a release with the reserved module name `Core`, plus `min_php` taken from `composer.json`. A version must be newer than every earlier core release.
+- **Offers:** a newer core is offered **first**, to every site (respecting test sites first). A module release with `"core": "x.y.z"` in its `module.json` (stored as `min_core_version`) isn't offered until the site runs that core.
+- **On their server:**
+  - Super Admin → Updates shows a **Core update** card with its own **Install** button (password confirmation). On Automatic it's installed by the hourly check, modules first and the core last. The core is never part of "Install all".
+  - `CoreUpdater` checks everything in the running code before any change: proc_open available, PHP ≥ `min_php`, the app's folders writable, sha256, signature, safe extraction, the version inside, no `Modules/` or `storage/` in the package. Then it backs up the database.
+  - It runs **the new package's own** `app/Support/Updates/apply-core.php` from storage, in its own process. The script:
+    1. `artisan down` (old code)
+    2. moves each core path (`app`, `bootstrap/app.php`, `bootstrap/providers.php`, `config`, `database`, `public`, `resources`, `routes`, `vendor`, `artisan`, `composer.*`, `.htaccess`) to `storage/app/updates/core-backups/<old version>-<time>/` and puts the new one in place. **`public/` itself is never moved**: only the entries the package ships inside it are swapped, so `public/storage` (uploads) stays and web servers keep their web root.
+    3. clears `bootstrap/cache/*.php`
+    4. runs `artisan core:after-update` in the **new** code: migrations, and on failure it undoes its own migrations, including the half-done one; then permissions and `optimize:clear`
+    5. on any failure, moves every path back
+    6. `artisan up`
+  - The result is recorded by `artisan core:finish-core-update` in a fresh process (history, report, audit, notification to their admins). The last 2 code backups are kept.
+  - **Never touched:** `.env`, `storage/`, `Modules/`.
+- **Limits:**
+  - Servers installed from zips built before core updates existed ignore core offers; they need one new zip.
+  - Hosts without `proc_open` can't take core updates; the customer is told so, and nothing changes.
+  - Core migrations, like module ones, should only add things. A rollback depends on each migration's `down()`.
 
 ### 5.2 Updates
 
@@ -419,9 +441,18 @@ Commit after each phase. Run `php artisan test` before every commit.
 | Our server down | "Could not reach your provider's update server…" |
 | `distribution:prune` | runs |
 
+### End-to-end run 4, 02/11/2026: core updates (two servers, PostgreSQL)
+
+| Step | Result |
+|---|---|
+| Core 1.0.1 (new text + a new core migration), real build with Composer, about 8 s | offered first; the **web button** installed it in 3.3 s; dashboard shows the new text, new table present, `public/storage` and `.env` intact; our site page shows core 1.0.1 and we were notified; their admin was notified |
+| Core 1.0.2 with a migration that creates a table then throws | **rolled back**: still 1.0.1, no half-made table, 1.0.1's table kept, out of maintenance, dashboard working; reported to us; not retried automatically |
+| Savings 1.2.0 needing core 1.0.3, then core 1.0.3 | Savings waited; the hourly check installed core 1.0.3, the next one Savings 1.2.0 |
+| **Bug found and fixed** | moving `public/` left PHP's built-in server (`php artisan serve`) serving from the backup folder (500s). Now only the entries inside `public/` are swapped, and the package's own script is used. Proven: 1.0.4, applied by the old updater, still hit it; 1.0.5, applied by the new one, kept the site at 200 with no restart |
+
 ## 12. Open points
 
 - **HTTPS:** nothing enforces HTTPS for the update server address yet. Our `APP_URL` must be `https://` in production, because builds put it in every `site.json`.
-- **Core self-update** (app/, vendor) is a later phase. Until then, a core change means a new zip for each site. A server installed from an older zip also lacks newer core features (link form, plan changes) until it gets a new zip.
+- **Core updates are built (§5.3).** A server installed from a zip built before 02/11/2026 needs one new zip to receive them.
 - Should a customer's admin be allowed to switch modules off on their server? They can today, through Super Admin → Modules, because they are superadmin there.
 - Docker: `storage/` and `Modules/` must be persistent volumes for updates to survive a container restart. Otherwise use `manual` mode and ship new images.

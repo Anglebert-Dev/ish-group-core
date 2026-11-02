@@ -137,6 +137,8 @@ php artisan core:setup        # asks; or --no-interaction with --db-* --app-url=
 
 Then cron `* * * * * php artisan schedule:run` (and `queue:work`, unless they ticked "cron only").
 
+**Core updates:** raise `version` in `config/core.php`, commit, then **Releases → Publish core update** (or `php artisan distribution:publish-core`). Customers' servers install it with a minute of maintenance mode and undo it if anything fails.
+
 **Updates:** raise the module's `version` in its `module.json`, commit, then **Releases → Publish** (or `php artisan distribution:publish <Module>`). Sites check hourly: automatic ones install, manual ones show it under **Super Admin → Updates**. A failed update is undone. Write module migrations so they only add things.
 
 **Docker:** `php artisan core:setup --skip-env --no-interaction …` with the environment set by the container; keep `storage/` and `Modules/` on volumes, or use manual updates and ship new images.
