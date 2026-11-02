@@ -43,6 +43,18 @@ class LicenceController extends Controller
         ])));
     }
 
+    public function update(Request $request, Site $site, Charge $charge): RedirectResponse
+    {
+        abort_unless($charge->site_id === $site->id, 404);
+
+        return $this->back($site, $this->licences->update($charge, $request->validate([
+            'amount' => ['required', 'numeric', 'min:0', 'max:999999999'],
+            'support_months' => ['nullable', 'integer', 'min:0', 'max:60'],
+            'due_on' => ['nullable', 'date'],
+            'description' => ['nullable', 'string', 'max:255'],
+        ])));
+    }
+
     public function cancel(Request $request, Site $site, Charge $charge): RedirectResponse
     {
         abort_unless($charge->site_id === $site->id, 404);

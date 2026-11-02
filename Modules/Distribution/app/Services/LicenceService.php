@@ -42,6 +42,11 @@ class LicenceService extends BaseService
      */
     public function charge(Site $site, array $data): array
     {
+        // One open licence at a time: a wrong one is edited, not duplicated.
+        if ($data['kind'] === Charge::LICENCE && ($open = $site->charges()->where('kind', Charge::LICENCE)->where('status', ChargeStatus::Unpaid->value)->first())) {
+            return $this->failure(__('distribution::distribution.charge_licence_open', ['number' => $open->number]));
+        }
+
         $months = (int) ($data['support_months'] ?? 0);
         // A renewal starts the day after the current period ends (or today, if it has lapsed).
         $from = $site->support_until && $site->support_until->isFuture() ? $site->support_until->copy()->addDay() : today();
@@ -98,6 +103,42 @@ class LicenceService extends BaseService
         }
 
         return $this->success($charge, $message);
+    }
+
+    /**
+     * Correct an unpaid charge (amount, support months, due date, description).
+     * Paid or cancelled charges are records and stay as they are.
+     *
+     * @param  array{amount: float|string, support_months?: ?int, due_on?: ?string, description?: ?string}  $data
+     */
+    public function update(Charge $charge, array $data): array
+    {
+        if (! $charge->isOpen()) {
+            return $this->failure(__('distribution::distribution.charge_not_open'));
+        }
+
+        $site = $charge->site;
+        $months = (int) ($data['support_months'] ?? 0);
+        $from = $charge->period_from ?? ($site->support_until && $site->support_until->isFuture() ? $site->support_until->copy()->addDay() : today());
+        $before = $charge->only(['amount', 'period_until', 'due_on', 'description']);
+
+        $charge->forceFill([
+            'amount' => $data['amount'],
+            'period_from' => $months > 0 ? $from : null,
+            'period_until' => $months > 0 ? $from->copy()->addMonthsNoOverflow($months)->subDay() : null,
+            'due_on' => $data['due_on'] ?? $charge->due_on,
+            'description' => filled($data['description'] ?? null) ? $data['description'] : $this->defaultDescription($site, $charge->kind, $months),
+        ])->save();
+
+        PlatformAudit::log('distribution_charge_updated', "Charge {$charge->number} corrected", $charge, ['before' => $before]);
+
+        return $this->success($charge, __('distribution::distribution.charge_updated', ['number' => $charge->number]));
+    }
+
+    /** Support months a charge carries (from its period). */
+    public static function monthsOf(Charge $charge): int
+    {
+        return $charge->period_from && $charge->period_until ? (int) round($charge->period_from->diffInMonths($charge->period_until->copy()->addDay())) : 0;
     }
 
     public function cancel(Charge $charge, string $reason): array

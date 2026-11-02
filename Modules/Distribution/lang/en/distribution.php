@@ -468,4 +468,8 @@ return [
     'build_needs_paid_licence' => 'The licence is not paid yet. Create the licence charge below (Licence & support), send it, and mark it paid when the money arrives; then the zip can be built. (Test sites need no licence.)',
     'licence_unpaid_title' => 'Waiting for the licence payment',
     'support_none' => 'No support (until paid)',
+    'charge_edit' => 'Edit',
+    'charge_save' => 'Save changes',
+    'charge_updated' => 'Charge :number updated. Email it again so the customer has the new version.',
+    'charge_licence_open' => 'Licence charge :number is still open. Edit it (amount, months, due date) instead of making another, or cancel it first.',
 ];

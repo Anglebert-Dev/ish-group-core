@@ -40,6 +40,7 @@ Route::prefix('app/super-admin/distribution')->name('superadmin.distribution.')-
     Route::get('/sites/{site}/builds/{build}/download', [SiteController::class, 'download'])->middleware('password.confirm.staff')->name('sites.builds.download');
     Route::post('/sites/{site}/link-key', [SiteController::class, 'linkKey'])->middleware(['password.confirm.staff', 'throttle:10,1'])->name('sites.link-key');
     Route::post('/sites/{site}/charges', [LicenceController::class, 'store'])->name('sites.charges.store');
+    Route::put('/sites/{site}/charges/{charge}', [LicenceController::class, 'update'])->name('sites.charges.update');
     Route::post('/sites/{site}/charges/{charge}/pay', [LicenceController::class, 'pay'])->name('sites.charges.pay');
     Route::post('/sites/{site}/charges/{charge}/cancel', [LicenceController::class, 'cancel'])->name('sites.charges.cancel');
     Route::post('/sites/{site}/charges/{charge}/email', [LicenceController::class, 'email'])->middleware('throttle:10,1')->name('sites.charges.email');

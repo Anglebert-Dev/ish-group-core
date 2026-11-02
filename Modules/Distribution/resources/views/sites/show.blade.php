@@ -102,15 +102,29 @@
                                         <a href="{{ route('print.show', ['distribution_charge', $charge->getRouteKey()]) }}" target="_blank" rel="noopener" class="text-brand hover:text-brand-dark">{{ __('body.print') }}</a>
                                         <a href="{{ route('print.pdf', ['distribution_charge', $charge->getRouteKey()]) }}" class="text-brand hover:text-brand-dark">PDF</a>
                                     </div>
+                                    @if ($charge->status !== \Modules\Distribution\Enums\ChargeStatus::Cancelled)
                                     <form action="{{ route('superadmin.distribution.sites.charges.email', [$site, $charge]) }}" method="POST" class="flex gap-2">
                                         @csrf
                                         <input type="email" name="email" value="{{ $site->contact_email }}" required placeholder="{{ __('distribution::distribution.contact_email') }}" class="h-8 w-44 rounded-lg border border-line bg-card px-2 text-xs">
                                         <x-common.button type="submit" variant="secondary" size="sm">{{ __('distribution::distribution.charge_email') }}</x-common.button>
                                     </form>
+                                    @endif
                                     @if ($charge->emailed_at)
                                         <p class="text-xs text-muted">{{ __('distribution::distribution.charge_emailed', ['when' => $charge->emailed_at->diffForHumans()]) }}</p>
                                     @endif
                                     @if ($charge->isOpen())
+                                        <details>
+                                            <summary class="cursor-pointer text-xs font-semibold text-link">{{ __('distribution::distribution.charge_edit') }}</summary>
+                                            <form action="{{ route('superadmin.distribution.sites.charges.update', [$site, $charge]) }}" method="POST" class="mt-2 space-y-2">
+                                                @csrf
+                                                @method('PUT')
+                                                <x-common.input name="amount" type="number" step="0.01" min="0" :label="__('distribution::distribution.charge_amount')" :value="$charge->amount" required />
+                                                <x-common.input name="support_months" type="number" min="0" max="60" :label="__('distribution::distribution.charge_support_months')" :value="\Modules\Distribution\Services\LicenceService::monthsOf($charge)" />
+                                                <x-common.input name="due_on" type="date" :label="__('distribution::distribution.print_due')" :value="$charge->due_on?->toDateString()" />
+                                                <x-common.input name="description" :label="__('distribution::distribution.charge_description')" :value="$charge->description" :hint="__('distribution::distribution.charge_description_hint')" />
+                                                <x-common.button type="submit" size="sm">{{ __('distribution::distribution.charge_save') }}</x-common.button>
+                                            </form>
+                                        </details>
                                         <details>
                                             <summary class="cursor-pointer text-xs font-semibold text-success">{{ __('distribution::distribution.charge_mark_paid') }}</summary>
                                             <form action="{{ route('superadmin.distribution.sites.charges.pay', [$site, $charge]) }}" method="POST" class="mt-2 space-y-2">
@@ -146,7 +160,7 @@
                 <p class="font-semibold text-ink text-sm">{{ __('distribution::distribution.charge_new') }}</p>
                 <div class="grid sm:grid-cols-2 gap-3">
                     <x-common.select name="kind" :label="__('distribution::distribution.charge_kind')" hide-placeholder required
-                        :value="$site->charges->isEmpty() ? 'licence' : 'support'"
+                        :value="$site->licencePaid() ? 'support' : 'licence'"
                         :options="collect(\Modules\Distribution\Models\Charge::KINDS)->mapWithKeys(fn ($k) => [$k => __('distribution::distribution.charge_kind_'.$k)])->all()" />
                     <x-common.input name="amount" type="number" step="0.01" min="0" :label="__('distribution::distribution.charge_amount')" required />
                     <x-common.input name="support_months" type="number" min="0" max="60" :value="\Modules\Distribution\Services\LicenceService::DEFAULT_SUPPORT_MONTHS" :label="__('distribution::distribution.charge_support_months')" :hint="__('distribution::distribution.charge_support_months_hint')" />

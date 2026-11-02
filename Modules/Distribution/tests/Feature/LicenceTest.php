@@ -99,6 +99,30 @@ class LicenceTest extends TestCase
         $this->post(route('superadmin.distribution.sites.charges.pay', [$this->site, $renewal]), ['paid_on' => today()->toDateString()])->assertSessionHas('error');
     }
 
+    public function test_an_unpaid_charge_is_corrected_in_place_and_licences_are_not_duplicated(): void
+    {
+        $this->post(route('superadmin.distribution.sites.charges.store', $this->site), ['kind' => 'licence', 'amount' => '500000', 'support_months' => 0])->assertSessionHas('success');
+        $charge = Charge::query()->firstOrFail();
+        $this->assertStringNotContainsString('0 months', $charge->description);
+
+        // A second licence while one is open: edit that one instead.
+        $this->post(route('superadmin.distribution.sites.charges.store', $this->site), ['kind' => 'licence', 'amount' => '450000', 'support_months' => 12])->assertSessionHas('error');
+        $this->assertSame(1, Charge::query()->count());
+
+        $this->put(route('superadmin.distribution.sites.charges.update', [$this->site, $charge]), ['amount' => '450000', 'support_months' => 12, 'due_on' => today()->addDays(30)->toDateString()])
+            ->assertSessionHas('success');
+        $charge = $charge->fresh();
+        $this->assertSame('450000.00', $charge->amount);
+        $this->assertSame(12, LicenceService::monthsOf($charge));
+        $this->assertStringContainsString('12 months', $charge->description);
+        $this->assertTrue(ActivityLog::query()->where('action', 'distribution_charge_updated')->exists());
+
+        // Paid charges are records: no more changes.
+        app(LicenceService::class)->markPaid($charge, ['paid_on' => today()->toDateString()]);
+        $this->put(route('superadmin.distribution.sites.charges.update', [$this->site, $charge]), ['amount' => '1'])->assertSessionHas('error');
+        $this->assertSame('450000.00', $charge->fresh()->amount);
+    }
+
     public function test_other_businesses_cannot_print_our_charges(): void
     {
         $charge = app(LicenceService::class)->charge($this->site, ['kind' => 'licence', 'amount' => 10])['data'];
