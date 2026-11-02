@@ -2,23 +2,38 @@
 
 Laravel 13 base for multi-business apps. Everything app-specific is a module in `Modules/`.
 
-## Install
+## Install (your own server)
+
+You need PHP 8.3 or newer, Composer, and an empty PostgreSQL or MySQL database.
 
 ```bash
-composer install && npm install && npm run build
-cp .env.example .env && php artisan key:generate
-php artisan core:install     # first business + superadmin
+composer install
+cp .env.example .env         # the installer fills it in
 php artisan storage:link     # makes uploaded logos and files visible
+php artisan serve --port=9000
 ```
 
-## Run locally
+Open the site in a browser (`http://localhost:9000`). The installer asks for the database, the app's address, email settings and your admin account, then sets everything up. Prefer the terminal? `php artisan core:setup` asks the same questions.
+
+There is no npm step: the styles and scripts ship ready in `public/`.
+
+**Reached through a tunnel or proxy** (ngrok, Cloudflare Tunnel, a load balancer)? Before opening the installer, put `TRUSTED_PROXIES=*` in `.env`, so links and logins work over its HTTPS. With ngrok:
+
+```bash
+ngrok config add-authtoken YOUR_TOKEN          # once, from dashboard.ngrok.com
+ngrok http 9000 --url=https://YOUR-DOMAIN.ngrok-free.app
+```
+
+Claim the free static domain in the ngrok dashboard (Domains) so the address never changes, and give that address as the app's address in the installer. The first visit shows ngrok's "Visit Site" page once.
+
+## Run
 
 Keep these running in separate terminals:
 
 ```bash
-php artisan serve            # the app: http://localhost:8000
-php artisan queue:work       # sends emails — without it, no email goes out
-php artisan schedule:work    # daily jobs (billing renewals, suspensions)
+php artisan serve --port=9000   # the app
+php artisan queue:work          # sends emails — without it, no email goes out
+php artisan schedule:work       # daily jobs (billing renewals, support reminders, alerts)
 ```
 
 ## Core
