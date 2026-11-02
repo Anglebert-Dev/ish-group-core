@@ -8,7 +8,7 @@
                 <button type="button" data-confirm-cancel class="h-11 sm:h-10 px-4 rounded-lg border border-line text-sm font-medium text-body hover:border-brand">
                     Cancel
                 </button>
-                <button type="button" id="confirm-modal-confirm" class="h-11 sm:h-10 px-4 rounded-lg text-sm font-semibold text-white bg-danger hover:opacity-90">
+                <button type="button" id="confirm-modal-confirm" class="h-11 sm:h-10 px-4 rounded-lg text-sm font-semibold text-on-danger bg-danger hover:opacity-90">
                     Confirm
                 </button>
             </div>
@@ -25,8 +25,8 @@
     var pending = null;
 
     var variantClasses = {
-        danger: 'bg-danger hover:opacity-90',
-        brand: 'bg-brand hover:bg-brand-dark',
+        danger: 'bg-danger text-on-danger hover:opacity-90',
+        brand: 'bg-brand text-on-brand hover:bg-brand-dark',
     };
 
     window.openConfirm = function (opts) {
@@ -34,7 +34,7 @@
         titleEl.textContent = opts.title || 'Are you sure?';
         messageEl.textContent = opts.message || 'This action cannot be undone.';
         confirmBtn.textContent = opts.confirmText || 'Confirm';
-        confirmBtn.className = 'h-11 sm:h-10 px-4 rounded-lg text-sm font-semibold text-white ' + (variantClasses[opts.variant] || variantClasses.danger);
+        confirmBtn.className = 'h-11 sm:h-10 px-4 rounded-lg text-sm font-semibold ' + (variantClasses[opts.variant] || variantClasses.danger);
         pending = typeof opts.onConfirm === 'function' ? opts.onConfirm : null;
         modal.classList.remove('hidden');
     };

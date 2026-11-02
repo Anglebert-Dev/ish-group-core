@@ -21,7 +21,7 @@
     <x-common.textarea name="message" :label="__('body.message')" :value="old('message')" :rows="5" required />
 
     <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-        <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-brand hover:bg-brand-dark text-white font-semibold text-[15px] px-6 py-3 transition-colors w-full sm:w-auto">
+        <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-brand hover:bg-brand-dark text-on-brand font-semibold text-[15px] px-6 py-3 transition-colors w-full sm:w-auto">
             {{ __('body.send_message') }}
         </button>
         <p class="text-xs text-muted">{{ __('body.contact_form_note') }}</p>

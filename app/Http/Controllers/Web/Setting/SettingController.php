@@ -60,6 +60,7 @@ class SettingController extends Controller
             'themeDefaults' => ThemeTokens::resolve($business->brandColor(), $this->themes->effective($business)['colors'] ?? []),
             'themeDarkDefaults' => ThemeTokens::resolve($business->brandColor(), $this->themes->effective($business)['colors_dark'] ?? [], dark: true),
             'contrast' => $tab === 'theme' ? $this->themes->contrast($business) : [],
+            'brandOnScreen' => ['light' => $this->themes->tokens($business), 'dark' => $this->themes->tokens($business, dark: true)],
             'versions' => $tab === 'history' ? $this->themes->history($business) : collect(),
             'previewing' => $this->branding->previewing($business),
             'extraLogos' => collect(BrandingService::EXTRA_LOGOS)->mapWithKeys(fn ($field, $key) => [$field => $this->branding->logoFor($business, str_replace(['logo_', '_path'], '', $key))])->all(),

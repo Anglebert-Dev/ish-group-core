@@ -3,7 +3,7 @@
     <x-common.page-header :title="__('savings::savings.obligations')" />
     <div class="flex flex-wrap gap-2 mb-4">
         @foreach (['' => __('body.all'), 'receivable' => __('savings::savings.direction_receivable'), 'payable' => __('savings::savings.direction_payable'), 'restore' => __('savings::savings.direction_restore')] as $key => $label)
-            <a href="{{ route('savings.obligations.index', array_filter(['direction' => $key])) }}" class="px-4 py-2 rounded-lg text-sm font-semibold border {{ ($direction ?? '') === $key ? 'bg-brand text-white border-brand' : 'bg-card text-body border-line' }}">{{ $label }}</a>
+            <a href="{{ route('savings.obligations.index', array_filter(['direction' => $key])) }}" class="px-4 py-2 rounded-lg text-sm font-semibold border {{ ($direction ?? '') === $key ? 'bg-brand text-on-brand border-brand' : 'bg-card text-body border-line' }}">{{ $label }}</a>
         @endforeach
     </div>
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">

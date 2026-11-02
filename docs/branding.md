@@ -274,6 +274,13 @@ Off by default. Needs package feature `branding.custom_css` and permission `publ
 - **Readability:** `ThemeContrast` checks text on what it sits on (WCAG ratio), in light and also dark when dark can be seen. Body, headings, sidebar and header text below 4.5:1, or secondary text below 3:1, **block publishing**. Links, status colours and white text on the brand are warnings. Each problem shows a readable suggestion (`ColorLibrary::readable`).
 - **Chart palette:** `chart-1` to `chart-6` tokens, also used by the dashboard's quick-action tiles.
 - **Status colours:** the remaining `red`, `green`, `amber` and similar classes (about 100) became `danger`, `success`, `warning` and `info` tints. Dark text on tints became `text-ink`. The guard test now also rejects coloured palette classes.
+- **Brand per mode** (after a report of a navy brand vanishing in dark mode):
+  - On screen, the brand is fitted to the card it sits on. If it's under 3:1 (the minimum for buttons and controls), only its lightness changes (`ColorLibrary::fit`, so hue and saturation stay): navy `#080231` becomes `#5C45F7` in dark mode, and pale yellow is deepened in light mode.
+  - Links and the "brand-dark" shade are fitted to 4.5:1.
+  - Text on any fill (brand, accent, danger, success, warning, info) uses `text-on-*` tokens, white or near-black, whichever reads better (`ThemeTokens::textOn`). A guard test rejects `text-white` on a fill.
+  - A dark-mode brand can be set on the Theme tab (dark colours → Brand); it's used as given, with the readability check blocking anything under 3:1.
+  - The Look tab shows the brand as buttons really appear in light and dark.
+  - Documents and emails always use the exact brand colour.
 - **Secondary colour:** still documents only. The app uses accent and the token set instead.
 - **Checked:** screenshots in dark mode of the dashboard, a list (phone), an order, the new-order form (date fields, selects), an invoice and the Theme tab.
 - **Found:** the products table on order and invoice pages scrolls sideways at 1280px in both modes (an existing layout limit). To fix in B3 (content width).

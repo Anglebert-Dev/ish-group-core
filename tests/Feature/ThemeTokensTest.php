@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Libraries\ColorLibrary;
 use App\Support\Branding\ThemeTokens;
 use Illuminate\Support\Facades\File;
 use Tests\TestCase;
@@ -44,6 +45,45 @@ class ThemeTokensTest extends TestCase
         }
 
         $this->assertSame([], $found, "Use colour names (bg-card, bg-surface, text-ink, text-body, text-muted, border-line, bg-danger/10, text-success, bg-chart-1…), not fixed colours.\n".implode("\n", $found));
+    }
+
+    public function test_text_on_a_filled_colour_uses_its_on_colour(): void
+    {
+        // White on the brand (or a status fill) vanishes when the brand is light:
+        // text-on-brand / text-on-danger… pick white or dark for each business.
+        $files = collect(File::allFiles(resource_path('views')))
+            ->merge(collect(glob(base_path('Modules/*/resources/views'), GLOB_ONLYDIR))->flatMap(fn ($dir) => File::allFiles($dir)))
+            ->merge(File::allFiles(public_path('js')));
+
+        $found = [];
+        foreach ($files as $file) {
+            if (str_contains($file->getPathname(), '/views/install/')) {
+                continue; // before install: no business, fixed colours
+            }
+            foreach (explode("\n", $file->getContents()) as $number => $line) {
+                if (preg_match('/(?<![\w-])bg-(?:brand|accent|danger|success|warning|info)(?![\w\/-])/', $line) && preg_match('/(?<![\w\/-])(?:[a-z-]+:)*text-white(?![\w\/-])/', $line)) {
+                    $found[] = $file->getRelativePathname().':'.($number + 1);
+                }
+            }
+        }
+
+        $this->assertSame([], $found, "Use text-on-brand, text-on-danger… on filled colours:\n".implode("\n", $found));
+    }
+
+    public function test_the_brand_stays_visible_in_every_mode(): void
+    {
+        foreach (['#080231', '#000000', '#FFFFFF', '#FDE047', '#124EB0'] as $brand) {
+            foreach ([false, true] as $dark) {
+                $tokens = ThemeTokens::resolve($brand, [], $dark);
+                $this->assertGreaterThanOrEqual(3.0, ColorLibrary::contrast($tokens['brand'], $tokens['card']), "$brand ".($dark ? 'dark' : 'light'));
+                $this->assertGreaterThanOrEqual(4.5, ColorLibrary::contrast($tokens['on_brand'], $tokens['brand']) + 0.6, "$brand button text");
+            }
+        }
+
+        // A colour that already stands out is left exactly as chosen.
+        $this->assertSame('#124EB0', ThemeTokens::resolve('#124EB0')['brand']);
+        // A dark-mode brand chosen on the Theme tab is used as given.
+        $this->assertSame('#FF00AA', ThemeTokens::resolve('#080231', ['brand' => '#FF00AA'], dark: true)['brand']);
     }
 
     public function test_tokens_follow_the_brand_and_ignore_bad_overrides(): void

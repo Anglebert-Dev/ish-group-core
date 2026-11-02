@@ -29,7 +29,7 @@
                 @endif
                 <span>{{ $label }}</span>
                 @if (! empty($tab['badge']))
-                    <span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-warning text-white text-[10px] font-bold">{{ $tab['badge'] }}</span>
+                    <span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-warning text-on-warning text-[10px] font-bold">{{ $tab['badge'] }}</span>
                 @endif
             </button>
         @endforeach

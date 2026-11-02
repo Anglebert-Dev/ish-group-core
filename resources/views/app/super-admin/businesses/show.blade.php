@@ -165,7 +165,7 @@
                         <p class="text-sm text-muted mt-1">{{ __('body.delete_business_warning') }}</p>
                     </div>
                     <x-common.input name="confirm_name" :label="__('body.delete_business_confirm', ['name' => $business->name])" required autocomplete="off" />
-                    <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-danger hover:opacity-90 text-white font-semibold text-sm px-4 py-2">
+                    <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-danger hover:opacity-90 text-on-danger font-semibold text-sm px-4 py-2">
                         {{ __('body.delete_business_permanently') }}
                     </button>
                 </form>

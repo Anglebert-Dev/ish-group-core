@@ -23,7 +23,7 @@
             </a>
         </div>
 
-        <button type="submit" class="w-full h-12 rounded-xl bg-brand hover:bg-brand-dark text-white font-semibold text-[15px] transition-colors shadow-sm shadow-brand/25">
+        <button type="submit" class="w-full h-12 rounded-xl bg-brand hover:bg-brand-dark text-on-brand font-semibold text-[15px] transition-colors shadow-sm shadow-brand/25">
             {{ __('body.auth_sign_in') }}
         </button>
     </form>

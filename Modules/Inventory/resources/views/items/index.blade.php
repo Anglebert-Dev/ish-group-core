@@ -18,7 +18,7 @@
     <div class="flex flex-wrap gap-2 mb-4">
         @foreach ($tabs as $value => $label)
             <a href="{{ route('inventory.items.index', array_filter(['type' => $value] + $filters)) }}"
-               class="px-4 py-2 rounded-lg text-sm font-semibold border transition-colors {{ $type === $value ? 'bg-brand text-white border-brand' : 'bg-card text-body border-line hover:border-brand hover:text-brand' }}">{{ $label }}</a>
+               class="px-4 py-2 rounded-lg text-sm font-semibold border transition-colors {{ $type === $value ? 'bg-brand text-on-brand border-brand' : 'bg-card text-body border-line hover:border-brand hover:text-brand' }}">{{ $label }}</a>
         @endforeach
     </div>
 

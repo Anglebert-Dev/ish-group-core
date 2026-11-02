@@ -9,7 +9,7 @@
     <nav class="flex flex-wrap gap-1.5 mb-6">
         @foreach ($tabs as $item)
             <a href="{{ route('settings.index', ['tab' => $item]) }}"
-               class="inline-flex items-center rounded-full px-3.5 py-1.5 text-sm font-medium border transition-colors {{ $tab === $item ? 'bg-brand text-white border-brand' : 'bg-card text-body border-line hover:border-brand hover:text-brand' }}">
+               class="inline-flex items-center rounded-full px-3.5 py-1.5 text-sm font-medium border transition-colors {{ $tab === $item ? 'bg-brand text-on-brand border-brand' : 'bg-card text-body border-line hover:border-brand hover:text-brand' }}">
                 {{ __('body.brand_tab_'.$item) }}
             </a>
         @endforeach
@@ -119,6 +119,18 @@
                             </div>
                             @if ($hint)<p class="text-xs text-muted">{{ $hint }}</p>@endif
                             @error($field)<p class="text-xs text-danger" role="alert">{{ $message }}</p>@enderror
+                            @if ($field === 'brand_color')
+                                {{-- How buttons really look on screen, per mode (the brand is fitted when it would vanish). --}}
+                                <div class="flex flex-wrap items-center gap-2 text-xs">
+                                    @foreach ($brandOnScreen as $mode => $colors)
+                                        <span class="inline-flex items-center gap-1.5 rounded-lg border px-2 py-1" style="background: {{ $colors['card'] }}; border-color: {{ $colors['line'] }}">
+                                            <span class="rounded-md px-2 py-0.5 font-semibold" style="background: {{ $colors['brand'] }}; color: {{ $colors['on_brand'] }}">{{ __('body.theme_mode_'.$mode) }}</span>
+                                            <code style="color: {{ $colors['muted'] }}">{{ $colors['brand'] }}</code>
+                                        </span>
+                                    @endforeach
+                                </div>
+                                <p class="text-xs text-muted">{{ __('body.brand_on_screen_hint') }}</p>
+                            @endif
                         </div>
                     @endforeach
 
@@ -252,7 +264,7 @@
                             <fieldset class="space-y-3">
                                 <legend class="text-sm font-semibold text-ink">{{ __('body.'.$group) }}</legend>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                                    @foreach ($keys as $key)
+                                    @foreach ($group === 'theme_group_brand' ? ['brand', ...$keys] : $keys as $key)
                                         <x-common.color-field :name="'colors_dark['.$key.']'" :label="__('body.theme_color_'.$key)"
                                             :value="old('colors_dark.'.$key, $saved['colors_dark'][$key] ?? null)" :default="$themeDarkDefaults[$key]" />
                                     @endforeach

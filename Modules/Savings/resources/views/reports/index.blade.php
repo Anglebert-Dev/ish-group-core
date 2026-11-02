@@ -6,7 +6,7 @@
     </x-common.page-header>
     <div class="flex flex-wrap gap-2 mb-4">
         @foreach (\Modules\Savings\Services\Reports::KEYS as $key)
-            <a href="{{ route('savings.reports', ['report' => $key, 'from' => $from, 'to' => $to]) }}" class="px-3 py-2 rounded-lg text-sm font-semibold border {{ $report === $key ? 'bg-brand text-white border-brand' : 'bg-card text-body border-line' }}">{{ __('savings::savings.report_'.$key) }}</a>
+            <a href="{{ route('savings.reports', ['report' => $key, 'from' => $from, 'to' => $to]) }}" class="px-3 py-2 rounded-lg text-sm font-semibold border {{ $report === $key ? 'bg-brand text-on-brand border-brand' : 'bg-card text-body border-line' }}">{{ __('savings::savings.report_'.$key) }}</a>
         @endforeach
     </div>
     <form method="GET" class="bg-card border border-line rounded-xl p-4 mb-4 flex flex-wrap items-end gap-3">

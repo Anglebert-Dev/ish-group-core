@@ -46,7 +46,7 @@ final class ThemeSchema
 
         return array_filter([
             'colors' => $colors($payload['colors'] ?? null),
-            'colors_dark' => $colors($payload['colors_dark'] ?? null),
+            'colors_dark' => $colors($payload['colors_dark'] ?? null) + array_filter(['brand' => ColorLibrary::parse(is_string($payload['colors_dark']['brand'] ?? null) ? $payload['colors_dark']['brand'] : null)]),
             // Light, dark, or follow each device.
             'mode' => in_array($payload['mode'] ?? null, ThemeTokens::MODES, true) ? $payload['mode'] : null,
             // May each person pick their own light/dark? (Unset = yes.)

@@ -20,7 +20,7 @@
             {{ $exception->getMessage() ?: __('body.no_permission') }}
         </p>
         <a href="{{ Route::has('dashboard') ? route('dashboard') : url('/') }}"
-           class="inline-flex items-center justify-center gap-2 font-semibold rounded-lg transition-colors bg-brand text-white hover:bg-brand-dark text-[15px] px-5 py-2.5 mt-6">
+           class="inline-flex items-center justify-center gap-2 font-semibold rounded-lg transition-colors bg-brand text-on-brand hover:bg-brand-dark text-[15px] px-5 py-2.5 mt-6">
             {{ __('body.back_to_dashboard') }}
         </a>
     </div>

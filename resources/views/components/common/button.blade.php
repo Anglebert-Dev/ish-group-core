@@ -8,10 +8,10 @@
     $base = 'inline-flex items-center justify-center gap-2 font-semibold rounded-lg transition-colors whitespace-nowrap';
 
     $variants = [
-        'primary'   => 'bg-brand text-white hover:bg-brand-dark',
+        'primary'   => 'bg-brand text-on-brand hover:bg-brand-dark',
         'secondary' => 'bg-card text-body border border-line hover:border-brand hover:text-brand',
         'ghost'     => 'text-body hover:text-brand',
-        'danger'    => 'bg-danger text-white hover:opacity-90',
+        'danger'    => 'bg-danger text-on-danger hover:opacity-90',
     ];
 
     $sizes = [

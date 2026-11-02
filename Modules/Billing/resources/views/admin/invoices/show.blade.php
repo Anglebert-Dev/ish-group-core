@@ -34,7 +34,7 @@
                     @csrf
                     <h2 class="font-display font-bold text-danger">{{ __('billing::billing.void_invoice') }}</h2>
                     <x-common.input name="reason" :label="__('billing::billing.void_reason')" />
-                    <button type="submit" class="inline-flex items-center rounded-lg bg-danger hover:opacity-90 text-white font-semibold text-sm px-4 py-2"
+                    <button type="submit" class="inline-flex items-center rounded-lg bg-danger hover:opacity-90 text-on-danger font-semibold text-sm px-4 py-2"
                         data-confirm data-confirm-title="{{ __('billing::billing.void_invoice') }}?" data-confirm-variant="danger">{{ __('billing::billing.void_invoice') }}</button>
                 </form>
             </div>

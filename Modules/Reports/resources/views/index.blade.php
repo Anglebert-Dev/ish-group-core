@@ -16,7 +16,7 @@
         <div class="flex flex-wrap gap-2 mb-4">
             @foreach ($available as $key)
                 <a href="{{ route('reports.index', ['report' => $key, 'from' => $from, 'to' => $to]) }}"
-                   class="px-4 py-2 rounded-lg text-sm font-semibold border transition-colors {{ $report === $key ? 'bg-brand text-white border-brand' : 'bg-card text-body border-line hover:border-brand hover:text-brand' }}">{{ __('reports::reports.'.$key) }}</a>
+                   class="px-4 py-2 rounded-lg text-sm font-semibold border transition-colors {{ $report === $key ? 'bg-brand text-on-brand border-brand' : 'bg-card text-body border-line hover:border-brand hover:text-brand' }}">{{ __('reports::reports.'.$key) }}</a>
             @endforeach
         </div>
 

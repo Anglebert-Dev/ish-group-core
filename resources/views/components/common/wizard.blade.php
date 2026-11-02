@@ -42,7 +42,7 @@
                         data-wizard-step-btn="{{ $stepNum }}"
                         @if ($stepNum > 1) disabled @endif
                         class="w-full flex flex-col items-center gap-1 px-1 py-2 rounded-lg text-center transition-all
-                               {{ $stepNum === 1 ? 'bg-brand text-white shadow-md' : 'bg-card border border-line text-muted opacity-60 cursor-not-allowed' }}"
+                               {{ $stepNum === 1 ? 'bg-brand text-on-brand shadow-md' : 'bg-card border border-line text-muted opacity-60 cursor-not-allowed' }}"
                     >
                         <span
                             data-wizard-step-badge

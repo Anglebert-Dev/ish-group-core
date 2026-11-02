@@ -43,12 +43,13 @@ final class ThemeContrast
             }
         }
 
-        // White button text on the brand colour (set on Look, so only a warning here).
-        $ratio = ColorLibrary::contrast('#FFFFFF', $tokens['brand']);
-        if ($ratio < 4.5) {
+        // Buttons must stand out from the cards (the brand is fitted automatically,
+        // but a dark-mode brand chosen on the Theme tab is used as given).
+        $ratio = ColorLibrary::contrast($tokens['brand'], $tokens['card']);
+        if ($ratio < 3.0) {
             $issues[] = [
-                'mode' => $mode, 'text' => 'button_text', 'background' => 'brand', 'ratio' => round($ratio, 2), 'min' => 4.5,
-                'blocking' => false, 'suggestion' => ColorLibrary::readable($tokens['brand'], '#FFFFFF'),
+                'mode' => $mode, 'text' => 'brand', 'background' => 'card', 'ratio' => round($ratio, 2), 'min' => 3.0,
+                'blocking' => true, 'suggestion' => ColorLibrary::readable($tokens['brand'], $tokens['card'], 3.0),
             ];
         }
 

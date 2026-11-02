@@ -33,7 +33,7 @@
 
             @for ($page = $start; $page <= $end; $page++)
                 @if ($page === $current)
-                    <span class="h-8 w-8 flex items-center justify-center rounded-md bg-brand text-white text-sm font-medium">{{ $page }}</span>
+                    <span class="h-8 w-8 flex items-center justify-center rounded-md bg-brand text-on-brand text-sm font-medium">{{ $page }}</span>
                 @else
                     <a href="{{ $pageUrl($page) }}" class="h-8 w-8 flex items-center justify-center rounded-md border border-line text-sm text-body hover:bg-surface">{{ $page }}</a>
                 @endif

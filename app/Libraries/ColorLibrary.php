@@ -85,6 +85,76 @@ class ColorLibrary
     }
 
     /**
+     * Like readable(), but keeps the colour's hue and saturation and moves only
+     * its lightness: a navy brand on a dark card becomes a brighter indigo,
+     * not a grey.
+     */
+    public static function fit(string $fg, string $bg, float $min = 3.0): string
+    {
+        if (self::contrast($fg, $bg) >= $min) {
+            return strtoupper($fg);
+        }
+
+        [$h, $s, $l] = self::toHsl($fg);
+        $direction = self::luminance($bg) > 0.4 ? -1 : 1;
+        for ($i = 1; $i <= 50; $i++) {
+            $candidate = self::fromHsl($h, $s, max(0, min(1, $l + $direction * 0.02 * $i)));
+            if (self::contrast($candidate, $bg) >= $min) {
+                return $candidate;
+            }
+        }
+
+        return self::readable($fg, $bg, $min);
+    }
+
+    /** @return array{0: float, 1: float, 2: float} hue, saturation, lightness (0–1) */
+    public static function toHsl(string $hex): array
+    {
+        [$r, $g, $b] = array_map(fn ($c) => $c / 255, self::rgb($hex));
+        $max = max($r, $g, $b);
+        $min = min($r, $g, $b);
+        $l = ($max + $min) / 2;
+
+        if ($max === $min) {
+            return [0.0, 0.0, $l];
+        }
+
+        $d = $max - $min;
+        $s = $l > 0.5 ? $d / (2 - $max - $min) : $d / ($max + $min);
+        $h = match ($max) {
+            $r => ($g - $b) / $d + ($g < $b ? 6 : 0),
+            $g => ($b - $r) / $d + 2,
+            default => ($r - $g) / $d + 4,
+        };
+
+        return [$h / 6, $s, $l];
+    }
+
+    public static function fromHsl(float $h, float $s, float $l): string
+    {
+        if ($s == 0) {
+            $v = (int) round($l * 255);
+
+            return self::toHex($v, $v, $v);
+        }
+
+        $q = $l < 0.5 ? $l * (1 + $s) : $l + $s - $l * $s;
+        $p = 2 * $l - $q;
+        $hue = function (float $t) use ($p, $q): float {
+            $t = $t < 0 ? $t + 1 : ($t > 1 ? $t - 1 : $t);
+
+            return match (true) {
+                $t < 1 / 6 => $p + ($q - $p) * 6 * $t,
+                $t < 1 / 2 => $q,
+                $t < 2 / 3 => $p + ($q - $p) * (2 / 3 - $t) * 6,
+                default => $p,
+            };
+        };
+
+        return self::toHex((int) round($hue($h + 1 / 3) * 255), (int) round($hue($h) * 255), (int) round($hue($h - 1 / 3) * 255));
+    }
+
+    /**
      * "#abc", "#aabbcc", "rgb(1, 2, 3)" or "hsl(210, 50%, 40%)" as "#AABBCC"; null if not a colour.
      */
     public static function parse(?string $value): ?string
@@ -105,26 +175,7 @@ class ColorLibrary
             return self::toHex((int) $m[1], (int) $m[2], (int) $m[3]);
         }
         if (preg_match('/^hsla?\(\s*(\d{1,3}(?:\.\d+)?)(?:deg)?\s*[, ]\s*(\d{1,3}(?:\.\d+)?)%\s*[, ]\s*(\d{1,3}(?:\.\d+)?)%\s*(?:[,\/]\s*[\d.]+%?\s*)?\)$/', $value, $m)) {
-            [$h, $sat, $l] = [fmod((float) $m[1], 360) / 360, min(100, (float) $m[2]) / 100, min(100, (float) $m[3]) / 100];
-            if ($sat == 0) {
-                $v = (int) round($l * 255);
-
-                return self::toHex($v, $v, $v);
-            }
-            $q = $l < 0.5 ? $l * (1 + $sat) : $l + $sat - $l * $sat;
-            $p = 2 * $l - $q;
-            $hue = function (float $t) use ($p, $q): float {
-                $t = $t < 0 ? $t + 1 : ($t > 1 ? $t - 1 : $t);
-
-                return match (true) {
-                    $t < 1 / 6 => $p + ($q - $p) * 6 * $t,
-                    $t < 1 / 2 => $q,
-                    $t < 2 / 3 => $p + ($q - $p) * (2 / 3 - $t) * 6,
-                    default => $p,
-                };
-            };
-
-            return self::toHex((int) round($hue($h + 1 / 3) * 255), (int) round($hue($h) * 255), (int) round($hue($h - 1 / 3) * 255));
+            return self::fromHsl(fmod((float) $m[1], 360) / 360, min(100, (float) $m[2]) / 100, min(100, (float) $m[3]) / 100);
         }
 
         return null;

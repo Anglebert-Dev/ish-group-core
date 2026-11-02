@@ -28,7 +28,7 @@
         <img src="{{ $custom }}" alt="{{ $name }}" class="{{ $imgClass }}">
     @else
         <span class="flex {{ $stacked ? 'flex-col text-center' : 'items-center' }} gap-2.5 min-w-0">
-            <span class="{{ $stacked ? 'h-14 w-14 text-2xl mx-auto' : ($compact ? 'h-8 w-8 text-sm' : 'h-9 w-9 text-base') }} shrink-0 rounded-lg bg-brand text-white font-display font-bold flex items-center justify-center">{{ $initial }}</span>
+            <span class="{{ $stacked ? 'h-14 w-14 text-2xl mx-auto' : ($compact ? 'h-8 w-8 text-sm' : 'h-9 w-9 text-base') }} shrink-0 rounded-lg bg-brand text-on-brand font-display font-bold flex items-center justify-center">{{ $initial }}</span>
             <span class="font-display font-bold truncate {{ $compact ? 'text-base' : 'text-lg' }} {{ $dark ? 'text-white' : 'text-ink' }}">{{ $name }}</span>
         </span>
     @endif

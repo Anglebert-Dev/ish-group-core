@@ -188,7 +188,7 @@
             btn.className = 'w-full flex flex-col items-center gap-1 px-1 py-2 rounded-lg text-center transition-all';
 
             if (isCurrent) {
-                btn.className += ' bg-brand text-white shadow-md';
+                btn.className += ' bg-brand text-on-brand shadow-md';
             } else if (isDone) {
                 btn.className += ' bg-brand-light text-brand-dark cursor-pointer hover:opacity-90';
             } else if (clickable) {

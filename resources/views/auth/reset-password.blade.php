@@ -11,7 +11,7 @@
         <x-common.input type="password" name="password" :label="__('body.new_password')" required autocomplete="new-password" strength />
         <x-common.input type="password" name="password_confirmation" :label="__('body.confirm_password')" required autocomplete="new-password" confirm-for="field-password" />
 
-        <button type="submit" class="w-full h-12 rounded-xl bg-brand hover:bg-brand-dark text-white font-semibold text-[15px] transition-colors shadow-sm shadow-brand/25">
+        <button type="submit" class="w-full h-12 rounded-xl bg-brand hover:bg-brand-dark text-on-brand font-semibold text-[15px] transition-colors shadow-sm shadow-brand/25">
             {{ __('body.auth_reset_password') }}
         </button>
     </form>

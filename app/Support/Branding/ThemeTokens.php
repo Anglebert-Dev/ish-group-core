@@ -77,33 +77,52 @@ final class ThemeTokens
     public static function resolve(string $brand, array $overrides = [], bool $dark = false): array
     {
         $valid = fn ($hex) => is_string($hex) && preg_match('/^#[0-9A-Fa-f]{6}$/', $hex) ? strtoupper($hex) : null;
-        $brand = $valid($brand) ?? '#124EB0';
 
-        $tokens = $dark
-            // On dark: "light" brand is a dim tint (active menu item), "dark" brand
-            // is a brighter shade (its text), links lifted so they read.
-            ? self::DARK_DEFAULTS + [
-                'brand' => $brand,
-                'brand_dark' => ColorLibrary::readable(ColorLibrary::lighten($brand, 0.35), self::DARK_DEFAULTS['card']),
-                'brand_light' => ColorLibrary::mix(self::DARK_DEFAULTS['card'], $brand, 0.22),
-                'accent' => $brand,
-                'link' => ColorLibrary::readable($brand, self::DARK_DEFAULTS['card']),
-            ]
-            : self::DEFAULTS + [
-                'brand' => $brand,
-                'brand_dark' => ColorLibrary::darken($brand),
-                'brand_light' => ColorLibrary::lighten($brand),
-                'accent' => $brand,
-                'link' => $brand,
-            ];
-
+        // Fixed colours first, so the brand can be fitted to the card it sits on.
+        $tokens = $dark ? self::DARK_DEFAULTS : self::DEFAULTS;
         foreach ($overrides as $key => $value) {
             if (array_key_exists($key, $tokens) && ($hex = $valid($value))) {
                 $tokens[$key] = $hex;
             }
         }
 
+        // The brand colour on screen: as chosen, unless it would vanish into the
+        // cards (under 3:1, the minimum for buttons); then lifted (dark mode) or
+        // deepened (light mode) just enough. A dark-mode brand set on the Theme
+        // tab is used as given. Documents and emails keep the brand unchanged.
+        $base = $valid($brand) ?? '#124EB0';
+        $brand = ($dark ? $valid($overrides['brand'] ?? null) : null) ?? ColorLibrary::fit($base, $tokens['card'], 3.0);
+
+        $tokens += $dark
+            // On dark: "light" brand is a dim tint (active menu item), "dark" brand
+            // a brighter shade that reads on cards (its text, hovers).
+            ? [
+                'brand' => $brand,
+                'brand_dark' => ColorLibrary::fit(ColorLibrary::lighten($brand, 0.35), $tokens['card'], 4.5),
+                'brand_light' => ColorLibrary::mix($tokens['card'], $brand, 0.22),
+            ]
+            : [
+                'brand' => $brand,
+                'brand_dark' => ColorLibrary::darken($brand),
+                'brand_light' => ColorLibrary::lighten($brand),
+            ];
+        $tokens['accent'] = $valid($overrides['accent'] ?? null) ?? $brand;
+        $tokens['link'] = $valid($overrides['link'] ?? null) ?? ColorLibrary::fit($brand, $tokens['card'], 4.5);
+
+        // Text on a filled colour: white or near-black, whichever reads better.
+        foreach (self::FILLED as $key) {
+            $tokens['on_'.$key] = self::textOn($tokens[$key]);
+        }
+
         return $tokens;
+    }
+
+    /** Colours used as fills behind text (buttons, badges, banners). */
+    public const FILLED = ['brand', 'accent', 'danger', 'success', 'warning', 'info'];
+
+    public static function textOn(string $fill): string
+    {
+        return ColorLibrary::contrast('#FFFFFF', $fill) >= ColorLibrary::contrast('#111827', $fill) ? '#FFFFFF' : '#111827';
     }
 
     /**
@@ -167,6 +186,7 @@ final class ThemeTokens
                 'header' => ['DEFAULT' => $color('header'), 'ink' => $color('header_ink')],
                 // Fixed, not themed: things dark on purpose in both modes (banners, footers).
                 'night' => '#111827',
+                'on' => collect(self::FILLED)->mapWithKeys(fn ($key) => [$key => $color('on_'.$key)])->all(),
                 'chart' => collect(range(1, 6))->mapWithKeys(fn ($i) => [(string) $i => $color('chart_'.$i)])->all(),
             ],
             'boxShadow' => ['card' => '0 1px 2px 0 rgba(17, 24, 39, 0.04)'],

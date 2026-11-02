@@ -35,7 +35,7 @@
             <div class="absolute left-0 top-0 bottom-0 w-1 bg-brand rounded-l-xl"></div>
             <p class="font-semibold text-ink mb-2">{{ __('body.need_help') }}</p>
             <p class="text-sm text-muted mb-4">{{ __('body.need_help_description') }}</p>
-            <a href="{{ route('contact') }}" class="inline-flex min-h-[2.75rem] w-full items-center justify-center rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark">
+            <a href="{{ route('contact') }}" class="inline-flex min-h-[2.75rem] w-full items-center justify-center rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-on-brand hover:bg-brand-dark">
                 {{ __('body.contact_us') }}
             </a>
         </div>

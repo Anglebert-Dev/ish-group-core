@@ -945,6 +945,7 @@ return [
     'theme_color_chart_6' => 'Chart 6',
     'theme_color_brand' => 'Brand colour',
     'theme_color_button_text' => 'Button text (white)',
+    'brand_on_screen_hint' => 'Buttons on screen, in light and dark. If your colour would not stand out against the background, it is made lighter or darker just enough; button text turns white or dark to stay readable. Documents and emails always use your exact colour. Set your own dark-mode brand colour on the Theme tab.',
     'theme_mode' => 'Light or dark',
     'theme_mode_light' => 'Light',
     'theme_mode_light_hint' => 'Light backgrounds for everyone.',

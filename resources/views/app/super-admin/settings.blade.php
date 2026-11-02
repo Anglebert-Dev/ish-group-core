@@ -16,7 +16,7 @@
         <nav class="flex md:flex-col gap-1 overflow-x-auto">
             @foreach ($tabs as $key => $label)
                 <a href="{{ route('superadmin.settings.index', ['tab' => $key]) }}"
-                   class="px-4 py-3 rounded-lg text-sm font-semibold text-center md:text-left whitespace-nowrap transition-colors {{ $tab === $key ? 'bg-brand text-white' : 'text-body hover:bg-surface' }}">
+                   class="px-4 py-3 rounded-lg text-sm font-semibold text-center md:text-left whitespace-nowrap transition-colors {{ $tab === $key ? 'bg-brand text-on-brand' : 'text-body hover:bg-surface' }}">
                     {{ $label }}
                 </a>
             @endforeach

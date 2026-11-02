@@ -7,7 +7,7 @@
                 @if (\App\Helpers\AuthHelper::can('approve settings.setting'))
                     <form action="{{ route('settings.theme.publish') }}" method="POST">
                         @csrf
-                        <button type="submit" class="rounded-lg bg-brand hover:bg-brand-dark px-3 py-1.5 font-semibold transition-colors">{{ __('body.theme_publish') }}</button>
+                        <button type="submit" class="rounded-lg bg-brand text-on-brand hover:bg-brand-dark px-3 py-1.5 font-semibold transition-colors">{{ __('body.theme_publish') }}</button>
                     </form>
                 @endif
                 <form action="{{ route('settings.theme.preview.stop') }}" method="POST">

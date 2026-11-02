@@ -48,7 +48,7 @@
                     <h2 class="font-display font-bold text-danger">{{ __('billing::billing.cancel_now') }}</h2>
                     <p class="text-sm text-muted mt-1">{{ __('billing::billing.cancel_now_hint') }}</p>
                 </div>
-                <button type="submit" class="inline-flex items-center rounded-lg bg-danger hover:opacity-90 text-white font-semibold text-sm px-4 py-2"
+                <button type="submit" class="inline-flex items-center rounded-lg bg-danger hover:opacity-90 text-on-danger font-semibold text-sm px-4 py-2"
                     data-confirm data-confirm-title="{{ __('billing::billing.cancel_now') }}?" data-confirm-variant="danger">{{ __('billing::billing.cancel_now') }}</button>
             </form>
         </div>
