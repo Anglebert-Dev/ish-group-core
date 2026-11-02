@@ -255,6 +255,7 @@
     <div class="block">
         <div class="block-title">{{ $section['title'] }}</div>
         @foreach ($section['lines'] as $line)<div class="pre">{{ $line }}</div>@endforeach
+        @if ($section['image'])<img src="{{ $section['image'] }}" alt="" style="height: 64px; margin-top: 4px">@endif
     </div>
 @endforeach
 

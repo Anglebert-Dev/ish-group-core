@@ -75,7 +75,9 @@ class DeliveryTest extends InventoryTestCase
 
         $note = DeliveryNote::query()->firstOrFail();
         $this->get(route('delivery.notes.show', $note))->assertOk()->assertSee('data:image/png;base64', false);
-        $this->get(route('delivery.notes.pdf', $note))->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        $this->get(route('delivery.notes.pdf', $note))->assertRedirect(route('print.pdf', ['delivery_note', $note->getRouteKey()]));
+        $this->get(route('print.pdf', ['delivery_note', $note->getRouteKey()]))->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        $this->get(route('print.show', ['delivery_note', $note->getRouteKey()]))->assertOk()->assertSee($note->number);
         $this->get(route('salesorders.orders.show', $order))->assertSee($note->number);
         $this->get(route('delivery.notes.index'))->assertOk()->assertSee($note->number);
     }

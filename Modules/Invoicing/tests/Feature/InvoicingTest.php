@@ -74,7 +74,9 @@ class InvoicingTest extends InventoryTestCase
         $this->assertSame(40.0, app(StockService::class)->onHand($s['medium']));
 
         $this->get(route('invoicing.invoices.show', $invoice))->assertOk()->assertSee('Green Hills School');
-        $this->get(route('invoicing.invoices.pdf', $invoice))->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        $this->get(route('invoicing.invoices.pdf', $invoice))->assertRedirect(route('print.pdf', ['sales_invoice', $invoice->getRouteKey()]));
+        $this->get(route('print.pdf', ['sales_invoice', $invoice->getRouteKey()]))->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        $this->get(route('print.show', ['sales_invoice', $invoice->getRouteKey()]))->assertOk()->assertSee($invoice->number);
         $this->get(route('invoicing.invoices.index'))->assertOk()->assertSee($invoice->number);
         $this->get(route('invoicing.invoices.export.excel'))->assertOk();
     }

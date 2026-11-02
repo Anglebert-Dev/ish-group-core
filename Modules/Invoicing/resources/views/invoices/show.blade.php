@@ -6,7 +6,7 @@
     <x-common.page-header :title="$invoice->number" :description="$invoice->customer?->displayName()">
         <x-slot:actions>
             <x-common.button href="{{ route('invoicing.invoices.index') }}" variant="secondary" size="sm">← {{ __('invoicing::invoicing.invoices') }}</x-common.button>
-            <x-common.button href="{{ route('invoicing.invoices.pdf', $invoice) }}" size="sm">{{ __('invoicing::invoicing.download_pdf') }}</x-common.button>
+            <x-print.buttons type="sales_invoice" :id="$invoice->getRouteKey()" />
         </x-slot:actions>
     </x-common.page-header>
 
@@ -67,6 +67,9 @@
                                 <td class="px-5 py-3">{{ $payment->method->label() }}@if ($payment->reference)<span class="text-muted"> · {{ $payment->reference }}</span>@endif</td>
                                 <td class="px-5 py-3 text-right whitespace-nowrap font-semibold {{ $payment->isReversed() ? 'line-through' : 'text-success' }}">{{ money($payment->amount) }}</td>
                                 <td class="px-5 py-3 text-right whitespace-nowrap">
+                                    @if ($can('read invoicing.payment'))
+                                        <a href="{{ route('print.show', ['sales_payment', $payment->getRouteKey()]) }}" target="_blank" rel="noopener" class="text-xs font-semibold text-brand hover:text-brand-dark mr-3">{{ __('invoicing::invoicing.receipt') }}</a>
+                                    @endif
                                     @if ($payment->isReversed())
                                         <x-common.badge color="muted" title="{{ $payment->reverse_reason }}">{{ __('invoicing::invoicing.reversed') }}</x-common.badge>
                                     @elseif ($can('delete invoicing.payment'))

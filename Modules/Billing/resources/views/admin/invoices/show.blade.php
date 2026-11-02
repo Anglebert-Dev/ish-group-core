@@ -3,6 +3,7 @@
 
     <x-common.page-header :title="__('billing::billing.invoice').' '.$invoice->number" :description="$invoice->business?->name">
         <x-slot:actions>
+            <x-common.button href="{{ route('superadmin.billing.invoices.pdf', [$invoice, 'print' => 1]) }}" target="_blank" variant="secondary" size="sm">{{ __('body.print') }}</x-common.button>
             <x-common.button href="{{ route('superadmin.billing.invoices.pdf', $invoice) }}" variant="secondary" size="sm">{{ __('billing::billing.download_pdf') }}</x-common.button>
             @if ($invoice->subscription)
                 <x-common.button href="{{ route('superadmin.billing.subscriptions.show', $invoice->subscription) }}" variant="secondary" size="sm">{{ __('billing::billing.subscription') }}</x-common.button>

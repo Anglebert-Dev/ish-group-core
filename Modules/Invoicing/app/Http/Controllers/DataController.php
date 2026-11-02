@@ -13,6 +13,17 @@ use Modules\Invoicing\Services\InvoiceService;
  */
 class DataController
 {
+    /**
+     * Documents this module prints through the core print engine.
+     */
+    public function printables(): array
+    {
+        return [
+            'sales_invoice' => \Modules\Invoicing\Printing\SalesInvoicePrintable::class,
+            'sales_payment' => \Modules\Invoicing\Printing\SalesPaymentPrintable::class,
+        ];
+    }
+
     public function user_permissions(): array
     {
         return [

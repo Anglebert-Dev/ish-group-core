@@ -78,7 +78,7 @@ return [
     'audit_pdf' => 'Invoice :number downloaded',
 
     'settings' => 'Invoice settings',
-    'settings_description' => 'Tax and the details printed on your invoices.',
+    'settings_description' => 'The tax rate applied to invoices.',
     'tax_rate' => 'Tax rate (%)',
     'tax_rate_hint' => 'Applied to new invoices, e.g. 18 for VAT. 0 for none.',
     'tax_id' => 'Your TIN',
@@ -94,9 +94,31 @@ return [
     'order_invoices' => 'Invoices',
     'order_invoice' => 'Invoice this order',
     'pdf_bill_to' => 'Bill to',
-    'pdf_invoice' => 'INVOICE',
+    'pdf_invoice' => 'Invoice',
     'pdf_page_total' => 'Amount due',
 
     'dashboard_owed' => 'Owed by customers',
     'dashboard_overdue' => 'Overdue invoices',
+
+    // Printing (core print engine)
+    'pdf_credit_note' => 'Credit note',
+    'pdf_for_invoice' => 'For invoice',
+    'pdf_receipt' => 'Payment receipt',
+    'pdf_received_on' => 'Received on',
+    'pdf_method' => 'Method',
+    'pdf_reference' => 'Reference',
+    'pdf_received_from' => 'Received from',
+    'pdf_description' => 'Description',
+    'pdf_payment_for' => 'Payment for invoice :number',
+    'pdf_amount_received' => 'Amount received',
+    'pdf_invoice_total' => 'Invoice total',
+    'pdf_balance_after' => 'Balance after this payment',
+    'watermark_paid' => 'PAID',
+    'watermark_cancelled' => 'CANCELLED',
+    'watermark_reversed' => 'REVERSED',
+    'receipt' => 'Receipt',
+    'settings_moved' => 'Your TIN, address, phone, invoice footer and payment terms are now set once for every document, in Branding.',
+    'settings_moved_details' => 'Business details',
+    'settings_moved_documents' => 'Invoice terms & footer',
+
 ];

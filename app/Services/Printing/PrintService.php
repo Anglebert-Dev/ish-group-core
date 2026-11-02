@@ -43,6 +43,7 @@ class PrintService
     {
         $brand = $this->branding->brand($business);
         $design ??= PrintDesign::for($business, $brand);
+        $brand = $document->issuer ? $brand->with($document->issuer) : $brand;
         $dark = $design->layout === 'modern';
 
         return [

@@ -32,4 +32,9 @@ return [
     'audit_pdf' => 'Delivery note :number downloaded',
     'pdf_title' => 'DELIVERY NOTE',
     'pdf_received' => 'Goods received in good condition by',
+
+    // Printing (core print engine)
+    'pdf_delivered_on' => 'Delivered on',
+    'pdf_vehicle' => 'Vehicle',
+    'pdf_deliver_to' => 'Deliver to',
 ];

@@ -2,6 +2,7 @@
     <x-common.page-header :title="__('billing::billing.invoice').' '.$invoice->number">
         <x-slot:actions>
             <x-common.button href="{{ route('billing.index') }}" variant="secondary" size="sm">← {{ __('billing::billing.my_subscription') }}</x-common.button>
+            <x-common.button href="{{ route('billing.invoices.pdf', [$invoice, 'print' => 1]) }}" target="_blank" variant="secondary" size="sm">{{ __('body.print') }}</x-common.button>
             <x-common.button href="{{ route('billing.invoices.pdf', $invoice) }}" variant="secondary" size="sm">{{ __('billing::billing.download_pdf') }}</x-common.button>
         </x-slot:actions>
     </x-common.page-header>

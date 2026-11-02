@@ -354,4 +354,10 @@ return [
     'package_change_limits' => 'Limits changed.',
     'package_change_price' => 'From your next invoice the price is :price :currency.',
     'audit_package_applied' => 'Package ":name" changes applied to the subscription (:mode)',
+
+    // Printing (core print engine)
+    'description' => 'Description',
+    'amount' => 'Amount',
+    'watermark_paid' => 'PAID',
+    'watermark_void' => 'VOID',
 ];

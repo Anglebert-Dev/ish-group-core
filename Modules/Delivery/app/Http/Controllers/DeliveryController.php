@@ -3,8 +3,6 @@
 namespace Modules\Delivery\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Dompdf\Dompdf;
-use Dompdf\Options;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -67,21 +65,7 @@ class DeliveryController extends Controller
 
     public function pdf(DeliveryNote $note): Response
     {
-        $options = new Options;
-        $options->set('isRemoteEnabled', false);
-        $dompdf = new Dompdf($options);
-        $dompdf->loadHtml(view('delivery::notes.pdf', [
-            'note' => $note->load(['salesOrder.customer', 'lines.variant.item']),
-            'business' => $note->business,
-        ])->render());
-        $dompdf->setPaper('a4');
-        $dompdf->render();
-
-        audit(\App\Enums\ActivityLogAction::Downloaded, __('delivery::delivery.audit_pdf', ['number' => $note->number]), $note);
-
-        return response($dompdf->output(), 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="'.$note->number.'.pdf"',
-        ]);
+        // Kept for old links: the print engine makes the PDF now.
+        return redirect()->route('print.pdf', ['delivery_note', $note->getRouteKey()]);
     }
 }

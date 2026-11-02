@@ -2,7 +2,7 @@
     <x-common.page-header :title="$note->number" :description="$note->salesOrder?->customer?->displayName()">
         <x-slot:actions>
             <x-common.button href="{{ route('delivery.notes.index') }}" variant="secondary" size="sm">← {{ __('delivery::delivery.notes') }}</x-common.button>
-            <x-common.button href="{{ route('delivery.notes.pdf', $note) }}" size="sm">{{ __('delivery::delivery.download_pdf') }}</x-common.button>
+            <x-print.buttons type="delivery_note" :id="$note->getRouteKey()" />
         </x-slot:actions>
     </x-common.page-header>
 

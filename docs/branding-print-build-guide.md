@@ -1,6 +1,6 @@
 # Branding & printing: Build Guide
 
-Created: 02/11/2026. Status: **Phases 1–2 done (02/11/2026)**. Update §7 after each phase, so work can pick up where it stopped.
+Created: 02/11/2026. Status: **Phases 1–3 done (02/11/2026)**. Update §7 after each phase, so work can pick up where it stopped.
 
 ## 1. Goal
 
@@ -77,6 +77,16 @@ The Invoicing module's own issuer settings (`invoicing.tax_id`, `invoicing.addre
 - **Designer:** Branding → **Documents** tab. The live preview iframe is `settings.print-preview`, which takes the unsaved choices as a query string, and `?format=pdf` shows the real PDF. Saved as `print.*` (layout, paper, accent, font, logo position and size, tagline, footer, 5 switches, and per-type terms and footer in `print.types`).
 - **Checked visually:** all three layouts rendered to PDF and converted to images (poppler in a throwaway Docker image). The "1 / 0" page counter was fixed after that check.
 
+**Phase 3 notes:**
+- **Invoicing** (module 1.1.0):
+  - printables `sales_invoice` (prints as the **credit note** when cancelled; watermark PAID or CANCELLED; payment details while money is owed) and `sales_payment` (receipt; a **Receipt** link on each payment row)
+  - its settings page keeps only the tax rate and links to Branding
+  - a module migration copied `invoicing.footer` to `print.types.sales_invoice.footer`
+  - `invoicing.tax_id`, `address` and `phone` still work as fallbacks in `BrandingService::brand()`
+- **Delivery:** printable `delivery_note`, including the receiver's name, phone and drawn signature (`Document::section(…, $image)` accepts only `data:image/…`).
+- **Billing:** subscription invoices aren't scoped to the viewing business (superadmins see all), so they **keep their two routes** (`billing.invoices.pdf`, `superadmin.billing.invoices.pdf`), now built by the engine through `InvoicePdf::document()`. Branded as the **platform business**. Billing's issuer settings, when filled in, print instead of the brand's identity (`Document::issuer()` → `Brand::with()`). Payment instructions show while the invoice is open. `?print=1` gives the print view, with a **Print** button on both invoice pages.
+- **Old links:** `invoicing.invoices.pdf` and `delivery.notes.pdf` now redirect to `print.pdf`. The old templates and `Invoicing\Support\InvoicePdf` are deleted.
+
 ## 5. Documents
 
 | Module | Documents |
@@ -106,6 +116,6 @@ Savings (personal finance) is left out on purpose.
 |---|---|---|
 | 1 | Branding data + Branding page (identity, visuals, stamp & signature, payment details); copy Invoicing issuer settings | ✅ 02/11/2026 |
 | 2 | Print engine: `Document`, layouts, PDF/HTML/Excel, design settings + live preview, printables registry + routes + buttons; lists through the engine | ✅ 02/11/2026 |
-| 3 | Move the existing PDFs (Invoicing, Billing, Delivery) onto the engine | ☐ |
+| 3 | Move the existing PDFs (Invoicing, Billing, Delivery) onto the engine | ✅ 02/11/2026 |
 | 4 | New documents in every module (§5) | ☐ |
 | 5 | Check every document in PDF and print view (rendered to images and looked at), tests, README | ☐ |

@@ -19,7 +19,6 @@ use Modules\Invoicing\Enums\PaymentMethod;
 use Modules\Invoicing\Models\SalesInvoice;
 use Modules\Invoicing\Models\SalesPayment;
 use Modules\Invoicing\Services\InvoiceService;
-use Modules\Invoicing\Support\InvoicePdf;
 use Symfony\Component\HttpFoundation\Response;
 
 class InvoiceController extends Controller
@@ -129,7 +128,8 @@ class InvoiceController extends Controller
 
     public function pdf(SalesInvoice $invoice): Response
     {
-        return InvoicePdf::download($invoice);
+        // Kept for old links: the print engine makes the PDF now.
+        return redirect()->route('print.pdf', ['sales_invoice', $invoice->getRouteKey()]);
     }
 
     public function pay(Request $request, SalesInvoice $invoice): RedirectResponse
@@ -164,32 +164,21 @@ class InvoiceController extends Controller
         return back()->with($result['status'] ? 'success' : 'error', $result['message']);
     }
 
+    /**
+     * Business details, footer and terms moved to Branding (core): only the tax rate stays here.
+     */
     public function settings(BusinessSettings $settings): View
     {
         return view('invoicing::settings', [
-            'values' => [
-                'tax_rate' => $settings->get('invoicing.tax_rate', 0),
-                'tax_id' => $settings->get('invoicing.tax_id'),
-                'address' => $settings->get('invoicing.address'),
-                'phone' => $settings->get('invoicing.phone'),
-                'footer' => $settings->get('invoicing.footer'),
-            ],
+            'values' => ['tax_rate' => $settings->get('invoicing.tax_rate', 0)],
         ]);
     }
 
     public function saveSettings(Request $request, BusinessSettings $settings): RedirectResponse
     {
-        $data = $request->validate([
-            'tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
-            'tax_id' => ['nullable', 'string', 'max:60'],
-            'address' => ['nullable', 'string', 'max:500'],
-            'phone' => ['nullable', 'string', 'max:60'],
-            'footer' => ['nullable', 'string', 'max:1000'],
-        ]);
+        $data = $request->validate(['tax_rate' => ['required', 'numeric', 'min:0', 'max:100']]);
 
-        foreach ($data as $key => $value) {
-            $settings->set('invoicing.'.$key, $key === 'tax_rate' ? (float) $value : ($value ?: null));
-        }
+        $settings->set('invoicing.tax_rate', (float) $data['tax_rate']);
 
         return back()->with('success', __('invoicing::invoicing.settings_saved'));
     }

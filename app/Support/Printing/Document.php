@@ -34,7 +34,7 @@ final class Document
     /** @var list<array{label: string, value: string, strong: bool}> */
     public array $totals = [];
 
-    /** @var list<array{title: string, lines: list<string>}> */
+    /** @var list<array{title: string, lines: list<string>, image: ?string}> */
     public array $sections = [];
 
     public ?string $notes = null;
@@ -48,6 +48,9 @@ final class Document
     public string $orientation = 'portrait';
 
     public ?string $emptyText = null;
+
+    /** @var array<string, ?string> identity fields printed instead of the brand's */
+    public array $issuer = [];
 
     public function __construct(public string $type, public string $title)
     {
@@ -87,6 +90,26 @@ final class Document
     }
 
     /**
+     * A customer as a party: company or person, contact, address, phone, TIN.
+     * $delivery prints the delivery address when there is one.
+     */
+    public function customer(string $label, ?\App\Models\Customer\Customer $customer, bool $delivery = false): self
+    {
+        if (! $customer) {
+            return $this;
+        }
+
+        $address = $delivery && filled($customer->delivery_address) ? $customer->delivery_address : $customer->address;
+
+        return $this->party($label, $customer->displayName(), [
+            $customer->displayName() !== $customer->contact_person ? $customer->contact_person : null,
+            $address,
+            implode(' · ', array_filter([$customer->phone, $customer->email])) ?: null,
+            $customer->tax_id ? __('body.brand_tax_id_short').' '.$customer->tax_id : null,
+        ]);
+    }
+
+    /**
      * @param  list<array{0: string, 1?: string}|string>  $columns  label, or [label, align]
      * @param  list<list<mixed>>  $rows
      */
@@ -110,14 +133,19 @@ final class Document
     }
 
     /**
+     * A titled block of lines, optionally with an image (e.g. the receiver's
+     * signature on a delivery note). Only embedded images (data:image/…) are
+     * accepted: a document never fetches anything.
+     *
      * @param  list<string|null>  $lines
      */
-    public function section(string $title, array $lines): self
+    public function section(string $title, array $lines, ?string $image = null): self
     {
         $lines = array_values(array_filter($lines, fn ($line) => $line !== null && $line !== ''));
+        $image = $image && preg_match('#^data:image/(png|jpe?g|gif);base64,[A-Za-z0-9+/=]+$#', $image) ? $image : null;
 
-        if ($lines !== []) {
-            $this->sections[] = ['title' => $title, 'lines' => $lines];
+        if ($lines !== [] || $image) {
+            $this->sections[] = ['title' => $title, 'lines' => $lines, 'image' => $image];
         }
 
         return $this;
@@ -155,6 +183,18 @@ final class Document
     public function landscape(bool $landscape = true): self
     {
         $this->orientation = $landscape ? 'landscape' : 'portrait';
+
+        return $this;
+    }
+
+    /**
+     * Print some identity fields differently from the brand (see Brand::with()).
+     *
+     * @param  array{name?: ?string, legalName?: ?string, address?: ?string, taxId?: ?string, email?: ?string, phone?: ?string}  $fields
+     */
+    public function issuer(array $fields): self
+    {
+        $this->issuer = $fields;
 
         return $this;
     }

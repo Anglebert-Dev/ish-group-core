@@ -36,6 +36,25 @@ final class Brand
     ) {
     }
 
+    /**
+     * The same brand with some identity fields replaced — a document issued
+     * in another name (e.g. Billing's issuer details on platform invoices).
+     *
+     * @param  array{name?: ?string, legalName?: ?string, address?: ?string, taxId?: ?string, email?: ?string, phone?: ?string}  $fields
+     */
+    public function with(array $fields): self
+    {
+        $values = get_object_vars($this);
+
+        foreach ($fields as $key => $value) {
+            if (array_key_exists($key, $values) && $value !== null && $value !== '') {
+                $values[$key] = $value;
+            }
+        }
+
+        return new self(...$values);
+    }
+
     /** The name on documents: the legal name when there is one. */
     public function documentName(): string
     {
