@@ -83,12 +83,19 @@ class Site extends BaseModel
     }
 
     /**
-     * Updates and support still included? No end date = yes. The app keeps
-     * working either way; only updates stop.
+     * Updates and support included right now? They start when the licence
+     * (or a renewal) is paid: no date yet = none. Our own test sites always
+     * have them. The customer's app keeps working either way; only updates stop.
      */
     public function hasSupport(): bool
     {
-        return $this->support_until === null || ! $this->support_until->isBefore(today());
+        return $this->is_test || ($this->support_until !== null && ! $this->support_until->isBefore(today()));
+    }
+
+    /** Has the customer paid for the licence? (Test sites: no licence needed.) */
+    public function licencePaid(): bool
+    {
+        return $this->is_test || $this->charges()->where('kind', Charge::LICENCE)->where('status', 'paid')->exists();
     }
 
     /** Days until support ends (negative once ended); null = no end date. */

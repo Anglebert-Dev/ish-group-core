@@ -372,7 +372,9 @@ return [
     // Licence & support (docs/self-hosting-build-guide.md §11)
     'support_until' => 'Support & updates until',
     'support_until_hint' => 'Usually a year from the licence. After this date the site gets no updates (the app keeps working). Paying a support charge extends it.',
-    'support_no_end' => 'No end date',
+    'support_no_end' => 'No support (none paid yet)',
+    'support_not_started' => 'Not started: starts when the licence is paid',
+    'support_test_site' => 'Always (test site)',
     'support_ended_on' => 'Ended :date',
     'support_now_until' => 'Support & updates now run until :date.',
     'licence_title' => 'Licence & support',
@@ -395,6 +397,7 @@ return [
     'charge_due_days' => 'Due in (days)',
     'charge_create' => 'Create charge',
     'charge_created' => 'Charge :number created. Print it or email it to the customer.',
+    'charge_licence_text_only' => 'Software licence: :modules',
     'charge_licence_text' => 'Software licence: :modules (includes :months months of support & updates)',
     'charge_support_text' => 'Support & updates renewal, :months months (:site)',
     'charge_status_unpaid' => 'Unpaid',
@@ -420,7 +423,7 @@ return [
     'method_card' => 'Card',
     'method_other' => 'Other',
     'support_change' => 'Change the end date by hand',
-    'support_change_hint' => 'For a goodwill extension or a correction. Blank = no end date. The reason is kept in the audit log.',
+    'support_change_hint' => 'For a goodwill extension or a correction. Blank = no support. The reason is kept in the audit log.',
     'support_change_reason' => 'Reason',
     'support_change_save' => 'Save date',
 
@@ -462,4 +465,6 @@ return [
     'signing_needed_title' => 'First, create your signing key',
     'signing_needed_body' => 'Needed once for this server, before any zip can be built: it proves that zips and updates really come from you. (Not the same as a link key, which reconnects one customer\'s server later.)',
     'signing_create' => 'Create signing key',
+    'build_needs_paid_licence' => 'The licence is not paid yet. Create the licence charge below (Licence & support), send it, and mark it paid when the money arrives; then the zip can be built. (Test sites need no licence.)',
+    'licence_unpaid_title' => 'Waiting for the licence payment',
 ];

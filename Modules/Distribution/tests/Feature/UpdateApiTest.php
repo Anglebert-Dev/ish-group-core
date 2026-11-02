@@ -19,6 +19,7 @@ use Modules\Distribution\Notifications\CustomerEmail;
 use Modules\Distribution\Services\ReleaseService;
 use Modules\Distribution\Services\SigningKeys;
 use Modules\Distribution\Services\SiteService;
+use Modules\Distribution\Tests\Feature\Concerns\PaidSite;
 use Tests\TestCase;
 
 /**
@@ -27,6 +28,8 @@ use Tests\TestCase;
  */
 class UpdateApiTest extends TestCase
 {
+    use PaidSite;
+
     protected string $publicKey;
 
     protected Site $site;
@@ -45,7 +48,7 @@ class UpdateApiTest extends TestCase
         $this->publicKey = $keys['public'];
         Storage::fake('local');
 
-        $this->site = app(SiteService::class)->create(['name' => 'Kigali Finance'], ['Savings', 'SalesOrders'])['data'];
+        $this->site = $this->paid(app(SiteService::class)->create(['name' => 'Kigali Finance'], ['Savings', 'SalesOrders'])['data']);
         $this->token = app(SiteService::class)->issueToken($this->site);
     }
 

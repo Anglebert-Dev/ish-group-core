@@ -12,6 +12,7 @@ use Modules\Distribution\Models\Charge;
 use Modules\Distribution\Models\Release;
 use Modules\Distribution\Models\Site;
 use Modules\Distribution\Notifications\CustomerEmail;
+use Modules\Distribution\Services\BuildService;
 use Modules\Distribution\Services\LicenceService;
 use Modules\Distribution\Services\SigningKeys;
 use Modules\Distribution\Services\SiteService;
@@ -38,15 +39,32 @@ class LicenceTest extends TestCase
         $this->site = app(SiteService::class)->create(['name' => 'Kigali Finance', 'customer_name' => 'Kigali Finance Ltd', 'contact_email' => 'it@kf.test'], ['Savings'])['data'];
     }
 
-    public function test_a_new_site_gets_a_year_of_support_by_default(): void
+    public function test_nothing_ships_or_updates_before_the_licence_is_paid(): void
     {
-        $this->get(route('superadmin.distribution.sites.create'))->assertOk()
-            ->assertSee('value="'.today()->addMonthsNoOverflow(12)->subDay()->toDateString().'"', false);
+        $this->post(route('superadmin.distribution.sites.store'), ['name' => 'Acme', 'update_mode' => 'manual', 'status' => 'active', 'modules' => ['Savings']])->assertRedirect();
+        $site = Site::query()->where('name', 'Acme')->firstOrFail();
 
-        $this->post(route('superadmin.distribution.sites.store'), [
-            'name' => 'Acme', 'update_mode' => 'manual', 'status' => 'active', 'support_until' => '2027-11-01',
-        ])->assertRedirect();
-        $this->assertSame('2027-11-01', Site::query()->where('name', 'Acme')->first()->support_until->toDateString());
+        $this->assertNull($site->support_until, 'support starts at payment, not at creation');
+        $this->assertFalse($site->hasSupport());
+        $this->assertFalse($site->licencePaid());
+        $this->get(route('superadmin.distribution.sites.show', $site))->assertOk()->assertSee(__('distribution::distribution.licence_unpaid_title'));
+
+        $keys = SigningKeys::generate();
+        config(['distribution.signing_secret' => $keys['secret'], 'distribution.public_keys' => [$keys['public']]]);
+        $refused = app(BuildService::class)->start($site);
+        $this->assertFalse($refused['status']);
+        $this->assertSame(__('distribution::distribution.build_needs_paid_licence'), $refused['message']);
+
+        // Paid: the zip can be built and a year of support begins.
+        $charge = app(LicenceService::class)->charge($site, ['kind' => 'licence', 'amount' => 500000, 'support_months' => 12])['data'];
+        app(LicenceService::class)->markPaid($charge, ['paid_on' => today()->toDateString()]);
+        $site = $site->fresh();
+        $this->assertTrue($site->licencePaid());
+        $this->assertTrue($site->hasSupport());
+        $this->assertTrue(app(BuildService::class)->start($site)['status']);
+
+        // Test sites need no licence.
+        $this->assertTrue((new Site(['is_test' => true]))->hasSupport());
     }
 
     public function test_licence_charge_prints_emails_and_paying_extends_support(): void

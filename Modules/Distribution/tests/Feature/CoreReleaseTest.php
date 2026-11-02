@@ -3,6 +3,7 @@
 namespace Modules\Distribution\Tests\Feature;
 
 use App\Models\Notification\Notification;
+use App\Models\User;
 use App\Services\Module\ModuleManager;
 use App\Support\Distribution\PackageSignature;
 use Illuminate\Support\Facades\Storage;
@@ -11,6 +12,7 @@ use Modules\Distribution\Models\Site;
 use Modules\Distribution\Services\ReleaseService;
 use Modules\Distribution\Services\SigningKeys;
 use Modules\Distribution\Services\SiteService;
+use Modules\Distribution\Tests\Feature\Concerns\PaidSite;
 use Tests\TestCase;
 use ZipArchive;
 
@@ -19,6 +21,8 @@ use ZipArchive;
  */
 class CoreReleaseTest extends TestCase
 {
+    use PaidSite;
+
     protected string $publicKey;
 
     protected Site $site;
@@ -36,7 +40,7 @@ class CoreReleaseTest extends TestCase
         $this->publicKey = $keys['public'];
         Storage::fake('local');
 
-        $this->site = app(SiteService::class)->create(['name' => 'Acme'], ['Savings'])['data'];
+        $this->site = $this->paid(app(SiteService::class)->create(['name' => 'Acme'], ['Savings'])['data']);
         $this->token = app(SiteService::class)->issueToken($this->site);
     }
 
@@ -97,7 +101,7 @@ class CoreReleaseTest extends TestCase
 
     public function test_the_releases_page_has_publish_core(): void
     {
-        $this->actingAs(\App\Models\User::query()->where('email', 'root@example.com')->firstOrFail(), 'staff');
+        $this->actingAs(User::query()->where('email', 'root@example.com')->firstOrFail(), 'staff');
 
         $this->get(route('superadmin.distribution.releases.index'))->assertOk()->assertSee(__('distribution::distribution.publish_core'))->assertSee(config('core.version'));
     }

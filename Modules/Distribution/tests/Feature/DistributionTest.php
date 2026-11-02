@@ -4,6 +4,7 @@ namespace Modules\Distribution\Tests\Feature;
 
 use App\Models\ActivityLog\ActivityLog;
 use App\Models\User;
+use App\Services\Install\EnvWriter;
 use App\Services\Module\ModuleManager;
 use App\Support\Distribution\PackageSignature;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +15,7 @@ use Modules\Distribution\Models\SiteToken;
 use Modules\Distribution\Services\ReleaseService;
 use Modules\Distribution\Services\SigningKeys;
 use Modules\Distribution\Services\SiteService;
+use Modules\Distribution\Tests\Feature\Concerns\PaidSite;
 use Tests\TestCase;
 use ZipArchive;
 
@@ -23,6 +25,8 @@ use ZipArchive;
  */
 class DistributionTest extends TestCase
 {
+    use PaidSite;
+
     protected User $root;
 
     protected string $publicKey;
@@ -214,7 +218,7 @@ class DistributionTest extends TestCase
     {
         $env = sys_get_temp_dir().'/ish-env-'.uniqid();
         file_put_contents($env, "APP_NAME=Test\n");
-        $this->app->bind(\App\Services\Install\EnvWriter::class, fn () => new \App\Services\Install\EnvWriter($env));
+        $this->app->bind(EnvWriter::class, fn () => new EnvWriter($env));
         config(['distribution.signing_secret' => null, 'distribution.public_keys' => []]);
         $this->actingAs($this->root, 'staff');
 
@@ -242,7 +246,7 @@ class DistributionTest extends TestCase
 
     public function test_an_unwritable_env_gets_the_lines_to_add_by_hand(): void
     {
-        $this->app->bind(\App\Services\Install\EnvWriter::class, fn () => new \App\Services\Install\EnvWriter('/nonexistent-dir/.env'));
+        $this->app->bind(EnvWriter::class, fn () => new EnvWriter('/nonexistent-dir/.env'));
         config(['distribution.signing_secret' => null]);
         $this->actingAs($this->root, 'staff');
 
@@ -261,6 +265,6 @@ class DistributionTest extends TestCase
 
     private function site(array $modules): Site
     {
-        return app(SiteService::class)->create(['name' => 'Site '.$this->nextSeq()], $modules)['data'];
+        return $this->paid(app(SiteService::class)->create(['name' => 'Site '.$this->nextSeq()], $modules)['data']);
     }
 }

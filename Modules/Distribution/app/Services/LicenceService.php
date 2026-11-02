@@ -206,6 +206,10 @@ class LicenceService extends BaseService
 
     private function defaultDescription(Site $site, string $kind, int $months): string
     {
+        if ($kind === Charge::LICENCE && $months === 0) {
+            return __('distribution::distribution.charge_licence_text_only', ['modules' => implode(', ', $site->moduleNames()) ?: '—']);
+        }
+
         return $kind === Charge::LICENCE
             ? __('distribution::distribution.charge_licence_text', ['modules' => implode(', ', $site->moduleNames()) ?: '—', 'months' => $months])
             : __('distribution::distribution.charge_support_text', ['months' => $months, 'site' => $site->name]);

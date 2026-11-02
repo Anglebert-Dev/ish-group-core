@@ -17,6 +17,7 @@ use Modules\Distribution\Notifications\CustomerEmail;
 use Modules\Distribution\Services\BuildService;
 use Modules\Distribution\Services\SigningKeys;
 use Modules\Distribution\Services\SiteService;
+use Modules\Distribution\Tests\Feature\Concerns\PaidSite;
 use Tests\TestCase;
 
 /**
@@ -24,6 +25,8 @@ use Tests\TestCase;
  */
 class CustomerEmailTest extends TestCase
 {
+    use PaidSite;
+
     protected User $root;
 
     protected Site $site;
@@ -39,7 +42,7 @@ class CustomerEmailTest extends TestCase
         Storage::fake('local');
         Notification::fake();
 
-        $this->site = app(SiteService::class)->create(['name' => 'Acme Finance', 'customer_name' => 'Jane', 'contact_email' => 'jane@acme.test'], ['Savings'])['data'];
+        $this->site = $this->paid(app(SiteService::class)->create(['name' => 'Acme Finance', 'customer_name' => 'Jane', 'contact_email' => 'jane@acme.test'], ['Savings'])['data']);
         app(SiteService::class)->saveServerDetails($this->site, ['install_path' => '/home/acme/finance', 'php_path' => '/usr/local/bin/php', 'app_url' => 'https://finance.acme.test'], 'form');
         $this->actingAs($this->root, 'staff');
     }

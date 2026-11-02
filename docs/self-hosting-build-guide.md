@@ -482,6 +482,10 @@ The usual model for software you install yourself: **a licence once, then yearly
 - **Tests:** `Modules/Distribution/tests/Feature/LicenceTest.php`, and `ModuleUpdatesTest::test_the_updates_page_says_when_support_has_ended`.
 - Distribution **1.5.0**: run `php artisan core:module update Distribution` (or Super Admin → Modules → Update) on our server for the new tables.
 
+**Changed 03/11/2026 (found while testing):** nothing ships and nothing updates before payment.
+- **No zip** until a licence charge is **paid** ("Build zip" explains why). Test sites are exempt.
+- **Support starts at payment:** a new site has no support date. Paying a charge with support months starts or extends it. Blank in the manual change means no support. Test sites always have support.
+
 ## 14. Developer edition & customised modules (added 02/11/2026)
 
 For customers who keep developing the code they bought.

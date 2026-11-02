@@ -71,12 +71,14 @@ class BuildService extends BaseService
             return $this->failure(__('distribution::distribution.keys_missing'));
         }
 
-        // What the customer told us rules their server out: no point building.
+        if (! $site->licencePaid()) {
+            return $this->failure(__('distribution::distribution.build_needs_paid_licence'));
+        }
+
         if ($problems = ServerDetails::problems((array) $site->server_details)) {
             return $this->failure(__('distribution::distribution.build_blocked', ['problems' => implode(' ', $problems)]));
         }
 
-        // A second click while one is being built would only make a duplicate.
         if ($site->builds()->where('status', BuildStatus::Building)->where('updated_at', '>', now()->subMinutes(30))->exists()) {
             return $this->failure(__('distribution::distribution.build_in_progress'));
         }

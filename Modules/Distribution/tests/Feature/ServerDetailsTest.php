@@ -6,12 +6,13 @@ use App\Models\ActivityLog\ActivityLog;
 use App\Models\User;
 use App\Services\Module\ModuleManager;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Modules\Distribution\Models\Site;
 use Modules\Distribution\Services\BuildService;
 use Modules\Distribution\Services\SigningKeys;
 use Modules\Distribution\Services\SiteService;
+use Modules\Distribution\Support\ServerDetails;
+use Modules\Distribution\Tests\Feature\Concerns\PaidSite;
 use Tests\TestCase;
 use ZipArchive;
 
@@ -21,6 +22,8 @@ use ZipArchive;
  */
 class ServerDetailsTest extends TestCase
 {
+    use PaidSite;
+
     protected User $root;
 
     protected Site $site;
@@ -35,7 +38,7 @@ class ServerDetailsTest extends TestCase
         config(['distribution.signing_secret' => $keys['secret'], 'distribution.public_keys' => []]);
         Storage::fake('local');
 
-        $this->site = app(SiteService::class)->create(['name' => 'Acme Finance'], ['Savings'])['data'];
+        $this->site = $this->paid(app(SiteService::class)->create(['name' => 'Acme Finance'], ['Savings'])['data']);
         $this->actingAs($this->root, 'staff');
     }
 
@@ -66,7 +69,7 @@ class ServerDetailsTest extends TestCase
             ->assertRedirect();
 
         $this->assertSame('none', $this->site->fresh()->server_details['mail_encryption']);
-        $this->assertArrayNotHasKey('scheme', \Modules\Distribution\Support\ServerDetails::installerDefaults($this->site->fresh()->server_details, 'x')['mail']);
+        $this->assertArrayNotHasKey('scheme', ServerDetails::installerDefaults($this->site->fresh()->server_details, 'x')['mail']);
     }
 
     public function test_unsafe_or_wrong_answers_are_refused(): void

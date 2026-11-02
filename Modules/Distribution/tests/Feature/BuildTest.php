@@ -18,6 +18,7 @@ use Modules\Distribution\Models\SiteToken;
 use Modules\Distribution\Services\BuildService;
 use Modules\Distribution\Services\SigningKeys;
 use Modules\Distribution\Services\SiteService;
+use Modules\Distribution\Tests\Feature\Concerns\PaidSite;
 use Tests\TestCase;
 use ZipArchive;
 
@@ -26,6 +27,8 @@ use ZipArchive;
  */
 class BuildTest extends TestCase
 {
+    use PaidSite;
+
     protected User $root;
 
     protected string $publicKey;
@@ -238,6 +241,6 @@ class BuildTest extends TestCase
 
     private function site(array $modules): Site
     {
-        return app(SiteService::class)->create(['name' => 'Kigali Finance '.$this->nextSeq()], $modules)['data'];
+        return $this->paid(app(SiteService::class)->create(['name' => 'Kigali Finance '.$this->nextSeq()], $modules)['data']);
     }
 }

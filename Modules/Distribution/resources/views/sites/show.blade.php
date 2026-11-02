@@ -12,8 +12,10 @@
             <div class="flex justify-between gap-3"><span class="text-muted">{{ __('body.status') }}</span><x-common.badge :color="$site->status->color()">{{ $site->status->label() }}</x-common.badge></div>
             <div class="flex justify-between gap-3"><span class="text-muted">{{ __('distribution::distribution.update_mode') }}</span><span>{{ $site->update_mode->label() }}</span></div>
             <div class="flex justify-between gap-3"><span class="text-muted">{{ __('distribution::distribution.support_until') }}</span>
-                @if (! $site->support_until)
-                    <span>{{ __('distribution::distribution.support_no_end') }}</span>
+                @if ($site->is_test)
+                    <span>{{ __('distribution::distribution.support_test_site') }}</span>
+                @elseif (! $site->support_until)
+                    <x-common.badge color="warning">{{ __('distribution::distribution.support_not_started') }}</x-common.badge>
                 @elseif (! $site->hasSupport())
                     <x-common.badge color="danger">{{ __('distribution::distribution.support_ended_on', ['date' => $site->support_until->format('d M Y')]) }}</x-common.badge>
                 @else
@@ -309,6 +311,12 @@
             <p class="mt-2 font-mono text-xs break-all select-all bg-card border border-warning/30 rounded-lg p-3">{{ session('signing_secret') }}</p>
         </div>
     @endif
+    @unless ($site->licencePaid())
+        <div class="rounded-xl border border-warning/30 bg-warning/10 p-4 mb-3 text-sm text-ink">
+            <p class="font-semibold">{{ __('distribution::distribution.licence_unpaid_title') }}</p>
+            <p>{{ __('distribution::distribution.build_needs_paid_licence') }}</p>
+        </div>
+    @endunless
     @unless ($signingReady)
         <div class="rounded-xl border border-warning/30 bg-warning/10 p-4 mb-3 flex flex-wrap items-center justify-between gap-3">
             <div class="text-sm text-ink max-w-2xl">
