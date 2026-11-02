@@ -8,7 +8,7 @@
     $cronOnly = $details['cron_only'] ?? ($details['hosting_type'] ?? null) === 'shared';
 @endphp
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
