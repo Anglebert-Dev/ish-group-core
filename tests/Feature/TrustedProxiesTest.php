@@ -19,11 +19,12 @@ class TrustedProxiesTest extends TestCase
     {
         Route::get('/_proxy-probe', fn (Request $request) => $request->isSecure() ? 'https' : 'http');
 
-        $this->get('/_proxy-probe', ['X-Forwarded-Proto' => 'https'])->assertSee('http')->assertDontSee('https');
+        // Plain http on purpose: test requests otherwise follow APP_URL, which may be https.
+        $this->get('http://localhost/_proxy-probe', ['X-Forwarded-Proto' => 'https'])->assertSee('http')->assertDontSee('https');
 
         $this->refreshWithProxies('*');
         Route::get('/_proxy-probe', fn (Request $request) => $request->isSecure() ? 'https' : 'http');
-        $this->get('/_proxy-probe', ['X-Forwarded-Proto' => 'https', 'X-Forwarded-Host' => 'demo.ngrok-free.app'])->assertSee('https');
+        $this->get('http://localhost/_proxy-probe', ['X-Forwarded-Proto' => 'https', 'X-Forwarded-Host' => 'demo.ngrok-free.app'])->assertSee('https');
     }
 
     public function test_update_calls_skip_the_ngrok_warning_page(): void
