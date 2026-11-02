@@ -1,6 +1,6 @@
 # Branding & printing: Build Guide
 
-Created: 02/11/2026. Status: **planned**. Update §7 after each phase, so work can pick up where it stopped.
+Created: 02/11/2026. Status: **Phase 1 done (02/11/2026)**. Update §7 after each phase, so work can pick up where it stopped.
 
 ## 1. Goal
 
@@ -32,7 +32,13 @@ Stored with `BusinessSettings` under `branding.*`. Colour, logo and favicon stay
 | Stamp & signature | stamp image, signature image, signatory name, signatory title |
 | Payment details | a list of bank accounts and mobile money numbers (label, account name, number, bank or provider, branch, SWIFT) |
 
-The Invoicing module's own issuer settings (`invoicing.tax_id`, `invoicing.address`, `invoicing.phone`, `invoicing.footer`) are copied into branding once, and branding is read first from then on.
+The Invoicing module's own issuer settings (`invoicing.tax_id`, `invoicing.address`, `invoicing.phone`) are **used as fallbacks**: branding is read first, then those. Nothing is copied, so the two can't drift apart. Phase 3 moves editing to Branding. `invoicing.footer` becomes the invoice document's footer in the print design.
+
+**Phase 1 notes:**
+- **The page:** Settings became **Branding**. Same route (`settings.index`/`settings.update`), same permission (`list`/`update settings.setting`), so existing roles keep access. It has tabs for Business details, Look, Stamp & signature and Payment details (`?tab=`), and each tab posts `section` and saves only its own fields. The old one-form post (no `section`) still works.
+- **Code:** `App\Services\Branding\BrandingService` reads and saves; `App\Support\Branding\Brand` is the value object for documents (`documentName()`, `contactLines()`, data URIs for the logo, stamp and signature).
+- **Stamp and signature** are stored on the **private** `local` disk, previewed through `settings.image/{kind}` (signed in, same permission, `no-store`), and embedded in PDFs as data URIs. Never a public URL.
+- **Auditing:** every change goes through `BusinessSettings::set()`/`forget()`, which audit each key.
 
 ## 4. Print engine (core)
 
@@ -81,7 +87,7 @@ Savings (personal finance) is left out on purpose.
 
 | # | Phase | Status |
 |---|---|---|
-| 1 | Branding data + Branding page (identity, visuals, stamp & signature, payment details); copy Invoicing issuer settings | ☐ |
+| 1 | Branding data + Branding page (identity, visuals, stamp & signature, payment details); copy Invoicing issuer settings | ✅ 02/11/2026 |
 | 2 | Print engine: `Document`, layouts, PDF/HTML/Excel, design settings + live preview, printables registry + routes + buttons; lists through the engine | ☐ |
 | 3 | Move the existing PDFs (Invoicing, Billing, Delivery) onto the engine | ☐ |
 | 4 | New documents in every module (§5) | ☐ |

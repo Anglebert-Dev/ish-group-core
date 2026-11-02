@@ -138,6 +138,7 @@ Route::prefix('app')->middleware(['auth:staff', 'auth.session', 'exclusive.porta
 
     Route::get('/settings', [SettingController::class, 'index'])->middleware('permission:list settings.setting')->name('settings.index');
     Route::put('/settings', [SettingController::class, 'update'])->middleware('permission:update settings.setting')->name('settings.update');
+    Route::get('/settings/image/{kind}', [SettingController::class, 'image'])->middleware('permission:list settings.setting')->whereIn('kind', ['stamp', 'signature'])->name('settings.image');
 
     Route::prefix('notifications')->name('notifications.')->group(function () {
         Route::get('/', [NotificationController::class, 'index'])->middleware('permission:list notifications.notification')->name('index');
