@@ -3,7 +3,10 @@
 namespace App\Support\Menu;
 
 use App\Helpers\AuthHelper;
+use App\Services\Branding\BrandingService;
 use App\Services\Module\ModuleManager;
+use App\Services\Setting\SettingService;
+use App\Support\Branding\ThemeSchema;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
 
@@ -14,25 +17,65 @@ use Illuminate\Support\Facades\Route;
  */
 class AdminMenu
 {
-    public function __construct(protected ModuleManager $modules)
-    {
-    }
+    public function __construct(protected ModuleManager $modules) {}
 
     /**
      * @return Collection<string, Collection<int, array<string, mixed>>> group label ('' = top) => items
      */
     public function visibleGroups(): Collection
     {
-        $items = collect(config('menu.items', []))
-            ->merge($this->moduleItems())
-            ->filter(fn ($item) => is_array($item) && isset($item['label'], $item['route']))
-            ->filter(fn (array $item) => Route::has($item['route']) && $this->allowed($item))
-            ->map(fn (array $item) => $this->normalise($item));
+        // The business's menu choices (Branding → Menu) come after the
+        // permission filter: they rename, move, reorder or hide, never reveal.
+        $menu = $this->overrides();
+
+        $items = $this->allowedItems()
+            ->map(fn (array $item) => $this->override($item, $menu['items'][$item['route']] ?? []))
+            ->reject(fn (array $item) => $item['hidden']);
 
         return $items
             ->groupBy(fn (array $item) => (string) $item['group'])
             ->map(fn (Collection $group) => $group->sortBy('order')->values())
-            ->sortBy(fn ($group, string $name) => $this->groupRank($name));
+            ->sortBy(fn ($group, string $name) => isset($menu['groups'][$name]['order'])
+                ? sprintf('%08.2f-%s', $menu['groups'][$name]['order'], strtolower($name))
+                : $this->groupRank($name))
+            ->mapWithKeys(fn ($group, string $name) => [($name !== '' ? ($menu['groups'][$name]['label'] ?? $name) : '') => $group]);
+    }
+
+    /**
+     * Every item this person may open, as defined (no business choices):
+     * the menu editor's list, and what a landing page may be.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function allowedItems(): Collection
+    {
+        return collect(config('menu.items', []))
+            ->merge($this->moduleItems())
+            ->filter(fn ($item) => is_array($item) && isset($item['label'], $item['route']))
+            ->filter(fn (array $item) => Route::has($item['route']) && $this->allowed($item))
+            ->map(fn (array $item) => $this->normalise($item))
+            ->values();
+    }
+
+    /** @return array{items: array<string, array<string, mixed>>, groups: array<string, array<string, mixed>>} */
+    private function overrides(): array
+    {
+        $business = app(SettingService::class)->current();
+        $menu = $business->exists ? (app(BrandingService::class)->theme($business)['menu'] ?? []) : [];
+
+        return ['items' => $menu['items'] ?? [], 'groups' => $menu['groups'] ?? []];
+    }
+
+    /** @param  array<string, mixed>  $choice */
+    private function override(array $item, array $choice): array
+    {
+        return [
+            'label' => $choice['label'] ?? $item['label'],
+            'icon' => isset($choice['icon']) ? ThemeSchema::ICONS[$choice['icon']] : $item['icon'],
+            'group' => $choice['group'] ?? $item['group'],
+            'order' => $choice['order'] ?? $item['order'],
+            'hidden' => ! empty($choice['hidden']),
+        ] + $item;
     }
 
     /**

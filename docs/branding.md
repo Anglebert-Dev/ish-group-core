@@ -1,6 +1,6 @@
 # Branding & Appearance: Plan
 
-Created: 02/11/2026. Status: **B0–B5 done (02/11/2026).** Update §8 after each phase, so work can pick up where it stopped.
+Created: 02/11/2026. Status: **B0–B6 done (02/11/2026).** Update §8 after each phase, so work can pick up where it stopped.
 
 This takes the full "Branding & Appearance Module" requirements and sets out, section by section, **what we already have**, **what we build**, and **what we leave out and why**. Printing and document branding are already built (`docs/branding-print-build-guide.md`); this plan builds on them.
 
@@ -305,6 +305,19 @@ Off by default. Needs package feature `branding.custom_css` and permission `publ
 - **Login page tab** (saved immediately, audited per key): link name (unique, suggested from the business name), heading, welcome message, picture-panel text (else the slogan, with the description under it), panel image (else brand colours), text under the form, show contacts. A business's own login page hides "Create account" and "plans & pricing".
 - **The business website's** "staff login" link uses the business login link when there is one.
 
+**B6 notes:**
+- **Theme document sections:** `dashboard`, `menu`, `landing` and `announcement`, cleaned by `ThemeSchema` (text trimmed to length, unknown keys dropped, icons from `ThemeSchema::ICONS` only). The **platform passes on only the look** (`ThemeSchema::SHARED`), never its dashboard, menu or notices.
+- **Effective theme:** a business's layer is now its draft **or** its published version, never both merged. Lists then shrink properly, and "reset" previews the platform look exactly.
+- **Dashboard:**
+  - blocks (welcome, key figures, quick actions, each module's panel as `module:<Name>`, recent activity) can be ordered, hidden, or hidden for chosen roles
+  - welcome title (`:name` = the person) and text, a banner (logo or the login picture), figures per row
+  - `DashboardService::blocks()`; module widgets are now keyed by module
+- **Menu:** rename, icon, move to another existing section, order, hide; rename and reorder sections. `AdminMenu` applies these **after** the permission filter, so they can't reveal anything, and hidden pages still open for people allowed.
+- **Left out:** default-open groups and menu badges, because the menu has neither.
+- **Landing page** after signing in (password and two-step) and at `/app`: the business's choice when this person may open it, else the dashboard.
+- **Announcement** under the top bar on every page, with a tone and optional from/until dates. Each person can close it (kept in their browser, per text).
+- **Presets:** 8 built-in (Corporate, Minimal, Modern, Dark, Warm, Fashion, Retail, Services) plus up to 12 saved per business (`branding.presets`). Applying one sets all appearance sections (`ThemeSchema::PRESET_SECTIONS`) in the draft and never touches content. Audited. To duplicate one, apply it and save it under a new name.
+
 ## 4. What the B1 clean-up involves
 
 **B1 notes:**
@@ -383,7 +396,7 @@ For each phase:
 | B3 | Layout & typography: sidebar, header, density, content width, cards, corners, buttons, switches (breadcrumbs, titles, footer, back-to-top, transitions); fonts and type scale | P0 | ✅ 02/11/2026 |
 | B4 | Studio: live preview with devices, pages, light/dark; history screen | P0 | ✅ 02/11/2026 |
 | B5 | Login & authentication branding, business login link | P1 | ✅ 02/11/2026 |
-| B6 | Dashboard (welcome, banner, widgets, per role), navigation overrides, landing page, announcement banner, presets | P1 | ☐ |
+| B6 | Dashboard (welcome, banner, widgets, per role), navigation overrides, landing page, announcement banner, presets | P1 | ✅ 02/11/2026 |
 | B7 | Emails: header, footer, signature, contacts, sender name/Reply-To, every mail on the template, previews | P2 | ☐ |
 | B8 | Documents extras, branded error pages, footer/copyright/support links, date and number formats | P2 | ☐ |
 | B9 | QA: every module page at three widths, light and dark, with presets; README | P2 | ☐ |

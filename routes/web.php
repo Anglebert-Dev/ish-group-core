@@ -22,6 +22,7 @@ use App\Http\Controllers\Web\SuperAdmin\PlatformSettingController;
 use App\Http\Controllers\Web\SuperAdmin\SuperAdminDashboardController;
 use App\Http\Controllers\Web\SuperAdmin\UpdateController;
 use App\Http\Controllers\Web\User\UserController;
+use App\Services\Branding\BrandingService;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -47,7 +48,7 @@ Route::prefix('app')->group(function () {
 
     Route::get('/', function () {
         return auth('staff')->check()
-            ? redirect()->route('dashboard')
+            ? redirect()->route(app(BrandingService::class)->landingRoute(auth('staff')->user()->business))
             : redirect()->route('staff.login');
     })->name('staff.home');
 
@@ -155,6 +156,10 @@ Route::prefix('app')->middleware(['auth:staff', 'auth.session', 'exclusive.porta
         Route::post('/restore/{version}', [SettingController::class, 'restoreTheme'])->name('restore');
         Route::post('/preview', [SettingController::class, 'previewTheme'])->name('preview');
         Route::post('/preview/stop', [SettingController::class, 'stopPreview'])->name('preview.stop');
+        // Sent from inside the Theme form (formaction), hence PUT as well.
+        Route::match(['post', 'put'], '/presets/apply', [SettingController::class, 'applyPreset'])->name('presets.apply');
+        Route::match(['post', 'put'], '/presets/save', [SettingController::class, 'savePreset'])->name('presets.save');
+        Route::match(['post', 'put'], '/presets/delete', [SettingController::class, 'deletePreset'])->name('presets.delete');
     });
     Route::middleware('permission:update settings.setting')->prefix('settings/studio')->name('settings.studio.')->group(function () {
         Route::get('/components', [SettingController::class, 'studioComponents'])->name('components');

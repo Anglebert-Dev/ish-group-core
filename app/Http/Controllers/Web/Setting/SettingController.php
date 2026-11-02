@@ -7,8 +7,10 @@ use App\Http\Requests\Setting\UpdateSettingRequest;
 use App\Libraries\ColorLibrary;
 use App\Models\Branding\BrandingVersion;
 use App\Models\Business\Business;
+use App\Models\Role\Role;
 use App\Services\Branding\BrandingService;
 use App\Services\Branding\ThemeService;
+use App\Services\Dashboard\DashboardService;
 use App\Services\Printing\PrintService;
 use App\Services\Setting\SettingService;
 use App\Support\Branding\Fonts;
@@ -17,6 +19,7 @@ use App\Support\Branding\ThemeSchema;
 use App\Support\Branding\ThemeTokens;
 use App\Support\Locale\Locales;
 use App\Support\Mail\BrandedMail;
+use App\Support\Menu\AdminMenu;
 use App\Support\Printing\PrintDesign;
 use App\Support\Printing\PrintRegistry;
 use App\Support\Printing\SampleDocument;
@@ -34,7 +37,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class SettingController extends Controller
 {
-    public const TABS = ['details', 'look', 'theme', 'layout', 'login', 'stamp', 'payments', 'documents', 'history'];
+    public const TABS = ['details', 'look', 'theme', 'layout', 'dashboard', 'menu', 'login', 'stamp', 'payments', 'documents', 'history'];
 
     public function __construct(
         protected SettingService $settings,
@@ -63,6 +66,10 @@ class SettingController extends Controller
             'themeDefaults' => ThemeTokens::resolve($business->brandColor(), $this->themes->effective($business)['colors'] ?? []),
             'themeDarkDefaults' => ThemeTokens::resolve($business->brandColor(), $this->themes->effective($business)['colors_dark'] ?? [], dark: true),
             'contrast' => $tab === 'theme' ? $this->themes->contrast($business) : [],
+            'savedPresets' => $tab === 'theme' ? $this->themes->savedPresets($business) : [],
+            'dashboardBlocks' => $tab === 'dashboard' ? $this->dashboardBlocks() : [],
+            'roles' => $tab === 'dashboard' ? Role::query()->where('business_id', $business->id)->orderBy('name')->get() : collect(),
+            'menuItems' => in_array($tab, ['dashboard', 'menu'], true) ? app(AdminMenu::class)->allowedItems() : collect(),
             'loginPage' => $this->branding->loginPage($business) + ['suggested' => $tab === 'login' ? $this->branding->suggestHandle($business) : null],
             'brandOnScreen' => ['light' => $this->themes->tokens($business), 'dark' => $this->themes->tokens($business, dark: true)],
             'versions' => $tab === 'history' ? $this->themes->history($business) : collect(),
@@ -113,6 +120,13 @@ class SettingController extends Controller
             'theme' => $this->saveTheme($request, $business),
             'layout' => $this->saveLayout($request, $business),
             'login' => $this->saveLoginPage($request, $business),
+            // Cleaned by ThemeSchema (unknown keys dropped, text trimmed to length).
+            'dashboard' => $this->themes->saveDraft($business, [
+                'dashboard' => (array) $request->input('dashboard', []),
+                'announcement' => (array) $request->input('announcement', []),
+                'landing' => $request->input('landing') ?: null,
+            ]),
+            'menu' => $this->themes->saveDraft($business, ['menu' => (array) $request->input('menu', [])]),
             default => $this->legacy(app(UpdateSettingRequest::class)),
         };
 
@@ -126,6 +140,33 @@ class SettingController extends Controller
         $request->session()->forget(ThemeService::PREVIEW);
 
         return $this->back($this->themes->publish($this->settings->current()));
+    }
+
+    /** Apply a built-in ("builtin:<key>") or saved ("saved:<n>") preset to the draft. */
+    public function applyPreset(Request $request): RedirectResponse
+    {
+        $business = $this->settings->current();
+        [$kind, $key] = array_pad(explode(':', (string) $request->input('preset'), 2), 2, '');
+
+        if ($kind === 'builtin' && isset(ThemeSchema::PRESETS[$key])) {
+            return $this->back($this->themes->applyPreset($business, ThemeSchema::PRESETS[$key], __('body.preset_'.$key)), 'theme');
+        }
+        $saved = $this->themes->savedPresets($business)[(int) $key] ?? null;
+        abort_unless($kind === 'saved' && $saved, 404);
+
+        return $this->back($this->themes->applyPreset($business, $saved['theme'], $saved['name']), 'theme');
+    }
+
+    public function savePreset(Request $request): RedirectResponse
+    {
+        $name = $request->validate(['preset_name' => ['required', 'string', 'max:60']])['preset_name'];
+
+        return $this->back($this->themes->savePreset($this->settings->current(), trim($name)), 'theme');
+    }
+
+    public function deletePreset(Request $request): RedirectResponse
+    {
+        return $this->back($this->themes->deletePreset($this->settings->current(), (int) $request->input('preset_index')), 'theme');
     }
 
     public function discardTheme(Request $request): RedirectResponse
@@ -202,6 +243,16 @@ class SettingController extends Controller
         $business = $this->settings->current();
 
         return response((string) BrandedMail::make($business, __('body.studio_email_subject'), [__('body.studio_email_line')], __('body.view'), url('/'))->render());
+    }
+
+    /** @return array<string, string> block key => label */
+    private function dashboardBlocks(): array
+    {
+        $dashboard = app(DashboardService::class);
+
+        return collect($dashboard->blockKeys(array_keys($dashboard->widgets())))
+            ->mapWithKeys(fn (string $key) => [$key => str_starts_with($key, 'module:') ? __('body.dash_block_module', ['module' => substr($key, 7)]) : __('body.dash_block_'.$key)])
+            ->all();
     }
 
     private function saveLoginPage(Request $request, Business $business): array

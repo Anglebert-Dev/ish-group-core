@@ -53,14 +53,29 @@
         var device = 1280, appearance = 'light', timer;
 
         // The form, as the theme document's sections.
+        var SECTIONS = ['colors', 'colors_dark', 'layout', 'switches', 'mode', 'heading_font', 'user_mode', 'dashboard', 'menu', 'announcement', 'landing'];
+
+        // "a[b][c]" names → nested objects, as PHP reads them ("a[b][]" lists are handled in payload()).
+        function put(data, name, value) {
+            var keys = name.replace(/\]/g, '').split('['), node = data;
+            for (var i = 0; i < keys.length - 1; i++) node = node[keys[i]] = node[keys[i]] || {};
+            node[keys[keys.length - 1]] = value;
+        }
+
         function payload() {
             var data = {};
             new FormData(form).forEach(function (value, name) {
-                var m = name.match(/^(colors|colors_dark|layout|switches)\[(\w+)\]$/);
-                if (m) { (data[m[1]] = data[m[1]] || {})[m[2]] = m[1] === 'switches' ? value === '1' : value; }
-                else if (name === 'mode' || name === 'heading_font') { data[name] = value; }
-                else if (name === 'user_mode') { data.user_mode = value === '1'; }
+                if (SECTIONS.indexOf(name.split('[')[0]) === -1) return;
+                if (/\[\]$/.test(name)) {
+                    var base = name.slice(0, -2), keys = base.replace(/\]/g, '').split('['), node = data;
+                    for (var i = 0; i < keys.length - 1; i++) node = node[keys[i]] = node[keys[i]] || {};
+                    (node[keys[keys.length - 1]] = node[keys[keys.length - 1]] || []).push(value);
+                } else {
+                    put(data, name, value);
+                }
             });
+            if (data.switches) Object.keys(data.switches).forEach(function (k) { data.switches[k] = data.switches[k] === '1'; });
+            if ('user_mode' in data) data.user_mode = data.user_mode === '1';
             if (form.querySelector('[name^="switches["]')) {
                 data.switches = data.switches || {};
                 switches.forEach(function (key) { if (!(key in data.switches)) data.switches[key] = false; });

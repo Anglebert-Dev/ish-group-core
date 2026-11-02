@@ -11,6 +11,7 @@ use App\Support\Branding\ThemeContrast;
 use App\Support\Branding\ThemeLayout;
 use App\Support\Branding\ThemeSchema;
 use App\Support\Branding\ThemeTokens;
+use App\Support\Settings\BusinessSettings;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -62,13 +63,15 @@ class ThemeService extends BaseService
         $layers = [];
 
         if ($platform && $platform->id !== $business->id && $platform->exists) {
-            $layers[] = $this->publishedPayload($platform);
+            // Only the look carries over: a business's dashboard, menu and notices are its own.
+            $layers[] = array_intersect_key($this->publishedPayload($platform), array_flip(ThemeSchema::SHARED));
         }
         if ($business->exists) {
-            $layers[] = $this->publishedPayload($business);
-            if ($withDraft) {
-                $layers[] = $this->draft($business)?->payload ?? [];
-            }
+            // A draft is a full copy (it starts from what is live), so it replaces
+            // the published version rather than merging into it: lists then
+            // shrink as they should, and "reset" really previews the platform look.
+            $draft = $withDraft ? $this->draft($business) : null;
+            $layers[] = $draft ? ($draft->payload ?? []) : $this->publishedPayload($business);
         }
 
         $theme = ThemeSchema::clean(array_replace_recursive([], ...$layers ?: [[]]));
@@ -236,6 +239,56 @@ class ThemeService extends BaseService
         audit('branding_reset', 'Reset branding to the platform defaults (draft)', $draft, [], $business->id);
 
         return $this->success($draft, __('body.theme_reset'));
+    }
+
+    /**
+     * A preset's look into the draft: every appearance part is set (or cleared
+     * to default) from it; dashboard, menu and notices are left alone.
+     *
+     * @param  array<string, mixed>  $preset
+     */
+    public function applyPreset(Business $business, array $preset, string $name): array
+    {
+        $sections = collect(ThemeSchema::PRESET_SECTIONS)->mapWithKeys(fn ($section) => [$section => $preset[$section] ?? null])->all();
+        $result = $this->saveDraft($business, $sections);
+        audit('branding_preset_applied', "Applied the branding preset \"{$name}\" to the draft", $result['data'], [], $business->id);
+
+        return $this->success($result['data'], __('body.preset_applied', ['name' => $name]));
+    }
+
+    /** @return list<array{name: string, theme: array<string, mixed>}> */
+    public function savedPresets(Business $business): array
+    {
+        return array_values(array_filter((array) app(BusinessSettings::class)->get('branding.presets', [], $business), fn ($preset) => is_array($preset) && isset($preset['name'], $preset['theme'])));
+    }
+
+    /** The draft's (or live) look, kept under a name. */
+    public function savePreset(Business $business, string $name): array
+    {
+        $presets = array_values(array_filter($this->savedPresets($business), fn ($preset) => $preset['name'] !== $name));
+        if (count($presets) >= ThemeSchema::MAX_SAVED_PRESETS) {
+            return $this->failure(__('body.preset_limit', ['max' => ThemeSchema::MAX_SAVED_PRESETS]));
+        }
+
+        $theme = array_intersect_key($this->effective($business, withDraft: true), array_flip(ThemeSchema::PRESET_SECTIONS));
+        $presets[] = ['name' => $name, 'theme' => $theme];
+        app(BusinessSettings::class)->set('branding.presets', $presets, $business);
+
+        return $this->success($presets, __('body.preset_saved', ['name' => $name]));
+    }
+
+    public function deletePreset(Business $business, int $index): array
+    {
+        $presets = $this->savedPresets($business);
+        $name = $presets[$index]['name'] ?? null;
+        if ($name === null) {
+            return $this->failure(__('body.preset_missing'));
+        }
+
+        array_splice($presets, $index, 1);
+        $presets === [] ? app(BusinessSettings::class)->forget('branding.presets', $business) : app(BusinessSettings::class)->set('branding.presets', $presets, $business);
+
+        return $this->success($presets, __('body.preset_deleted', ['name' => $name]));
     }
 
     public function forget(Business $business): void

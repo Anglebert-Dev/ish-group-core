@@ -174,7 +174,7 @@
             </div>
         @endif
 
-        @if (in_array($tab, ['theme', 'layout'], true))
+        @if (in_array($tab, ['theme', 'layout', 'dashboard', 'menu'], true))
             <div class="grid gap-6 2xl:grid-cols-2 items-start">
                 <div class="min-w-0">
         @endif
@@ -230,6 +230,32 @@
                         </ul>
                     </div>
                 @endif
+
+                <div class="space-y-2 rounded-xl border border-line p-4">
+                    <p class="text-sm font-bold text-ink">{{ __('body.presets') }}</p>
+                    <p class="text-xs text-muted">{{ __('body.presets_hint') }}</p>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach (array_keys(\App\Support\Branding\ThemeSchema::PRESETS) as $preset)
+                            <button type="submit" formaction="{{ route('settings.theme.presets.apply') }}" name="preset" value="builtin:{{ $preset }}" formnovalidate
+                                    class="rounded-lg border border-line bg-card px-3 py-1.5 text-sm text-body hover:border-brand">{{ __('body.preset_'.$preset) }}</button>
+                        @endforeach
+                    </div>
+                    @if ($savedPresets)
+                        <p class="text-xs font-semibold text-muted uppercase tracking-wide pt-2">{{ __('body.presets_saved') }}</p>
+                        <div class="flex flex-wrap gap-2">
+                            @foreach ($savedPresets as $index => $saved)
+                                <span class="inline-flex items-center rounded-lg border border-line bg-card overflow-hidden">
+                                    <button type="submit" formaction="{{ route('settings.theme.presets.apply') }}" name="preset" value="saved:{{ $index }}" formnovalidate class="px-3 py-1.5 text-sm text-body hover:text-brand">{{ $saved['name'] }}</button>
+                                    <button type="submit" formaction="{{ route('settings.theme.presets.delete') }}" name="preset_index" value="{{ $index }}" formnovalidate class="px-2 py-1.5 text-sm text-muted hover:text-danger border-l border-line" aria-label="{{ __('body.delete') }} {{ $saved['name'] }}">×</button>
+                                </span>
+                            @endforeach
+                        </div>
+                    @endif
+                    <div class="flex flex-wrap items-end gap-2 pt-2">
+                        <x-common.input name="preset_name" :label="__('body.preset_save_as')" maxlength="60" class="flex-1 min-w-[12rem]" />
+                        <x-common.button type="submit" variant="secondary" size="sm" formaction="{{ route('settings.theme.presets.save') }}" formnovalidate>{{ __('body.preset_save') }}</x-common.button>
+                    </div>
+                </div>
 
                 <div class="space-y-2">
                     <p class="text-sm font-bold text-ink">{{ __('body.theme_palettes') }}</p>
@@ -355,7 +381,147 @@
             </div>
         @endif
 
-        @if (in_array($tab, ['theme', 'layout'], true))
+        @if ($tab === 'dashboard')
+            @php
+                $dash = $theme['dashboard'] ?? [];
+                $ordered = array_values(array_unique([...array_intersect($dash['order'] ?? [], array_keys($dashboardBlocks)), ...array_keys($dashboardBlocks)]));
+                $note = $theme['announcement'] ?? [];
+            @endphp
+            <div class="space-y-6">
+                <div class="bg-card border border-line rounded-xl p-4 sm:p-6 space-y-5">
+                    <p class="text-sm text-muted">{{ __('body.dash_hint') }}</p>
+                    <x-common.input name="dashboard[welcome_title]" :label="__('body.dash_welcome_title')" :value="$dash['welcome_title'] ?? ''" maxlength="120" :hint="__('body.dash_welcome_title_hint')" />
+                    <x-common.textarea name="dashboard[welcome_text]" :label="__('body.dash_welcome_text')" :value="$dash['welcome_text'] ?? ''" :rows="2" />
+                    <div class="grid sm:grid-cols-2 gap-4">
+                        <x-common.select name="dashboard[banner]" :label="__('body.dash_banner')" :value="$dash['banner'] ?? 'none'" hide-placeholder
+                            :options="collect(\App\Support\Branding\ThemeSchema::BANNERS)->mapWithKeys(fn ($b) => [$b => __('body.dash_banner_'.$b)])->all()" :hint="__('body.dash_banner_hint')" />
+                        <x-common.select name="dashboard[stat_columns]" :label="__('body.dash_stat_columns')" :value="(string) ($dash['stat_columns'] ?? 4)" hide-placeholder :options="['2' => '2', '3' => '3', '4' => '4']" />
+                    </div>
+                    <x-common.select name="landing" :label="__('body.dash_landing')" :value="$theme['landing'] ?? 'dashboard'" hide-placeholder
+                        :options="$menuItems->pluck('label', 'route')->all()" :hint="__('body.dash_landing_hint')" />
+                </div>
+
+                <div class="bg-card border border-line rounded-xl p-4 sm:p-6 space-y-3">
+                    <p class="text-sm font-bold text-ink">{{ __('body.dash_blocks') }}</p>
+                    <p class="text-xs text-muted">{{ __('body.dash_blocks_hint') }}</p>
+                    <ul id="dash-blocks" class="divide-y divide-line border border-line rounded-xl">
+                        @foreach ($ordered as $key)
+                            <li class="p-3 space-y-2" data-block>
+                                <input type="hidden" name="dashboard[order][]" value="{{ $key }}">
+                                <div class="flex items-center gap-2">
+                                    <div class="flex flex-col">
+                                        <button type="button" class="text-muted hover:text-ink leading-none" aria-label="{{ __('body.move_up') }}" onclick="var li = this.closest('li'); li.previousElementSibling && li.parentNode.insertBefore(li, li.previousElementSibling); li.closest('form').dispatchEvent(new Event('change'))">▲</button>
+                                        <button type="button" class="text-muted hover:text-ink leading-none" aria-label="{{ __('body.move_down') }}" onclick="var li = this.closest('li'); li.nextElementSibling && li.parentNode.insertBefore(li.nextElementSibling, li); li.closest('form').dispatchEvent(new Event('change'))">▼</button>
+                                    </div>
+                                    <span class="flex-1 text-sm font-medium text-ink">{{ $dashboardBlocks[$key] }}</span>
+                                    <x-common.checkbox name="dashboard[hidden][]" :value="$key" inline :checked="in_array($key, $dash['hidden'] ?? [], true)" :label="__('body.dash_hide')" />
+                                </div>
+                                @if ($roles->isNotEmpty())
+                                    <details class="pl-7">
+                                        <summary class="cursor-pointer text-xs text-muted">{{ __('body.dash_hide_for_roles') }}</summary>
+                                        <div class="flex flex-wrap gap-3 mt-2">
+                                            @foreach ($roles as $role)
+                                                <x-common.checkbox :name="'dashboard[roles_hidden]['.$key.'][]'" :value="$role->id" inline :checked="in_array($role->id, $dash['roles_hidden'][$key] ?? [], true)" :label="$role->display_name" />
+                                            @endforeach
+                                        </div>
+                                    </details>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+
+                <div class="bg-card border border-line rounded-xl p-4 sm:p-6 space-y-4">
+                    <p class="text-sm font-bold text-ink">{{ __('body.dash_announcement') }}</p>
+                    <p class="text-xs text-muted">{{ __('body.dash_announcement_hint') }}</p>
+                    <x-common.textarea name="announcement[text]" :label="__('body.dash_announcement_text')" :value="$note['text'] ?? ''" :rows="2" />
+                    <div class="grid sm:grid-cols-3 gap-4">
+                        <x-common.select name="announcement[tone]" :label="__('body.dash_announcement_tone')" :value="$note['tone'] ?? 'info'" hide-placeholder
+                            :options="collect(\App\Support\Branding\ThemeSchema::TONES)->mapWithKeys(fn ($t) => [$t => __('body.dash_tone_'.$t)])->all()" />
+                        <x-common.input type="date" name="announcement[from]" :label="__('body.dash_announcement_from')" :value="$note['from'] ?? ''" />
+                        <x-common.input type="date" name="announcement[until]" :label="__('body.dash_announcement_until')" :value="$note['until'] ?? ''" />
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        @if ($tab === 'menu')
+            @php
+                $menu = $theme['menu'] ?? [];
+                $groupNames = $menuItems->pluck('group')->filter()->unique()->sort()->values();
+            @endphp
+            <div class="space-y-6">
+                <div class="bg-card border border-line rounded-xl overflow-hidden">
+                    <div class="p-4 sm:p-6 border-b border-line">
+                        <p class="text-sm text-muted">{{ __('body.menu_hint') }}</p>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="text-left text-xs text-muted uppercase tracking-wide border-b border-line bg-surface/60">
+                                    <th class="px-4 py-3 font-semibold">{{ __('body.menu_item') }}</th>
+                                    <th class="px-4 py-3 font-semibold">{{ __('body.menu_icon') }}</th>
+                                    <th class="px-4 py-3 font-semibold">{{ __('body.menu_group') }}</th>
+                                    <th class="px-4 py-3 font-semibold">{{ __('body.menu_order') }}</th>
+                                    <th class="px-4 py-3 font-semibold">{{ __('body.dash_hide') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-line">
+                                @foreach ($menuItems as $item)
+                                    @php $choice = $menu['items'][$item['route']] ?? []; $field = 'menu[items]['.$item['route'].']'; @endphp
+                                    <tr>
+                                        <td class="px-4 py-2 min-w-[12rem]">
+                                            <input type="text" name="{{ $field }}[label]" value="{{ $choice['label'] ?? '' }}" placeholder="{{ $item['label'] }}" maxlength="60" class="w-full h-9 rounded-lg border border-line bg-card px-2 text-sm">
+                                        </td>
+                                        <td class="px-4 py-2">
+                                            <select name="{{ $field }}[icon]" class="h-9 rounded-lg border border-line bg-card px-2 text-sm">
+                                                <option value="">{{ __('body.menu_default') }}</option>
+                                                @foreach (array_keys(\App\Support\Branding\ThemeSchema::ICONS) as $icon)
+                                                    <option value="{{ $icon }}" @selected(($choice['icon'] ?? '') === $icon)>{{ __('body.menu_icon_'.$icon) }}</option>
+                                                @endforeach
+                                            </select>
+                                        </td>
+                                        <td class="px-4 py-2">
+                                            @if ($item['group'])
+                                                <select name="{{ $field }}[group]" class="h-9 rounded-lg border border-line bg-card px-2 text-sm">
+                                                    <option value="">{{ $item['group'] }}</option>
+                                                    @foreach ($groupNames as $group)
+                                                        @if ($group !== $item['group'])
+                                                            <option value="{{ $group }}" @selected(($choice['group'] ?? '') === $group)>{{ $group }}</option>
+                                                        @endif
+                                                    @endforeach
+                                                </select>
+                                            @else
+                                                <span class="text-xs text-muted">{{ __('body.menu_top') }}</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-2">
+                                            <input type="number" name="{{ $field }}[order]" value="{{ $choice['order'] ?? '' }}" placeholder="{{ $item['order'] }}" min="-999" max="999" class="w-20 h-9 rounded-lg border border-line bg-card px-2 text-sm">
+                                        </td>
+                                        <td class="px-4 py-2">
+                                            <x-common.checkbox :name="$field.'[hidden]'" value="1" inline :checked="! empty($choice['hidden'])" :label="__('body.dash_hide')" />
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-card border border-line rounded-xl p-4 sm:p-6 space-y-3">
+                    <p class="text-sm font-bold text-ink">{{ __('body.menu_groups') }}</p>
+                    @foreach ($groupNames as $group)
+                        <div class="grid grid-cols-[minmax(0,1fr)_5.5rem] gap-3 items-end">
+                            <x-common.input :name="'menu[groups]['.$group.'][label]'" :label="$group" :value="$menu['groups'][$group]['label'] ?? ''" :placeholder="$group" maxlength="60" />
+                            <x-common.input type="number" :name="'menu[groups]['.$group.'][order]'" :label="__('body.menu_order')" :value="$menu['groups'][$group]['order'] ?? ''" min="-999" max="999" />
+                        </div>
+                    @endforeach
+                    <p class="text-xs text-muted">{{ __('body.menu_groups_hint') }}</p>
+                </div>
+            </div>
+        @endif
+
+        @if (in_array($tab, ['theme', 'layout', 'dashboard', 'menu'], true))
                 </div>
                 @include('app.settings.studio.panel')
             </div>
@@ -510,7 +676,7 @@
         @endif
 
         <div class="flex [&>*]:w-full sm:[&>*]:w-auto sm:justify-end">
-            <x-common.button type="submit">{{ in_array($tab, ['theme', 'layout'], true) ? __('body.theme_save_draft') : __('body.save_changes') }}</x-common.button>
+            <x-common.button type="submit">{{ in_array($tab, ['theme', 'layout', 'dashboard', 'menu'], true) ? __('body.theme_save_draft') : __('body.save_changes') }}</x-common.button>
         </div>
     </form>
     @endif

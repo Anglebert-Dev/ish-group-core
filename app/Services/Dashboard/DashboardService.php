@@ -8,6 +8,7 @@ use App\Models\ActivityLog\ActivityLog;
 use App\Models\User;
 use App\Repositories\Role\RoleRepository;
 use App\Repositories\User\UserRepository;
+use App\Services\Branding\BrandingService;
 use App\Services\Module\ModuleManager;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
@@ -26,17 +27,54 @@ class DashboardService
         protected UserRepository $users,
         protected RoleRepository $roles,
         protected ModuleManager $modules,
-    ) {
-    }
+    ) {}
+
+    /** Dashboard blocks in their built-in order; module widgets go before recent activity. */
+    public const CORE_BLOCKS = ['welcome', 'stats', 'quick_actions', 'recent_activity'];
 
     public function payload(User $user): array
     {
+        $widgets = $this->widgets();
+        $settings = $user->business ? (app(BrandingService::class)->theme($user->business)['dashboard'] ?? []) : [];
+
         return [
             'stats' => $this->stats($user),
             'quickActions' => $this->quickActions(),
             'recentActivity' => $this->recentActivity(),
-            'widgets' => $this->widgets(),
+            'widgets' => $widgets,
+            'blocks' => $this->blocks($user, array_keys($widgets), $settings),
+            'dashboard' => $settings,
         ];
+    }
+
+    /**
+     * Every block key this business's dashboard can have (Branding → Dashboard).
+     *
+     * @param  list<string>  $widgetKeys
+     * @return list<string>
+     */
+    public function blockKeys(array $widgetKeys): array
+    {
+        return ['welcome', 'stats', 'quick_actions', ...$widgetKeys, 'recent_activity'];
+    }
+
+    /**
+     * The blocks this person sees, in the business's order. Hiding (for
+     * everyone, or for some roles) only takes away: permissions still decide
+     * what each block contains.
+     *
+     * @param  list<string>  $widgetKeys
+     * @param  array<string, mixed>  $settings  the theme's "dashboard" section
+     * @return list<string>
+     */
+    public function blocks(User $user, array $widgetKeys, array $settings): array
+    {
+        $all = $this->blockKeys($widgetKeys);
+        $ordered = array_values(array_unique([...array_intersect($settings['order'] ?? [], $all), ...$all]));
+        $roles = $user->roles->pluck('id')->all();
+
+        return array_values(array_filter($ordered, fn (string $block) => ! in_array($block, $settings['hidden'] ?? [], true)
+            && array_intersect($roles, $settings['roles_hidden'][$block] ?? []) === []));
     }
 
     public function stats(User $user): Collection
@@ -121,15 +159,26 @@ class DashboardService
     }
 
     /**
-     * @return list<string> rendered HTML blocks
+     * Module widgets, keyed "module:<Name>" so the business can order or hide each.
+     *
+     * @return array<string, string> key => rendered HTML
      */
     public function widgets(): array
     {
-        return collect($this->modules->hook('dashboard_widget'))
-            ->flatten()
-            ->filter()
-            ->map(fn ($widget) => is_string($widget) && view()->exists($widget) ? view($widget)->render() : (string) $widget)
-            ->values()
-            ->all();
+        $widgets = [];
+
+        foreach ($this->modules->hook('dashboard_widget') as $module => $result) {
+            $html = collect(is_array($result) ? $result : [$result])
+                ->flatten()
+                ->filter()
+                ->map(fn ($widget) => is_string($widget) && view()->exists($widget) ? view($widget)->render() : (string) $widget)
+                ->implode('');
+
+            if (trim($html) !== '') {
+                $widgets['module:'.$module] = $html;
+            }
+        }
+
+        return $widgets;
     }
 }

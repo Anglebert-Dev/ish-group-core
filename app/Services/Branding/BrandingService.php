@@ -11,6 +11,7 @@ use App\Support\Branding\Fonts;
 use App\Support\Branding\LoginBranding;
 use App\Support\Branding\ThemeLayout;
 use App\Support\Branding\ThemeTokens;
+use App\Support\Menu\AdminMenu;
 use App\Support\Printing\PrintDesign;
 use App\Support\Settings\BusinessSettings;
 use Illuminate\Http\UploadedFile;
@@ -177,6 +178,23 @@ class BrandingService extends BaseService
         $user = auth('staff')->user();
 
         return app(ThemeService::class)->css($business, $user?->business_id === $business->id ? $user : null, $this->previewing($business));
+    }
+
+    /** The theme document this person sees now (the draft while previewing). */
+    public function theme(Business $business): array
+    {
+        return app(ThemeService::class)->effective($business, $this->previewing($business));
+    }
+
+    /**
+     * Where staff land after signing in (Branding → Dashboard): the chosen
+     * page if this person may open it, else the dashboard.
+     */
+    public function landingRoute(Business $business): string
+    {
+        $route = $this->theme($business)['landing'] ?? null;
+
+        return $route && app(AdminMenu::class)->allowedItems()->contains('route', $route) ? $route : 'dashboard';
     }
 
     /** Layout & typography for this business's pages (draft while previewing). */

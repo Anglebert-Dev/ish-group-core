@@ -11,6 +11,7 @@ use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Http\Requests\Auth\VerifyStaffMfaRequest;
 use App\Models\User;
 use App\Services\Auth\AuthService;
+use App\Services\Branding\BrandingService;
 use App\Services\Module\ModuleManager;
 use App\Support\Branding\LoginBranding;
 use Illuminate\Http\JsonResponse;
@@ -94,7 +95,7 @@ class AuthController extends Controller
         $request->session()->regenerate();
         $this->rememberBrand();
 
-        return redirect()->route('dashboard')->with('success', $result['message']);
+        return redirect()->route($this->landing())->with('success', $result['message']);
     }
 
     /**
@@ -108,6 +109,14 @@ class AuthController extends Controller
         }
 
         return redirect()->route('staff.login');
+    }
+
+    /** The business's chosen landing page (Branding → Dashboard), else the dashboard. */
+    private function landing(): string
+    {
+        $business = auth('staff')->user()?->business;
+
+        return $business ? app(BrandingService::class)->landingRoute($business) : 'dashboard';
     }
 
     /** Next time, /app/login on this device shows this business's brand. */
@@ -138,7 +147,7 @@ class AuthController extends Controller
         $request->session()->regenerate();
         $this->rememberBrand();
 
-        return redirect()->route('dashboard')->with('success', $result['message']);
+        return redirect()->route($this->landing())->with('success', $result['message']);
     }
 
     public function logout(Request $request): RedirectResponse
