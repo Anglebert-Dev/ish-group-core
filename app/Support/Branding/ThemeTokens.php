@@ -29,7 +29,41 @@ final class ThemeTokens
         'sidebar_ink' => '#1F2937',
         'header' => '#FFFFFF',
         'header_ink' => '#1F2937',
+        // Categorical colours: charts, quick-action tiles.
+        'chart_1' => '#2563EB',
+        'chart_2' => '#7C3AED',
+        'chart_3' => '#4F46E5',
+        'chart_4' => '#DB2777',
+        'chart_5' => '#0D9488',
+        'chart_6' => '#EA580C',
     ];
+
+    /** The built-in dark theme. */
+    public const DARK_DEFAULTS = [
+        'page' => '#0B1120',
+        'card' => '#111827',
+        'surface' => '#1A2332',
+        'line' => '#2B3546',
+        'ink' => '#F9FAFB',
+        'body' => '#E5E7EB',
+        'muted' => '#9CA3AF',
+        'success' => '#22C55E',
+        'warning' => '#FBBF24',
+        'danger' => '#F87171',
+        'info' => '#38BDF8',
+        'sidebar' => '#0F172A',
+        'sidebar_ink' => '#E5E7EB',
+        'header' => '#111827',
+        'header_ink' => '#E5E7EB',
+        'chart_1' => '#60A5FA',
+        'chart_2' => '#A78BFA',
+        'chart_3' => '#818CF8',
+        'chart_4' => '#F472B6',
+        'chart_5' => '#2DD4BF',
+        'chart_6' => '#FB923C',
+    ];
+
+    public const MODES = ['light', 'dark', 'system'];
 
     /** Tokens worked out from the brand colour unless set. */
     public const DERIVED = ['brand', 'brand_dark', 'brand_light', 'accent', 'link'];
@@ -40,18 +74,28 @@ final class ThemeTokens
      * @param  array<string, ?string>  $overrides
      * @return array<string, string>
      */
-    public static function resolve(string $brand, array $overrides = []): array
+    public static function resolve(string $brand, array $overrides = [], bool $dark = false): array
     {
         $valid = fn ($hex) => is_string($hex) && preg_match('/^#[0-9A-Fa-f]{6}$/', $hex) ? strtoupper($hex) : null;
         $brand = $valid($brand) ?? '#124EB0';
 
-        $tokens = self::DEFAULTS + [
-            'brand' => $brand,
-            'brand_dark' => ColorLibrary::darken($brand),
-            'brand_light' => ColorLibrary::lighten($brand),
-            'accent' => $brand,
-            'link' => $brand,
-        ];
+        $tokens = $dark
+            // On dark: "light" brand is a dim tint (active menu item), "dark" brand
+            // is a brighter shade (its text), links lifted so they read.
+            ? self::DARK_DEFAULTS + [
+                'brand' => $brand,
+                'brand_dark' => ColorLibrary::readable(ColorLibrary::lighten($brand, 0.35), self::DARK_DEFAULTS['card']),
+                'brand_light' => ColorLibrary::mix(self::DARK_DEFAULTS['card'], $brand, 0.22),
+                'accent' => $brand,
+                'link' => ColorLibrary::readable($brand, self::DARK_DEFAULTS['card']),
+            ]
+            : self::DEFAULTS + [
+                'brand' => $brand,
+                'brand_dark' => ColorLibrary::darken($brand),
+                'brand_light' => ColorLibrary::lighten($brand),
+                'accent' => $brand,
+                'link' => $brand,
+            ];
 
         foreach ($overrides as $key => $value) {
             if (array_key_exists($key, $tokens) && ($hex = $valid($value))) {
@@ -63,12 +107,24 @@ final class ThemeTokens
     }
 
     /**
-     * The :root block. Brand colours are also given as plain hex
-     * (--brand, --brand-dark, --brand-light) for hand-written CSS.
+     * The :root block for a mode: light, dark, or system (light, with the
+     * dark set when the device asks for it). Brand colours are also given as
+     * plain hex (--brand, --brand-dark, --brand-light) for hand-written CSS.
      *
-     * @param  array<string, string>  $tokens
+     * @param  array<string, string>  $light
+     * @param  array<string, string>  $dark
      */
-    public static function css(array $tokens): string
+    public static function css(array $light, array $dark = [], string $mode = 'light'): string
+    {
+        return match (true) {
+            $mode === 'dark' && $dark !== [] => ':root{'.self::vars($dark).';color-scheme:dark}',
+            $mode === 'system' && $dark !== [] => ':root{'.self::vars($light).';color-scheme:light}@media (prefers-color-scheme: dark){:root{'.self::vars($dark).';color-scheme:dark}}',
+            default => ':root{'.self::vars($light).';color-scheme:light}',
+        };
+    }
+
+    /** @param  array<string, string>  $tokens */
+    private static function vars(array $tokens): string
     {
         $vars = [];
         foreach ($tokens as $key => $hex) {
@@ -78,7 +134,7 @@ final class ThemeTokens
             $vars[] = '--'.str_replace('_', '-', $key).': '.$tokens[$key];
         }
 
-        return ':root{'.implode(';', $vars).'}';
+        return implode(';', $vars);
     }
 
     /**
@@ -109,6 +165,7 @@ final class ThemeTokens
                 'info' => $color('info'),
                 'sidebar' => ['DEFAULT' => $color('sidebar'), 'ink' => $color('sidebar_ink')],
                 'header' => ['DEFAULT' => $color('header'), 'ink' => $color('header_ink')],
+                'chart' => collect(range(1, 6))->mapWithKeys(fn ($i) => [(string) $i => $color('chart_'.$i)])->all(),
             ],
             'boxShadow' => ['card' => '0 1px 2px 0 rgba(17, 24, 39, 0.04)'],
         ]]];

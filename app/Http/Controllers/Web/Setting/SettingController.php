@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Web\Setting;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Setting\UpdateSettingRequest;
+use App\Libraries\ColorLibrary;
 use App\Models\Branding\BrandingVersion;
+use App\Models\Business\Business;
 use App\Services\Branding\BrandingService;
 use App\Services\Branding\ThemeService;
 use App\Services\Printing\PrintService;
@@ -56,6 +58,8 @@ class SettingController extends Controller
             'live' => $this->themes->published($business),
             'theme' => $this->themes->effective($business, withDraft: true),
             'themeDefaults' => ThemeTokens::resolve($business->brandColor(), $this->themes->effective($business)['colors'] ?? []),
+            'themeDarkDefaults' => ThemeTokens::resolve($business->brandColor(), $this->themes->effective($business)['colors_dark'] ?? [], dark: true),
+            'contrast' => $tab === 'theme' ? $this->themes->contrast($business) : [],
             'versions' => $tab === 'history' ? $this->themes->history($business) : collect(),
             'previewing' => $this->branding->previewing($business),
             'extraLogos' => collect(BrandingService::EXTRA_LOGOS)->mapWithKeys(fn ($field, $key) => [$field => $this->branding->logoFor($business, str_replace(['logo_', '_path'], '', $key))])->all(),
@@ -101,10 +105,7 @@ class SettingController extends Controller
                 'methods.*.swift' => ['nullable', 'string', 'max:20'],
             ])['methods'] ?? []),
             'documents' => $this->branding->saveDesign($business, $this->designInput($request)),
-            'theme' => $this->themes->saveDraft($business, ['colors' => $request->validate([
-                'colors' => ['array'],
-                'colors.*' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            ])['colors'] ?? []]),
+            'theme' => $this->saveTheme($request, $business),
             default => $this->legacy(app(UpdateSettingRequest::class)),
         };
 
@@ -152,6 +153,28 @@ class SettingController extends Controller
         $request->session()->forget(ThemeService::PREVIEW);
 
         return redirect()->route('settings.index', ['tab' => 'theme']);
+    }
+
+    private function saveTheme(Request $request, Business $business): array
+    {
+        // Hex, rgb() or hsl(); stored as hex.
+        $color = fn (string $attribute, mixed $value, \Closure $fail) => blank($value) || ColorLibrary::parse((string) $value) || $fail(__('body.theme_bad_color'));
+
+        $data = $request->validate([
+            'colors' => ['array'],
+            'colors.*' => ['nullable', 'string', 'max:40', $color],
+            'colors_dark' => ['array'],
+            'colors_dark.*' => ['nullable', 'string', 'max:40', $color],
+            'mode' => ['nullable', Rule::in(ThemeTokens::MODES)],
+        ]);
+
+        // A part not on the form keeps what the draft has.
+        return $this->themes->saveDraft($business, array_filter([
+            'colors' => $data['colors'] ?? [],
+            'colors_dark' => $request->has('colors_dark') ? $data['colors_dark'] : null,
+            'mode' => $data['mode'] ?? null,
+            'user_mode' => $request->has('user_mode') ? $request->boolean('user_mode') : null,
+        ], fn ($value) => $value !== null));
     }
 
     private function back(array $result, ?string $tab = null): RedirectResponse

@@ -18,7 +18,7 @@
                     </div>
                 </div>
                 @if ($row['shortfall'])
-                    <div class="rounded-lg bg-red-50 border border-red-200 p-3 text-sm">
+                    <div class="rounded-lg bg-danger/10 border border-danger/30 p-3 text-sm">
                         <p class="font-semibold text-danger">{{ __('savings::savings.shortfall', ['date' => \Illuminate\Support\Carbon::parse($row['shortfall'])->format('d/m/Y')]) }}{{ $row['threshold'] ? ' ('.__('savings::savings.minimum_balance').' '.$m($row['threshold']).')' : '' }}</p>
                         <p class="text-xs text-muted mt-1">{{ __('savings::savings.shortfall_causes') }}:</p>
                         @foreach ($row['causes'] as $c)<p class="text-xs">• {{ \Illuminate\Support\Carbon::parse($c['date'])->format('d/m') }} {{ $c['label'] }} ({{ $m(-$c['effects'][$row['account']->id]) }})</p>@endforeach
@@ -29,7 +29,7 @@
 
                 @php $points = collect($row['days']); $max = max(1, $points->max()); $min = min(0, $points->min()); $span = max(1, $max - $min); @endphp
                 <svg viewBox="0 0 {{ max(1, $points->count() - 1) }} 100" preserveAspectRatio="none" class="w-full h-24">
-                    <line x1="0" x2="{{ $points->count() }}" y1="{{ 100 - ($row['threshold'] - $min) / $span * 100 }}" y2="{{ 100 - ($row['threshold'] - $min) / $span * 100 }}" stroke="#DC2626" stroke-width="0.6" stroke-dasharray="2 2" vector-effect="non-scaling-stroke" />
+                    <line x1="0" x2="{{ $points->count() }}" y1="{{ 100 - ($row['threshold'] - $min) / $span * 100 }}" y2="{{ 100 - ($row['threshold'] - $min) / $span * 100 }}" stroke="currentColor" class="text-danger" stroke-width="0.6" stroke-dasharray="2 2" vector-effect="non-scaling-stroke" />
                     <polyline fill="none" stroke="currentColor" class="text-brand" stroke-width="2" vector-effect="non-scaling-stroke"
                         points="{{ $points->values()->map(fn ($v, $i) => $i.','.round(100 - ($v - $min) / $span * 100, 2))->implode(' ') }}" />
                 </svg>

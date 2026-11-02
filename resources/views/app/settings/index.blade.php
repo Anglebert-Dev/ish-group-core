@@ -163,6 +163,11 @@
         @endif
 
         @if ($tab === 'theme')
+            @php
+                $saved = ($draft ?? $live)?->payload ?? [];
+                $groups = ['theme_group_brand' => ['accent', 'link'], 'theme_group_surfaces' => ['page', 'card', 'surface', 'line'], 'theme_group_text' => ['ink', 'body', 'muted'], 'theme_group_navigation' => ['sidebar', 'sidebar_ink', 'header', 'header_ink'], 'theme_group_status' => ['success', 'warning', 'danger', 'info'], 'theme_group_chart' => ['chart_1', 'chart_2', 'chart_3', 'chart_4', 'chart_5', 'chart_6']];
+                $currentMode = old('mode', $theme['mode'] ?? \App\Support\Branding\ThemeSchema::DEFAULT_MODE);
+            @endphp
             <div class="bg-card border border-line rounded-xl p-4 sm:p-6 space-y-6">
                 <div class="space-y-1">
                     <p class="text-sm text-muted">{{ __('body.theme_hint') }}</p>
@@ -174,19 +179,104 @@
                         @endif
                     </p>
                 </div>
-                @foreach (['theme_group_brand' => ['accent', 'link'], 'theme_group_surfaces' => ['page', 'card', 'surface', 'line'], 'theme_group_text' => ['ink', 'body', 'muted'], 'theme_group_navigation' => ['sidebar', 'sidebar_ink', 'header', 'header_ink'], 'theme_group_status' => ['success', 'warning', 'danger', 'info']] as $group => $keys)
+
+                <fieldset class="space-y-3">
+                    <legend class="text-sm font-bold text-ink">{{ __('body.theme_mode') }}</legend>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        @foreach (\App\Support\Branding\ThemeTokens::MODES as $mode)
+                            <label class="rounded-xl border px-4 py-3 cursor-pointer has-[:checked]:border-brand has-[:checked]:bg-brand-light border-line">
+                                <input type="radio" name="mode" value="{{ $mode }}" class="sr-only" @checked($currentMode === $mode)>
+                                <span class="block text-sm font-semibold text-ink">{{ __('body.theme_mode_'.$mode) }}</span>
+                                <span class="block text-xs text-muted mt-0.5">{{ __('body.theme_mode_'.$mode.'_hint') }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                    <input type="hidden" name="user_mode" value="0">
+                    <x-common.checkbox name="user_mode" value="1" :checked="(bool) old('user_mode', $theme['user_mode'] ?? true)" :label="__('body.theme_user_mode')" :description="__('body.theme_user_mode_hint')" />
+                </fieldset>
+
+                @if ($contrast)
+                    <div class="rounded-xl border {{ collect($contrast)->contains('blocking', true) ? 'border-danger/30 bg-danger/10' : 'border-warning/30 bg-warning/10' }} p-4 space-y-2" id="theme-contrast">
+                        <p class="text-sm font-semibold text-ink">{{ collect($contrast)->contains('blocking', true) ? __('body.theme_contrast_blocking') : __('body.theme_contrast_warnings') }}</p>
+                        <ul class="space-y-1.5">
+                            @foreach ($contrast as $issue)
+                                <li class="text-sm text-body flex flex-wrap items-center gap-x-2 gap-y-1">
+                                    <x-common.badge :color="$issue['blocking'] ? 'danger' : 'warning'">{{ __('body.theme_mode_'.$issue['mode']) }}</x-common.badge>
+                                    <span>{{ __('body.theme_contrast_issue', ['text' => __('body.theme_color_'.$issue['text']), 'background' => __('body.theme_color_'.$issue['background']), 'ratio' => $issue['ratio'], 'min' => $issue['min']]) }}</span>
+                                    <span class="inline-flex items-center gap-1.5 text-xs text-muted">
+                                        {{ __('body.theme_contrast_try') }}
+                                        <span class="inline-block h-3.5 w-3.5 rounded border border-line" style="background: {{ $issue['suggestion'] }}"></span>
+                                        <code>{{ $issue['suggestion'] }}</code>
+                                    </span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                <div class="space-y-2">
+                    <p class="text-sm font-bold text-ink">{{ __('body.theme_palettes') }}</p>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach (\App\Support\Branding\ThemeSchema::PALETTES as $key => $palette)
+                            @php $swatch = $palette + $themeDefaults; @endphp
+                            <button type="button" data-palette='@json($palette)' class="inline-flex items-center gap-2 rounded-lg border border-line bg-card px-3 py-1.5 text-sm text-body hover:border-brand">
+                                <span class="flex -space-x-1">
+                                    @foreach (['sidebar', 'page', 'card', 'brand'] as $k)
+                                        <span class="h-4 w-4 rounded-full border border-line" style="background: {{ $swatch[$k] }}"></span>
+                                    @endforeach
+                                </span>
+                                {{ __('body.theme_palette_'.$key) }}
+                            </button>
+                        @endforeach
+                    </div>
+                    <p class="text-xs text-muted">{{ __('body.theme_palettes_hint') }}</p>
+                </div>
+
+                @foreach ($groups as $group => $keys)
                     <fieldset class="space-y-3">
                         <legend class="text-sm font-bold text-ink">{{ __('body.'.$group) }}</legend>
                         <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                             @foreach ($keys as $key)
                                 <x-common.color-field :name="'colors['.$key.']'" :label="__('body.theme_color_'.$key)"
-                                    :value="old('colors.'.$key, ($draft ?? $live)?->payload['colors'][$key] ?? null)" :default="$themeDefaults[$key]" />
+                                    :value="old('colors.'.$key, $saved['colors'][$key] ?? null)" :default="$themeDefaults[$key]" />
                             @endforeach
                         </div>
                     </fieldset>
                 @endforeach
+
+                <details class="rounded-xl border border-line p-4" @if (($saved['colors_dark'] ?? []) !== [] || $currentMode !== 'light') open @endif>
+                    <summary class="cursor-pointer text-sm font-bold text-ink">{{ __('body.theme_dark_colors') }}</summary>
+                    <p class="text-xs text-muted mt-2">{{ __('body.theme_dark_colors_hint') }}</p>
+                    <div class="space-y-5 mt-4">
+                        @foreach ($groups as $group => $keys)
+                            <fieldset class="space-y-3">
+                                <legend class="text-sm font-semibold text-ink">{{ __('body.'.$group) }}</legend>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                                    @foreach ($keys as $key)
+                                        <x-common.color-field :name="'colors_dark['.$key.']'" :label="__('body.theme_color_'.$key)"
+                                            :value="old('colors_dark.'.$key, $saved['colors_dark'][$key] ?? null)" :default="$themeDarkDefaults[$key]" />
+                                    @endforeach
+                                </div>
+                            </fieldset>
+                        @endforeach
+                    </div>
+                </details>
+
                 <p class="text-xs text-muted">{{ __('body.theme_blank_hint') }}</p>
             </div>
+
+            <script>
+                document.querySelectorAll('[data-palette]').forEach(function (button) {
+                    button.addEventListener('click', function () {
+                        var palette = JSON.parse(button.dataset.palette);
+                        document.querySelectorAll('input[type=text][name^="colors["]').forEach(function (input) {
+                            var key = input.name.slice(7, -1);
+                            input.value = palette[key] || '';
+                            input.dispatchEvent(new Event('input', {bubbles: true}));
+                        });
+                    });
+                });
+            </script>
         @endif
 
         @if ($tab === 'stamp')

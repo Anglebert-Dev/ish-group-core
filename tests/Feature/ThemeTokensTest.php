@@ -24,7 +24,7 @@ class ThemeTokensTest extends TestCase
 
     public function test_views_use_colour_names_not_fixed_colours(): void
     {
-        $raw = '/(?<![\w\/-])(?:[a-z-]+:)*(?:bg|text|border(?:-[trblxy])?|ring|divide|shadow|from|to|via|fill|stroke|outline|placeholder)-(?:gray|slate|zinc|neutral|stone)-\d+|(?<![\w\/-])(?:[a-z-]+:)*bg-white(?![\w\/-])/';
+        $raw = '/(?<![\w\/-])(?:[a-z-]+:)*(?:bg|text|border(?:-[trblxy])?|ring|divide|shadow|from|to|via|fill|stroke|outline|placeholder)-(?:gray|slate|zinc|neutral|stone|red|rose|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink)-\d+|(?<![\w\/-])(?:[a-z-]+:)*bg-white(?![\w\/-])/';
 
         $files = collect(File::allFiles(resource_path('views')))
             ->merge(collect(glob(base_path('Modules/*/resources/views'), GLOB_ONLYDIR))->flatMap(fn ($dir) => File::allFiles($dir)))
@@ -41,7 +41,7 @@ class ThemeTokensTest extends TestCase
             }
         }
 
-        $this->assertSame([], $found, "Use colour names (bg-card, bg-surface, text-ink, text-body, text-muted, border-line…), not fixed colours.\n".implode("\n", $found));
+        $this->assertSame([], $found, "Use colour names (bg-card, bg-surface, text-ink, text-body, text-muted, border-line, bg-danger/10, text-success, bg-chart-1…), not fixed colours.\n".implode("\n", $found));
     }
 
     public function test_tokens_follow_the_brand_and_ignore_bad_overrides(): void

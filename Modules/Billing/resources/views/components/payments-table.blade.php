@@ -46,7 +46,7 @@
                                         {{ __('body.approve') }}
                                     </x-common.action-button>
                                     <details class="relative">
-                                        <summary class="list-none inline-flex items-center rounded-lg border border-red-300 bg-card px-2.5 py-1 text-xs font-semibold text-danger hover:bg-red-50 cursor-pointer [&::-webkit-details-marker]:hidden">{{ __('billing::billing.reject') }}</summary>
+                                        <summary class="list-none inline-flex items-center rounded-lg border border-danger/30 bg-card px-2.5 py-1 text-xs font-semibold text-danger hover:bg-danger/10 cursor-pointer [&::-webkit-details-marker]:hidden">{{ __('billing::billing.reject') }}</summary>
                                         <form action="{{ route('superadmin.billing.payments.reject', $payment) }}" method="POST" class="mt-2 w-64 space-y-2">
                                             @csrf
                                             <x-common.textarea name="reason" :rows="2" :placeholder="__('billing::billing.reject_reason')" required />

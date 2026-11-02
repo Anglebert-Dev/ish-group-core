@@ -1,7 +1,12 @@
 {{-- $menuGroups comes from App\Support\Menu\AdminMenu (config/menu.php + module hooks).
      Colours come from the sidebar tokens, so a dark sidebar stays readable. --}}
 @php
-    $sidebarDark = \App\Libraries\ColorLibrary::isDark(app(\App\Services\Branding\BrandingService::class)->tokens($branding)['sidebar']);
+    // Dark mode: the dark sidebar colour decides; "system" can't be known here, so light's does.
+    $brandingService = app(\App\Services\Branding\BrandingService::class);
+    $sidebarTokens = $brandingService->effectiveMode($branding) === 'dark'
+        ? app(\App\Services\Branding\ThemeService::class)->tokens($branding, $brandingService->previewing($branding), dark: true)
+        : $brandingService->tokens($branding);
+    $sidebarDark = \App\Libraries\ColorLibrary::isDark($sidebarTokens['sidebar']);
 @endphp
 
 <div id="sidebar-backdrop" onclick="toggleSidebar()" class="hidden fixed inset-0 bg-black/30 z-30 lg:hidden"></div>

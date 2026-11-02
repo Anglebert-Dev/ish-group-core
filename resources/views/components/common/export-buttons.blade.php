@@ -17,7 +17,7 @@
     </a>
     <a
         href="{{ $pdf }}"
-        class="inline-flex items-center justify-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg border border-line bg-card text-red-600 hover:border-red-500 hover:bg-red-50 transition-colors whitespace-nowrap"
+        class="inline-flex items-center justify-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg border border-line bg-card text-danger hover:border-danger hover:bg-danger/10 transition-colors whitespace-nowrap"
         title="{{ __('body.export_pdf') }}"
         aria-label="{{ __('body.export_pdf') }}"
     >
@@ -28,7 +28,7 @@
     </a>
     <a
         href="{{ $excel }}"
-        class="inline-flex items-center justify-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg border border-line bg-card text-green-700 hover:border-green-600 hover:bg-green-50 transition-colors whitespace-nowrap"
+        class="inline-flex items-center justify-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg border border-line bg-card text-success hover:border-success hover:bg-success/10 transition-colors whitespace-nowrap"
         title="{{ __('body.export_excel') }}"
         aria-label="{{ __('body.export_excel') }}"
     >

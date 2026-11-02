@@ -4,8 +4,10 @@ namespace App\Services\Branding;
 
 use App\Models\Branding\BrandingVersion;
 use App\Models\Business\Business;
+use App\Models\User;
 use App\Services\BaseService;
 use App\Services\Setting\SettingService;
+use App\Support\Branding\ThemeContrast;
 use App\Support\Branding\ThemeSchema;
 use App\Support\Branding\ThemeTokens;
 use Illuminate\Database\Eloquent\Builder;
@@ -50,9 +52,57 @@ class ThemeService extends BaseService
     /**
      * @return array<string, string>
      */
-    public function tokens(Business $business, bool $withDraft = false): array
+    public function tokens(Business $business, bool $withDraft = false, bool $dark = false): array
     {
-        return ThemeTokens::resolve($business->brandColor(), $this->effective($business, $withDraft)['colors'] ?? []);
+        $theme = $this->effective($business, $withDraft);
+
+        return ThemeTokens::resolve($business->brandColor(), $theme[$dark ? 'colors_dark' : 'colors'] ?? [], $dark);
+    }
+
+    /** The business's mode: light, dark or system. */
+    public function mode(Business $business, bool $withDraft = false): string
+    {
+        return $this->effective($business, $withDraft)['mode'] ?? ThemeSchema::DEFAULT_MODE;
+    }
+
+    /** May each person choose light/dark for themselves? */
+    public function allowsUserMode(Business $business, bool $withDraft = false): bool
+    {
+        return $this->effective($business, $withDraft)['user_mode'] ?? true;
+    }
+
+    /**
+     * The :root CSS for a page: the business's mode, or the user's own
+     * choice when the business allows it.
+     */
+    public function css(Business $business, ?User $user = null, bool $withDraft = false): string
+    {
+        $mode = $this->mode($business, $withDraft);
+        if ($user && $this->allowsUserMode($business, $withDraft) && in_array($user->appearance, ThemeTokens::MODES, true)) {
+            $mode = $user->appearance;
+        }
+
+        return ThemeTokens::css(
+            $this->tokens($business, $withDraft),
+            $mode === 'light' ? [] : $this->tokens($business, $withDraft, dark: true),
+            $mode,
+        );
+    }
+
+    /**
+     * Readability problems of the draft (or what is live): light always,
+     * dark too when anyone can end up in dark.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function contrast(Business $business, bool $withDraft = true): array
+    {
+        $issues = ThemeContrast::check($this->tokens($business, $withDraft), 'light');
+        if ($this->mode($business, $withDraft) !== 'light' || $this->allowsUserMode($business, $withDraft)) {
+            $issues = [...$issues, ...ThemeContrast::check($this->tokens($business, $withDraft, dark: true), 'dark')];
+        }
+
+        return $issues;
     }
 
     public function draft(Business $business): ?BrandingVersion
@@ -92,6 +142,11 @@ class ThemeService extends BaseService
         $draft = $this->draft($business);
         if (! $draft) {
             return $this->failure(__('body.theme_nothing_to_publish'));
+        }
+
+        $blocking = array_filter($this->contrast($business), fn ($issue) => $issue['blocking']);
+        if ($blocking) {
+            return $this->failure(__('body.theme_unreadable', ['count' => count($blocking)]));
         }
 
         DB::transaction(function () use ($business, $draft) {

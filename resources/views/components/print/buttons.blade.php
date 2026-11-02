@@ -8,7 +8,7 @@
         {{ __('body.print') }}
     </a>
     <a href="{{ route('print.pdf', [$type, $id]) }}"
-       class="inline-flex items-center justify-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg border border-line bg-card text-red-600 hover:border-red-500 hover:bg-red-50 transition-colors whitespace-nowrap">
+       class="inline-flex items-center justify-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg border border-line bg-card text-danger hover:border-danger hover:bg-danger/10 transition-colors whitespace-nowrap">
         {{ __('body.pdf') }}
     </a>
 </div>

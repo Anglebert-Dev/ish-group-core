@@ -27,6 +27,109 @@ class ColorLibrary
         );
     }
 
+    /** $amount (0–1) of $b mixed into $a. */
+    public static function mix(string $a, string $b, float $amount): string
+    {
+        [$r1, $g1, $b1] = self::rgb($a);
+        [$r2, $g2, $b2] = self::rgb($b);
+        $t = max(0, min(1, $amount));
+
+        return self::toHex(
+            (int) round($r1 + ($r2 - $r1) * $t),
+            (int) round($g1 + ($g2 - $g1) * $t),
+            (int) round($b1 + ($b2 - $b1) * $t),
+        );
+    }
+
+    /** WCAG contrast ratio between two colours (1–21). */
+    public static function contrast(string $a, string $b): float
+    {
+        $l1 = self::luminance($a);
+        $l2 = self::luminance($b);
+
+        return (max($l1, $l2) + 0.05) / (min($l1, $l2) + 0.05);
+    }
+
+    /** WCAG relative luminance (0 black – 1 white). */
+    public static function luminance(string $hex): float
+    {
+        $channel = function (int $value): float {
+            $c = $value / 255;
+
+            return $c <= 0.03928 ? $c / 12.92 : (($c + 0.055) / 1.055) ** 2.4;
+        };
+        [$r, $g, $b] = self::rgb($hex);
+
+        return 0.2126 * $channel($r) + 0.7152 * $channel($g) + 0.0722 * $channel($b);
+    }
+
+    /**
+     * The nearest colour to $fg that reads on $bg (ratio $min): $fg pushed
+     * towards black or white, whichever the background needs.
+     */
+    public static function readable(string $fg, string $bg, float $min = 4.5): string
+    {
+        if (self::contrast($fg, $bg) >= $min) {
+            return strtoupper($fg);
+        }
+
+        $target = self::luminance($bg) > 0.4 ? '#000000' : '#FFFFFF';
+        for ($step = 0.05; $step <= 1.0; $step += 0.05) {
+            $candidate = self::mix($fg, $target, $step);
+            if (self::contrast($candidate, $bg) >= $min) {
+                return $candidate;
+            }
+        }
+
+        return $target;
+    }
+
+    /**
+     * "#abc", "#aabbcc", "rgb(1, 2, 3)" or "hsl(210, 50%, 40%)" as "#AABBCC"; null if not a colour.
+     */
+    public static function parse(?string $value): ?string
+    {
+        $value = strtolower(trim((string) $value));
+
+        if (preg_match('/^#?([0-9a-f]{6})$/', $value, $m)) {
+            return '#'.strtoupper($m[1]);
+        }
+        if (preg_match('/^#?([0-9a-f])([0-9a-f])([0-9a-f])$/', $value, $m)) {
+            return strtoupper('#'.$m[1].$m[1].$m[2].$m[2].$m[3].$m[3]);
+        }
+        if (preg_match('/^rgba?\(\s*(\d{1,3})\s*[, ]\s*(\d{1,3})\s*[, ]\s*(\d{1,3})\s*(?:[,\/]\s*[\d.]+%?\s*)?\)$/', $value, $m)) {
+            if (max($m[1], $m[2], $m[3]) > 255) {
+                return null;
+            }
+
+            return self::toHex((int) $m[1], (int) $m[2], (int) $m[3]);
+        }
+        if (preg_match('/^hsla?\(\s*(\d{1,3}(?:\.\d+)?)(?:deg)?\s*[, ]\s*(\d{1,3}(?:\.\d+)?)%\s*[, ]\s*(\d{1,3}(?:\.\d+)?)%\s*(?:[,\/]\s*[\d.]+%?\s*)?\)$/', $value, $m)) {
+            [$h, $sat, $l] = [fmod((float) $m[1], 360) / 360, min(100, (float) $m[2]) / 100, min(100, (float) $m[3]) / 100];
+            if ($sat == 0) {
+                $v = (int) round($l * 255);
+
+                return self::toHex($v, $v, $v);
+            }
+            $q = $l < 0.5 ? $l * (1 + $sat) : $l + $sat - $l * $sat;
+            $p = 2 * $l - $q;
+            $hue = function (float $t) use ($p, $q): float {
+                $t = $t < 0 ? $t + 1 : ($t > 1 ? $t - 1 : $t);
+
+                return match (true) {
+                    $t < 1 / 6 => $p + ($q - $p) * 6 * $t,
+                    $t < 1 / 2 => $q,
+                    $t < 2 / 3 => $p + ($q - $p) * (2 / 3 - $t) * 6,
+                    default => $p,
+                };
+            };
+
+            return self::toHex((int) round($hue($h + 1 / 3) * 255), (int) round($hue($h) * 255), (int) round($hue($h - 1 / 3) * 255));
+        }
+
+        return null;
+    }
+
     /** True when white text reads better on it than dark text. */
     public static function isDark(string $hex): bool
     {

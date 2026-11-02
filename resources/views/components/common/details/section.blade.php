@@ -8,9 +8,9 @@
     $tones = [
         'brand' => 'bg-brand-light text-brand',
         'ink' => 'bg-surface text-ink',
-        'success' => 'bg-green-50 text-success',
-        'warning' => 'bg-amber-50 text-warning',
-        'danger' => 'bg-red-50 text-danger',
+        'success' => 'bg-success/10 text-success',
+        'warning' => 'bg-warning/10 text-warning',
+        'danger' => 'bg-danger/10 text-danger',
     ];
     $toneClass = $tones[$tone] ?? $tones['brand'];
 @endphp

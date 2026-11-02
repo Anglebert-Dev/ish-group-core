@@ -1,5 +1,5 @@
 @if (session('savings_duplicates'))
-    <div class="rounded-xl border border-amber-300 bg-amber-50 p-4 space-y-2 text-sm">
+    <div class="rounded-xl border border-warning/30 bg-warning/10 p-4 space-y-2 text-sm">
         @foreach (session('savings_duplicates') as $match)
             <p>• <a href="{{ route('savings.transactions.show', $match['uuid']) }}" target="_blank" class="font-semibold text-brand">{{ $match['date'] }} · {{ $match['description'] }} · {{ $match['amount'] }}</a></p>
         @endforeach

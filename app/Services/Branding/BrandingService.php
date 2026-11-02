@@ -8,6 +8,7 @@ use App\Models\Business\Business;
 use App\Services\BaseService;
 use App\Support\Branding\Brand;
 use App\Support\Branding\Fonts;
+use App\Support\Branding\ThemeTokens;
 use App\Support\Printing\PrintDesign;
 use App\Support\Settings\BusinessSettings;
 use Illuminate\Http\UploadedFile;
@@ -107,6 +108,30 @@ class BrandingService extends BaseService
         $path = $business->exists ? $this->settings->get('branding.'.$key, null, $business) : null;
 
         return $path ? '/storage/'.$path : null;
+    }
+
+    /**
+     * The :root colour block for this business's pages, in the mode this
+     * user sees (their own choice when allowed, else the business's).
+     */
+    public function themeCss(Business $business): string
+    {
+        $user = auth('staff')->user();
+
+        return app(ThemeService::class)->css($business, $user?->business_id === $business->id ? $user : null, $this->previewing($business));
+    }
+
+    /**
+     * Light or dark for this user right now; "system" when the device decides.
+     */
+    public function effectiveMode(Business $business): string
+    {
+        $themes = app(ThemeService::class);
+        $preview = $this->previewing($business);
+        $user = auth('staff')->user();
+        $own = $user?->business_id === $business->id && $themes->allowsUserMode($business, $preview) ? $user->appearance : null;
+
+        return in_array($own, ThemeTokens::MODES, true) ? $own : $themes->mode($business, $preview);
     }
 
     /**

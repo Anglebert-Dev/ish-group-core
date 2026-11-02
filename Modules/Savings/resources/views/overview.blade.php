@@ -29,7 +29,7 @@
     </div>
 
     @if ($shortfalls->isNotEmpty() || $late > 0)
-        <div class="rounded-xl border border-red-200 bg-red-50 p-4 mb-6 space-y-1 text-sm">
+        <div class="rounded-xl border border-danger/30 bg-danger/10 p-4 mb-6 space-y-1 text-sm">
             <p class="font-semibold text-danger">{{ __('savings::savings.warnings') }}</p>
             @foreach ($shortfalls as $row)
                 <p>• {{ $row['account']->name }}: {{ __('savings::savings.shortfall', ['date' => \Illuminate\Support\Carbon::parse($row['shortfall'])->format('d/m/Y')]) }} ({{ $m($row['lowest'], $row['account']->currency) }}) — <a href="{{ route('savings.forecast', ['account' => $row['account']->uuid]) }}" class="font-semibold text-brand">{{ __('savings::savings.forecast') }} →</a></p>

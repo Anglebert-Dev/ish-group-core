@@ -7,14 +7,14 @@
     $actions = collect($actions);
 
     $colors = [
-        'blue' => 'bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200',
-        'green' => 'bg-green-50 hover:bg-green-100 text-green-700 border-green-200',
-        'yellow' => 'bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200',
-        'purple' => 'bg-violet-50 hover:bg-violet-100 text-violet-700 border-violet-200',
-        'indigo' => 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border-indigo-200',
-        'pink' => 'bg-pink-50 hover:bg-pink-100 text-pink-600 border-pink-200',
+        'blue' => 'bg-chart-1/10 hover:bg-chart-1/15 text-chart-1 border-chart-1/30',
+        'green' => 'bg-success/10 hover:bg-success/15 text-success border-success/30',
+        'yellow' => 'bg-warning/10 hover:bg-warning/15 text-ink border-warning/30',
+        'purple' => 'bg-chart-2/10 hover:bg-chart-2/15 text-chart-2 border-chart-2/30',
+        'indigo' => 'bg-chart-3/10 hover:bg-chart-3/15 text-chart-3 border-chart-3/30',
+        'pink' => 'bg-chart-4/10 hover:bg-chart-4/15 text-chart-4 border-chart-4/30',
         'gray' => 'bg-surface hover:bg-line/60 text-body border-line',
-        'teal' => 'bg-teal-50 hover:bg-teal-100 text-teal-700 border-teal-200',
+        'teal' => 'bg-chart-5/10 hover:bg-chart-5/15 text-chart-5 border-chart-5/30',
     ];
 @endphp
 

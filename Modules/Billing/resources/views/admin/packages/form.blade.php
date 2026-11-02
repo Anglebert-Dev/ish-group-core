@@ -69,7 +69,7 @@
         <div class="flex justify-center gap-3">
             <x-common.button href="{{ route('superadmin.billing.packages.index') }}" variant="secondary">{{ __('body.cancel') }}</x-common.button>
             @if ($package->exists && $subscriberCount > 0)
-                <div class="rounded-xl border border-amber-300 bg-amber-50 p-4 space-y-2">
+                <div class="rounded-xl border border-warning/30 bg-warning/10 p-4 space-y-2">
                     <p class="text-sm font-semibold text-ink">{{ __('billing::billing.apply_title', ['count' => $subscriberCount]) }}</p>
                     <p class="text-xs text-muted">{{ __('billing::billing.apply_hint') }}</p>
                     @foreach (['none', 'terms', 'all'] as $mode)

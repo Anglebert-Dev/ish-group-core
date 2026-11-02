@@ -13,10 +13,10 @@
     </x-common.page-header>
 
     @if ($lastError)
-        <div class="mb-6 rounded-xl border border-red-200 bg-red-50 text-red-800 px-5 py-4 text-sm">{{ $lastError }}</div>
+        <div class="mb-6 rounded-xl border border-danger/30 bg-danger/10 text-ink px-5 py-4 text-sm">{{ $lastError }}</div>
     @endif
     @unless ($writable)
-        <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 px-5 py-4 text-sm">{{ __('updates.modules_not_writable') }}</div>
+        <div class="mb-6 rounded-xl border border-warning/30 bg-warning/10 text-ink px-5 py-4 text-sm">{{ __('updates.modules_not_writable') }}</div>
     @endunless
 
     @unless ($linked)
@@ -26,12 +26,12 @@
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         <div class="xl:col-span-2 space-y-6">
             @if ($coreOffer)
-                <div class="bg-card border border-amber-200 rounded-xl overflow-hidden">
-                    <div class="px-5 py-4 bg-amber-50 border-b border-amber-200 flex flex-wrap items-start justify-between gap-3">
+                <div class="bg-card border border-warning/30 rounded-xl overflow-hidden">
+                    <div class="px-5 py-4 bg-warning/10 border-b border-warning/30 flex flex-wrap items-start justify-between gap-3">
                         <div>
                             <p class="font-semibold text-ink">{{ __('updates.core_title') }}
                                 <span class="font-mono text-muted">{{ $coreOffer['from_version'] ? $coreOffer['from_version'].' → ' : '' }}{{ $coreOffer['version'] }}</span></p>
-                            <p class="text-sm text-amber-900 mt-1 max-w-2xl">{{ __('updates.core_hint') }}</p>
+                            <p class="text-sm text-ink mt-1 max-w-2xl">{{ __('updates.core_hint') }}</p>
                             @if (! empty($coreOffer['changelog']))<p class="text-sm text-muted mt-2 whitespace-pre-line">{{ $coreOffer['changelog'] }}</p>@endif
                         </div>
                         <form action="{{ route('superadmin.updates.install-core') }}" method="POST">

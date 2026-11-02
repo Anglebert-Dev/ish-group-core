@@ -134,7 +134,7 @@
         </div>
 
         @if ($serverProblems)
-            <div class="m-5 rounded-xl border border-red-200 bg-red-50 text-red-800 px-5 py-4 text-sm">
+            <div class="m-5 rounded-xl border border-danger/30 bg-danger/10 text-ink px-5 py-4 text-sm">
                 <p class="font-semibold">{{ __('distribution::distribution.server_problems') }}</p>
                 <ul class="list-disc pl-5 mt-1">@foreach ($serverProblems as $problem)<li>{{ $problem }}</li>@endforeach</ul>
             </div>
@@ -284,9 +284,9 @@
         </div>
 
         @if (session('link_key'))
-            <div class="m-5 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
-                <p class="text-sm text-amber-900">{{ __('distribution::distribution.link_key_once') }}</p>
-                <p class="mt-2 font-mono text-xs break-all text-ink select-all bg-card border border-amber-200 rounded-lg p-3">{{ session('link_key') }}</p>
+            <div class="m-5 rounded-xl border border-warning/30 bg-warning/10 px-5 py-4">
+                <p class="text-sm text-ink">{{ __('distribution::distribution.link_key_once') }}</p>
+                <p class="mt-2 font-mono text-xs break-all text-ink select-all bg-card border border-warning/30 rounded-lg p-3">{{ session('link_key') }}</p>
             </div>
         @endif
 

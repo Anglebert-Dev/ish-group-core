@@ -1,7 +1,7 @@
 @php $impersonation = session(\App\Services\SuperAdmin\ImpersonationService::SESSION_KEY); @endphp
 
 @if ($impersonation)
-    <div class="sticky top-0 z-30 bg-amber-500 text-white">
+    <div class="sticky top-0 z-30 bg-warning text-white">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 sm:px-5 lg:px-8 py-2 text-sm">
             <p class="font-medium">
                 {{ __('body.impersonation_banner', [

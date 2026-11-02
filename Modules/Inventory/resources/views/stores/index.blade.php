@@ -24,7 +24,7 @@
                             @if (! $store->is_default && \App\Helpers\AuthHelper::can('delete inventory.store'))
                                 <form action="{{ route('inventory.stores.destroy', $store) }}" method="POST" class="inline">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="inline-flex items-center rounded-lg border border-red-300 bg-card px-2.5 py-1 text-xs font-semibold text-danger hover:bg-red-50"
+                                    <button type="submit" class="inline-flex items-center rounded-lg border border-danger/30 bg-card px-2.5 py-1 text-xs font-semibold text-danger hover:bg-danger/10"
                                         data-confirm data-confirm-title="{{ __('body.delete') }} {{ $store->name }}?" data-confirm-variant="danger">{{ __('body.delete') }}</button>
                                 </form>
                             @endif

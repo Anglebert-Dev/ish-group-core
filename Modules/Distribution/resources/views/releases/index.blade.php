@@ -4,10 +4,10 @@
     <x-common.page-header :title="__('distribution::distribution.releases')" :description="__('distribution::distribution.releases_description')" />
 
     @if (session('signing_secret'))
-        <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
-            <p class="font-semibold text-amber-900">{{ __('distribution::distribution.secret_backup_title') }}</p>
-            <p class="text-sm text-amber-900 mt-1">{{ __('distribution::distribution.secret_backup_hint') }}</p>
-            <p class="mt-3 font-mono text-xs break-all bg-card border border-amber-200 rounded-lg p-3 select-all">{{ session('signing_secret') }}</p>
+        <div class="mb-6 rounded-xl border border-warning/30 bg-warning/10 px-5 py-4">
+            <p class="font-semibold text-ink">{{ __('distribution::distribution.secret_backup_title') }}</p>
+            <p class="text-sm text-ink mt-1">{{ __('distribution::distribution.secret_backup_hint') }}</p>
+            <p class="mt-3 font-mono text-xs break-all bg-card border border-warning/30 rounded-lg p-3 select-all">{{ session('signing_secret') }}</p>
         </div>
     @endif
     @if (session('signing_env_lines'))
@@ -15,7 +15,7 @@
     @endif
 
     @unless ($keysConfigured)
-        <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 px-5 py-4 text-sm flex flex-wrap items-center justify-between gap-3">
+        <div class="mb-6 rounded-xl border border-warning/30 bg-warning/10 text-ink px-5 py-4 text-sm flex flex-wrap items-center justify-between gap-3">
             <span>{{ __('distribution::distribution.keys_missing') }}</span>
             <form method="POST" action="{{ route('superadmin.distribution.releases.key') }}">
                 @csrf

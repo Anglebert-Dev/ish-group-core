@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="{{ asset('css/responsive.css') }}{{ file_exists(public_path('css/responsive.css')) ? '?v='.filemtime(public_path('css/responsive.css')) : '' }}">
 <x-common.brand-font />
 <style>
-    {!! \App\Support\Branding\ThemeTokens::css(app(\App\Services\Branding\BrandingService::class)->tokens($branding)) !!}
+    {!! app(\App\Services\Branding\BrandingService::class)->themeCss($branding) !!}
 
     /* Shared date / datetime fields */
     .date-field-wrap {
@@ -33,7 +33,6 @@
     input.date-field,
     input[type="date"],
     input[type="datetime-local"] {
-        color-scheme: light;
         font-variant-numeric: tabular-nums;
         letter-spacing: -0.01em;
     }
@@ -169,7 +168,6 @@
         opacity: 0;
         border: 0;
         pointer-events: none;
-        color-scheme: light;
         font-size: 16px;
     }
 </style>

@@ -21,7 +21,7 @@
            class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium border transition-colors {{ $active ? 'bg-brand text-white border-brand' : 'bg-card text-body border-line hover:border-brand hover:text-brand' }}">
             {{ $tab['label'] }}
             @if ($tab['route'] === 'superadmin.billing.payments.index' && $pending > 0)
-                <span class="rounded-full px-1.5 text-xs {{ $active ? 'bg-white/25' : 'bg-amber-100 text-amber-800' }}">{{ $pending }}</span>
+                <span class="rounded-full px-1.5 text-xs {{ $active ? 'bg-white/25' : 'bg-warning/15 text-ink' }}">{{ $pending }}</span>
             @endif
         </a>
     @endforeach

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Web\ActivityLog\ActivityLogController;
+use App\Http\Controllers\Web\Appearance\AppearanceController;
 use App\Http\Controllers\Web\Auth\AuthController;
 use App\Http\Controllers\Web\Auth\ProfileController;
 use App\Http\Controllers\Web\Customer\CustomerController;
@@ -86,6 +87,7 @@ Route::prefix('app')->middleware(['auth:staff', 'auth.session', 'exclusive.porta
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/profile', [ProfileController::class, 'show'])->name('staff.profile');
+    Route::post('/appearance', [AppearanceController::class, 'update'])->name('staff.appearance');
     Route::put('/profile', [ProfileController::class, 'update'])->name('staff.profile.update');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->middleware('not.impersonating')->name('staff.profile.password');
     Route::post('/profile/mfa/setup', [ProfileController::class, 'beginMfaSetup'])

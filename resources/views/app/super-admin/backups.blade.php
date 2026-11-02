@@ -53,7 +53,7 @@
                 <x-common.input name="backup_keep" type="number" min="0" :label="__('body.backup_keep')" :value="$keep" :hint="__('body.backup_keep_hint')" required />
                 <x-common.button type="submit" size="sm">{{ __('body.save') }}</x-common.button>
             </form>
-            <div class="rounded-xl border border-warning/40 bg-amber-50 p-4 text-sm text-amber-900">{{ __('body.backup_offsite_hint') }}</div>
+            <div class="rounded-xl border border-warning/40 bg-warning/10 p-4 text-sm text-ink">{{ __('body.backup_offsite_hint') }}</div>
         </div>
     </div>
 </x-layouts.app>

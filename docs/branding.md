@@ -1,6 +1,6 @@
 # Branding & Appearance: Plan
 
-Created: 02/11/2026. Status: **B0 and B1 done (02/11/2026).** Update §8 after each phase, so work can pick up where it stopped.
+Created: 02/11/2026. Status: **B0, B1 and B2 done (02/11/2026).** Update §8 after each phase, so work can pick up where it stopped.
 
 This takes the full "Branding & Appearance Module" requirements and sets out, section by section, **what we already have**, **what we build**, and **what we leave out and why**. Printing and document branding are already built (`docs/branding-print-build-guide.md`); this plan builds on them.
 
@@ -263,6 +263,22 @@ Off by default. Needs package feature `branding.custom_css` and permission `publ
   - adding French = copy `resources/lang/en` to `resources/lang/fr` (and each module's `lang/en` to `lang/fr`) and translate
 - **Run `php artisan migrate`** after pulling (`users.locale`).
 
+**B2 notes:**
+- **Dark set:** `ThemeTokens::DARK_DEFAULTS`. On dark, `brand-light` becomes a dim brand tint (the active menu item) and `brand-dark` a brighter shade that passes 4.5:1 on cards, and links are lifted until readable. A test checks this for light, dark, yellow and near-black brands.
+- **Modes:** the theme document has `mode` (light / dark / system) and `user_mode` (may people choose; unset = yes). `ThemeTokens::css()` writes light only, dark only, or light plus a `prefers-color-scheme: dark` block, and sets `color-scheme` so native date pickers and scrollbars follow.
+- **People's own choice:** `users.appearance` (null = business default), from the user menu → Appearance (Business default / Light / Dark / Follow device). Shown and accepted only while the business allows it, and it never touches the business's setting. Audited.
+- **Colours:**
+  - every token has a dark counterpart (`colors_dark`, in a fold-out "Dark mode colours" section)
+  - fields accept `#abc`, `#aabbcc`, `rgb()` and `hsl()`, stored as hex (`ColorLibrary::parse`)
+  - six ready-made palettes fill the form without saving
+- **Readability:** `ThemeContrast` checks text on what it sits on (WCAG ratio), in light and also dark when dark can be seen. Body, headings, sidebar and header text below 4.5:1, or secondary text below 3:1, **block publishing**. Links, status colours and white text on the brand are warnings. Each problem shows a readable suggestion (`ColorLibrary::readable`).
+- **Chart palette:** `chart-1` to `chart-6` tokens, also used by the dashboard's quick-action tiles.
+- **Status colours:** the remaining `red`, `green`, `amber` and similar classes (about 100) became `danger`, `success`, `warning` and `info` tints. Dark text on tints became `text-ink`. The guard test now also rejects coloured palette classes.
+- **Secondary colour:** still documents only. The app uses accent and the token set instead.
+- **Checked:** screenshots in dark mode of the dashboard, a list (phone), an order, the new-order form (date fields, selects), an invoice and the Theme tab.
+- **Found:** the products table on order and invoice pages scrolls sideways at 1280px in both modes (an existing layout limit). To fix in B3 (content width).
+- **Run `php artisan migrate`** after pulling (`users.appearance`).
+
 ## 4. What the B1 clean-up involves
 
 **B1 notes:**
@@ -337,7 +353,7 @@ For each phase:
 |---|---|---|---|
 | B0 | System font: one font choice for the whole system (app, login, emails, error pages, website, PDF), bundled font files, dompdf registration | P0 | ✅ 02/11/2026 |
 | B1 | Foundation: theme document + `ThemeSchema`, versions (draft/publish/restore/reset), tokens + compiler + cache, platform defaults, fallbacks; identity extras (short name, slogan, description, login and mobile logos); **move all views and components onto tokens** + raw-colour guard. Package features moved to B10. | P0 | ✅ 02/11/2026 |
-| B2 | Colours & themes: full palette, picker/HEX/RGB/HSL, palettes, contrast check + suggestions, dark and system mode, user override, chart palette | P0 | ☐ |
+| B2 | Colours & themes: full palette, picker/HEX/RGB/HSL, palettes, contrast check + suggestions, dark and system mode, user override, chart palette | P0 | ✅ 02/11/2026 |
 | B3 | Layout & typography: sidebar, header, density, content width, cards, corners, buttons, switches (breadcrumbs, titles, footer, back-to-top, transitions); fonts and type scale | P0 | ☐ |
 | B4 | Studio: live preview with devices, pages, light/dark; history screen | P0 | ☐ |
 | B5 | Login & authentication branding, business login link | P1 | ☐ |

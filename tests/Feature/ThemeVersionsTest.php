@@ -102,13 +102,13 @@ class ThemeVersionsTest extends TestCase
         [$platform] = $this->makeBusiness();
         System::setProperty('primary_business_id', $platform->id);
         $themes = app(ThemeService::class);
-        $themes->saveDraft($platform, ['colors' => ['sidebar' => '#0B1F3A', 'card' => '#FDFDFD']]);
+        $themes->saveDraft($platform, ['colors' => ['sidebar' => '#0B1F3A', 'sidebar_ink' => '#E2E8F0', 'card' => '#FDFDFD']]);
         $themes->publish($platform);
 
         [$tenant] = $this->makeBusiness();
         $this->assertSame('#0B1F3A', $themes->tokens($tenant)['sidebar']);
 
-        $themes->saveDraft($tenant, ['colors' => ['sidebar' => '#222222']]);
+        $themes->saveDraft($tenant, ['colors' => ['sidebar' => '#222222', 'sidebar_ink' => '#F5F5F5']]);
         $themes->publish($tenant);
         $this->assertSame('#222222', $themes->tokens($tenant)['sidebar'], 'its own choice wins');
         $this->assertSame('#FDFDFD', $themes->tokens($tenant)['card'], 'the platform fills the rest');
