@@ -17,6 +17,17 @@
         <button type="button" onclick="toggleSidebar(true)" class="lg:hidden text-header-ink p-2 -ml-2 rounded-lg hover:bg-header-ink/5" aria-label="Open menu">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
         </button>
+        @php
+            $mobileLogo = app(\App\Services\Branding\BrandingService::class)->logoFor($branding, 'mobile');
+            $shortName = app(\App\Services\Branding\BrandingService::class)->detail($branding, 'short_name') ?? $branding->companyName();
+        @endphp
+        <a href="{{ route('dashboard') }}" class="lg:hidden flex items-center min-w-0">
+            @if ($mobileLogo)
+                <img src="{{ $mobileLogo }}" alt="{{ $branding->companyName() }}" class="h-8 w-auto max-w-[9rem] object-contain">
+            @else
+                <span class="font-display font-bold text-header-ink truncate">{{ $shortName }}</span>
+            @endif
+        </a>
     </div>
 
     <div class="flex items-center gap-2 sm:gap-4 shrink-0">

@@ -138,4 +138,35 @@ class BrandingTest extends TestCase
         app(BusinessSettings::class)->set('branding.tax_id', 'NEW-TIN', $owner->business);
         $this->assertSame('NEW-TIN', app(BrandingService::class)->brand($owner->business)->taxId);
     }
+
+    public function test_short_name_slogan_description_and_place_logos(): void
+    {
+        $owner = $this->actingAsStaff();
+
+        $this->put(route('settings.update'), [
+            'section' => 'details', 'name' => 'Kigali Sun Garments', 'short_name' => 'KSG', 'slogan' => 'Made in Kigali', 'description' => 'School uniforms and workwear.',
+        ])->assertSessionHasNoErrors();
+        $this->put(route('settings.update'), ['section' => 'details', 'name' => 'X', 'short_name' => str_repeat('a', 31)])->assertSessionHasErrors('short_name');
+
+        $business = $owner->business->fresh();
+        $this->assertSame('KSG', app(BrandingService::class)->detail($business, 'short_name'));
+        $this->assertSame('Made in Kigali', app(BrandingService::class)->detail($business, 'slogan'));
+
+        // Phone header: the short name until a phone logo is uploaded.
+        $this->get(route('dashboard'))->assertOk()->assertSee('>KSG</span>', false);
+
+        $this->put(route('settings.update'), [
+            'section' => 'look', 'brand_color' => '#124EB0',
+            'logo_login' => UploadedFile::fake()->image('login.png'), 'logo_mobile' => UploadedFile::fake()->image('mark.png'),
+        ])->assertSessionHasNoErrors();
+
+        $mobile = app(BrandingService::class)->logoFor($business, 'mobile');
+        $this->assertNotNull(app(BrandingService::class)->logoFor($business, 'login'));
+        Storage::disk('public')->assertExists(str_replace('/storage/', '', $mobile));
+        $this->get(route('dashboard'))->assertOk()->assertSee($mobile, false);
+
+        $this->put(route('settings.update'), ['section' => 'look', 'brand_color' => '#124EB0', 'remove_logo_mobile' => '1'])->assertSessionHasNoErrors();
+        $this->assertNull(app(BrandingService::class)->logoFor($business->fresh(), 'mobile'));
+        $this->assertNotNull(app(BrandingService::class)->logoFor($business->fresh(), 'login'), 'only the one ticked is removed');
+    }
 }

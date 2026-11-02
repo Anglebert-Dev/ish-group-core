@@ -57,6 +57,8 @@ class SettingController extends Controller
             'themeDefaults' => ThemeTokens::resolve($business->brandColor(), $this->themes->effective($business)['colors'] ?? []),
             'versions' => $tab === 'history' ? $this->themes->history($business) : collect(),
             'previewing' => $this->branding->previewing($business),
+            'extraLogos' => collect(BrandingService::EXTRA_LOGOS)->mapWithKeys(fn ($field, $key) => [$field => $this->branding->logoFor($business, str_replace(['logo_', '_path'], '', $key))])->all(),
+            'details' => collect(['short_name', 'slogan', 'description'])->mapWithKeys(fn ($key) => [$key => $this->branding->detail($business, $key)])->all(),
         ]);
     }
 
@@ -70,6 +72,9 @@ class SettingController extends Controller
                 'name' => ['required', 'string', 'max:255'],
                 'email' => ['nullable', 'email', 'max:255'],
                 'legal_name' => ['nullable', 'string', 'max:255'],
+                'short_name' => ['nullable', 'string', 'max:30'],
+                'slogan' => ['nullable', 'string', 'max:120'],
+                'description' => ['nullable', 'string', 'max:500'],
                 'tax_id' => ['nullable', 'string', 'max:64'],
                 'registration_no' => ['nullable', 'string', 'max:64'],
                 'address' => ['nullable', 'string', 'max:500'],
@@ -231,10 +236,17 @@ class SettingController extends Controller
             'font' => ['nullable', Rule::in(array_keys(Fonts::LIST))],
             'logo' => ['nullable', 'image', 'max:4096'],
             'logo_dark' => ['nullable', 'image', 'max:4096'],
+            'logo_login' => ['nullable', 'image', 'max:4096'],
+            'logo_mobile' => ['nullable', 'image', 'max:2048'],
             'favicon' => ['nullable', 'image', 'max:1024'],
         ]);
 
-        return $this->branding->saveLook($this->settings->current(), $data, $request->file('logo'), $request->file('logo_dark'), $request->file('favicon'), $request->boolean('remove_logo_dark'));
+        $business = $this->settings->current();
+        $this->branding->saveExtraLogos($business,
+            ['logo_login' => $request->file('logo_login'), 'logo_mobile' => $request->file('logo_mobile')],
+            ['logo_login' => $request->boolean('remove_logo_login'), 'logo_mobile' => $request->boolean('remove_logo_mobile')]);
+
+        return $this->branding->saveLook($business, $data, $request->file('logo'), $request->file('logo_dark'), $request->file('favicon'), $request->boolean('remove_logo_dark'));
     }
 
     /** The original one-form settings (name, email, colour, logo, favicon). */

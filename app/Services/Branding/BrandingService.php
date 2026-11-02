@@ -25,7 +25,10 @@ class BrandingService extends BaseService
     public const MAX_PAYMENT_METHODS = 6;
 
     /** Text fields of the Business details tab. */
-    public const DETAILS = ['legal_name', 'tax_id', 'registration_no', 'address', 'phone', 'website'];
+    public const DETAILS = ['legal_name', 'short_name', 'slogan', 'description', 'tax_id', 'registration_no', 'address', 'phone', 'website'];
+
+    /** Optional logos, each falling back to the main logo (setting key => upload field). */
+    public const EXTRA_LOGOS = ['logo_login_path' => 'logo_login', 'logo_mobile_path' => 'logo_mobile'];
 
     public function __construct(protected BusinessSettings $settings) {}
 
@@ -71,7 +74,37 @@ class BrandingService extends BaseService
     /** Public URL of the logo for dark backgrounds, if uploaded. */
     public function darkLogoUrl(Business $business): ?string
     {
-        $path = $business->exists ? $this->settings->get('branding.logo_dark_path', null, $business) : null;
+        return $this->publicImage($business, 'logo_dark_path');
+    }
+
+    /**
+     * A logo for one place ("login", "mobile"), if uploaded; null = use the main logo.
+     */
+    public function logoFor(Business $business, string $place): ?string
+    {
+        return $this->publicImage($business, 'logo_'.$place.'_path');
+    }
+
+    /** A short text value from Business details (short name, slogan, description). */
+    public function detail(Business $business, string $key): ?string
+    {
+        return $business->exists ? $this->settings->get('branding.'.$key, null, $business) : null;
+    }
+
+    /**
+     * @param  array<string, ?UploadedFile>  $files  upload field => file
+     * @param  array<string, bool>  $remove  upload field => remove
+     */
+    public function saveExtraLogos(Business $business, array $files, array $remove): void
+    {
+        foreach (self::EXTRA_LOGOS as $key => $field) {
+            $this->replaceImage($business, $key, $files[$field] ?? null, (bool) ($remove[$field] ?? false), 'public');
+        }
+    }
+
+    private function publicImage(Business $business, string $key): ?string
+    {
+        $path = $business->exists ? $this->settings->get('branding.'.$key, null, $business) : null;
 
         return $path ? '/storage/'.$path : null;
     }

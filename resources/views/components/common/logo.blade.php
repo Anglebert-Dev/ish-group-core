@@ -3,6 +3,7 @@
     'stacked' => false,
     'compact' => false,
     'href' => null,
+    'place' => null,   // "login" or "mobile": that place's own logo when uploaded
 ])
 
 @php
@@ -10,7 +11,8 @@
     // otherwise a text wordmark built from the business name.
     // On a dark background, the logo made for dark backgrounds (Branding → Look) when there is one.
     $darkLogo = $dark ? app(\App\Services\Branding\BrandingService::class)->darkLogoUrl($branding) : null;
-    $custom = $darkLogo ?? $branding->logoUrl();
+    $placeLogo = $place ? app(\App\Services\Branding\BrandingService::class)->logoFor($branding, $place) : null;
+    $custom = $placeLogo ?? $darkLogo ?? $branding->logoUrl();
     $name = $branding->companyName();
     $initial = mb_strtoupper(mb_substr($name, 0, 1));
 

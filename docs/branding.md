@@ -1,6 +1,6 @@
 # Branding & Appearance: Plan
 
-Created: 02/11/2026. Status: **B0 done (02/11/2026).** Update §8 after each phase, so work can pick up where it stopped.
+Created: 02/11/2026. Status: **B0 and B1 done (02/11/2026).** Update §8 after each phase, so work can pick up where it stopped.
 
 This takes the full "Branding & Appearance Module" requirements and sets out, section by section, **what we already have**, **what we build**, and **what we leave out and why**. Printing and document branding are already built (`docs/branding-print-build-guide.md`); this plan builds on them.
 
@@ -254,6 +254,36 @@ Off by default. Needs package feature `branding.custom_css` and permission `publ
 
 ## 4. What the B1 clean-up involves
 
+**B1 notes:**
+- **Tokens:**
+  - `App\Support\Branding\ThemeTokens` defines the defaults (today's look) and resolves them against the brand and overrides.
+  - CSS variables hold RGB channels (`--c-card: 255 255 255`), so opacity classes like `bg-brand/20` work. `--brand`, `--brand-dark` and `--brand-light` stay as hex for hand-written CSS.
+  - New colour names: `page`, `card`, `accent`, `link`, `info`, `sidebar` / `sidebar-ink`, `header` / `header-ink`.
+  - One shared `<x-common.tailwind />` replaces five copies of the Tailwind config (app, auth, 403, pricing, website).
+- **The clean-up was smaller than counted above:**
+  - `bg-white` (359) → `bg-card`, plus a handful of greys
+  - translucent white over colour (`bg-white/20`) is allowed
+  - the website's dark hero and footer, the installer, print and email stay fixed on purpose
+  - `ThemeTokensTest` fails on any new raw colour class
+- **Versions:**
+  - stored in `branding_versions` (business, number, status, payload)
+  - `App\Services\Branding\ThemeService` runs draft, publish, discard, restore, reset, history and preview
+  - layers, in order: built-in → platform published → business published → draft (preview only)
+  - published payloads are cached per business and cleared on publish
+  - `ThemeSchema` keeps only known keys and valid values. The brand colour stays on Look, because it's identity and also used by emails and print.
+- **Who can do what:** `update settings.setting` edits drafts. **Publishing needs `approve settings.setting`** (an existing permission, so roles can split editing from publishing).
+- **Preview:** a session flag for that user only. It's checked against their business and edit permission, and ended by Publish, Discard or "Stop preview". A dark banner shows while previewing.
+- **Screens:** Branding → **Theme** (colour fields grouped as Brand, Backgrounds, Text, Sidebar & header, Status; blank = default, shown as the placeholder) and **History** (versions, Restore, Reset to platform look). A publish bar appears on every Branding tab while a draft exists.
+- **Sidebar and header** follow `sidebar-ink` and `header-ink` (icons, headings and borders as tints), and the sidebar uses the dark-background logo when its colour is dark (`ColorLibrary::isDark`).
+- **Identity extras:**
+  - short name, slogan and description on Business details
+  - login page logo and phone logo on Look
+  - the phone header shows the phone logo, else the short name; the login page uses the login logo
+  - slogan and description are stored now and will be used by B5 (login) and B6 (dashboard welcome)
+- **Package features:** Billing's package "features" are only marketing text. Since everything P0–P2 is for all plans, per-package switches (`Entitlements::allowsCapability`, package checkboxes) are built with B10, the first feature that needs one.
+- **Checked:** a scripted browser walk-through on a throwaway QA database with the demo factory: save draft, preview (banner), publish, History, dark sidebar, phone header. It caught two bugs: dark sidebar text was unreadable, and the banner stayed after publishing.
+- **Run `php artisan migrate`** after pulling (new table `branding_versions`).
+
 Dark mode, page and card colours and density all depend on views using names, not fixed colours:
 - `bg-white` (~370) → `bg-card`
 - `text-gray-*`, `bg-gray-*`, `border-gray-*`, `slate-*` (~390) → `ink`, `body`, `muted`, `surface`, `line`
@@ -295,7 +325,7 @@ For each phase:
 | # | Phase | Priority | Status |
 |---|---|---|---|
 | B0 | System font: one font choice for the whole system (app, login, emails, error pages, website, PDF), bundled font files, dompdf registration | P0 | ✅ 02/11/2026 |
-| B1 | Foundation: theme document + `ThemeSchema`, versions (draft/publish/restore/reset), tokens + compiler + cache, platform defaults, package features, fallbacks; identity extras (short name, slogan, description, login and mobile logos); **move all views and components onto tokens** + raw-colour guard | P0 | ☐ |
+| B1 | Foundation: theme document + `ThemeSchema`, versions (draft/publish/restore/reset), tokens + compiler + cache, platform defaults, fallbacks; identity extras (short name, slogan, description, login and mobile logos); **move all views and components onto tokens** + raw-colour guard. Package features moved to B10. | P0 | ✅ 02/11/2026 |
 | B2 | Colours & themes: full palette, picker/HEX/RGB/HSL, palettes, contrast check + suggestions, dark and system mode, user override, chart palette | P0 | ☐ |
 | B3 | Layout & typography: sidebar, header, density, content width, cards, corners, buttons, switches (breadcrumbs, titles, footer, back-to-top, transitions); fonts and type scale | P0 | ☐ |
 | B4 | Studio: live preview with devices, pages, light/dark; history screen | P0 | ☐ |

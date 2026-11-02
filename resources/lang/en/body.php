@@ -878,6 +878,18 @@ return [
     'audit_log_customer_invited' => 'Website access email sent to :name',
     'audit_log_customer_portal_revoked' => 'Website access removed for :name',
 
+    // Branding: identity extras (docs/branding.md §3.1)
+    'brand_short_name' => 'Short name',
+    'brand_short_name_hint' => 'Shown where space is tight, like the phone header. Blank: the full name.',
+    'brand_slogan' => 'Slogan',
+    'brand_slogan_hint' => 'A short line under your name on the login page and dashboard.',
+    'brand_description' => 'Short description',
+    'brand_description_hint' => 'One or two sentences about the business, for the login page and your website.',
+    'brand_logo_login' => 'Login page logo',
+    'brand_logo_login_hint' => 'Optional. Blank: the main logo.',
+    'brand_logo_mobile' => 'Phone logo',
+    'brand_logo_mobile_hint' => 'Optional: a small, square-ish mark for the phone header. Blank: your short name.',
+
     // Branding → Theme (docs/branding.md §2.2)
     'brand_tab_theme' => 'Theme',
     'brand_tab_history' => 'History',

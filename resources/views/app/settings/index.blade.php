@@ -89,6 +89,8 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
                     <x-common.input name="name" :label="__('body.company_name')" :value="old('name', $setting->name)" :hint="__('body.company_name_hint')" required />
                     <x-common.input name="legal_name" :label="__('body.brand_legal_name')" :value="old('legal_name', $brand->legalName)" :hint="__('body.brand_legal_name_hint')" />
+                    <x-common.input name="short_name" :label="__('body.brand_short_name')" :value="old('short_name', $details['short_name'])" :hint="__('body.brand_short_name_hint')" maxlength="30" />
+                    <x-common.input name="slogan" :label="__('body.brand_slogan')" :value="old('slogan', $details['slogan'])" :hint="__('body.brand_slogan_hint')" maxlength="120" />
                     <x-common.input name="tax_id" :label="__('body.brand_tax_id')" :value="old('tax_id', $brand->taxId)" />
                     <x-common.input name="registration_no" :label="__('body.brand_registration_no')" :value="old('registration_no', $brand->registrationNo)" />
                     <x-common.input type="email" name="email" :label="__('body.business_email')" :value="old('email', $setting->email)" :hint="__('body.business_email_hint')" />
@@ -96,6 +98,7 @@
                     <x-common.input name="website" :label="__('body.brand_website')" :value="old('website', $brand->website)" placeholder="www.example.com" />
                 </div>
                 <x-common.textarea name="address" :label="__('body.brand_address')" :value="old('address', $brand->address)" :rows="3" />
+                <x-common.textarea name="description" :label="__('body.brand_description')" :value="old('description', $details['description'])" :rows="3" :hint="__('body.brand_description_hint')" />
             </div>
         @endif
 
@@ -145,6 +148,14 @@
                             <x-common.checkbox name="remove_logo_dark" value="1" inline :label="__('body.brand_remove')" />
                         @endif
                     </div>
+                    @foreach (['logo_login' => 4, 'logo_mobile' => 2] as $field => $size)
+                        <div class="space-y-2">
+                            <x-common.file-input :name="$field" :label="__('body.brand_'.$field)" accept="image/*" :max-size-mb="$size" :existing-url="$extraLogos[$field]" :hint="__('body.brand_'.$field.'_hint')" />
+                            @if ($extraLogos[$field])
+                                <x-common.checkbox :name="'remove_'.$field" value="1" inline :label="__('body.brand_remove')" />
+                            @endif
+                        </div>
+                    @endforeach
                     <x-common.file-input name="favicon" :label="__('body.favicon')" accept="image/*" :max-size-mb="1" :existing-url="$setting->faviconUrl()" />
                 </div>
             </div>
