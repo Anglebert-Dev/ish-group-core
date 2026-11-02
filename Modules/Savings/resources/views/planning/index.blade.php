@@ -24,7 +24,7 @@
                         @php $late = $e->expected_date->lt(now()->startOfDay()); @endphp
                         <details class="px-5 py-3">
                             <summary class="cursor-pointer flex flex-wrap items-center justify-between gap-2 text-sm">
-                                <span><b class="{{ $late ? 'text-danger' : '' }}">{{ $e->expected_date->format('d/m/Y') }}</b> · {{ $e->description }}
+                                <span><b class="{{ $late ? 'text-danger' : '' }}">{{ $e->expected_date->format(short_date_format()) }}</b> · {{ $e->description }}
                                     <span class="text-xs text-muted">{{ __('savings::savings.kind_'.$e->kind) }} · {{ $e->account?->name }}{{ $e->toAccount ? ' → '.$e->toAccount->name : '' }}</span>
                                     <x-common.badge :color="$late ? 'danger' : ($e->confidence === 'uncertain' ? 'warning' : 'muted')">{{ $late ? __('savings::savings.late') : __('savings::savings.confidence_'.$e->confidence) }}</x-common.badge></span>
                                 <span class="font-semibold {{ in_array($e->kind, ['income', 'repayment_in']) ? 'text-success' : '' }}">{{ $m($e->amount, $e->account?->currency) }}</span>
@@ -95,7 +95,7 @@
                 <div class="divide-y divide-line">
                     @forelse ($commitments as $c)
                         <div class="px-5 py-3 flex flex-wrap items-center justify-between gap-2 text-sm {{ $c->status !== 'open' ? 'opacity-60' : '' }}">
-                            <span>{{ $c->description }} <span class="text-xs text-muted">{{ $c->account?->name }}{{ $c->due_date ? ' · '.$c->due_date->format('d/m/Y') : '' }} · {{ $c->status }}</span></span>
+                            <span>{{ $c->description }} <span class="text-xs text-muted">{{ $c->account?->name }}{{ $c->due_date ? ' · '.$c->due_date->format(short_date_format()) : '' }} · {{ $c->status }}</span></span>
                             <span class="flex items-center gap-2"><b>{{ $m($c->amount, $c->account?->currency) }}</b>
                                 @if ($c->status === 'open' && $can('update savings.planning'))
                                     <form action="{{ route('savings.planning.commitments.settle', $c) }}" method="POST" class="flex gap-1">

@@ -974,6 +974,41 @@ return [
     'emails_footer_hint' => 'Small print at the bottom, e.g. opening hours or a legal line.',
     'emails_show_contact' => 'Show our phone, email, website and address in the footer',
 
+    // Documents extras (docs/branding.md §3.11)
+    'design_watermark_text' => 'Watermark text',
+    'design_watermark_placeholder' => 'e.g. COPY',
+    'design_watermark_text_hint' => 'Across documents that have no status of their own; PAID, CANCELLED and the like always show instead.',
+    'design_background' => 'Page background',
+    'design_background_none' => 'White',
+    'design_background_tint' => 'Faint tint of the accent colour',
+    'design_type_layout' => 'Layout for this document',
+    'design_type_layout_same' => 'Same as above',
+
+    // Formats, support & footer (docs/branding.md §3.17)
+    'brand_date_format' => 'Short dates',
+    'brand_number_format' => 'Numbers and amounts',
+    'brand_support' => 'Support & footer',
+    'brand_support_hint' => 'Where your staff get help, and a footer at the bottom of every page. Leave empty for none.',
+    'brand_support_email' => 'Support email',
+    'brand_support_phone' => 'Support phone',
+    'brand_help_url' => 'Help page (link)',
+    'brand_app_footer' => 'Footer text',
+    'brand_copyright' => 'Copyright line',
+    'help_support' => 'Help & support',
+
+    // Error pages (docs/branding.md §3.17)
+    'error_home' => 'Back to the start',
+    'error_404_title' => 'Page not found',
+    'error_404_message' => 'The page you are looking for does not exist or has moved.',
+    'error_419_title' => 'Page expired',
+    'error_419_message' => 'The page was open for too long. Go back, refresh it and try again.',
+    'error_429_title' => 'Too many requests',
+    'error_429_message' => 'Please wait a minute before trying again.',
+    'error_500_title' => 'Something went wrong',
+    'error_500_message' => 'We have been told and are looking into it. Please try again in a moment.',
+    'error_503_title' => 'Back soon',
+    'error_503_message' => 'We are updating the system. It will be back in a few minutes.',
+
     // Presets (docs/branding.md §3.14)
     'presets' => 'Presets',
     'presets_hint' => 'A ready-made look for colours, light/dark, layout and fonts. Applying one changes the draft only (your dashboard and menu stay); save, preview, then publish.',

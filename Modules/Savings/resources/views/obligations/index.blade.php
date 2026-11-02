@@ -17,7 +17,7 @@
                     @forelse ($rows as $r)
                         <tr>
                             <td class="px-5 py-3"><a href="{{ route('savings.obligations.show', $r['o']) }}" class="font-medium text-ink hover:text-brand">{{ $r['o']->counterparty ?: $r['o']->description }}</a>
-                                <span class="block text-xs text-muted">{{ __('savings::savings.direction_'.$r['o']->direction) }} · {{ $r['o']->description }}{{ $r['o']->due_date ? ' · '.$r['o']->due_date->format('d/m/Y') : '' }}</span></td>
+                                <span class="block text-xs text-muted">{{ __('savings::savings.direction_'.$r['o']->direction) }} · {{ $r['o']->description }}{{ $r['o']->due_date ? ' · '.$r['o']->due_date->format(short_date_format()) : '' }}</span></td>
                             <td class="px-5 py-3 text-right">{{ $m($r['original'], $r['o']->currency) }}</td>
                             <td class="px-5 py-3 text-right font-semibold">{{ $m($r['outstanding'], $r['o']->currency) }}</td>
                             <td class="px-5 py-3"><x-common.badge :color="match ($r['state']) { 'settled' => 'success', 'overdue', 'disputed' => 'danger', 'written_off' => 'muted', 'partly_repaid' => 'warning', default => 'brand' }">{{ __('savings::savings.state_'.$r['state']) }}</x-common.badge></td>

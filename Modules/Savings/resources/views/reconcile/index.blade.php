@@ -8,7 +8,7 @@
                     @forelse ($history as $rec)
                         @php $m = fn ($v) => \Modules\Savings\Support\Money::format((int) $v, $rec->account?->currency); @endphp
                         <tr>
-                            <td class="px-5 py-3"><a href="{{ route('savings.reconcile.show', $rec) }}" class="font-medium text-ink hover:text-brand">{{ $rec->account?->name }}</a><span class="block text-xs text-muted">{{ $rec->statement_date->format('d/m/Y') }}</span></td>
+                            <td class="px-5 py-3"><a href="{{ route('savings.reconcile.show', $rec) }}" class="font-medium text-ink hover:text-brand">{{ $rec->account?->name }}</a><span class="block text-xs text-muted">{{ $rec->statement_date->format(short_date_format()) }}</span></td>
                             <td class="px-5 py-3 text-right">{{ $m($rec->statement_balance) }}</td>
                             <td class="px-5 py-3 text-right font-semibold {{ $rec->difference ? 'text-danger' : 'text-success' }}">{{ $m($rec->difference) }}</td>
                             <td class="px-5 py-3"><x-common.badge :color="match ($rec->status) { 'matched' => 'success', 'open' => 'danger', default => 'warning' }">{{ __('savings::savings.status_'.$rec->status) }}</x-common.badge></td>

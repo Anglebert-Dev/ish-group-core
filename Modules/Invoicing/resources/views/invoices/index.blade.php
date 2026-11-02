@@ -40,8 +40,8 @@
                     <tr class="hover:bg-surface">
                         <td class="px-5 py-3.5 whitespace-nowrap"><a href="{{ route('invoicing.invoices.show', $invoice) }}" class="font-medium text-ink hover:text-brand">{{ $invoice->number }}</a></td>
                         <td class="px-5 py-3.5">{{ $invoice->customer?->displayName() }}</td>
-                        <td class="px-5 py-3.5 whitespace-nowrap">{{ $invoice->invoice_date->format('d/m/Y') }}</td>
-                        <td class="px-5 py-3.5 whitespace-nowrap {{ $invoice->isOverdue() ? 'text-danger font-semibold' : '' }}">{{ $invoice->due_date?->format('d/m/Y') ?? '—' }}</td>
+                        <td class="px-5 py-3.5 whitespace-nowrap">{{ $invoice->invoice_date->format(short_date_format()) }}</td>
+                        <td class="px-5 py-3.5 whitespace-nowrap {{ $invoice->isOverdue() ? 'text-danger font-semibold' : '' }}">{{ $invoice->due_date?->format(short_date_format()) ?? '—' }}</td>
                         <td class="px-5 py-3.5 whitespace-nowrap text-right">{{ money($invoice->total) }}</td>
                         <td class="px-5 py-3.5 whitespace-nowrap text-right font-semibold text-ink">{{ money($invoice->balance()) }}</td>
                         <td class="px-5 py-3.5 whitespace-nowrap">

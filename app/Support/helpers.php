@@ -2,6 +2,9 @@
 
 use App\Enums\ActivityLogAction;
 use App\Services\ActivityLog\ActivityLogService;
+use App\Services\Branding\BrandingService;
+use App\Support\Settings\BusinessSettings;
+use App\Support\Tenancy\CurrentBusiness;
 use Illuminate\Database\Eloquent\Model;
 
 /*
@@ -41,13 +44,43 @@ if (! function_exists('money')) {
      */
     function money(float|int|string|null $amount, ?string $currency = null): string
     {
-        $currency ??= (string) (app(\App\Support\Tenancy\CurrentBusiness::class)->id()
-            ? app(\App\Support\Settings\BusinessSettings::class)->get('business.currency', config('app.currency', 'RWF'))
+        $currency ??= (string) (app(CurrentBusiness::class)->id()
+            ? app(BusinessSettings::class)->get('business.currency', config('app.currency', 'RWF'))
             : config('app.currency', 'RWF'));
         $value = (float) $amount;
         $decimals = abs($value - round($value)) < 0.005 ? 0 : 2;
+        [$point, $thousands] = number_separators();
 
-        return $currency.' '.number_format($value, $decimals);
+        return $currency.' '.number_format($value, $decimals, $point, $thousands);
+    }
+}
+
+if (! function_exists('number_separators')) {
+    /**
+     * The business's way of writing numbers (Branding → Business details):
+     * [decimal point, thousands separator].
+     *
+     * @return array{0: string, 1: string}
+     */
+    function number_separators(): array
+    {
+        $style = app(CurrentBusiness::class)->id()
+            ? app(BusinessSettings::class)->get('branding.number_format')
+            : null;
+
+        return BrandingService::NUMBER_FORMATS[$style] ?? ['.', ','];
+    }
+}
+
+if (! function_exists('short_date_format')) {
+    /** The business's short date ("d/m/Y", "m/d/Y", "Y-m-d" or "d.m.Y"), for ->format(). */
+    function short_date_format(): string
+    {
+        $format = app(CurrentBusiness::class)->id()
+            ? app(BusinessSettings::class)->get('branding.date_format')
+            : null;
+
+        return in_array($format, BrandingService::DATE_FORMATS, true) ? $format : 'd/m/Y';
     }
 }
 

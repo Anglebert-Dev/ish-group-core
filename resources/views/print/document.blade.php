@@ -22,6 +22,9 @@
         @page { size: {{ $paperSizes[$design->paper] ?? 'A4' }} {{ $doc->orientation }}; margin: {{ $compact ? '12mm 12mm 18mm' : '16mm 15mm 22mm' }}; }
         {!! $design->fontFaces($mode) !!}
         * { box-sizing: border-box; }
+        @if ($design->background === 'tint')
+            html, body { background: {{ \App\Libraries\ColorLibrary::lighten($accent, 0.97) }}; }
+        @endif
         body { margin: 0; font-family: {!! $design->fontStack($mode) !!}; font-size: {{ $base }}px; line-height: 1.45; color: #1F2937; }
         table { border-collapse: collapse; width: 100%; }
         td, th { vertical-align: top; }
@@ -114,8 +117,9 @@
     <div class="sheet">
 @endif
 
-@if ($doc->watermark && $design->showWatermark)
-    <div class="watermark">{{ $doc->watermark }}</div>
+@php $mark = $doc->watermark ?: $design->watermarkText; @endphp
+@if ($mark && $design->showWatermark)
+    <div class="watermark">{{ $mark }}</div>
 @endif
 
 {{-- Footer first so dompdf repeats it on every page --}}

@@ -26,7 +26,7 @@
         <div class="space-y-4">
             <x-common.info-card :title="__('delivery::delivery.note')" :rows="[
                 [__('delivery::delivery.order'), $note->salesOrder?->number],
-                [__('delivery::delivery.delivered_on'), $note->delivered_on->format('d/m/Y')],
+                [__('delivery::delivery.delivered_on'), $note->delivered_on->format(short_date_format())],
                 [__('delivery::delivery.receiver_name'), $note->receiver_name],
                 [__('delivery::delivery.receiver_phone'), $note->receiver_phone],
                 [__('delivery::delivery.vehicle'), $note->vehicle],

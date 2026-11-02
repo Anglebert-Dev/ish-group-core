@@ -148,7 +148,18 @@ class AppServiceProvider extends ServiceProvider
                 return;
             }
 
-            $branding = app(SettingService::class)->current();
+            // Error pages (500, 503) render even when the database is down:
+            // they then get no branding and fall back to the built-in look.
+            try {
+                $branding = app(SettingService::class)->current();
+            } catch (\Throwable $e) {
+                if (! str_starts_with($view->name(), 'errors.')) {
+                    throw $e;
+                }
+                $view->with('branding', null);
+
+                return;
+            }
             $view->with('branding', $branding);
             $view->with('company', $branding->companyName());
             $view->with('appTimezone', config('app.timezone'));

@@ -24,6 +24,9 @@ final class PrintDesign
 
     public const LOGO_SIZES = ['small' => 34, 'medium' => 50, 'large' => 70];
 
+    /** Page background: plain white, or a faint tint of the accent colour. */
+    public const BACKGROUNDS = ['none', 'tint'];
+
     /** Toggles and their defaults. */
     public const SWITCHES = [
         'show_contact' => true,
@@ -51,7 +54,24 @@ final class PrintDesign
         public readonly bool $showSignature,
         public readonly bool $showStamp,
         public readonly array $types,
+        public readonly ?string $watermarkText = null,
+        public readonly string $background = 'none',
     ) {}
+
+    /**
+     * The design for one kind of document: its own layout when chosen
+     * (e.g. Modern for quotations, Compact for receipts).
+     */
+    public function forType(string $type): self
+    {
+        $layout = $this->types[$type]['layout'] ?? null;
+        if (! in_array($layout, self::LAYOUTS, true) || $layout === $this->layout) {
+            return $this;
+        }
+
+        return new self($layout, $this->paper, $this->accent, $this->font, $this->logoPosition, $this->logoSize, $this->headerNote, $this->footerText,
+            $this->showContact, $this->showWatermark, $this->showPayment, $this->showSignature, $this->showStamp, $this->types, $this->watermarkText, $this->background);
+    }
 
     public static function for(Business $business, ?Brand $brand = null, array $overrides = []): self
     {
@@ -78,6 +98,9 @@ final class PrintDesign
             showSignature: $flag('show_signature'),
             showStamp: $flag('show_stamp'),
             types: is_array($types = $get('types', [])) ? $types : [],
+            // E.g. "COPY": only on documents without a status mark (PAID, CANCELLED… always win).
+            watermarkText: self::text(mb_substr((string) $get('watermark_text'), 0, 30)),
+            background: $pick('background', self::BACKGROUNDS, 'none'),
         );
     }
 

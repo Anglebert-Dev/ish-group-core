@@ -20,9 +20,9 @@
         <div class="xl:col-span-2 space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <x-common.info-card :title="__('quotations::quotations.quote')" :rows="[
-                    [__('quotations::quotations.quote_date'), $quote->quote_date->format('d/m/Y')],
-                    [__('quotations::quotations.valid_until'), $quote->valid_until?->format('d/m/Y')],
-                    [__('quotations::quotations.follow_up_date'), $quote->follow_up_date?->format('d/m/Y')],
+                    [__('quotations::quotations.quote_date'), $quote->quote_date->format(short_date_format())],
+                    [__('quotations::quotations.valid_until'), $quote->valid_until?->format(short_date_format())],
+                    [__('quotations::quotations.follow_up_date'), $quote->follow_up_date?->format(short_date_format())],
                     [__('quotations::quotations.store'), $quote->store?->name],
                 ]" />
                 <x-common.info-card :title="__('quotations::quotations.customer')" :rows="[
@@ -44,7 +44,7 @@
                 </div>
                 @forelse ($quote->deposits as $deposit)
                     <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-2 text-sm {{ $deposit->isReversed() ? 'opacity-60' : '' }}">
-                        <span>{{ $deposit->paid_on->format('d/m/Y') }} · {{ $methods[$deposit->method] ?? $deposit->method }}@if ($deposit->reference) · {{ $deposit->reference }}@endif</span>
+                        <span>{{ $deposit->paid_on->format(short_date_format()) }} · {{ $methods[$deposit->method] ?? $deposit->method }}@if ($deposit->reference) · {{ $deposit->reference }}@endif</span>
                         <span class="flex items-center gap-2">
                             <b class="{{ $deposit->isReversed() ? 'line-through' : 'text-success' }}">{{ money($deposit->amount) }}</b>
                             <a href="{{ route('print.show', ['quotation_deposit', $deposit->getRouteKey()]) }}" target="_blank" rel="noopener" class="text-xs font-semibold text-brand hover:text-brand-dark">{{ __('quotations::quotations.print_receipt_short') }}</a>

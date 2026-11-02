@@ -14,8 +14,8 @@
         <div class="xl:col-span-2 space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <x-common.info-card :title="__('invoicing::invoicing.invoice')" :rows="[
-                    [__('invoicing::invoicing.invoice_date'), $invoice->invoice_date->format('d/m/Y')],
-                    [__('invoicing::invoicing.due_date'), $invoice->due_date?->format('d/m/Y')],
+                    [__('invoicing::invoicing.invoice_date'), $invoice->invoice_date->format(short_date_format())],
+                    [__('invoicing::invoicing.due_date'), $invoice->due_date?->format(short_date_format())],
                     [__('invoicing::invoicing.store'), $invoice->store?->name],
                     [__('invoicing::invoicing.sales_order'), $salesOrder?->number],
                 ]" />
@@ -63,7 +63,7 @@
                         @forelse ($invoice->payments as $payment)
                             <tr class="{{ $payment->isReversed() ? 'opacity-60' : '' }}">
                                 <td class="px-5 py-3 whitespace-nowrap font-medium text-ink">{{ $payment->number }}</td>
-                                <td class="px-5 py-3 whitespace-nowrap text-muted">{{ $payment->paid_on->format('d/m/Y') }}</td>
+                                <td class="px-5 py-3 whitespace-nowrap text-muted">{{ $payment->paid_on->format(short_date_format()) }}</td>
                                 <td class="px-5 py-3">{{ $payment->method->label() }}@if ($payment->reference)<span class="text-muted"> · {{ $payment->reference }}</span>@endif</td>
                                 <td class="px-5 py-3 text-right whitespace-nowrap font-semibold {{ $payment->isReversed() ? 'line-through' : 'text-success' }}">{{ money($payment->amount) }}</td>
                                 <td class="px-5 py-3 text-right whitespace-nowrap">

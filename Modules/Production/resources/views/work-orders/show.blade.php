@@ -37,8 +37,8 @@
                 <x-common.info-card :title="__('production::production.work_order')" :rows="[
                     [__('production::production.line'), $workOrder->line],
                     [__('production::production.daily_target'), $workOrder->daily_target !== null ? \Modules\Inventory\Exceptions\InsufficientStock::format($workOrder->daily_target) : null],
-                    [__('production::production.start_date'), $workOrder->start_date?->format('d/m/Y')],
-                    [__('production::production.due_date'), $workOrder->due_date?->format('d/m/Y')],
+                    [__('production::production.start_date'), $workOrder->start_date?->format(short_date_format())],
+                    [__('production::production.due_date'), $workOrder->due_date?->format(short_date_format())],
                 ]" />
                 <x-common.info-card :title="__('production::production.product')" :rows="[
                     [__('production::production.product'), $workOrder->variant?->displayName()],
@@ -64,7 +64,7 @@
                     <tbody class="divide-y divide-line">
                         @forelse ($workOrder->entries as $entry)
                             <tr>
-                                <td class="px-5 py-3 whitespace-nowrap text-muted">{{ $entry->work_date->format('d/m/Y') }}</td>
+                                <td class="px-5 py-3 whitespace-nowrap text-muted">{{ $entry->work_date->format(short_date_format()) }}</td>
                                 <td class="px-5 py-3">{{ $entry->stage_name }}@if ($entry->kind === 'reject') <x-common.badge color="danger">{{ __('production::production.qc_reject') }}</x-common.badge>@endif</td>
                                 <td class="px-5 py-3 text-right font-semibold {{ $entry->quantity < 0 ? 'text-danger' : 'text-success' }}">{{ $entry->quantity > 0 ? '+' : '' }}@include('inventory::partials.qty', ['value' => $entry->quantity])</td>
                                 <td class="px-5 py-3 text-right">@include('inventory::partials.qty', ['value' => $entry->count_after])</td>

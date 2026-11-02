@@ -1,0 +1,1 @@
+@include('errors.layout', ['code' => 503, 'title' => __('body.error_503_title'), 'message' => __('body.error_503_message'), 'hideButton' => true, 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'])

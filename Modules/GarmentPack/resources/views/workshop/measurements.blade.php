@@ -7,7 +7,7 @@
     @forelse ($measurements as $set)
         <div class="rounded-xl border border-line p-4 space-y-2">
             <div class="flex items-center justify-between gap-3">
-                <p class="font-semibold text-ink">{{ $set->name }} <span class="text-xs text-muted font-normal">{{ $set->taken_on?->format('d/m/Y') }}</span></p>
+                <p class="font-semibold text-ink">{{ $set->name }} <span class="text-xs text-muted font-normal">{{ $set->taken_on?->format(short_date_format()) }}</span></p>
                 @if ($canEdit)
                     <form action="{{ route('garmentpack.measurements.destroy', $set) }}" method="POST">
                         @csrf @method('DELETE')

@@ -40,8 +40,8 @@
                     <tr class="hover:bg-surface">
                         <td class="px-5 py-3.5 whitespace-nowrap"><a href="{{ route('salesorders.orders.show', $order) }}" class="font-medium text-ink hover:text-brand">{{ $order->number }}</a></td>
                         <td class="px-5 py-3.5">{{ $order->customer?->displayName() }}</td>
-                        <td class="px-5 py-3.5 whitespace-nowrap">{{ $order->order_date->format('d/m/Y') }}</td>
-                        <td class="px-5 py-3.5 whitespace-nowrap {{ $order->isOverdue() ? 'text-danger font-semibold' : '' }}">{{ $order->due_date ? $order->due_date->format('d/m/Y') : '—' }}</td>
+                        <td class="px-5 py-3.5 whitespace-nowrap">{{ $order->order_date->format(short_date_format()) }}</td>
+                        <td class="px-5 py-3.5 whitespace-nowrap {{ $order->isOverdue() ? 'text-danger font-semibold' : '' }}">{{ $order->due_date ? $order->due_date->format(short_date_format()) : '—' }}</td>
                         <td class="px-5 py-3.5 whitespace-nowrap text-right font-semibold text-ink">{{ money($order->total) }}</td>
                         <td class="px-5 py-3.5 whitespace-nowrap">
                             <x-common.badge :color="$order->status->color()">{{ $order->status->label() }}</x-common.badge>

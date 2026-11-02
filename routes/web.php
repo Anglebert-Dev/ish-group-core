@@ -238,3 +238,7 @@ Route::prefix('app')->middleware(['auth:staff', 'auth.session', 'exclusive.porta
         Route::put('/settings', [PlatformSettingController::class, 'update'])->name('settings.update');
     });
 });
+
+// Unknown addresses: a 404 that still knows who is signed in (session runs),
+// so the error page wears their business's brand. Always matched last.
+Route::fallback(fn () => abort(404));

@@ -13,7 +13,7 @@
         <div class="bg-card border border-line rounded-xl p-4"><p class="text-xs uppercase text-muted font-semibold">{{ __('savings::savings.original') }}</p><p class="text-lg font-display font-bold">{{ $m($original) }}</p></div>
         <div class="bg-card border border-line rounded-xl p-4"><p class="text-xs uppercase text-muted font-semibold">{{ __('savings::savings.outstanding') }}</p><p class="text-lg font-display font-bold {{ $outstanding > 0 ? 'text-danger' : 'text-success' }}">{{ $m($outstanding) }}</p></div>
         <div class="bg-card border border-line rounded-xl p-4"><p class="text-xs uppercase text-muted font-semibold">{{ __('body.status') }}</p><p class="mt-2"><x-common.badge>{{ __('savings::savings.state_'.$state) }}</x-common.badge></p></div>
-        <div class="bg-card border border-line rounded-xl p-4"><p class="text-xs uppercase text-muted font-semibold">{{ __('savings::savings.due_date') }}</p><p class="text-lg font-display font-bold">{{ $o->due_date?->format('d/m/Y') ?? '—' }}</p></div>
+        <div class="bg-card border border-line rounded-xl p-4"><p class="text-xs uppercase text-muted font-semibold">{{ __('savings::savings.due_date') }}</p><p class="text-lg font-display font-bold">{{ $o->due_date?->format(short_date_format()) ?? '—' }}</p></div>
     </div>
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
@@ -22,7 +22,7 @@
                 <h2 class="font-display font-bold text-ink">{{ __('savings::savings.explanation') }}</h2>
                 @forelse ($history as $h)
                     <div class="flex justify-between gap-3 text-sm border-b border-line pb-1.5">
-                        <span><span class="text-muted">{{ \Illuminate\Support\Carbon::parse($h['date'])->format('d/m/Y') }}</span> · {{ $h['label'] }}
+                        <span><span class="text-muted">{{ \Illuminate\Support\Carbon::parse($h['date'])->format(short_date_format()) }}</span> · {{ $h['label'] }}
                             @if ($h['transaction'])<a href="{{ route('savings.transactions.show', $h['transaction']) }}" class="text-brand text-xs">{{ $h['transaction']->description }} →</a>@endif</span>
                         @include('savings::partials.money', ['v' => $h['amount'], 'c' => $o->currency, 'signed' => true])
                     </div>

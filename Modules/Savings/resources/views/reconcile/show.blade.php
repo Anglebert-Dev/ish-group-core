@@ -1,6 +1,6 @@
 @php $m = fn ($v) => \Modules\Savings\Support\Money::format((int) $v, $rec->account?->currency); $can = fn ($p) => \App\Helpers\AuthHelper::can($p); @endphp
 <x-layouts.app :title="__('savings::savings.reconcile')">
-    <x-common.page-header :title="$rec->account?->name.' · '.$rec->statement_date->format('d/m/Y')">
+    <x-common.page-header :title="$rec->account?->name.' · '.$rec->statement_date->format(short_date_format())">
         <x-slot:actions><x-common.button href="{{ route('savings.reconcile.index') }}" variant="secondary" size="sm">← {{ __('savings::savings.reconcile') }}</x-common.button></x-slot:actions>
     </x-common.page-header>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -19,7 +19,7 @@
                     @if ($look[$key]->isNotEmpty())
                         <p class="text-sm font-semibold">{{ __('savings::savings.'.$label) }}</p>
                         @foreach ($look[$key] as $entry)
-                            <a href="{{ route('savings.transactions.show', $entry->transaction) }}" class="flex justify-between text-sm hover:text-brand"><span>{{ $entry->effective_date->format('d/m/Y') }} · {{ $entry->transaction?->description }}</span>@include('savings::partials.money', ['v' => $entry->amount, 'c' => $rec->account?->currency, 'signed' => true])</a>
+                            <a href="{{ route('savings.transactions.show', $entry->transaction) }}" class="flex justify-between text-sm hover:text-brand"><span>{{ $entry->effective_date->format(short_date_format()) }} · {{ $entry->transaction?->description }}</span>@include('savings::partials.money', ['v' => $entry->amount, 'c' => $rec->account?->currency, 'signed' => true])</a>
                         @endforeach
                     @endif
                 @endforeach

@@ -29,8 +29,8 @@
                     <tr class="hover:bg-surface">
                         <td class="px-5 py-3.5"><a href="{{ route('purchasing.orders.show', $order) }}" class="font-medium text-ink hover:text-brand">{{ $order->number }}</a></td>
                         <td class="px-5 py-3.5">{{ $order->supplier?->name }}</td>
-                        <td class="px-5 py-3.5 whitespace-nowrap">{{ $order->order_date->format('d/m/Y') }}</td>
-                        <td class="px-5 py-3.5 whitespace-nowrap">{{ $order->expected_date?->format('d/m/Y') ?? '—' }}</td>
+                        <td class="px-5 py-3.5 whitespace-nowrap">{{ $order->order_date->format(short_date_format()) }}</td>
+                        <td class="px-5 py-3.5 whitespace-nowrap">{{ $order->expected_date?->format(short_date_format()) ?? '—' }}</td>
                         <td class="px-5 py-3.5 text-right">{{ money($order->total) }}</td>
                         <td class="px-5 py-3.5"><x-common.badge :color="$order->status->color()">{{ $order->status->label() }}</x-common.badge></td>
                     </tr>

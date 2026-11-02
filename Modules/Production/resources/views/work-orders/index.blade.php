@@ -55,7 +55,7 @@
                                 <span class="text-xs text-muted whitespace-nowrap">@include('inventory::partials.qty', ['value' => $wo->finished()]) / @include('inventory::partials.qty', ['value' => $wo->quantity])</span>
                             </div>
                         </td>
-                        <td class="px-5 py-3.5 whitespace-nowrap">{{ $wo->due_date?->format('d/m/Y') ?? '—' }}</td>
+                        <td class="px-5 py-3.5 whitespace-nowrap">{{ $wo->due_date?->format(short_date_format()) ?? '—' }}</td>
                         <td class="px-5 py-3.5"><x-common.badge :color="$wo->status->color()">{{ $wo->status->label() }}</x-common.badge></td>
                     </tr>
                 @empty

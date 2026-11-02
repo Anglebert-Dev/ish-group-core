@@ -41,7 +41,7 @@ class PrintService
     public function data(Document $document, Business $business, ?PrintDesign $design = null, string $mode = 'pdf'): array
     {
         $brand = $this->branding->brand($business);
-        $design ??= PrintDesign::for($business, $brand);
+        $design = ($design ?? PrintDesign::for($business, $brand))->forType($document->type);
         $brand = $document->issuer ? $brand->with($document->issuer) : $brand;
         $dark = $design->layout === 'modern';
 

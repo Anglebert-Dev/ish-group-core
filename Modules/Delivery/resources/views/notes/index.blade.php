@@ -23,7 +23,7 @@
                         <td class="px-5 py-3.5"><a href="{{ route('delivery.notes.show', $note) }}" class="font-medium text-ink hover:text-brand">{{ $note->number }}</a></td>
                         <td class="px-5 py-3.5">{{ $note->salesOrder?->number }}</td>
                         <td class="px-5 py-3.5">{{ $note->salesOrder?->customer?->displayName() }}</td>
-                        <td class="px-5 py-3.5 whitespace-nowrap">{{ $note->delivered_on->format('d/m/Y') }}</td>
+                        <td class="px-5 py-3.5 whitespace-nowrap">{{ $note->delivered_on->format(short_date_format()) }}</td>
                         <td class="px-5 py-3.5">{{ $note->receiver_name }}</td>
                     </tr>
                 @empty

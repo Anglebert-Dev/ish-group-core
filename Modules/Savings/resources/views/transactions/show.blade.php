@@ -1,6 +1,6 @@
 @php $m = fn ($v, $c = null) => \Modules\Savings\Support\Money::format((int) $v, $c ?? $tx->currency); $can = fn ($p) => \App\Helpers\AuthHelper::can($p); @endphp
 <x-layouts.app :title="$tx->description">
-    <x-common.page-header :title="$tx->description" :description="__('savings::savings.type_'.$tx->type).' · '.$tx->effective_date->format('d/m/Y')">
+    <x-common.page-header :title="$tx->description" :description="__('savings::savings.type_'.$tx->type).' · '.$tx->effective_date->format(short_date_format())">
         <x-slot:actions><x-common.button href="{{ route('savings.transactions.index') }}" variant="secondary" size="sm">← {{ __('savings::savings.transactions') }}</x-common.button></x-slot:actions>
     </x-common.page-header>
 
@@ -8,7 +8,7 @@
         <div class="xl:col-span-2 space-y-6">
             @if ($tx->isReversed() || $tx->isReversal() || $replaces || $replacedBy || $tx->refundOf)
                 <div class="rounded-xl border border-warning/30 bg-warning/10 p-4 text-sm space-y-1">
-                    @if ($tx->isReversed())<p>{{ __('savings::savings.reversed_note', ['date' => $tx->reversed_at->format('d/m/Y'), 'reason' => $tx->reversal_reason]) }} @if ($tx->reversal)<a class="font-semibold text-brand" href="{{ route('savings.transactions.show', $tx->reversal) }}">→</a>@endif</p>@endif
+                    @if ($tx->isReversed())<p>{{ __('savings::savings.reversed_note', ['date' => $tx->reversed_at->format(short_date_format()), 'reason' => $tx->reversal_reason]) }} @if ($tx->reversal)<a class="font-semibold text-brand" href="{{ route('savings.transactions.show', $tx->reversal) }}">→</a>@endif</p>@endif
                     @if ($tx->isReversal())<p>{{ __('savings::savings.reversal') }}: <a class="font-semibold text-brand" href="{{ route('savings.transactions.show', $tx->reverses) }}">{{ $tx->reverses?->description }}</a></p>@endif
                     @if ($replaces)<p>{{ __('savings::savings.replaces') }}: <a class="font-semibold text-brand" href="{{ route('savings.transactions.show', $replaces) }}">{{ $replaces->description }}</a></p>@endif
                     @if ($replacedBy)<p>{{ __('savings::savings.correct') }}: <a class="font-semibold text-brand" href="{{ route('savings.transactions.show', $replacedBy) }}">{{ $replacedBy->description }}</a></p>@endif

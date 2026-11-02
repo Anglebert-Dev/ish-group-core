@@ -100,6 +100,25 @@
                 </div>
                 <x-common.textarea name="address" :label="__('body.brand_address')" :value="old('address', $brand->address)" :rows="3" />
                 <x-common.textarea name="description" :label="__('body.brand_description')" :value="old('description', $details['description'])" :rows="3" :hint="__('body.brand_description_hint')" />
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    <x-common.select name="date_format" :label="__('body.brand_date_format')" :value="old('date_format', $details['date_format'] ?? 'd/m/Y')" hide-placeholder
+                        :options="collect(\App\Services\Branding\BrandingService::DATE_FORMATS)->mapWithKeys(fn ($f) => [$f => now()->setDate((int) now()->format('Y'), 12, 31)->format($f)])->all()" />
+                    <x-common.select name="number_format" :label="__('body.brand_number_format')" :value="old('number_format', $details['number_format'] ?? 'comma_dot')" hide-placeholder
+                        :options="collect(\App\Services\Branding\BrandingService::NUMBER_FORMATS)->map(fn ($s) => number_format(1234567.89, 2, $s[0], $s[1]))->all()" />
+                </div>
+                <fieldset class="space-y-4 pt-2">
+                    <legend class="text-sm font-bold text-ink">{{ __('body.brand_support') }}</legend>
+                    <p class="text-xs text-muted">{{ __('body.brand_support_hint') }}</p>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                        <x-common.input type="email" name="support_email" :label="__('body.brand_support_email')" :value="old('support_email', $details['support_email'])" />
+                        <x-common.input name="support_phone" :label="__('body.brand_support_phone')" :value="old('support_phone', $details['support_phone'])" />
+                        <x-common.input type="url" name="help_url" :label="__('body.brand_help_url')" :value="old('help_url', $details['help_url'])" placeholder="https://" />
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                        <x-common.input name="app_footer" :label="__('body.brand_app_footer')" :value="old('app_footer', $details['app_footer'])" maxlength="300" />
+                        <x-common.input name="copyright" :label="__('body.brand_copyright')" :value="old('copyright', $details['copyright'])" maxlength="160" :placeholder="'© '.date('Y').' '.$setting->companyName()" />
+                    </div>
+                </fieldset>
             </div>
         @endif
 
@@ -649,6 +668,11 @@
                         </div>
 
                         <x-common.input name="header_note" :label="__('body.design_header_note')" :value="$design->headerNote" :hint="__('body.design_header_note_hint')" />
+                        <div class="grid sm:grid-cols-2 gap-4">
+                            <x-common.input name="watermark_text" :label="__('body.design_watermark_text')" :value="$design->watermarkText" maxlength="30" :placeholder="__('body.design_watermark_placeholder')" :hint="__('body.design_watermark_text_hint')" />
+                            <x-common.select name="background" :label="__('body.design_background')" :value="$design->background" hide-placeholder
+                                :options="collect(\App\Support\Printing\PrintDesign::BACKGROUNDS)->mapWithKeys(fn ($b) => [$b => __('body.design_background_'.$b)])->all()" />
+                        </div>
                         <x-common.textarea name="footer_text" :label="__('body.design_footer')" :value="$design->footerText" :rows="2" :hint="__('body.design_footer_hint')" />
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -664,9 +688,11 @@
                             <p class="text-sm text-muted">{{ __('body.design_per_type_hint') }}</p>
                         </div>
                         @foreach ($documentTypes as $type => $label)
-                            <details class="rounded-xl border border-line p-3" @if (! empty($types[$type]['terms']) || ! empty($types[$type]['footer'])) open @endif>
+                            <details class="rounded-xl border border-line p-3" @if (! empty($types[$type]['terms']) || ! empty($types[$type]['footer']) || ! empty($types[$type]['layout'])) open @endif>
                                 <summary class="cursor-pointer text-sm font-semibold text-ink">{{ $label }}</summary>
                                 <div class="mt-3 space-y-3">
+                                    <x-common.select :name="'types['.$type.'][layout]'" :label="__('body.design_type_layout')" :value="$types[$type]['layout'] ?? ''" :placeholder="__('body.design_type_layout_same')"
+                                        :options="collect(\App\Support\Printing\PrintDesign::LAYOUTS)->mapWithKeys(fn ($l) => [$l => __('body.design_layout_'.$l)])->all()" />
                                     <x-common.textarea :name="'types['.$type.'][terms]'" :label="__('body.design_terms')" :value="$types[$type]['terms'] ?? ''" :rows="2" />
                                     <x-common.input :name="'types['.$type.'][footer]'" :label="__('body.design_type_footer')" :value="$types[$type]['footer'] ?? ''" :hint="__('body.design_type_footer_hint')" compact />
                                 </div>

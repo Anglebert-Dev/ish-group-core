@@ -32,7 +32,7 @@
         <div class="rounded-xl border border-danger/30 bg-danger/10 p-4 mb-6 space-y-1 text-sm">
             <p class="font-semibold text-danger">{{ __('savings::savings.warnings') }}</p>
             @foreach ($shortfalls as $row)
-                <p>• {{ $row['account']->name }}: {{ __('savings::savings.shortfall', ['date' => \Illuminate\Support\Carbon::parse($row['shortfall'])->format('d/m/Y')]) }} ({{ $m($row['lowest'], $row['account']->currency) }}) — <a href="{{ route('savings.forecast', ['account' => $row['account']->uuid]) }}" class="font-semibold text-brand">{{ __('savings::savings.forecast') }} →</a></p>
+                <p>• {{ $row['account']->name }}: {{ __('savings::savings.shortfall', ['date' => \Illuminate\Support\Carbon::parse($row['shortfall'])->format(short_date_format())]) }} ({{ $m($row['lowest'], $row['account']->currency) }}) — <a href="{{ route('savings.forecast', ['account' => $row['account']->uuid]) }}" class="font-semibold text-brand">{{ __('savings::savings.forecast') }} →</a></p>
             @endforeach
             @if ($late > 0)<p>• {{ $late }} {{ __('savings::savings.late') }} — <a href="{{ route('savings.planning.index') }}" class="font-semibold text-brand">{{ __('savings::savings.planning') }} →</a></p>@endif
         </div>

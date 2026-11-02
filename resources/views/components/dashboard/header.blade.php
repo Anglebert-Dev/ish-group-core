@@ -118,6 +118,13 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                     {{ __('body.profile') }}
                 </a>
+                @php $helpUrl = app(\App\Services\Branding\BrandingService::class)->detail($branding, 'help_url'); @endphp
+                @if ($helpUrl)
+                    <a href="{{ $helpUrl }}" target="_blank" rel="noopener" class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-ink hover:bg-surface transition-colors border-t border-line">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        {{ __('body.help_support') }}
+                    </a>
+                @endif
                 <x-common.appearance-switcher />
                 <x-common.language-switcher menu />
                 <form action="{{ route('staff.logout') }}" method="POST" class="border-t border-line">

@@ -11,7 +11,7 @@
         @forelse ($transactions as $t)
             @php $net = (int) $t->entries->sum('amount'); @endphp
             <tr class="{{ $t->isReversed() || $t->isReversal() ? 'opacity-60' : '' }}">
-                <td class="px-5 py-3 whitespace-nowrap text-muted">{{ $t->effective_date->format('d/m/Y') }}</td>
+                <td class="px-5 py-3 whitespace-nowrap text-muted">{{ $t->effective_date->format(short_date_format()) }}</td>
                 <td class="px-5 py-3">
                     <a href="{{ route('savings.transactions.show', $t) }}" class="font-medium text-ink hover:text-brand">{{ $t->description }}</a>
                     <span class="block text-xs text-muted">{{ __('savings::savings.type_'.$t->type) }}{{ $t->counterparty ? ' · '.$t->counterparty : '' }}

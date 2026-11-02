@@ -18,8 +18,8 @@
         <div class="xl:col-span-2 space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <x-common.info-card :title="__('salesorders::orders.order')" :rows="[
-                    [__('salesorders::orders.order_date'), $order->order_date->format('d/m/Y')],
-                    [__('salesorders::orders.due_date'), $order->due_date?->format('d/m/Y')],
+                    [__('salesorders::orders.order_date'), $order->order_date->format(short_date_format())],
+                    [__('salesorders::orders.due_date'), $order->due_date?->format(short_date_format())],
                     [__('salesorders::orders.store'), $order->store?->name],
                     [__('salesorders::orders.customer_reference'), $order->customer_reference],
                 ]" />

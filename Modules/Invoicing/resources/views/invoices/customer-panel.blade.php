@@ -13,7 +13,7 @@
             @forelse ($invoices as $invoice)
                 <tr>
                     <td class="px-5 py-3"><a href="{{ route('invoicing.invoices.show', $invoice) }}" class="font-medium text-ink hover:text-brand">{{ $invoice->number }}</a></td>
-                    <td class="px-5 py-3 text-muted">{{ $invoice->invoice_date->format('d/m/Y') }}</td>
+                    <td class="px-5 py-3 text-muted">{{ $invoice->invoice_date->format(short_date_format()) }}</td>
                     <td class="px-5 py-3 text-right">{{ money($invoice->total) }}</td>
                     <td class="px-5 py-3"><x-common.badge :color="$invoice->status->color()">{{ $invoice->status->label() }}</x-common.badge></td>
                 </tr>

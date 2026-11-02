@@ -19,7 +19,7 @@
                 </div>
                 @if ($row['shortfall'])
                     <div class="rounded-lg bg-danger/10 border border-danger/30 p-3 text-sm">
-                        <p class="font-semibold text-danger">{{ __('savings::savings.shortfall', ['date' => \Illuminate\Support\Carbon::parse($row['shortfall'])->format('d/m/Y')]) }}{{ $row['threshold'] ? ' ('.__('savings::savings.minimum_balance').' '.$m($row['threshold']).')' : '' }}</p>
+                        <p class="font-semibold text-danger">{{ __('savings::savings.shortfall', ['date' => \Illuminate\Support\Carbon::parse($row['shortfall'])->format(short_date_format())]) }}{{ $row['threshold'] ? ' ('.__('savings::savings.minimum_balance').' '.$m($row['threshold']).')' : '' }}</p>
                         <p class="text-xs text-muted mt-1">{{ __('savings::savings.shortfall_causes') }}:</p>
                         @foreach ($row['causes'] as $c)<p class="text-xs">• {{ \Illuminate\Support\Carbon::parse($c['date'])->format('d/m') }} {{ $c['label'] }} ({{ $m(-$c['effects'][$row['account']->id]) }})</p>@endforeach
                     </div>

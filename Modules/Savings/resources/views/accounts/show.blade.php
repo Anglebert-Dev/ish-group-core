@@ -20,7 +20,7 @@
                 <tbody class="divide-y divide-line">
                     @forelse ($entries as $entry)
                         <tr class="{{ $entry->transaction?->isReversed() || $entry->transaction?->isReversal() ? 'opacity-60' : '' }}">
-                            <td class="px-5 py-3 whitespace-nowrap text-muted">{{ $entry->effective_date->format('d/m/Y') }}</td>
+                            <td class="px-5 py-3 whitespace-nowrap text-muted">{{ $entry->effective_date->format(short_date_format()) }}</td>
                             <td class="px-5 py-3"><a href="{{ route('savings.transactions.show', $entry->transaction) }}" class="text-ink hover:text-brand">{{ $entry->transaction?->description }}</a>
                                 <span class="block text-xs text-muted">{{ __('savings::savings.type_'.$entry->transaction?->type) }}</span></td>
                             <td class="px-5 py-3 text-right">@include('savings::partials.money', ['v' => $entry->amount, 'c' => $account->currency, 'signed' => true])</td>
@@ -29,7 +29,7 @@
                     @empty
                         <tr><td class="px-5 py-8 text-center text-muted">{{ __('savings::savings.none') }}</td></tr>
                     @endforelse
-                    <tr class="bg-surface/60"><td class="px-5 py-3 text-muted">{{ $account->opening_date->format('d/m/Y') }}</td><td class="px-5 py-3" colspan="2">{{ __('savings::savings.opening_balance') }}</td><td class="px-5 py-3 text-right">{{ $m($account->opening_balance) }}</td></tr>
+                    <tr class="bg-surface/60"><td class="px-5 py-3 text-muted">{{ $account->opening_date->format(short_date_format()) }}</td><td class="px-5 py-3" colspan="2">{{ __('savings::savings.opening_balance') }}</td><td class="px-5 py-3 text-right">{{ $m($account->opening_balance) }}</td></tr>
                 </tbody>
             </table>
             <x-common.pagination :paginator="$entries" />
@@ -50,7 +50,7 @@
             <div class="bg-card border border-line rounded-xl p-5 space-y-2">
                 <div class="flex justify-between"><h2 class="font-display font-bold text-ink">{{ __('savings::savings.reconcile') }}</h2><a href="{{ route('savings.reconcile.index') }}" class="text-sm font-semibold text-brand">→</a></div>
                 @forelse ($reconciliations as $rec)
-                    <a href="{{ route('savings.reconcile.show', $rec) }}" class="flex justify-between text-sm"><span>{{ $rec->statement_date->format('d/m/Y') }}</span><span class="{{ $rec->difference ? 'text-danger' : 'text-success' }}">{{ __('savings::savings.status_'.$rec->status) }} {{ $rec->difference ? $m($rec->difference) : '' }}</span></a>
+                    <a href="{{ route('savings.reconcile.show', $rec) }}" class="flex justify-between text-sm"><span>{{ $rec->statement_date->format(short_date_format()) }}</span><span class="{{ $rec->difference ? 'text-danger' : 'text-success' }}">{{ __('savings::savings.status_'.$rec->status) }} {{ $rec->difference ? $m($rec->difference) : '' }}</span></a>
                 @empty
                     <p class="text-sm text-muted">{{ __('savings::savings.none') }}</p>
                 @endforelse

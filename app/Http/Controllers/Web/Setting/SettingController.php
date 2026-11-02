@@ -77,7 +77,7 @@ class SettingController extends Controller
             'versions' => $tab === 'history' ? $this->themes->history($business) : collect(),
             'previewing' => $this->branding->previewing($business),
             'extraLogos' => collect(BrandingService::EXTRA_LOGOS)->mapWithKeys(fn ($field, $key) => [$field => $this->branding->logoFor($business, str_replace(['logo_', '_path'], '', $key))])->all(),
-            'details' => collect(['short_name', 'slogan', 'description', 'locale'])->mapWithKeys(fn ($key) => [$key => $this->branding->detail($business, $key)])->all(),
+            'details' => collect(['short_name', 'slogan', 'description', 'locale', 'date_format', 'number_format', 'support_email', 'support_phone', 'help_url', 'app_footer', 'copyright'])->mapWithKeys(fn ($key) => [$key => $this->branding->detail($business, $key)])->all(),
         ]);
     }
 
@@ -95,6 +95,13 @@ class SettingController extends Controller
                 'slogan' => ['nullable', 'string', 'max:120'],
                 'description' => ['nullable', 'string', 'max:500'],
                 'locale' => ['nullable', Rule::in(array_keys(Locales::available()))],
+                'date_format' => ['nullable', Rule::in(BrandingService::DATE_FORMATS)],
+                'number_format' => ['nullable', Rule::in(array_keys(BrandingService::NUMBER_FORMATS))],
+                'support_email' => ['nullable', 'email', 'max:255'],
+                'support_phone' => ['nullable', 'string', 'max:64'],
+                'help_url' => ['nullable', 'url:http,https', 'max:255'],
+                'app_footer' => ['nullable', 'string', 'max:300'],
+                'copyright' => ['nullable', 'string', 'max:160'],
                 'tax_id' => ['nullable', 'string', 'max:64'],
                 'registration_no' => ['nullable', 'string', 'max:64'],
                 'address' => ['nullable', 'string', 'max:500'],
@@ -357,6 +364,9 @@ class SettingController extends Controller
             'types' => ['array'],
             'types.*.terms' => ['nullable', 'string', 'max:2000'],
             'types.*.footer' => ['nullable', 'string', 'max:500'],
+            'types.*.layout' => ['nullable', Rule::in(PrintDesign::LAYOUTS)],
+            'watermark_text' => ['nullable', 'string', 'max:30'],
+            'background' => ['nullable', Rule::in(PrintDesign::BACKGROUNDS)],
         ]);
 
         foreach (array_keys(PrintDesign::SWITCHES) as $switch) {

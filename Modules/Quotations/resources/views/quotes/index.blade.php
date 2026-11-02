@@ -39,8 +39,8 @@
                             @if ($quote->is_sample)<p class="text-xs text-muted">{{ __('quotations::quotations.sample') }}</p>@endif
                         </td>
                         <td class="px-5 py-3.5">{{ $quote->customer?->displayName() }}</td>
-                        <td class="px-5 py-3.5 whitespace-nowrap">{{ $quote->quote_date->format('d/m/Y') }}</td>
-                        <td class="px-5 py-3.5 whitespace-nowrap {{ $quote->needsFollowUp() ? 'text-warning font-semibold' : '' }}">{{ $quote->follow_up_date?->format('d/m/Y') ?? '—' }}</td>
+                        <td class="px-5 py-3.5 whitespace-nowrap">{{ $quote->quote_date->format(short_date_format()) }}</td>
+                        <td class="px-5 py-3.5 whitespace-nowrap {{ $quote->needsFollowUp() ? 'text-warning font-semibold' : '' }}">{{ $quote->follow_up_date?->format(short_date_format()) ?? '—' }}</td>
                         <td class="px-5 py-3.5 whitespace-nowrap text-right">{{ money($quote->total) }}</td>
                         <td class="px-5 py-3.5 whitespace-nowrap">
                             <x-common.badge :color="$quote->status->color()">{{ $quote->status->label() }}</x-common.badge>

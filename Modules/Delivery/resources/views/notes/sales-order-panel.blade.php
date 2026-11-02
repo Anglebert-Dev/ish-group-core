@@ -10,7 +10,7 @@
             @forelse ($notes as $note)
                 <tr>
                     <td class="px-5 py-3"><a href="{{ route('delivery.notes.show', $note) }}" class="font-medium text-ink hover:text-brand">{{ $note->number }}</a></td>
-                    <td class="px-5 py-3 text-muted">{{ $note->delivered_on->format('d/m/Y') }}</td>
+                    <td class="px-5 py-3 text-muted">{{ $note->delivered_on->format(short_date_format()) }}</td>
                     <td class="px-5 py-3">{{ $note->receiver_name }}</td>
                 </tr>
             @empty

@@ -41,6 +41,7 @@
                     {{ $slot }}
                 </div>
             </main>
+            <x-dashboard.footer />
         </div>
     </div>
 

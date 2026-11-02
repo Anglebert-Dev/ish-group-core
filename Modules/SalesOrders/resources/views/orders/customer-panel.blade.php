@@ -13,7 +13,7 @@
             @forelse ($orders as $order)
                 <tr>
                     <td class="px-5 py-3"><a href="{{ route('salesorders.orders.show', $order) }}" class="font-medium text-ink hover:text-brand">{{ $order->number }}</a></td>
-                    <td class="px-5 py-3 text-muted">{{ $order->order_date->format('d/m/Y') }}</td>
+                    <td class="px-5 py-3 text-muted">{{ $order->order_date->format(short_date_format()) }}</td>
                     <td class="px-5 py-3 text-right">{{ money($order->total) }}</td>
                     <td class="px-5 py-3"><x-common.badge :color="$order->status->color()">{{ $order->status->label() }}</x-common.badge></td>
                 </tr>

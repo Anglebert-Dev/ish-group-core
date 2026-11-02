@@ -1,6 +1,6 @@
 # Branding & Appearance: Plan
 
-Created: 02/11/2026. Status: **B0–B7 done (02/11/2026).** Update §8 after each phase, so work can pick up where it stopped.
+Created: 02/11/2026. Status: **B0–B8 done (02/11/2026).** Update §8 after each phase, so work can pick up where it stopped.
 
 This takes the full "Branding & Appearance Module" requirements and sets out, section by section, **what we already have**, **what we build**, and **what we leave out and why**. Printing and document branding are already built (`docs/branding-print-build-guide.md`); this plan builds on them.
 
@@ -328,6 +328,19 @@ Off by default. Needs package feature `branding.custom_css` and permission `publ
 - **Fixed:** button text in emails is white or dark by contrast (`ThemeTokens::textOn`), so light brands no longer get white-on-yellow.
 - **Left out:** SMS sender name (no SMS provider). Own sender address or domain needs domain verification with the mail provider (P3, later).
 
+**B8 notes:**
+- **Documents:**
+  - watermark text (e.g. "COPY") on documents without a status mark (PAID, CANCELLED… always win)
+  - page background (white, or a faint accent tint)
+  - layout per document type (`PrintDesign::forType()`, applied in `PrintService::data()`)
+  - lists and reports already had their own terms and footer (the "list" type)
+- **Error pages:** 403, 404, 419, 429, 500 and 503 share `errors/layout`, which uses plain CSS (no external scripts) and the business's colours, font and logo when they can be read, else the built-in look.
+  - The global view composer no longer fails for `errors.*` views when the database is down.
+  - A `Route::fallback` inside the web group makes unknown addresses 404 with the session running, so the page knows the signed-in business (found in the browser check: the brand was the platform's).
+- **Formats:** short date (31/12/2026, 12/31/2026, 2026-12-31, 31.12.2026) through `short_date_format()`, replacing the 47 fixed `d/m/Y` in views. Number style (1,234.56 / 1.234,56 / 1 234,56 / 1 234.56) in `money()` through `number_separators()`. Long dates (`d M Y`) are the same everywhere and stay.
+- **Support & footer** (Business details): support email and phone, help page link, footer text, copyright line. A footer shows at the bottom of every app page when something is set, and "Help & support" appears in the user menu when there is a help link.
+- **Left out:** custom empty-state text per page (empty states already use the theme's colours).
+
 ## 4. What the B1 clean-up involves
 
 **B1 notes:**
@@ -408,6 +421,6 @@ For each phase:
 | B5 | Login & authentication branding, business login link | P1 | ✅ 02/11/2026 |
 | B6 | Dashboard (welcome, banner, widgets, per role), navigation overrides, landing page, announcement banner, presets | P1 | ✅ 02/11/2026 |
 | B7 | Emails: header, footer, signature, contacts, sender name/Reply-To, every mail on the template, previews | P2 | ✅ 02/11/2026 |
-| B8 | Documents extras, branded error pages, footer/copyright/support links, date and number formats | P2 | ☐ |
+| B8 | Documents extras, branded error pages, footer/copyright/support links, date and number formats | P2 | ✅ 02/11/2026 |
 | B9 | QA: every module page at three widths, light and dark, with presets; README | P2 | ☐ |
 | B10 | Advanced: custom CSS (sanitised, scoped), uploaded fonts, terminology, PWA manifest | P3 | ☐ |

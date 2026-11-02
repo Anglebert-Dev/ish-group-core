@@ -64,7 +64,7 @@
                     @forelse ($order->receipts as $receipt)
                         <tr>
                             <td class="px-5 py-3 font-medium">{{ $receipt->number }}</td>
-                            <td class="px-5 py-3 text-muted">{{ $receipt->received_on->format('d/m/Y') }}{{ $receipt->supplier_reference ? ' · '.$receipt->supplier_reference : '' }}</td>
+                            <td class="px-5 py-3 text-muted">{{ $receipt->received_on->format(short_date_format()) }}{{ $receipt->supplier_reference ? ' · '.$receipt->supplier_reference : '' }}</td>
                             <td class="px-5 py-3 text-right">{{ money($receipt->value) }}</td>
                             <td class="px-5 py-3 text-right"><a href="{{ route('print.show', ['purchase_receipt', $receipt->getRouteKey()]) }}" target="_blank" rel="noopener" class="text-xs font-semibold text-brand hover:text-brand-dark">{{ __('body.print') }}</a></td>
                         </tr>

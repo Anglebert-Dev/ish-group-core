@@ -26,7 +26,7 @@
                     @forelse ($orders as $order)
                         <tr>
                             <td class="px-5 py-3"><a href="{{ route('purchasing.orders.show', $order) }}" class="font-medium text-ink hover:text-brand">{{ $order->number }}</a></td>
-                            <td class="px-5 py-3 text-muted">{{ $order->order_date->format('d/m/Y') }}</td>
+                            <td class="px-5 py-3 text-muted">{{ $order->order_date->format(short_date_format()) }}</td>
                             <td class="px-5 py-3 text-right">{{ money($order->total) }}</td>
                             <td class="px-5 py-3"><x-common.badge :color="$order->status->color()">{{ $order->status->label() }}</x-common.badge></td>
                         </tr>
@@ -42,7 +42,7 @@
                     @forelse ($payments as $payment)
                         <tr class="{{ $payment->isReversed() ? 'opacity-60' : '' }}">
                             <td class="px-5 py-3 font-medium">{{ $payment->number }}</td>
-                            <td class="px-5 py-3 text-muted">{{ $payment->paid_on->format('d/m/Y') }} · {{ $methods[$payment->method] ?? $payment->method }}</td>
+                            <td class="px-5 py-3 text-muted">{{ $payment->paid_on->format(short_date_format()) }} · {{ $methods[$payment->method] ?? $payment->method }}</td>
                             <td class="px-5 py-3 text-right {{ $payment->isReversed() ? 'line-through' : 'font-semibold' }}">{{ money($payment->amount) }}</td>
                             <td class="px-5 py-3 text-right">
                                 <a href="{{ route('print.show', ['supplier_payment', $payment->getRouteKey()]) }}" target="_blank" rel="noopener" class="text-xs font-semibold text-brand hover:text-brand-dark">{{ __('purchasing::purchasing.print_voucher_short') }}</a>

@@ -30,7 +30,7 @@ class BrandingService extends BaseService
     public const MAX_PAYMENT_METHODS = 6;
 
     /** Text fields of the Business details tab. */
-    public const DETAILS = ['legal_name', 'short_name', 'slogan', 'description', 'locale', 'tax_id', 'registration_no', 'address', 'phone', 'website'];
+    public const DETAILS = ['legal_name', 'short_name', 'slogan', 'description', 'locale', 'date_format', 'number_format', 'support_email', 'support_phone', 'help_url', 'app_footer', 'copyright', 'tax_id', 'registration_no', 'address', 'phone', 'website'];
 
     /** Optional logos, each falling back to the main logo (setting key => upload field). */
     public const EXTRA_LOGOS = ['logo_login_path' => 'logo_login', 'logo_mobile_path' => 'logo_mobile'];
@@ -75,6 +75,15 @@ class BrandingService extends BaseService
     {
         return app(ThemeService::class)->tokens($business, $this->previewing($business));
     }
+
+    /** Short date formats a business can pick (the first is the default). */
+    public const DATE_FORMATS = ['d/m/Y', 'm/d/Y', 'Y-m-d', 'd.m.Y'];
+
+    /** Number styles: [decimal point, thousands separator]. */
+    public const NUMBER_FORMATS = ['comma_dot' => ['.', ','], 'dot_comma' => [',', '.'], 'space_comma' => [',', ' '], 'space_dot' => ['.', ' ']];
+
+    /** Support and footer fields (Business details), saved as branding.*. */
+    public const SUPPORT_FIELDS = ['support_email', 'support_phone', 'help_url', 'app_footer', 'copyright'];
 
     /** Email fields (Branding → Emails), saved as branding.email_*. */
     public const EMAIL_FIELDS = ['email_header_color', 'email_sender_name', 'email_reply_to', 'email_footer', 'email_signature', 'email_show_contact'];
@@ -339,7 +348,7 @@ class BrandingService extends BaseService
      */
     public function saveDesign(Business $business, array $data): array
     {
-        foreach (['layout', 'paper', 'accent', 'font', 'logo_position', 'logo_size', 'header_note', 'footer_text'] as $key) {
+        foreach (['layout', 'paper', 'accent', 'font', 'logo_position', 'logo_size', 'header_note', 'footer_text', 'watermark_text', 'background'] as $key) {
             $value = is_string($data[$key] ?? null) ? trim($data[$key]) : null;
             $value === null || $value === ''
                 ? $this->settings->forget('print.'.$key, $business)
@@ -351,7 +360,11 @@ class BrandingService extends BaseService
         }
 
         $types = collect((array) ($data['types'] ?? []))
-            ->map(fn ($type) => array_filter(['terms' => $this->text($type['terms'] ?? null), 'footer' => $this->text($type['footer'] ?? null)]))
+            ->map(fn ($type) => array_filter([
+                'terms' => $this->text($type['terms'] ?? null),
+                'footer' => $this->text($type['footer'] ?? null),
+                'layout' => in_array($type['layout'] ?? null, PrintDesign::LAYOUTS, true) ? $type['layout'] : null,
+            ]))
             ->filter()
             ->all();
 
