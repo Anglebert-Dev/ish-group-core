@@ -32,4 +32,5 @@ Thumbs.db
 /docs/*
 !/docs/self-hosting-build-guide.md
 !/docs/branding-print-build-guide.md
+!/docs/branding.md
 /modules_statuses.json
