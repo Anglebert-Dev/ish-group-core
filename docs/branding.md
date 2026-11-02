@@ -12,7 +12,7 @@ This takes the full "Branding & Appearance Module" requirements and sets out, se
 | Logos | Logo, dark-background logo, favicon (`businesses.logo_path`, `favicon_path`, `branding.logo_dark`) |
 | Colours | **One** brand colour (`businesses.brand_color`) → CSS `--brand`, `--brand-dark`, `--brand-light`. Secondary colour is used only in print. |
 | Design tokens | Tailwind (CDN) config maps `brand`, `ink`, `body`, `muted`, `surface`, `line`, `success`, `warning`, `danger` to fixed values. These names are used ~1,900 times across 230 views, but **~370 `bg-white` and ~390 hard-coded `gray/slate` classes** remain. |
-| Font | Inter everywhere (Google Fonts). The branding font applies to print only. |
+| Font | Inter everywhere (Google Fonts), hard-coded in about 10 layouts. The branding font applies to print only. B0 makes one font choice apply everywhere. |
 | Theme | Light only. No dark mode (7 views have stray `dark:` classes). No user preferences. |
 | Layout | Fixed left sidebar (`components/dashboard/sidebar`), header, `responsive.css`. Menu built by `AdminMenu` from `config/menu.php` + module hooks, filtered by permission. |
 | Dashboard | `DashboardService`: stats, quick actions, recent activity, module widgets (hooks). Fixed order. |
@@ -105,9 +105,24 @@ Only what our layout can do everywhere:
 
 ### 3.5 Typography
 
+**System font: B0, P0, done first.** One choice on Branding → Look changes the font of **the whole system**:
+- the staff app and the login, forgot and reset password and 2FA pages
+- emails, error pages, the business website (Frontend) and pricing pages
+- printed documents
+
+Today Inter is hard-coded in about 10 places (`layouts/app`, `layouts/auth`, `emails/message`, `errors/403`, `install/layout`, `auth/confirm-password-resume`, Frontend `layouts/public`, Billing `pricing`, GarmentPack `tickets`, Distribution `guide`). Each one switches to a `--font-body` variable plus a font link from `brand-head`.
+
+- **List:** about 12 approved fonts (Inter by default, Roboto, Open Sans, Lato, Poppins, Montserrat, Nunito, DM Sans, Work Sans, Source Serif, Merriweather, Playfair Display), plus "System font" (no download).
+- **Self-hosted:** the font files are bundled in `public/fonts` (woff2), so nothing loads from Google and it works offline.
+- **PDF:** today the Look-tab font (Sans, Serif, Helvetica, Times) is for print only. It merges into this one choice. For PDFs, the same font's TTF is registered with dompdf, so documents match the screen. Without a TTF, the PDF falls back to the closest built-in font (sans → DejaVu Sans, serif → DejaVu Serif).
+- **Emails:** the font is listed first, then safe fallbacks, because many mail apps ignore web fonts.
+- The page loads only the chosen font, at the weights the app uses (400, 500, 600, 700).
+- **Tests:** saving a font changes the CSS variable on the app, login, email and PDF; an unknown font is rejected; it's audited.
+
 | Item | Plan |
 |---|---|
-| Body font, heading font from an approved list | **B3, P0**. About 12 Google Fonts (Inter, Roboto, Open Sans, Lato, Poppins, Montserrat, Nunito, Source Serif, Merriweather, Playfair, DM Sans, Work Sans), loaded only when chosen. Self-hosted installs can't always reach Google, so fonts fall back to system ones. |
+| System font (whole app, login, emails, website, PDF) | **B0, P0** (above) |
+| Separate heading font | **B3, P0**: defaults to the system font |
 | Base size (small, normal, large), heading scale, weight, line height | **B3, P0**: tokens |
 | Letter spacing, text alignment default | **Leave out**: breaks tables and forms; little value |
 | Font preview, restore default | **B3, P0** |
@@ -268,6 +283,7 @@ For each phase:
 
 | # | Phase | Priority | Status |
 |---|---|---|---|
+| B0 | System font: one font choice for the whole system (app, login, emails, error pages, website, PDF), bundled font files, dompdf registration | P0 | ☐ |
 | B1 | Foundation: theme document + `ThemeSchema`, versions (draft/publish/restore/reset), tokens + compiler + cache, platform defaults, package features, fallbacks; identity extras (short name, slogan, description, login and mobile logos); **move all views and components onto tokens** + raw-colour guard | P0 | ☐ |
 | B2 | Colours & themes: full palette, picker/HEX/RGB/HSL, palettes, contrast check + suggestions, dark and system mode, user override, chart palette | P0 | ☐ |
 | B3 | Layout & typography: sidebar, header, density, content width, cards, corners, buttons, switches (breadcrumbs, titles, footer, back-to-top, transitions); fonts and type scale | P0 | ☐ |
