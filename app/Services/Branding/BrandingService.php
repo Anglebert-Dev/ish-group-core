@@ -76,6 +76,26 @@ class BrandingService extends BaseService
         return app(ThemeService::class)->tokens($business, $this->previewing($business));
     }
 
+    /** Email fields (Branding → Emails), saved as branding.email_*. */
+    public const EMAIL_FIELDS = ['email_header_color', 'email_sender_name', 'email_reply_to', 'email_footer', 'email_signature', 'email_show_contact'];
+
+    /** @return array<string, mixed> */
+    public function emailSettings(Business $business): array
+    {
+        return collect(self::EMAIL_FIELDS)->mapWithKeys(fn ($key) => [$key => $this->settings->get('branding.'.$key, null, $business)])->filter(fn ($value) => $value !== null)->all();
+    }
+
+    /** @param  array<string, mixed>  $data */
+    public function saveEmails(Business $business, array $data): array
+    {
+        foreach (self::EMAIL_FIELDS as $key) {
+            $value = $data[$key] ?? null;
+            $this->put($business, $key, $key === 'email_show_contact' ? ($value ? true : null) : $value);
+        }
+
+        return $this->success($business, __('body.branding_saved'));
+    }
+
     /** Login page fields (Branding → Login page): text, saved as branding.login_*. */
     public const LOGIN_TEXT = ['login_heading', 'login_welcome', 'login_panel_text', 'login_footer'];
 

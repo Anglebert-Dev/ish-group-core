@@ -959,6 +959,21 @@ return [
     'login_image' => 'Picture panel image',
     'login_image_hint' => 'A wide photo for the side panel (it is darkened so the text stays readable). Blank: your brand colours.',
 
+    // Branding → Emails (docs/branding.md §3.10)
+    'brand_tab_emails' => 'Emails',
+    'emails_hint' => 'How every email from your business looks: invoices, password resets, invitations, notifications. Saved straight away; the preview shows your changes as you type.',
+    'emails_header_color' => 'Header colour',
+    'emails_header_color_hint' => 'Blank: your brand colour. Text and logo on it adjust to stay readable (the logo for dark backgrounds is used on a dark header).',
+    'emails_sender_name' => 'Sender name',
+    'emails_sender_name_hint' => 'The name people see in their inbox. The sending address stays ours, so emails are not marked as spam.',
+    'emails_reply_to' => 'Replies go to',
+    'emails_reply_to_hint' => 'Blank: your business email (Business details).',
+    'emails_signature' => 'Signature',
+    'emails_signature_placeholder' => "Kind regards,\nThe Kigali Sun team",
+    'emails_footer' => 'Footer text',
+    'emails_footer_hint' => 'Small print at the bottom, e.g. opening hours or a legal line.',
+    'emails_show_contact' => 'Show our phone, email, website and address in the footer',
+
     // Presets (docs/branding.md §3.14)
     'presets' => 'Presets',
     'presets_hint' => 'A ready-made look for colours, light/dark, layout and fonts. Applying one changes the draft only (your dashboard and menu stay); save, preview, then publish.',

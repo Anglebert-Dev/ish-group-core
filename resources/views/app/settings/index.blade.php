@@ -521,6 +521,43 @@
             </div>
         @endif
 
+        @if ($tab === 'emails')
+            <div class="grid gap-6 2xl:grid-cols-2 items-start">
+                <div class="bg-card border border-line rounded-xl p-4 sm:p-6 space-y-5" id="email-designer">
+                    <p class="text-sm text-muted">{{ __('body.emails_hint') }}</p>
+                    <x-common.color-field name="email_header_color" :label="__('body.emails_header_color')" :value="old('email_header_color', $emailSettings['email_header_color'] ?? null)" :default="$setting->brandColor()" :hint="__('body.emails_header_color_hint')" />
+                    <div class="grid sm:grid-cols-2 gap-4">
+                        <x-common.input name="email_sender_name" :label="__('body.emails_sender_name')" :value="old('email_sender_name', $emailSettings['email_sender_name'] ?? '')" :placeholder="$setting->companyName()" maxlength="80" :hint="__('body.emails_sender_name_hint')" />
+                        <x-common.input type="email" name="email_reply_to" :label="__('body.emails_reply_to')" :value="old('email_reply_to', $emailSettings['email_reply_to'] ?? '')" :placeholder="$setting->contactEmail()" :hint="__('body.emails_reply_to_hint')" />
+                    </div>
+                    <x-common.textarea name="email_signature" :label="__('body.emails_signature')" :value="old('email_signature', $emailSettings['email_signature'] ?? '')" :rows="3" :placeholder="__('body.emails_signature_placeholder')" />
+                    <x-common.textarea name="email_footer" :label="__('body.emails_footer')" :value="old('email_footer', $emailSettings['email_footer'] ?? '')" :rows="2" :hint="__('body.emails_footer_hint')" />
+                    <input type="hidden" name="email_show_contact" value="0">
+                    <x-common.checkbox name="email_show_contact" value="1" :checked="(bool) old('email_show_contact', $emailSettings['email_show_contact'] ?? false)" :label="__('body.emails_show_contact')" />
+                </div>
+                <div class="2xl:sticky 2xl:top-4 bg-card border border-line rounded-xl overflow-hidden">
+                    <div class="px-4 py-3 border-b border-line"><p class="font-semibold text-ink text-sm">{{ __('body.studio_title') }}</p></div>
+                    <iframe id="email-preview" title="{{ __('body.studio_title') }}" src="{{ route('settings.studio.email') }}" class="w-full bg-line" style="height: 640px; border: 0"></iframe>
+                </div>
+            </div>
+            <script>
+                (function () {
+                    var box = document.getElementById('email-designer'), form = box.closest('form'), frame = document.getElementById('email-preview'), timer;
+                    var base = @json(route('settings.studio.email'));
+                    function refresh() {
+                        clearTimeout(timer);
+                        timer = setTimeout(function () {
+                            var params = new URLSearchParams();
+                            new FormData(form).forEach(function (value, name) { if (name.indexOf('email_') === 0) params.set('email[' + name.slice(6) + ']', value); });
+                            frame.src = base + '?' + params.toString();
+                        }, 400);
+                    }
+                    form.addEventListener('input', refresh);
+                    form.addEventListener('change', refresh);
+                })();
+            </script>
+        @endif
+
         @if (in_array($tab, ['theme', 'layout', 'dashboard', 'menu'], true))
                 </div>
                 @include('app.settings.studio.panel')

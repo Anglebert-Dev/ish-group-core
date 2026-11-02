@@ -1,6 +1,6 @@
 # Branding & Appearance: Plan
 
-Created: 02/11/2026. Status: **B0–B6 done (02/11/2026).** Update §8 after each phase, so work can pick up where it stopped.
+Created: 02/11/2026. Status: **B0–B7 done (02/11/2026).** Update §8 after each phase, so work can pick up where it stopped.
 
 This takes the full "Branding & Appearance Module" requirements and sets out, section by section, **what we already have**, **what we build**, and **what we leave out and why**. Printing and document branding are already built (`docs/branding-print-build-guide.md`); this plan builds on them.
 
@@ -318,6 +318,16 @@ Off by default. Needs package feature `branding.custom_css` and permission `publ
 - **Announcement** under the top bar on every page, with a tone and optional from/until dates. Each person can close it (kept in their browser, per text).
 - **Presets:** 8 built-in (Corporate, Minimal, Modern, Dark, Warm, Fashion, Retail, Services) plus up to 12 saved per business (`branding.presets`). Applying one sets all appearance sections (`ThemeSchema::PRESET_SECTIONS`) in the draft and never touches content. Audited. To duplicate one, apply it and save it under a new name.
 
+**B7 notes:**
+- **One template:** every email (password reset, notifications, invitations, invoices to self-hosting customers…) already went through `BrandedMail` and `emails/message`, so all of them get the new options.
+- **Emails tab** (saved immediately, audited per key, `branding.email_*`):
+  - header colour (default: brand), with header text and logo adjusting (the dark-background logo on a dark header)
+  - sender name and reply-to address (the sending address stays the platform's verified one)
+  - signature, footer text, contacts in the footer
+  - live preview from the unsaved form (`settings.studio.email?email[...]`; half-typed values keep the saved look)
+- **Fixed:** button text in emails is white or dark by contrast (`ThemeTokens::textOn`), so light brands no longer get white-on-yellow.
+- **Left out:** SMS sender name (no SMS provider). Own sender address or domain needs domain verification with the mail provider (P3, later).
+
 ## 4. What the B1 clean-up involves
 
 **B1 notes:**
@@ -397,7 +407,7 @@ For each phase:
 | B4 | Studio: live preview with devices, pages, light/dark; history screen | P0 | ✅ 02/11/2026 |
 | B5 | Login & authentication branding, business login link | P1 | ✅ 02/11/2026 |
 | B6 | Dashboard (welcome, banner, widgets, per role), navigation overrides, landing page, announcement banner, presets | P1 | ✅ 02/11/2026 |
-| B7 | Emails: header, footer, signature, contacts, sender name/Reply-To, every mail on the template, previews | P2 | ☐ |
+| B7 | Emails: header, footer, signature, contacts, sender name/Reply-To, every mail on the template, previews | P2 | ✅ 02/11/2026 |
 | B8 | Documents extras, branded error pages, footer/copyright/support links, date and number formats | P2 | ☐ |
 | B9 | QA: every module page at three widths, light and dark, with presets; README | P2 | ☐ |
 | B10 | Advanced: custom CSS (sanitised, scoped), uploaded fonts, terminology, PWA manifest | P3 | ☐ |

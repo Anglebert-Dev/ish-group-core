@@ -12,11 +12,11 @@
         <td align="center">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#FFFFFF;border-radius:12px;overflow:hidden;border:1px solid #E5E7EB;">
                 <tr>
-                    <td style="background:{{ $brand['color'] }};padding:20px 28px;">
+                    <td style="background:{{ $brand['header'] ?? $brand['color'] }};padding:20px 28px;">
                         @if ($brand['logo'])
                             <img src="{{ $brand['logo'] }}" alt="{{ $brand['name'] }}" style="max-height:36px;">
                         @else
-                            <span style="color:#FFFFFF;font-size:18px;font-weight:700;">{{ $brand['name'] }}</span>
+                            <span style="color:{{ $brand['header_ink'] ?? '#FFFFFF' }};font-size:18px;font-weight:700;">{{ $brand['name'] }}</span>
                         @endif
                     </td>
                 </tr>
@@ -28,19 +28,26 @@
                         @endforeach
                         @if ($actionText && $actionUrl)
                             <p style="margin:24px 0;">
-                                <a href="{{ $actionUrl }}" style="display:inline-block;background:{{ $brand['color'] }};color:#FFFFFF;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:8px;">{{ $actionText }}</a>
+                                <a href="{{ $actionUrl }}" style="display:inline-block;background:{{ $brand['color'] }};color:{{ $brand['button_ink'] ?? '#FFFFFF' }};text-decoration:none;font-weight:600;padding:12px 22px;border-radius:8px;">{{ $actionText }}</a>
                             </p>
                         @endif
                         @foreach ($outro as $line)
                             <p style="margin:0 0 12px;font-size:13px;line-height:1.6;color:#6B7280;">{!! nl2br(e($line)) !!}</p>
                         @endforeach
+                        @if (! empty($brand['signature']))
+                            <p style="margin:20px 0 0;font-size:14px;line-height:1.6;color:#1F2937;">{!! nl2br(e($brand['signature'])) !!}</p>
+                        @endif
                         @if ($actionText && $actionUrl)
                             <p style="margin:20px 0 0;font-size:12px;color:#9CA3AF;word-break:break-all;">{{ __('body.email_link_fallback') }} {{ $actionUrl }}</p>
                         @endif
                     </td>
                 </tr>
                 <tr>
-                    <td style="padding:16px 28px;border-top:1px solid #F3F4F6;font-size:12px;color:#9CA3AF;">&copy; {{ date('Y') }} {{ $brand['name'] }}</td>
+                    <td style="padding:16px 28px;border-top:1px solid #F3F4F6;font-size:12px;line-height:1.6;color:#9CA3AF;">
+                        @if (! empty($brand['footer']))<div style="margin-bottom:6px;">{!! nl2br(e($brand['footer'])) !!}</div>@endif
+                        @if (! empty($brand['contact']))<div style="margin-bottom:6px;">{{ implode(' · ', $brand['contact']) }}</div>@endif
+                        &copy; {{ date('Y') }} {{ $brand['name'] }}
+                    </td>
                 </tr>
             </table>
         </td>

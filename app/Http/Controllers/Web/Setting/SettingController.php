@@ -28,6 +28,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -37,7 +38,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class SettingController extends Controller
 {
-    public const TABS = ['details', 'look', 'theme', 'layout', 'dashboard', 'menu', 'login', 'stamp', 'payments', 'documents', 'history'];
+    public const TABS = ['details', 'look', 'theme', 'layout', 'dashboard', 'menu', 'login', 'emails', 'stamp', 'payments', 'documents', 'history'];
 
     public function __construct(
         protected SettingService $settings,
@@ -70,6 +71,7 @@ class SettingController extends Controller
             'dashboardBlocks' => $tab === 'dashboard' ? $this->dashboardBlocks() : [],
             'roles' => $tab === 'dashboard' ? Role::query()->where('business_id', $business->id)->orderBy('name')->get() : collect(),
             'menuItems' => in_array($tab, ['dashboard', 'menu'], true) ? app(AdminMenu::class)->allowedItems() : collect(),
+            'emailSettings' => $tab === 'emails' ? $this->branding->emailSettings($business) : [],
             'loginPage' => $this->branding->loginPage($business) + ['suggested' => $tab === 'login' ? $this->branding->suggestHandle($business) : null],
             'brandOnScreen' => ['light' => $this->themes->tokens($business), 'dark' => $this->themes->tokens($business, dark: true)],
             'versions' => $tab === 'history' ? $this->themes->history($business) : collect(),
@@ -120,6 +122,7 @@ class SettingController extends Controller
             'theme' => $this->saveTheme($request, $business),
             'layout' => $this->saveLayout($request, $business),
             'login' => $this->saveLoginPage($request, $business),
+            'emails' => $this->branding->saveEmails($business, $this->emailInput($request)),
             // Cleaned by ThemeSchema (unknown keys dropped, text trimmed to length).
             'dashboard' => $this->themes->saveDraft($business, [
                 'dashboard' => (array) $request->input('dashboard', []),
@@ -237,12 +240,38 @@ class SettingController extends Controller
         return response(view('auth.login', ['registrationIsOpen' => false, 'isFirstRegistration' => false])->render());
     }
 
-    /** Studio preview: a sample email. */
-    public function studioEmail(): Response
+    /** Studio preview: a sample email; ?email[...] = the Emails tab's unsaved form. */
+    public function studioEmail(Request $request): Response
     {
         $business = $this->settings->current();
+        $mail = BrandedMail::make($business, __('body.studio_email_subject'), [__('body.studio_email_line')], __('body.view'), url('/'));
 
-        return response((string) BrandedMail::make($business, __('body.studio_email_subject'), [__('body.studio_email_line')], __('body.view'), url('/'))->render());
+        if ($request->has('email')) {
+            $request->merge(collect((array) $request->input('email'))->mapWithKeys(fn ($v, $k) => ['email_'.$k => $v])->all());
+            try {
+                $mail->viewData['brand'] = BrandedMail::brand($business, $this->emailInput($request));
+            } catch (ValidationException) {
+                // Half-typed (e.g. a colour being entered): keep showing the saved look.
+            }
+        }
+
+        return response((string) $mail->render());
+    }
+
+    /** @return array<string, mixed> */
+    private function emailInput(Request $request): array
+    {
+        $data = $request->validate([
+            'email_header_color' => ['nullable', 'string', 'max:40', fn ($attribute, $value, $fail) => blank($value) || ColorLibrary::parse((string) $value) || $fail(__('body.theme_bad_color'))],
+            'email_sender_name' => ['nullable', 'string', 'max:80'],
+            'email_reply_to' => ['nullable', 'email', 'max:255'],
+            'email_footer' => ['nullable', 'string', 'max:500'],
+            'email_signature' => ['nullable', 'string', 'max:500'],
+            'email_show_contact' => ['nullable', 'boolean'],
+        ]);
+        $data['email_header_color'] = ColorLibrary::parse($data['email_header_color'] ?? null);
+
+        return $data;
     }
 
     /** @return array<string, string> block key => label */
