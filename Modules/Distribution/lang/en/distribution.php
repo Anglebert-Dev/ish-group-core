@@ -422,10 +422,10 @@ return [
     'method_cash' => 'Cash',
     'method_card' => 'Card',
     'method_other' => 'Other',
-    'support_change' => 'Change the end date by hand',
-    'support_change_hint' => 'For a goodwill extension or a correction. The reason is kept in the audit log.',
+    'support_change' => 'Change support by hand',
+    'support_change_hint' => 'Usually not needed: marking a charge paid sets this for you. Use it to give extra time for free (goodwill), fix a mistake, or stop updates now. Takes effect straight away; the reason is kept in the audit log.',
     'support_change_reason' => 'Reason',
-    'support_change_save' => 'Save date',
+    'support_change_save' => 'Apply now',
 
     // The printed charge (an invoice from us)
     'print_charge' => 'Invoice',
