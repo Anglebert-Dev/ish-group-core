@@ -76,7 +76,7 @@ return [
     'check_failed' => 'Could not check for updates: :error',
     'server_said' => 'The update server answered :status. :message',
     'cannot_reach' => 'Could not reach your provider\'s update server (:url). Nothing was changed; it is tried again every hour. If this keeps happening, check that this server can reach the internet, or contact your provider.',
-    'access_revoked' => 'Your provider has stopped updates for this server (its access was revoked). Nothing was changed. Contact your provider to get updates again.',
+    'access_revoked' => 'Your provider has stopped updates for this server (its access was revoked). Nothing was changed. If they sent you a new link key, paste it under "Link to your provider" below; otherwise contact them for one.',
     'access_paused' => 'Your provider has paused updates for this server. Nothing was changed. Contact your provider if this is unexpected.',
     'server_unavailable' => 'Your provider\'s update server is not available right now. Nothing was changed; it is tried again every hour.',
     'bad_signature' => 'The answer from the update server is not signed by your provider. Nothing was changed.',

@@ -31,9 +31,14 @@
         <div class="mb-6 rounded-xl border border-warning/30 bg-warning/10 text-ink px-5 py-4 text-sm">{{ __('updates.modules_not_writable') }}</div>
     @endunless
 
-    @unless ($linked)
-        <div class="mb-6 rounded-xl border border-line bg-card px-5 py-4 text-sm text-muted">{{ __('updates.not_linked_hint') }}</div>
-    @endunless
+    {{-- Not linked, or the provider refused this server: the link key is the way back, so it comes first. --}}
+    @php $linkFirst = ! $linked || $lastError; @endphp
+    @if ($linkFirst)
+        <div class="mb-6 rounded-xl border border-line bg-card px-5 py-4 max-w-2xl">
+            @unless ($linked)<p class="text-sm text-muted mb-3">{{ __('updates.not_linked_hint') }}</p>@endunless
+            @include('app.super-admin.partials.link-form')
+        </div>
+    @endif
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         <div class="xl:col-span-2 space-y-6">
@@ -153,13 +158,9 @@
                     </ul>
                 </div>
             @endif
-            <form action="{{ route('superadmin.updates.link') }}" method="POST" class="pt-3 border-t border-line space-y-2">
-                @csrf
-                <p class="font-medium text-ink">{{ __('updates.link_title') }}</p>
-                <p class="text-xs text-muted">{{ __('updates.link_hint') }}</p>
-                <x-common.textarea name="key" :rows="3" :placeholder="'ISH1-…'" required />
-                <x-common.button type="submit" size="sm" variant="secondary">{{ __('updates.link_button') }}</x-common.button>
-            </form>
+            @unless ($linkFirst)
+                <div class="pt-3 border-t border-line">@include('app.super-admin.partials.link-form')</div>
+            @endunless
         </div>
     </div>
 </x-layouts.app>
