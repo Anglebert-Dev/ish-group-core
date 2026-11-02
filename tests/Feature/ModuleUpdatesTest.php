@@ -302,6 +302,29 @@ class ModuleUpdatesTest extends TestCase
         $this->assertSame(__('updates.module_given_manual'), $note->body);
     }
 
+    public function test_a_customised_module_is_held_until_its_owner_says_so(): void
+    {
+        $this->installFixture('1.0.0');
+        [$offer, $zip] = $this->package('1.1.0');
+        $this->fakeServer(offers: [$offer], mode: 'auto', downloads: [$offer['download_url'] => File::get($zip)]);
+        $updates = app(UpdateService::class);
+
+        $this->assertTrue($updates->setHeld('UpdProbe', true)['status']);
+        $this->assertTrue($updates->isHeld('UpdProbe'));
+
+        // Automatic runs and "Update all" skip it…
+        $this->assertFalse($updates->run()['status']);
+        $this->assertSame('1.0.0', app(ModuleManager::class)->installedVersion('UpdProbe'));
+        Http::assertSent(fn (Request $request) => str_ends_with($request->url(), '/check-in') && collect($request['modules'])->firstWhere('name', 'UpdProbe')['held'] === true);
+
+        // …a deliberate update still goes through.
+        $this->assertTrue($updates->install(['UpdProbe'])['status']);
+        $this->assertSame('1.1.0', app(ModuleManager::class)->installedVersion('UpdProbe'));
+
+        $this->assertTrue($updates->setHeld('UpdProbe', false)['status']);
+        $this->assertFalse($updates->isHeld('UpdProbe'));
+    }
+
     public function test_the_updates_page_says_when_support_has_ended(): void
     {
         $this->fakeServer(support: ['until' => today()->subDays(3)->toDateString(), 'active' => false]);

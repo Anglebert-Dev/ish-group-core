@@ -97,4 +97,14 @@ return [
     'support_ending' => 'Your support & updates end on :date. Renew with your provider to keep receiving updates.',
     'support_ended' => 'Your support & updates ended on :date.',
     'support_ended_hint' => 'Everything you have keeps working. New versions and fixes are no longer installed until you renew with your provider.',
+
+    // Customised modules
+    'customised_title' => 'Modules you changed',
+    'customised_hint' => 'An update replaces a module\'s whole folder (the old one is kept as a backup). If you changed a module yourself, hold its updates: automatic updates and "Update all" then skip it. Better still, put your changes in a module of your own (php artisan module:make): updates never touch it.',
+    'hold' => 'Hold updates',
+    'resume' => 'Allow updates',
+    'held_badge' => 'Customised: held',
+    'held' => 'Updates for :module are held. Automatic updates and "Update all" skip it.',
+    'resumed' => 'Updates for :module are allowed again.',
+    'held_install_confirm' => 'You marked :module as customised. Updating replaces your changes (a backup is kept). Update anyway?',
 ];

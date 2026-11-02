@@ -72,11 +72,13 @@
                                     {{ $offer['module'] }}
                                     <span class="font-mono text-muted">{{ $offer['from_version'] ? $offer['from_version'].' → ' : '' }}{{ $offer['version'] }}</span>
                                     @if ($offer['action'] === 'install')<x-common.badge color="brand">{{ __('updates.new_module') }}</x-common.badge>@endif
+                                    @if (in_array($offer['module'], $held, true))<x-common.badge color="warning">{{ __('updates.held_badge') }}</x-common.badge>@endif
                                 </p>
                                 @if (! empty($offer['changelog']))<p class="text-muted mt-1 whitespace-pre-line">{{ $offer['changelog'] }}</p>@endif
                             </div>
                             @if ($writable)
-                                <x-common.action-button :action="route('superadmin.updates.install')" data-confirm data-confirm-title="{{ __('updates.install_confirm') }}">
+                                <x-common.action-button :action="route('superadmin.updates.install')" data-confirm
+                                    data-confirm-title="{{ in_array($offer['module'], $held, true) ? __('updates.held_install_confirm', ['module' => $offer['module']]) : __('updates.install_confirm') }}">
                                     <x-slot:fields><input type="hidden" name="module" value="{{ $offer['module'] }}"></x-slot:fields>
                                     {{ __('updates.install') }}
                                 </x-common.action-button>
@@ -131,6 +133,26 @@
                 <p class="text-muted">{{ __('updates.version') }}</p>
                 <p class="font-mono text-ink">{{ $version }}</p>
             </div>
+            @if ($linked && $installedModules)
+                <div class="pt-3 border-t border-line space-y-2">
+                    <p class="font-medium text-ink">{{ __('updates.customised_title') }}</p>
+                    <p class="text-xs text-muted">{{ __('updates.customised_hint') }}</p>
+                    <ul class="space-y-1.5">
+                        @foreach ($installedModules as $module)
+                            @php $isHeld = in_array($module, $held, true); @endphp
+                            <li class="flex items-center justify-between gap-2">
+                                <span class="text-sm text-body">{{ $module }} @if ($isHeld)<x-common.badge color="warning">{{ __('updates.held_badge') }}</x-common.badge>@endif</span>
+                                <form action="{{ route('superadmin.updates.hold') }}" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="module" value="{{ $module }}">
+                                    <input type="hidden" name="held" value="{{ $isHeld ? 0 : 1 }}">
+                                    <button type="submit" class="text-xs font-semibold text-link hover:underline">{{ $isHeld ? __('updates.resume') : __('updates.hold') }}</button>
+                                </form>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
             <form action="{{ route('superadmin.updates.link') }}" method="POST" class="pt-3 border-t border-line space-y-2">
                 @csrf
                 <p class="font-medium text-ink">{{ __('updates.link_title') }}</p>

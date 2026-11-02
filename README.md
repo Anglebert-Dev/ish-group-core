@@ -150,6 +150,8 @@ Then cron `* * * * * php artisan schedule:run` (and `queue:work`, unless they ti
 
 **Updates:** raise the module's `version` in its `module.json`, commit, then **Releases → Publish** (or `php artisan distribution:publish <Module>`). Sites check hourly: automatic ones install, manual ones show it under **Super Admin → Updates**. A failed update is undone. Write module migrations so they only add things.
 
+**Customers who develop their copy:** build with **Developer edition** ticked (tests, guides, phpunit and developer packages included; nothing of ours). On their server, Super Admin → Updates → **Modules you changed** holds updates for a module they customised. Better: they build their own modules (`php artisan module:make`), which updates never touch.
+
 **Licence & support** (site page → Licence & support):
 - **Charges:** create the **licence** (once, for the site's modules, usually with 12 months of support included) and later **support renewals**. Each is numbered (`LIC-2026-00001`), prints as a branded invoice (PDF or Print) and can be emailed with the PDF attached.
 - **Paying extends support:** "Mark paid" extends **Support & updates until**. A renewal starts the day after the current period ends. The date can also be changed by hand, with a reason that goes into the audit log.

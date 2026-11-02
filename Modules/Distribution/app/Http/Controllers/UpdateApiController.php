@@ -34,6 +34,7 @@ class UpdateApiController extends Controller
             'modules.*.name' => ['required', 'string', 'max:100'],
             'modules.*.installed_version' => ['nullable', 'string', 'max:32'],
             'modules.*.enabled' => ['boolean'],
+            'modules.*.held' => ['boolean'],
         ]);
 
         if (! $keys->configured()) {

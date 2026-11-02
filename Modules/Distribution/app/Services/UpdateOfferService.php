@@ -53,6 +53,10 @@ class UpdateOfferService
 
             $offers = $this->offers($site, $installed, Release::plainVersion($reported['core_version'] ?? null));
 
+            // Which modules the customer marked as customised (their updates wait for them).
+            $held = collect($reported['modules'] ?? [])->filter(fn ($module) => is_array($module) && ! empty($module['held']))->map(fn ($module) => strtolower((string) $module['name']))->all();
+            $site->modules()->get()->each(fn (SiteModule $row) => $row->forceFill(['held' => in_array(strtolower($row->module), $held, true)])->saveQuietly());
+
             // Support ended: the site keeps everything it has, but nothing new
             // (module statuses above are still brought up to date).
             if (! $site->hasSupport()) {

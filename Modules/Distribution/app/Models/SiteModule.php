@@ -15,6 +15,7 @@ class SiteModule extends Model
     protected function casts(): array
     {
         return [
+            'held' => 'boolean',
             'status' => SiteModuleStatus::class,
             'last_reported_at' => 'datetime',
         ];

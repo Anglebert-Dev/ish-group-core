@@ -97,9 +97,9 @@ class SiteController extends Controller
     /**
      * Builds right away (about 10 seconds): no queue worker needed.
      */
-    public function build(Site $site, BuildService $builds): RedirectResponse
+    public function build(Request $request, Site $site, BuildService $builds): RedirectResponse
     {
-        $started = $builds->start($site);
+        $started = $builds->start($site, $request->boolean('developer'));
 
         if (! $started['status']) {
             return back()->with('error', $started['message']);

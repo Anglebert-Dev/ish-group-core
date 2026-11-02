@@ -482,6 +482,21 @@ The usual model for software you install yourself: **a licence once, then yearly
 - **Tests:** `Modules/Distribution/tests/Feature/LicenceTest.php`, and `ModuleUpdatesTest::test_the_updates_page_says_when_support_has_ended`.
 - Distribution **1.5.0**: run `php artisan core:module update Distribution` (or Super Admin → Modules → Update) on our server for the new tables.
 
+## 14. Developer edition & customised modules (added 02/11/2026)
+
+For customers who keep developing the code they bought.
+
+- **Developer edition** (site page → Build zip → tick "Developer edition"; `distribution_builds.developer`):
+  - keeps `tests`, `phpunit.xml`, `README.md`, `docs` and `.editorconfig`, and installs the developer Composer packages, so `php artisan test` runs on their copy
+  - left out, as in every zip: never-ship modules and modules they didn't get
+  - also left out: our internal docs (this guide and the like), the demo factory seeder (it seeds our test server, Billing included), and any test that needs a module the zip doesn't have (`BuildService::dropForeignTests`)
+- **Customised modules** (their Super Admin → Updates → "Modules you changed"):
+  - "Hold updates" marks a module as customised, stored as `distribution_held_modules` in their system table and audited
+  - automatic updates and "Update all" skip it; updating it on its own asks for confirmation first, because an update replaces the whole folder (a backup is kept)
+  - check-ins report `held`, so our site page shows "Customised (updates held)"
+- **The advice we give:** put changes in a module of their own (`php artisan module:make`), because updates never touch it. Hold a module only when it really has to be changed.
+- Distribution **1.6.0**: run `php artisan core:module update Distribution` on our server.
+
 ## 12. Open points
 
 - **HTTPS:** nothing enforces HTTPS for the update server address yet. Our `APP_URL` must be `https://` in production, because builds put it in every `site.json`.

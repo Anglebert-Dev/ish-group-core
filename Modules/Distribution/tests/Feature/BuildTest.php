@@ -2,12 +2,15 @@
 
 namespace Modules\Distribution\Tests\Feature;
 
+use App\Models\ActivityLog\ActivityLog;
 use App\Models\User;
 use App\Services\Module\ModuleManager;
 use App\Support\Installer\SiteManifest;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Mockery;
 use Modules\Distribution\Enums\BuildStatus;
 use Modules\Distribution\Models\Build;
 use Modules\Distribution\Models\Site;
@@ -15,7 +18,6 @@ use Modules\Distribution\Models\SiteToken;
 use Modules\Distribution\Services\BuildService;
 use Modules\Distribution\Services\SigningKeys;
 use Modules\Distribution\Services\SiteService;
-use Mockery;
 use Tests\TestCase;
 use ZipArchive;
 
@@ -79,7 +81,7 @@ class BuildTest extends TestCase
         $extract = sys_get_temp_dir().'/ish-build-'.uniqid();
         $zip = new ZipArchive;
         $zip->open($file);
-        $zip->getExternalAttributesName(\Illuminate\Support\Str::slug($site->name).'/artisan', $system, $attributes);
+        $zip->getExternalAttributesName(Str::slug($site->name).'/artisan', $system, $attributes);
         $this->assertSame(0755, ($attributes >> 16) & 0777, 'artisan is executable');
         $zip->extractTo($extract);
         $zip->close();
@@ -123,6 +125,33 @@ class BuildTest extends TestCase
         }
 
         $this->assertDirectoryDoesNotExist(Storage::disk('local')->path('distribution/work/'.$build->uuid), 'staging cleaned up');
+    }
+
+    public function test_the_developer_edition_keeps_tests_and_guides_but_nothing_of_ours(): void
+    {
+        $site = $this->site(['Savings']);
+        $result = app(BuildService::class)->run(app(BuildService::class)->start($site, developer: true)['data']['build'], vendor: false);
+        $this->assertTrue($result['status'], $result['message']);
+        $this->assertTrue($result['data']->fresh()->developer);
+
+        $extract = sys_get_temp_dir().'/ish-build-'.uniqid();
+        $zip = new ZipArchive;
+        $zip->open(app(BuildService::class)->absolutePath($result['data']->fresh()));
+        $zip->extractTo($extract);
+        $zip->close();
+
+        try {
+            $root = File::directories($extract)[0];
+            foreach (['tests/TestCase.php', 'phpunit.xml', 'README.md', 'docs/branding.md', 'Modules/Savings/tests', 'tests/Feature/BrandingTest.php'] as $kept) {
+                $this->assertFileExists($root.'/'.$kept, $kept);
+            }
+            // Ours, or needing modules this customer doesn't have: left out.
+            foreach (['docs/self-hosting-build-guide.md', 'database/seeders/DemoFactorySeeder.php', 'tests/Feature/DemoFactorySeederTest.php', 'tests/Feature/ModulePrintablesTest.php', 'Modules/Billing', 'Modules/Distribution'] as $gone) {
+                $this->assertFileDoesNotExist($root.'/'.$gone, $gone);
+            }
+        } finally {
+            File::deleteDirectory($extract);
+        }
     }
 
     public function test_a_failed_build_says_why_and_leaves_no_working_token(): void
@@ -187,7 +216,7 @@ class BuildTest extends TestCase
         $this->assertSame(0, Build::query()->count());
         Storage::disk('local')->assertMissing('distribution/builds/site.zip');
         $this->assertSame(0, $site->tokens()->whereNull('revoked_at')->count(), 'its token no longer works');
-        $this->assertTrue(\App\Models\ActivityLog\ActivityLog::query()->where('action', 'distribution_build_deleted')->exists());
+        $this->assertTrue(ActivityLog::query()->where('action', 'distribution_build_deleted')->exists());
     }
 
     public function test_download_needs_a_ready_unexpired_build(): void

@@ -2,7 +2,11 @@
 
 namespace Modules\Distribution\Tests\Feature;
 
+use App\Models\ActivityLog\ActivityLog;
+use App\Models\Notification\Notification;
+use App\Notifications\BrandedNotification;
 use App\Services\Module\ModuleManager;
+use App\Support\Distribution\LinkKey;
 use App\Support\Distribution\PackageSignature;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Illuminate\Support\Facades\Storage;
@@ -11,6 +15,7 @@ use Modules\Distribution\Models\CheckIn;
 use Modules\Distribution\Models\Release;
 use Modules\Distribution\Models\Site;
 use Modules\Distribution\Models\UpdateReport;
+use Modules\Distribution\Notifications\CustomerEmail;
 use Modules\Distribution\Services\ReleaseService;
 use Modules\Distribution\Services\SigningKeys;
 use Modules\Distribution\Services\SiteService;
@@ -149,7 +154,7 @@ class UpdateApiTest extends TestCase
 
         $this->withToken($this->token)->get(route('distribution.api.download', $savings))->assertOk()->assertHeader('X-Ish-Sha256', $savings->sha256);
         $this->withToken($this->token)->getJson(route('distribution.api.download', $delivery))->assertNotFound();
-        $this->withoutToken()->getJson(route("distribution.api.download", $savings))->assertUnauthorized();
+        $this->withoutToken()->getJson(route('distribution.api.download', $savings))->assertUnauthorized();
 
         $savings->update(['yanked_at' => now()]);
         $this->withToken($this->token)->getJson(route('distribution.api.download', $savings))->assertNotFound();
@@ -198,11 +203,11 @@ class UpdateApiTest extends TestCase
             ],
         ])->assertOk();
 
-        $titles = \App\Models\Notification\Notification::query()->pluck('title')->all();
+        $titles = Notification::query()->pluck('title')->all();
         $this->assertContains('Kigali Finance switched off Delivery', $titles);
         $this->assertContains('Kigali Finance installed SalesOrders 1.1.0', $titles);
         $this->assertCount(2, $titles, 'a plain successful update is not announced');
-        NotificationFacade::assertSentTimes(\App\Notifications\BrandedNotification::class, 2);
+        NotificationFacade::assertSentTimes(BrandedNotification::class, 2);
     }
 
     public function test_a_given_module_without_a_release_says_so_on_the_site_page(): void
@@ -262,14 +267,25 @@ class UpdateApiTest extends TestCase
             ->assertSessionHas('success')
             ->assertSessionHas('link_key');
 
-        $link = \App\Support\Distribution\LinkKey::decode(session('link_key'));
+        $link = LinkKey::decode(session('link_key'));
         $this->assertSame($this->site->uuid, $link['site_uuid']);
 
         $this->withToken($this->token)->postJson(route('distribution.api.check-in'), $this->checkIn())->assertUnauthorized();
         $this->withToken($link['token'])->postJson(route('distribution.api.check-in'), $this->checkIn())->assertOk();
 
-        NotificationFacade::assertSentOnDemand(\Modules\Distribution\Notifications\CustomerEmail::class, fn ($mail) => str_contains(implode(' ', $mail->lines), session('link_key')));
-        $this->assertTrue(\App\Models\ActivityLog\ActivityLog::query()->where('action', 'distribution_link_key_issued')->exists());
+        NotificationFacade::assertSentOnDemand(CustomerEmail::class, fn ($mail) => str_contains(implode(' ', $mail->lines), session('link_key')));
+        $this->assertTrue(ActivityLog::query()->where('action', 'distribution_link_key_issued')->exists());
+    }
+
+    public function test_customised_modules_are_shown_on_our_site_page(): void
+    {
+        $this->withToken($this->token)->postJson(route('distribution.api.check-in'), $this->checkIn([
+            'modules' => [['name' => 'Savings', 'installed_version' => '1.0.0', 'held' => true], ['name' => 'SalesOrders', 'installed_version' => '1.0.0']],
+        ]))->assertOk();
+
+        $held = $this->site->modules()->pluck('held', 'module');
+        $this->assertTrue($held['Savings']);
+        $this->assertFalse($held['SalesOrders']);
     }
 
     private function checkIn(array $overrides = []): array

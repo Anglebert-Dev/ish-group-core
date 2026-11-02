@@ -451,4 +451,10 @@ return [
     'email_support_keeps_working' => 'Your system keeps working as it is. After that date, new versions, fixes and support stop until you renew.',
     'email_support_invoice' => 'The renewal invoice :number (:amount) is attached.',
     'email_support_how' => 'Reply to this email to renew and we will send the invoice.',
+
+    // Developer edition & customised modules
+    'build_developer' => 'Developer edition',
+    'build_developer_hint' => 'For customers who keep developing their copy: keeps the tests, phpunit.xml, README, guides and the developer packages (tests needing modules they do not have are left out).',
+    'build_developer_badge' => 'Developer',
+    'module_held' => 'Customised (updates held)',
 ];

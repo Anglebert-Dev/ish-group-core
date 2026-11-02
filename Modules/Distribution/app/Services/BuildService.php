@@ -5,6 +5,7 @@ namespace Modules\Distribution\Services;
 use App\Services\BaseService;
 use App\Services\Install\EnvWriter;
 use App\Support\Installer\SiteManifest;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
@@ -41,21 +42,26 @@ class BuildService extends BaseService
         'database/seeders/DemoFactorySeeder.php', 'vite.config.js', 'package.json', 'package-lock.json',
     ];
 
+    /** A developer edition keeps these (for customers who build on their copy). */
+    private const DEVELOPER_KEEPS = ['tests', 'phpunit.xml', 'docs', 'README.md', '.editorconfig'];
+
+    /** Docs about our own server: never in any zip. */
+    private const INTERNAL_DOCS = ['docs/self-hosting-build-guide.md', 'docs/modules-roles-superadmin-reference.txt', 'docs/factory-user-manual-source.md'];
+
     /** Unambiguous characters for install codes (no 0/O, 1/I/L). */
     private const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
     public function __construct(
         protected SiteService $sites,
         protected SigningKeys $keys,
-    ) {
-    }
+    ) {}
 
     /**
      * Queue a build. The install code is returned here and never again.
      *
      * @return array{status: bool, data: array{build: Build, code: string}|null, message: string}
      */
-    public function start(Site $site): array
+    public function start(Site $site, bool $developer = false): array
     {
         if ($site->moduleNames() === []) {
             return $this->failure(__('distribution::distribution.build_needs_modules'));
@@ -80,6 +86,7 @@ class BuildService extends BaseService
         $build = Build::query()->create([
             'site_id' => $site->id,
             'modules' => $site->moduleNames(),
+            'developer' => $developer,
             'install_code_hash' => password_hash(SiteManifest::normalizeCode($code), PASSWORD_DEFAULT),
             'install_code' => $code, // encrypted; emailed to the customer with the download link
             'status' => BuildStatus::Queued,
@@ -123,7 +130,7 @@ class BuildService extends BaseService
         $root = Str::slug($site->name) ?: 'site';
 
         try {
-            $commit = $this->stage($stage, (array) $build->modules, $vendor);
+            $commit = $this->stage($stage, (array) $build->modules, $vendor, (bool) $build->developer);
             $coreVersion = $this->seal($stage, $commit).'+'.$commit;
 
             $token = $this->sites->issueToken($site, $build->id);
@@ -201,7 +208,7 @@ class BuildService extends BaseService
      *
      * @param  list<string>  $modules
      */
-    private function strip(string $stage, array $modules): void
+    private function strip(string $stage, array $modules, bool $developer = false): void
     {
         $keep = array_map('strtolower', $modules);
         $neverShip = array_map('strtolower', (array) config('distribution.never_ship', []));
@@ -214,12 +221,21 @@ class BuildService extends BaseService
             }
         }
 
-        foreach (File::directories($stage.'/Modules') as $dir) {
-            File::deleteDirectory($dir.'/tests');
+        if (! $developer) {
+            foreach (File::directories($stage.'/Modules') as $dir) {
+                File::deleteDirectory($dir.'/tests');
+            }
         }
 
-        foreach (self::STRIP as $path) {
+        foreach (array_diff(self::STRIP, $developer ? self::DEVELOPER_KEEPS : []) as $path) {
             File::isDirectory("{$stage}/{$path}") ? File::deleteDirectory("{$stage}/{$path}") : File::delete("{$stage}/{$path}");
+        }
+
+        if ($developer) {
+            foreach (self::INTERNAL_DOCS as $path) {
+                File::delete("{$stage}/{$path}");
+            }
+            $this->dropForeignTests($stage, $modules);
         }
 
         foreach (File::glob($stage.'/bootstrap/cache/*.php') as $file) {
@@ -237,10 +253,38 @@ class BuildService extends BaseService
     }
 
     /**
-     * Start from our vendor (fast, offline), then let Composer drop the dev
-     * packages and build an autoloader for only the modules in this zip.
+     * Developer edition: tests that need a module this zip doesn't have
+     * (or one that never ships) would only fail there, so they stay home.
+     *
+     * @param  list<string>  $modules
      */
-    private function vendor(string $stage): void
+    private function dropForeignTests(string $stage, array $modules): void
+    {
+        $shipped = array_map('strtolower', $modules);
+        $present = fn (string $name) => in_array(strtolower($name), $shipped, true);
+
+        foreach ([$stage.'/tests', ...File::glob($stage.'/Modules/*/tests')] as $dir) {
+            if (! is_dir($dir)) {
+                continue;
+            }
+            foreach (File::allFiles($dir) as $file) {
+                $code = $file->getContents();
+                preg_match_all('/Modules\\\\+(\w+)\\\\|install\(\s*[\'"](\w+)[\'"]\s*\)/', $code, $m);
+                $needs = array_filter(array_unique([...$m[1], ...$m[2]]));
+                // The demo factory seeds our own test server (Billing included): never there.
+                if (str_contains($code, 'DemoFactorySeeder') || collect($needs)->contains(fn ($name) => ! $present($name))) {
+                    File::delete($file->getPathname());
+                }
+            }
+        }
+    }
+
+    /**
+     * Start from our vendor (fast, offline), then let Composer drop the dev
+     * packages (kept in a developer edition) and build an autoloader for only
+     * the modules in this zip.
+     */
+    private function vendor(string $stage, bool $developer = false): void
     {
         if (is_dir(base_path('vendor'))) {
             File::copyDirectory(base_path('vendor'), $stage.'/vendor');
@@ -255,10 +299,10 @@ class BuildService extends BaseService
         ];
         File::ensureDirectoryExists($env['COMPOSER_HOME']);
 
-        $this->mustRun([
+        $this->mustRun(array_values(array_filter([
             $this->php(), $this->composer(), 'install',
-            '--no-dev', '--no-interaction', '--prefer-dist', '--optimize-autoloader', '--no-scripts', '--no-progress',
-        ], $stage, 900, $env);
+            $developer ? null : '--no-dev', '--no-interaction', '--prefer-dist', '--optimize-autoloader', '--no-scripts', '--no-progress',
+        ])), $stage, 900, $env);
     }
 
     /**
@@ -309,16 +353,16 @@ class BuildService extends BaseService
      * @param  list<string>  $modules
      * @return string the git commit
      */
-    private function stage(string $stage, array $modules, bool $vendor): string
+    private function stage(string $stage, array $modules, bool $vendor, bool $developer = false): string
     {
         File::deleteDirectory($stage);
         File::ensureDirectoryExists($stage);
 
         $commit = $this->export($stage);
-        $this->strip($stage, $modules);
+        $this->strip($stage, $modules, $developer);
 
         if ($vendor) {
-            $this->vendor($stage);
+            $this->vendor($stage, $developer);
         }
 
         return $commit;
@@ -480,7 +524,7 @@ class BuildService extends BaseService
         return $result->output();
     }
 
-    private function disk(): \Illuminate\Contracts\Filesystem\Filesystem
+    private function disk(): Filesystem
     {
         return Storage::disk((string) config('distribution.disk', 'local'));
     }

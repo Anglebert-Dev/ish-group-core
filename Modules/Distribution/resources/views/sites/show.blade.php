@@ -212,6 +212,7 @@
                             </td>
                             <td class="px-5 py-3.5">
                                 <x-common.badge :color="$row->status->color()">{{ $row->status->label() }}</x-common.badge>
+                                @if ($row->held)<x-common.badge color="warning">{{ __('distribution::distribution.module_held') }}</x-common.badge>@endif
                                 @if ($row->last_error)<div class="text-xs text-danger mt-1">{{ $row->last_error }}</div>@endif
                             </td>
                             <td class="px-5 py-3.5">
@@ -319,7 +320,10 @@
             <form method="POST" action="{{ route('superadmin.distribution.sites.builds.store', $site) }}"
                   onsubmit="var b=this.querySelector('button'); b.disabled=true; b.textContent=@js(__('distribution::distribution.building_wait'));">
                 @csrf
-                <x-common.button type="submit" size="sm">{{ __('distribution::distribution.build_zip') }}</x-common.button>
+                <div class="flex flex-wrap items-center gap-3">
+                    <x-common.checkbox name="developer" value="1" inline :label="__('distribution::distribution.build_developer')" title="{{ __('distribution::distribution.build_developer_hint') }}" />
+                    <x-common.button type="submit" size="sm">{{ __('distribution::distribution.build_zip') }}</x-common.button>
+                </div>
             </form>
         </div>
 
@@ -330,7 +334,10 @@
                     @forelse ($site->builds as $build)
                         <tr>
                             <td class="px-5 py-3.5 whitespace-nowrap text-muted">{{ $build->created_at?->format('d M Y H:i') }}</td>
-                            <td class="px-5 py-3.5">{{ implode(', ', (array) $build->modules) }}</td>
+                            <td class="px-5 py-3.5">
+                                {{ implode(', ', (array) $build->modules) }}
+                                @if ($build->developer)<x-common.badge color="brand" class="ml-1">{{ __('distribution::distribution.build_developer_badge') }}</x-common.badge>@endif
+                            </td>
                             <td class="px-5 py-3.5 font-mono text-xs">{{ $build->core_version ?: '—' }}</td>
                             <td class="px-5 py-3.5 whitespace-nowrap text-muted">{{ $build->size ? number_format($build->size / 1048576, 1).' MB' : '' }}</td>
                             <td class="px-5 py-3.5">

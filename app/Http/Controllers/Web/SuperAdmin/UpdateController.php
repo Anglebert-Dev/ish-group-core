@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use App\Models\System\System;
+use App\Services\Module\ModuleManager;
 use App\Services\Updates\UpdateService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,6 +34,8 @@ class UpdateController extends Controller
             'lastError' => System::getProperty('distribution_last_error'),
             'writable' => is_writable(base_path('Modules')),
             'version' => config('core.version'),
+            'held' => $this->updates->held(),
+            'installedModules' => app(ModuleManager::class)->catalogue()->filter(fn ($m) => $m['installed'])->pluck('name')->values()->all(),
         ]);
     }
 
@@ -60,6 +63,16 @@ class UpdateController extends Controller
     {
         $key = $request->validate(['key' => ['required', 'string', 'max:2000']])['key'];
         $result = $this->updates->link($key);
+
+        return back()->with($result['status'] ? 'success' : 'error', $result['message']);
+    }
+
+    /** Mark a module as customised (hold its updates), or let updates through again. */
+    public function hold(Request $request): RedirectResponse
+    {
+        abort_unless($this->updates->linked(), 404);
+        $data = $request->validate(['module' => ['required', 'string', 'max:100'], 'held' => ['required', 'boolean']]);
+        $result = $this->updates->setHeld($data['module'], (bool) $data['held']);
 
         return back()->with($result['status'] ? 'success' : 'error', $result['message']);
     }

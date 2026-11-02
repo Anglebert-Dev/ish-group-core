@@ -236,6 +236,7 @@ Route::prefix('app')->middleware(['auth:staff', 'auth.session', 'exclusive.porta
         Route::post('/updates/check', [UpdateController::class, 'check'])->middleware('throttle:10,1')->name('updates.check');
         Route::post('/updates/install-core', [UpdateController::class, 'installCore'])->middleware(['password.confirm.staff', 'throttle:5,1'])->name('updates.install-core');
         Route::post('/updates/link', [UpdateController::class, 'link'])->middleware(['password.confirm.staff', 'throttle:10,1'])->name('updates.link');
+        Route::post('/updates/hold', [UpdateController::class, 'hold'])->name('updates.hold');
         Route::post('/updates/install', [UpdateController::class, 'install'])->middleware(['password.confirm.staff', 'throttle:5,1'])->name('updates.install');
 
         Route::get('/communicator', [CommunicatorController::class, 'index'])->name('communicator.index');

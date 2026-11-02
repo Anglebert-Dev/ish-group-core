@@ -14,6 +14,7 @@ class Build extends BaseModel
     protected $table = 'distribution_builds';
 
     protected $fillable = [
+        'developer',
         'site_id', 'token_id', 'core_version', 'modules', 'filename', 'path', 'sha256', 'size',
         'install_code_hash', 'install_code', 'status', 'error', 'expires_at', 'emailed_to', 'emailed_at',
     ];
@@ -23,6 +24,7 @@ class Build extends BaseModel
     protected function casts(): array
     {
         return [
+            'developer' => 'boolean',
             'modules' => 'array',
             'size' => 'integer',
             'status' => BuildStatus::class,

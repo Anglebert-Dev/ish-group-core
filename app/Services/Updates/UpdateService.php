@@ -136,7 +136,8 @@ class UpdateService extends BaseService
 
         // A version that already failed here is not retried every hour;
         // the admin can still install it by hand, or we publish a fix.
-        $retry = array_values(array_filter($checked['data']['offers'], fn (array $offer) => ! $this->failedBefore($offer)));
+        // Customised modules wait for the admin too.
+        $retry = array_values(array_filter($checked['data']['offers'], fn (array $offer) => ! $this->failedBefore($offer) && ! $this->isHeld($offer['module'])));
 
         return $retry === []
             ? $this->failure(__('updates.not_retried'))
@@ -159,6 +160,38 @@ class UpdateService extends BaseService
         $core = $this->installCore();
 
         return $result && ! $result['status'] ? $result : $core;
+    }
+
+    /**
+     * Modules the customer changed themselves: updates wait for them
+     * (an update replaces the whole module folder; a backup is kept).
+     *
+     * @return list<string>
+     */
+    public function held(): array
+    {
+        return array_values(array_filter((array) json_decode((string) System::getProperty('distribution_held_modules', '[]'), true), 'is_string'));
+    }
+
+    public function isHeld(string $module): bool
+    {
+        return in_array(strtolower($module), array_map('strtolower', $this->held()), true);
+    }
+
+    public function setHeld(string $module, bool $held): array
+    {
+        if (! $this->modules->isInstalled($module)) {
+            return $this->failure(__('body.module_not_installed'));
+        }
+
+        $list = array_values(array_filter($this->held(), fn ($name) => strcasecmp($name, $module) !== 0));
+        if ($held) {
+            $list[] = $module;
+        }
+        System::addProperty('distribution_held_modules', json_encode($list));
+        audit($held ? 'module_updates_held' : 'module_updates_resumed', ($held ? 'Updates held for customised module ' : 'Updates resumed for module ').$module, null, ['module' => $module], (int) System::getProperty('primary_business_id') ?: null);
+
+        return $this->success($list, __($held ? 'updates.held' : 'updates.resumed', ['module' => $module]));
     }
 
     /**
@@ -253,7 +286,9 @@ class UpdateService extends BaseService
         }
 
         try {
-            $offers = array_values(array_filter($this->offers(), fn (array $offer) => $offer['action'] !== 'core' && ($modules === null || in_array($offer['module'], $modules, true))));
+            // "Update all" leaves customised modules alone; one picked by name is updated.
+            $offers = array_values(array_filter($this->offers(), fn (array $offer) => $offer['action'] !== 'core'
+                && ($modules === null ? ! $this->isHeld($offer['module']) : in_array($offer['module'], $modules, true))));
 
             if ($offers === []) {
                 return $this->failure(__('updates.nothing_to_install'));
@@ -336,7 +371,7 @@ class UpdateService extends BaseService
             'modules_writable' => is_writable(base_path('Modules')),
             'modules' => $this->modules->catalogue()
                 ->filter(fn (array $module) => $module['installed'])
-                ->map(fn (array $module) => ['name' => $module['name'], 'installed_version' => $module['installed_version'], 'enabled' => $module['enabled']])
+                ->map(fn (array $module) => ['name' => $module['name'], 'installed_version' => $module['installed_version'], 'enabled' => $module['enabled'], 'held' => $this->isHeld($module['name'])])
                 ->values()
                 ->all(),
         ];
