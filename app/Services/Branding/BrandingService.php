@@ -7,6 +7,7 @@ use App\Models\Business\Business;
 use App\Services\BaseService;
 use App\Support\Branding\Brand;
 use App\Support\Branding\Fonts;
+use App\Support\Branding\ThemeTokens;
 use App\Support\Printing\PrintDesign;
 use App\Support\Settings\BusinessSettings;
 use Illuminate\Http\UploadedFile;
@@ -55,6 +56,16 @@ class BrandingService extends BaseService
             signatoryTitle: $get('signatory_title'),
             paymentMethods: array_values(array_filter((array) $get('payment_methods', []), 'is_array')),
         );
+    }
+
+    /**
+     * The design tokens for every page (docs/branding.md §2.3).
+     *
+     * @return array<string, string>
+     */
+    public function tokens(Business $business): array
+    {
+        return ThemeTokens::resolve($business->brandColor());
     }
 
     /**

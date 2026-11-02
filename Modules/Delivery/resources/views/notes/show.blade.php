@@ -7,7 +7,7 @@
     </x-common.page-header>
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-        <div class="xl:col-span-2 bg-white border border-line rounded-xl p-5 space-y-3">
+        <div class="xl:col-span-2 bg-card border border-line rounded-xl p-5 space-y-3">
             <table class="w-full text-sm">
                 <thead><tr class="text-left text-xs text-muted uppercase tracking-wide border-b border-line">
                     <th class="px-3 py-2.5 font-semibold">{{ __('inventory::inventory.line_item') }}</th>
@@ -31,10 +31,10 @@
                 [__('delivery::delivery.receiver_phone'), $note->receiver_phone],
                 [__('delivery::delivery.vehicle'), $note->vehicle],
             ]" />
-            <div class="bg-white border border-line rounded-xl p-5 space-y-2">
+            <div class="bg-card border border-line rounded-xl p-5 space-y-2">
                 <p class="text-sm font-semibold text-ink">{{ __('delivery::delivery.signature') }}</p>
                 @if ($note->signature)
-                    <img src="{{ $note->signature }}" alt="{{ __('delivery::delivery.signature') }}" class="max-h-32 rounded-lg border border-line bg-white">
+                    <img src="{{ $note->signature }}" alt="{{ __('delivery::delivery.signature') }}" class="max-h-32 rounded-lg border border-line bg-card">
                 @else
                     <p class="text-sm text-muted">{{ __('delivery::delivery.signature_none') }}</p>
                 @endif

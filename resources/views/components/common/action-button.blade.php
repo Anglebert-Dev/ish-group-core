@@ -14,7 +14,7 @@
         'danger' => 'border-red-300 text-danger hover:bg-red-50',
         'muted' => 'border-line text-muted hover:bg-surface',
     ];
-    $classes = 'inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border bg-white px-2.5 py-1 text-xs font-semibold transition-colors '.($colors[$color] ?? $colors['brand']);
+    $classes = 'inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border bg-card px-2.5 py-1 text-xs font-semibold transition-colors '.($colors[$color] ?? $colors['brand']);
     $spoof = strtoupper($method);
 @endphp
 

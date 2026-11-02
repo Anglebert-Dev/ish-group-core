@@ -15,7 +15,7 @@
         <div class="xl:col-span-2 space-y-6">
             @include('billing::partials.invoice-body')
 
-            <div class="bg-white border border-line rounded-xl overflow-hidden">
+            <div class="bg-card border border-line rounded-xl overflow-hidden">
                 <div class="px-5 py-4 border-b border-line"><h2 class="font-display font-bold text-ink">{{ __('billing::billing.payments') }}</h2></div>
                 <x-billing::payments-table :payments="$invoice->payments" admin />
             </div>
@@ -30,7 +30,7 @@
                     'submitLabel' => __('billing::billing.record_payment'),
                 ])
 
-                <form action="{{ route('superadmin.billing.invoices.void', $invoice) }}" method="POST" class="bg-white border border-danger/40 rounded-xl p-5 space-y-3">
+                <form action="{{ route('superadmin.billing.invoices.void', $invoice) }}" method="POST" class="bg-card border border-danger/40 rounded-xl p-5 space-y-3">
                     @csrf
                     <h2 class="font-display font-bold text-danger">{{ __('billing::billing.void_invoice') }}</h2>
                     <x-common.input name="reason" :label="__('billing::billing.void_reason')" />

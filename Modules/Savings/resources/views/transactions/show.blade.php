@@ -16,14 +16,14 @@
                 </div>
             @endif
 
-            <div class="bg-white border border-line rounded-xl p-5 space-y-3">
+            <div class="bg-card border border-line rounded-xl p-5 space-y-3">
                 <h2 class="font-display font-bold text-ink">{{ __('savings::savings.entries') }}</h2>
                 @foreach ($tx->entries as $entry)
                     <div class="flex justify-between text-sm"><a href="{{ route('savings.accounts.show', $entry->account) }}" class="hover:text-brand">{{ $entry->account?->name }}</a>@include('savings::partials.money', ['v' => $entry->amount, 'c' => $entry->account?->currency, 'signed' => true])</div>
                 @endforeach
             </div>
 
-            <div class="bg-white border border-line rounded-xl p-5 space-y-3">
+            <div class="bg-card border border-line rounded-xl p-5 space-y-3">
                 <h2 class="font-display font-bold text-ink">{{ __('savings::savings.lines') }}</h2>
                 @forelse ($tx->lines as $line)
                     <div class="flex justify-between text-sm"><span>{{ __('savings::savings.nature_'.$line->nature) }}{{ $line->category ? ': '.$line->category->fullName() : '' }}{{ $line->note ? ' · '.$line->note : '' }}</span><span>{{ $m($line->amount) }}</span></div>
@@ -47,11 +47,11 @@
         </div>
 
         <div class="space-y-4">
-            <div class="bg-white border border-line rounded-xl p-5"><p class="text-xs uppercase text-muted font-semibold">{{ __('savings::savings.amount') }}</p><p class="text-2xl font-display font-bold text-ink">{{ $m($tx->amount) }}</p></div>
+            <div class="bg-card border border-line rounded-xl p-5"><p class="text-xs uppercase text-muted font-semibold">{{ __('savings::savings.amount') }}</p><p class="text-2xl font-display font-bold text-ink">{{ $m($tx->amount) }}</p></div>
 
             @if (! $tx->isReversed() && ! $tx->isReversal())
                 @if ($tx->lines->whereIn('nature', ['expense', 'income'])->isNotEmpty() && $can('create savings.transaction'))
-                    <details class="bg-white border border-line rounded-xl p-5">
+                    <details class="bg-card border border-line rounded-xl p-5">
                         <summary class="cursor-pointer font-display font-bold text-ink">{{ __('savings::savings.type_refund') }}</summary>
                         <form action="{{ route('savings.transactions.refund', $tx) }}" method="POST" class="mt-3 space-y-3">
                             @csrf
@@ -64,7 +64,7 @@
                     </details>
                 @endif
                 @if ($can('delete savings.transaction'))
-                    <form action="{{ route('savings.transactions.reverse', $tx) }}" method="POST" class="bg-white border border-danger/40 rounded-xl p-5 space-y-3">
+                    <form action="{{ route('savings.transactions.reverse', $tx) }}" method="POST" class="bg-card border border-danger/40 rounded-xl p-5 space-y-3">
                         @csrf
                         <h2 class="font-display font-bold text-danger">{{ __('savings::savings.reverse') }} / {{ __('savings::savings.correct') }}</h2>
                         <p class="text-xs text-muted">{{ __('savings::savings.reverse_hint') }}</p>

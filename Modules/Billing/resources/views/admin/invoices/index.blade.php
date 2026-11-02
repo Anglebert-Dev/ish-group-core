@@ -16,7 +16,7 @@
             :options="['' => __('body.all'), 'open' => __('billing::billing.invoice_open'), 'overdue' => __('billing::billing.overdue'), 'paid' => __('billing::billing.invoice_paid'), 'void' => __('billing::billing.invoice_void')]" />
     </x-common.filter-panel>
 
-    <div class="bg-white border border-line rounded-xl overflow-hidden">
+    <div class="bg-card border border-line rounded-xl overflow-hidden">
         @include('billing::admin.invoices.table', ['invoices' => $invoices])
         <x-common.pagination :paginator="$invoices" class="border-t border-line" />
     </div>

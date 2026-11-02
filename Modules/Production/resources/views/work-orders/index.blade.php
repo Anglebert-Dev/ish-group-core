@@ -7,7 +7,7 @@
         </x-slot:actions>
     </x-common.page-header>
 
-    <div class="bg-white border border-line rounded-xl p-5 mb-4">
+    <div class="bg-card border border-line rounded-xl p-5 mb-4">
         <h2 class="font-display font-bold text-ink mb-3">{{ __('production::production.today') }}</h2>
         @forelse ($today as $row)
             <div class="flex items-center justify-between gap-3 py-1.5 text-sm">
@@ -30,7 +30,7 @@
             :options="['' => __('body.all')] + array_combine($lines, $lines)" />
     </x-common.filter-panel>
 
-    <div class="bg-white border border-line rounded-xl overflow-hidden">
+    <div class="bg-card border border-line rounded-xl overflow-hidden">
         <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead>

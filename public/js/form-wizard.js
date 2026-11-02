@@ -192,9 +192,9 @@
             } else if (isDone) {
                 btn.className += ' bg-brand-light text-brand-dark cursor-pointer hover:opacity-90';
             } else if (clickable) {
-                btn.className += ' bg-white border border-line text-body cursor-pointer hover:border-brand';
+                btn.className += ' bg-card border border-line text-body cursor-pointer hover:border-brand';
             } else {
-                btn.className += ' bg-white border border-line text-muted opacity-60 cursor-not-allowed';
+                btn.className += ' bg-card border border-line text-muted opacity-60 cursor-not-allowed';
             }
 
             if (badge) {

@@ -10,15 +10,15 @@
     </x-common.page-header>
 
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div class="bg-white border border-line rounded-xl p-4"><p class="text-xs uppercase text-muted font-semibold">{{ __('savings::savings.original') }}</p><p class="text-lg font-display font-bold">{{ $m($original) }}</p></div>
-        <div class="bg-white border border-line rounded-xl p-4"><p class="text-xs uppercase text-muted font-semibold">{{ __('savings::savings.outstanding') }}</p><p class="text-lg font-display font-bold {{ $outstanding > 0 ? 'text-danger' : 'text-success' }}">{{ $m($outstanding) }}</p></div>
-        <div class="bg-white border border-line rounded-xl p-4"><p class="text-xs uppercase text-muted font-semibold">{{ __('body.status') }}</p><p class="mt-2"><x-common.badge>{{ __('savings::savings.state_'.$state) }}</x-common.badge></p></div>
-        <div class="bg-white border border-line rounded-xl p-4"><p class="text-xs uppercase text-muted font-semibold">{{ __('savings::savings.due_date') }}</p><p class="text-lg font-display font-bold">{{ $o->due_date?->format('d/m/Y') ?? '—' }}</p></div>
+        <div class="bg-card border border-line rounded-xl p-4"><p class="text-xs uppercase text-muted font-semibold">{{ __('savings::savings.original') }}</p><p class="text-lg font-display font-bold">{{ $m($original) }}</p></div>
+        <div class="bg-card border border-line rounded-xl p-4"><p class="text-xs uppercase text-muted font-semibold">{{ __('savings::savings.outstanding') }}</p><p class="text-lg font-display font-bold {{ $outstanding > 0 ? 'text-danger' : 'text-success' }}">{{ $m($outstanding) }}</p></div>
+        <div class="bg-card border border-line rounded-xl p-4"><p class="text-xs uppercase text-muted font-semibold">{{ __('body.status') }}</p><p class="mt-2"><x-common.badge>{{ __('savings::savings.state_'.$state) }}</x-common.badge></p></div>
+        <div class="bg-card border border-line rounded-xl p-4"><p class="text-xs uppercase text-muted font-semibold">{{ __('savings::savings.due_date') }}</p><p class="text-lg font-display font-bold">{{ $o->due_date?->format('d/m/Y') ?? '—' }}</p></div>
     </div>
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         <div class="xl:col-span-2 space-y-6">
-            <div class="bg-white border border-line rounded-xl p-5 space-y-2">
+            <div class="bg-card border border-line rounded-xl p-5 space-y-2">
                 <h2 class="font-display font-bold text-ink">{{ __('savings::savings.explanation') }}</h2>
                 @forelse ($history as $h)
                     <div class="flex justify-between gap-3 text-sm border-b border-line pb-1.5">
@@ -31,11 +31,11 @@
                 @endforelse
                 <div class="flex justify-between text-sm font-bold pt-1"><span>{{ __('savings::savings.outstanding') }}</span><span>{{ $m($outstanding) }}</span></div>
             </div>
-            @if ($o->notes)<div class="bg-white border border-line rounded-xl p-5 text-sm"><h2 class="font-display font-bold text-ink mb-1">{{ __('savings::savings.evidence') }}</h2>{!! nl2br(e($o->notes)) !!}</div>@endif
+            @if ($o->notes)<div class="bg-card border border-line rounded-xl p-5 text-sm"><h2 class="font-display font-bold text-ink mb-1">{{ __('savings::savings.evidence') }}</h2>{!! nl2br(e($o->notes)) !!}</div>@endif
 
             @if ($o->direction === 'restore' && $open && $can('update savings.obligation'))
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <form action="{{ route('savings.obligations.basis', $o) }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-3">
+                    <form action="{{ route('savings.obligations.basis', $o) }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-3">
                         @csrf
                         <h2 class="font-display font-bold text-ink">{{ __('savings::savings.add_basis') }}</h2>
                         <x-common.select name="transaction" id="b-tx" :label="__('savings::savings.transaction')" :options="$outgoing->mapWithKeys(fn ($t) => [$t->uuid => $t->effective_date->format('d/m').' · '.$t->description.' · '.$m($t->amount)])->all()" required />
@@ -43,7 +43,7 @@
                         <x-common.input name="note" id="b-note" :label="__('savings::savings.notes')" />
                         <x-common.button type="submit" size="sm">{{ __('savings::savings.add_basis') }}</x-common.button>
                     </form>
-                    <form action="{{ route('savings.obligations.link', $o) }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-3">
+                    <form action="{{ route('savings.obligations.link', $o) }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-3">
                         @csrf
                         <h2 class="font-display font-bold text-ink">{{ __('savings::savings.link_restore') }}</h2>
                         <x-common.select name="transaction" id="l-tx" :label="__('savings::savings.transaction')" :options="$incoming->mapWithKeys(fn ($t) => [$t->uuid => $t->effective_date->format('d/m').' · '.$t->description.' · '.$m($t->amount)])->all()" required />
@@ -56,7 +56,7 @@
 
         <div class="space-y-4">
             @if ($open && $outstanding > 0 && $can('create savings.transaction'))
-                <form action="{{ route('savings.obligations.repay', $o) }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-3">
+                <form action="{{ route('savings.obligations.repay', $o) }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-3">
                     @csrf
                     <input type="hidden" name="idempotency_key" value="{{ $key }}">
                     <h2 class="font-display font-bold text-ink">{{ $o->direction === 'restore' ? __('savings::savings.put_back') : __('savings::savings.record_repayment') }}</h2>
@@ -71,21 +71,21 @@
                 </form>
             @endif
             @if ($open && $can('update savings.obligation'))
-                <form action="{{ route('savings.obligations.adjust', $o) }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-3">
+                <form action="{{ route('savings.obligations.adjust', $o) }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-3">
                     @csrf
                     <h2 class="font-display font-bold text-ink">{{ __('savings::savings.adjust') }}</h2>
                     <x-common.input name="amount" id="a-amt" :label="__('savings::savings.amount')" hint="+ / −" required />
                     <x-common.input name="reason" id="a-reason" :label="__('savings::savings.reason')" required />
                     <x-common.button type="submit" variant="secondary" size="sm">{{ __('savings::savings.adjust') }}</x-common.button>
                 </form>
-                <form action="{{ route('savings.obligations.dispute', $o) }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-2">
+                <form action="{{ route('savings.obligations.dispute', $o) }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-2">
                     @csrf
                     <x-common.input name="reason" id="d-reason" :label="__('savings::savings.reason')" />
                     <x-common.button type="submit" variant="secondary" size="sm">{{ $o->status === 'disputed' ? __('savings::savings.undispute') : __('savings::savings.dispute') }}</x-common.button>
                 </form>
             @endif
             @if ($open && $can('delete savings.obligation'))
-                <form action="{{ route('savings.obligations.write-off', $o) }}" method="POST" class="bg-white border border-danger/40 rounded-xl p-5 space-y-3">
+                <form action="{{ route('savings.obligations.write-off', $o) }}" method="POST" class="bg-card border border-danger/40 rounded-xl p-5 space-y-3">
                     @csrf
                     <h2 class="font-display font-bold text-danger">{{ __('savings::savings.write_off') }}</h2>
                     <x-common.input name="reason" id="w-reason" :label="__('savings::savings.reason')" required />

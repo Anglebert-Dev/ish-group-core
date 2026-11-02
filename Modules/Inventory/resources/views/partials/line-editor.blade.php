@@ -6,7 +6,7 @@
 @php
     $name ??= 'lines';
     $rows = array_values($lines ?: [[]]);
-    $cell = 'w-full rounded-lg border border-line bg-white px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand';
+    $cell = 'w-full rounded-lg border border-line bg-card px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand';
     $editorId = 'lines-'.\Illuminate\Support\Str::random(6);
 @endphp
 <div id="{{ $editorId }}" data-line-editor class="space-y-3">
@@ -49,7 +49,7 @@
         @if ($gridItems->isNotEmpty())
             <label class="flex items-center gap-2 text-sm">
                 <span class="font-semibold text-brand">{{ __('inventory::inventory.grid_add') }}</span>
-                <select data-grid-item class="rounded-lg border border-line bg-white px-2.5 py-1.5 text-sm">
+                <select data-grid-item class="rounded-lg border border-line bg-card px-2.5 py-1.5 text-sm">
                     <option value="">{{ __('inventory::inventory.line_choose') }}</option>
                     @foreach ($gridItems as $uuid => $variants)
                         <option value="{{ $uuid }}">{{ $variants->first()['item_name'] }}</option>

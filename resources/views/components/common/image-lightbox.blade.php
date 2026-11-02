@@ -18,7 +18,7 @@
             <button
                 type="button"
                 data-image-lightbox-close
-                class="pointer-events-auto self-end inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-ink shadow-md border border-line hover:bg-white transition-colors"
+                class="pointer-events-auto self-end inline-flex h-9 w-9 items-center justify-center rounded-full bg-card/95 text-ink shadow-md border border-line hover:bg-card transition-colors"
                 aria-label="{{ __('body.close') }}"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -29,7 +29,7 @@
                 data-image-lightbox-img
                 src=""
                 alt=""
-                class="pointer-events-auto w-full max-h-[80vh] object-contain rounded-xl shadow-2xl bg-white border border-line"
+                class="pointer-events-auto w-full max-h-[80vh] object-contain rounded-xl shadow-2xl bg-card border border-line"
             >
         </div>
     </div>

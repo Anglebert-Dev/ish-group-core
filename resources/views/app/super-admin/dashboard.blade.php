@@ -14,7 +14,7 @@
         <x-dashboard.stat-card :label="__('body.active_modules')" :value="$activeModules" :href="route('superadmin.modules.index')" />
     </div>
 
-    <div class="bg-white border border-line rounded-xl overflow-hidden">
+    <div class="bg-card border border-line rounded-xl overflow-hidden">
         <div class="flex items-center justify-between gap-3 px-5 py-4 border-b border-line">
             <h2 class="font-display font-bold text-ink">{{ __('body.recent_businesses') }}</h2>
             <a href="{{ route('superadmin.businesses.index') }}" class="text-sm font-medium text-brand hover:text-brand-dark">{{ __('body.view_all') }}</a>

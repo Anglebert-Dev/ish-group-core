@@ -6,14 +6,14 @@
     <form action="{{ route('superadmin.businesses.store') }}" method="POST" class="space-y-6 max-w-2xl">
         @csrf
 
-        <div class="bg-white border border-line rounded-xl p-4 sm:p-6 space-y-5">
+        <div class="bg-card border border-line rounded-xl p-4 sm:p-6 space-y-5">
             <h2 class="font-display font-bold text-ink">{{ __('body.business') }}</h2>
             <x-common.input name="business_name" :label="__('body.business_name')" :value="old('business_name')" required autofocus />
             <input type="hidden" name="is_active" value="0">
             <x-common.checkbox name="is_active" :label="__('body.business_active_now')" :checked="old('is_active', true)" />
         </div>
 
-        <div class="bg-white border border-line rounded-xl p-4 sm:p-6 space-y-5">
+        <div class="bg-card border border-line rounded-xl p-4 sm:p-6 space-y-5">
             <h2 class="font-display font-bold text-ink">{{ __('body.owner') }}</h2>
             <x-common.input name="name" :label="__('body.full_name')" :value="old('name')" required autocomplete="off" />
             <x-common.input type="email" name="email" :label="__('body.email_address')" :value="old('email')" required autocomplete="off" />

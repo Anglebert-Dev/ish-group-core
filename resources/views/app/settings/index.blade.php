@@ -9,7 +9,7 @@
     <nav class="flex flex-wrap gap-1.5 mb-6">
         @foreach ($tabs as $item)
             <a href="{{ route('settings.index', ['tab' => $item]) }}"
-               class="inline-flex items-center rounded-full px-3.5 py-1.5 text-sm font-medium border transition-colors {{ $tab === $item ? 'bg-brand text-white border-brand' : 'bg-white text-body border-line hover:border-brand hover:text-brand' }}">
+               class="inline-flex items-center rounded-full px-3.5 py-1.5 text-sm font-medium border transition-colors {{ $tab === $item ? 'bg-brand text-white border-brand' : 'bg-card text-body border-line hover:border-brand hover:text-brand' }}">
                 {{ __('body.brand_tab_'.$item) }}
             </a>
         @endforeach
@@ -21,7 +21,7 @@
         <input type="hidden" name="section" value="{{ $tab }}">
 
         @if ($tab === 'details')
-            <div class="bg-white border border-line rounded-xl p-4 sm:p-6 space-y-5">
+            <div class="bg-card border border-line rounded-xl p-4 sm:p-6 space-y-5">
                 <p class="text-sm text-muted">{{ __('body.brand_details_hint') }}</p>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
                     <x-common.input name="name" :label="__('body.company_name')" :value="old('name', $setting->name)" :hint="__('body.company_name_hint')" required />
@@ -37,7 +37,7 @@
         @endif
 
         @if ($tab === 'look')
-            <div class="bg-white border border-line rounded-xl p-4 sm:p-6 space-y-5">
+            <div class="bg-card border border-line rounded-xl p-4 sm:p-6 space-y-5">
                 <p class="text-sm text-muted">{{ __('body.brand_look_hint') }}</p>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
                     @foreach ([['brand_color', $brandColor, __('body.brand_color'), null, true], ['secondary_color', $secondaryColor, __('body.brand_secondary_color'), __('body.brand_secondary_color_hint'), false]] as [$field, $value, $label, $hint, $required])
@@ -46,9 +46,9 @@
                             <div class="flex items-center gap-3">
                                 <input type="color" value="{{ strtolower($value) }}" aria-label="{{ $label }}"
                                        oninput="document.getElementById('{{ $field }}').value = this.value.toUpperCase()"
-                                       class="h-12 w-16 shrink-0 rounded-xl border border-line bg-white p-1 cursor-pointer shadow-sm">
+                                       class="h-12 w-16 shrink-0 rounded-xl border border-line bg-card p-1 cursor-pointer shadow-sm">
                                 <input type="text" name="{{ $field }}" id="{{ $field }}" value="{{ $value }}" maxlength="7" @required($required)
-                                       class="flex-1 min-w-0 h-12 rounded-xl border px-4 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand uppercase @error($field) border-danger @else border-line @enderror">
+                                       class="flex-1 min-w-0 h-12 rounded-xl border px-4 text-sm bg-card shadow-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand uppercase @error($field) border-danger @else border-line @enderror">
                             </div>
                             @if ($hint)<p class="text-xs text-muted">{{ $hint }}</p>@endif
                             @error($field)<p class="text-xs text-danger" role="alert">{{ $message }}</p>@enderror
@@ -88,7 +88,7 @@
         @endif
 
         @if ($tab === 'stamp')
-            <div class="bg-white border border-line rounded-xl p-4 sm:p-6 space-y-5">
+            <div class="bg-card border border-line rounded-xl p-4 sm:p-6 space-y-5">
                 <p class="text-sm text-muted">{{ __('body.brand_stamp_hint') }}</p>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
                     @foreach (['stamp' => $brand->stampPath, 'signature' => $brand->signaturePath] as $kind => $path)
@@ -111,7 +111,7 @@
                 $methods = old('methods', $brand->paymentMethods);
                 $methods = array_pad(array_values($methods), \App\Services\Branding\BrandingService::MAX_PAYMENT_METHODS, []);
             @endphp
-            <div class="bg-white border border-line rounded-xl p-4 sm:p-6 space-y-5">
+            <div class="bg-card border border-line rounded-xl p-4 sm:p-6 space-y-5">
                 <p class="text-sm text-muted">{{ __('body.brand_payments_hint', ['max' => \App\Services\Branding\BrandingService::MAX_PAYMENT_METHODS]) }} {{ __('body.brand_payment_empty_hint') }}</p>
                 @foreach ($methods as $i => $method)
                     <div class="rounded-xl border border-line p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -131,11 +131,11 @@
         @if ($tab === 'documents')
             @php
                 $types = old('types', $design->types);
-                $choice = fn (string $name, string $value, string $current) => 'rounded-xl border px-3 py-2 text-sm cursor-pointer select-none '.($current === $value ? 'border-brand bg-brand-light text-brand-dark font-semibold' : 'border-line bg-white hover:border-brand');
+                $choice = fn (string $name, string $value, string $current) => 'rounded-xl border px-3 py-2 text-sm cursor-pointer select-none '.($current === $value ? 'border-brand bg-brand-light text-brand-dark font-semibold' : 'border-line bg-card hover:border-brand');
             @endphp
             <div class="grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] gap-6 items-start" id="print-designer">
                 <div class="space-y-6">
-                    <div class="bg-white border border-line rounded-xl p-4 sm:p-6 space-y-5">
+                    <div class="bg-card border border-line rounded-xl p-4 sm:p-6 space-y-5">
                         <p class="text-sm text-muted">{{ __('body.design_hint') }}</p>
 
                         <div>
@@ -158,7 +158,7 @@
                                 <div class="flex items-center gap-3">
                                     <input type="color" value="{{ strtolower($design->accent) }}" aria-label="{{ __('body.design_accent') }}"
                                            oninput="document.getElementById('accent').value = this.value.toUpperCase(); document.getElementById('accent').dispatchEvent(new Event('input', {bubbles: true}))"
-                                           class="h-11 w-14 shrink-0 rounded-xl border border-line bg-white p-1 cursor-pointer">
+                                           class="h-11 w-14 shrink-0 rounded-xl border border-line bg-card p-1 cursor-pointer">
                                     <input type="text" name="accent" id="accent" value="{{ $design->accent }}" maxlength="7" class="flex-1 min-w-0 h-11 rounded-xl border border-line px-3 text-sm uppercase">
                                 </div>
                                 <p class="text-xs text-muted">{{ __('body.design_accent_hint') }}</p>
@@ -181,7 +181,7 @@
                         </div>
                     </div>
 
-                    <div class="bg-white border border-line rounded-xl p-4 sm:p-6 space-y-4">
+                    <div class="bg-card border border-line rounded-xl p-4 sm:p-6 space-y-4">
                         <div>
                             <p class="font-semibold text-ink">{{ __('body.design_per_type') }}</p>
                             <p class="text-sm text-muted">{{ __('body.design_per_type_hint') }}</p>
@@ -198,12 +198,12 @@
                     </div>
                 </div>
 
-                <div class="2xl:sticky 2xl:top-4 bg-white border border-line rounded-xl overflow-hidden">
+                <div class="2xl:sticky 2xl:top-4 bg-card border border-line rounded-xl overflow-hidden">
                     <div class="px-4 py-3 border-b border-line flex items-center justify-between gap-3">
                         <p class="font-semibold text-ink text-sm">{{ __('body.design_preview') }}</p>
                         <a id="print-preview-pdf" href="{{ route('settings.print-preview', ['format' => 'pdf']) }}" target="_blank" class="text-sm font-semibold text-brand hover:text-brand-dark">{{ __('body.design_preview_pdf') }}</a>
                     </div>
-                    <iframe id="print-preview" title="{{ __('body.design_preview') }}" src="{{ route('settings.print-preview') }}" class="w-full bg-gray-200" style="height: 900px; border: 0"></iframe>
+                    <iframe id="print-preview" title="{{ __('body.design_preview') }}" src="{{ route('settings.print-preview') }}" class="w-full bg-line" style="height: 900px; border: 0"></iframe>
                 </div>
             </div>
 

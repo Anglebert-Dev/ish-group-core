@@ -19,7 +19,7 @@
             :options="['' => __('body.all'), 'active' => __('body.customer_status_active'), 'inactive' => __('body.customer_status_inactive'), 'banned' => __('body.customer_status_banned')]" />
     </x-common.filter-panel>
 
-    <div class="bg-white border border-line rounded-xl overflow-hidden">
+    <div class="bg-card border border-line rounded-xl overflow-hidden">
         <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead>

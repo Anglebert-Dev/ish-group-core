@@ -18,25 +18,25 @@
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         <div class="xl:col-span-2 space-y-6">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="bg-white border border-line rounded-xl p-4">
+                <div class="bg-card border border-line rounded-xl p-4">
                     <p class="text-xs font-semibold uppercase tracking-wide text-muted">{{ __('inventory::inventory.on_hand') }}</p>
                     <p class="text-2xl font-display font-bold text-ink mt-1">@include('inventory::partials.qty', ['value' => $onHand]) <span class="text-sm font-normal text-muted">{{ $item->unit }}</span></p>
                 </div>
-                <div class="bg-white border border-line rounded-xl p-4">
+                <div class="bg-card border border-line rounded-xl p-4">
                     <p class="text-xs font-semibold uppercase tracking-wide text-muted">{{ __('inventory::inventory.variants') }}</p>
                     <p class="text-2xl font-display font-bold text-ink mt-1">{{ $variants->count() }}</p>
                 </div>
-                <div class="bg-white border border-line rounded-xl p-4">
+                <div class="bg-card border border-line rounded-xl p-4">
                     <p class="text-xs font-semibold uppercase tracking-wide text-muted">{{ __('inventory::inventory.reorder_level') }}</p>
                     <p class="text-2xl font-display font-bold text-ink mt-1">{{ $item->reorder_level !== null ? \Modules\Inventory\Exceptions\InsufficientStock::format($item->reorder_level) : '—' }}</p>
                 </div>
-                <div class="bg-white border border-line rounded-xl p-4">
+                <div class="bg-card border border-line rounded-xl p-4">
                     <p class="text-xs font-semibold uppercase tracking-wide text-muted">{{ __('body.status') }}</p>
                     <p class="mt-2"><x-common.badge :color="$item->is_active ? 'success' : 'muted'">{{ $item->is_active ? __('inventory::inventory.status_active') : __('inventory::inventory.status_inactive') }}</x-common.badge></p>
                 </div>
             </div>
 
-            <div class="bg-white border border-line rounded-xl overflow-hidden">
+            <div class="bg-card border border-line rounded-xl overflow-hidden">
                 <div class="px-5 py-4 border-b border-line">
                     <h2 class="font-display font-bold text-ink">{{ __('inventory::inventory.stock_by_store') }}</h2>
                 </div>
@@ -86,7 +86,7 @@
                 </div>
             </div>
 
-            <div class="bg-white border border-line rounded-xl overflow-hidden">
+            <div class="bg-card border border-line rounded-xl overflow-hidden">
                 <div class="px-5 py-4 border-b border-line flex items-center justify-between gap-3">
                     <h2 class="font-display font-bold text-ink">{{ __('inventory::inventory.recent_movements') }}</h2>
                     @if ($can('list inventory.movement'))
@@ -99,7 +99,7 @@
 
         <div class="space-y-4">
             @if ($item->is_active && $can('create inventory.movement') && $variants->isNotEmpty() && $activeStores->isNotEmpty())
-                <form action="{{ route('inventory.items.stock', $item) }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-4" data-stock-form>
+                <form action="{{ route('inventory.items.stock', $item) }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-4" data-stock-form>
                     @csrf
                     <h2 class="font-display font-bold text-ink">{{ __('inventory::inventory.stock_action') }}</h2>
                     <div class="grid grid-cols-2 gap-2">
@@ -155,14 +155,14 @@
             @endif
 
             @if ($item->description)
-                <div class="bg-white border border-line rounded-xl p-5">
+                <div class="bg-card border border-line rounded-xl p-5">
                     <h2 class="font-display font-bold text-ink mb-2">{{ __('body.description') }}</h2>
                     <p class="text-sm text-body leading-relaxed">{!! nl2br(e($item->description)) !!}</p>
                 </div>
             @endif
 
             @if ($can('update inventory.item'))
-                <div class="bg-white border border-line rounded-xl p-5 space-y-3">
+                <div class="bg-card border border-line rounded-xl p-5 space-y-3">
                     <h2 class="font-display font-bold text-ink">{{ __('body.status') }}</h2>
                     <x-common.action-button :action="route('inventory.items.status', $item)" method="PUT" :color="$item->is_active ? 'warning' : 'success'">
                         <x-slot:fields><input type="hidden" name="active" value="{{ $item->is_active ? 0 : 1 }}"></x-slot:fields>
@@ -172,7 +172,7 @@
             @endif
 
             @if ($can('delete inventory.item') && $movements->isEmpty())
-                <form action="{{ route('inventory.items.destroy', $item) }}" method="POST" class="bg-white border border-danger/40 rounded-xl p-5 space-y-3">
+                <form action="{{ route('inventory.items.destroy', $item) }}" method="POST" class="bg-card border border-danger/40 rounded-xl p-5 space-y-3">
                     @csrf @method('DELETE')
                     <h2 class="font-display font-bold text-danger">{{ __('body.delete') }}</h2>
                     <x-common.button type="submit" variant="secondary" size="sm"

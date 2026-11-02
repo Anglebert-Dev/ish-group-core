@@ -10,7 +10,7 @@
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         <div class="xl:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
             @foreach (['expense', 'income'] as $kind)
-                <div class="bg-white border border-line rounded-xl p-5 space-y-2">
+                <div class="bg-card border border-line rounded-xl p-5 space-y-2">
                     <h2 class="font-display font-bold text-ink">{{ __('savings::savings.kind_'.$kind) }}</h2>
                     @foreach ($categories->where('kind', $kind) as $category)
                         <details class="border-b border-line pb-2 {{ $category->is_archived ? 'opacity-60' : '' }}">
@@ -32,7 +32,7 @@
             @endforeach
         </div>
         @if (\App\Helpers\AuthHelper::can('create savings.category'))
-            <form action="{{ route('savings.categories.store') }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-4">
+            <form action="{{ route('savings.categories.store') }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-4">
                 @csrf
                 <h2 class="font-display font-bold text-ink">{{ __('savings::savings.category_add') }}</h2>
                 <x-common.select name="kind" :label="__('savings::savings.kind')" :options="['expense' => __('savings::savings.kind_expense'), 'income' => __('savings::savings.kind_income')]" hide-placeholder required />

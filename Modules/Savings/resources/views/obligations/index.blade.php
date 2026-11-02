@@ -3,11 +3,11 @@
     <x-common.page-header :title="__('savings::savings.obligations')" />
     <div class="flex flex-wrap gap-2 mb-4">
         @foreach (['' => __('body.all'), 'receivable' => __('savings::savings.direction_receivable'), 'payable' => __('savings::savings.direction_payable'), 'restore' => __('savings::savings.direction_restore')] as $key => $label)
-            <a href="{{ route('savings.obligations.index', array_filter(['direction' => $key])) }}" class="px-4 py-2 rounded-lg text-sm font-semibold border {{ ($direction ?? '') === $key ? 'bg-brand text-white border-brand' : 'bg-white text-body border-line' }}">{{ $label }}</a>
+            <a href="{{ route('savings.obligations.index', array_filter(['direction' => $key])) }}" class="px-4 py-2 rounded-lg text-sm font-semibold border {{ ($direction ?? '') === $key ? 'bg-brand text-white border-brand' : 'bg-card text-body border-line' }}">{{ $label }}</a>
         @endforeach
     </div>
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-        <div class="xl:col-span-2 bg-white border border-line rounded-xl overflow-hidden">
+        <div class="xl:col-span-2 bg-card border border-line rounded-xl overflow-hidden">
             <table class="w-full text-sm">
                 <thead><tr class="text-left text-xs text-muted uppercase border-b border-line bg-surface/60">
                     <th class="px-5 py-3">{{ __('savings::savings.counterparty') }}</th><th class="px-5 py-3 text-right">{{ __('savings::savings.original') }}</th>
@@ -29,7 +29,7 @@
             </table>
         </div>
         @if (\App\Helpers\AuthHelper::can('create savings.obligation'))
-            <form action="{{ route('savings.obligations.store') }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-3">
+            <form action="{{ route('savings.obligations.store') }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-3">
                 @csrf
                 <h2 class="font-display font-bold text-ink">{{ __('savings::savings.obligation_add') }}</h2>
                 <x-common.select name="direction" :label="__('savings::savings.direction')" :value="$direction ?? 'receivable'" :options="['receivable' => __('savings::savings.direction_receivable'), 'payable' => __('savings::savings.direction_payable'), 'restore' => __('savings::savings.direction_restore')]" hide-placeholder required />

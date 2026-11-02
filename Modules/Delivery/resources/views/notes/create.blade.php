@@ -1,4 +1,4 @@
-@php $cell = 'w-28 rounded-lg border border-line bg-white px-2.5 py-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand'; @endphp
+@php $cell = 'w-28 rounded-lg border border-line bg-card px-2.5 py-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand'; @endphp
 <x-layouts.app :title="__('delivery::delivery.add_title', ['number' => $order->number])">
     <x-common.page-header :title="__('delivery::delivery.add_title', ['number' => $order->number])" :description="$order->customer?->displayName().' · '.__('delivery::delivery.from_store', ['store' => $order->store?->name])">
         <x-slot:actions>
@@ -8,7 +8,7 @@
 
     <form action="{{ route('delivery.notes.store', $order) }}" method="POST" class="space-y-6 max-w-5xl" data-delivery-form>
         @csrf
-        <div class="bg-white border border-line rounded-xl p-5 sm:p-6 space-y-4">
+        <div class="bg-card border border-line rounded-xl p-5 sm:p-6 space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <p class="text-sm text-muted">{{ __('delivery::delivery.add_hint') }}</p>
                 <button type="button" data-fill-all class="text-sm font-semibold text-brand">{{ __('delivery::delivery.deliver_all') }}</button>
@@ -42,7 +42,7 @@
             </div>
         </div>
 
-        <div class="bg-white border border-line rounded-xl p-5 sm:p-6 space-y-5">
+        <div class="bg-card border border-line rounded-xl p-5 sm:p-6 space-y-5">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <x-common.input name="delivered_on" type="date" :label="__('delivery::delivery.delivered_on')" :value="old('delivered_on', now()->toDateString())" required />
                 <x-common.input name="receiver_name" :label="__('delivery::delivery.receiver_name')" :value="old('receiver_name', $order->customer?->contact_person)" required />

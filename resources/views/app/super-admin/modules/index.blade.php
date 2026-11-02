@@ -3,7 +3,7 @@
 
     <x-common.page-header :title="__('body.modules')" :description="__('body.modules_description')" />
 
-    <div class="bg-white border border-line rounded-xl overflow-hidden">
+    <div class="bg-card border border-line rounded-xl overflow-hidden">
         <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead>

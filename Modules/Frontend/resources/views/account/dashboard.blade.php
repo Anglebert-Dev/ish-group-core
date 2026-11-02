@@ -9,7 +9,7 @@
     </x-common.page-header>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-2 bg-white border border-line rounded-xl p-5 space-y-4">
+        <div class="lg:col-span-2 bg-card border border-line rounded-xl p-5 space-y-4">
             <h2 class="font-semibold text-ink">{{ __('body.account_details') }}</h2>
             <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
@@ -31,7 +31,7 @@
             </dl>
         </div>
 
-        <div class="relative bg-white border border-line rounded-xl p-5">
+        <div class="relative bg-card border border-line rounded-xl p-5">
             <div class="absolute left-0 top-0 bottom-0 w-1 bg-brand rounded-l-xl"></div>
             <p class="font-semibold text-ink mb-2">{{ __('body.need_help') }}</p>
             <p class="text-sm text-muted mb-4">{{ __('body.need_help_description') }}</p>

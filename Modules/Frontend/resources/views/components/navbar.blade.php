@@ -24,7 +24,7 @@
     @endif
     class="{{ $overlay
         ? 'landing-nav fixed top-0 inset-x-0 z-50 transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300'
-        : 'sticky top-0 z-50 border-b border-line bg-white' }}"
+        : 'sticky top-0 z-50 border-b border-line bg-card' }}"
 >
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 grid grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-4">
 
@@ -69,7 +69,7 @@
 
                     <div hidden
                          data-user-panel
-                         class="absolute right-0 mt-2 w-56 bg-white border border-line rounded-xl shadow-lg z-50 overflow-hidden py-1 text-body">
+                         class="absolute right-0 mt-2 w-56 bg-card border border-line rounded-xl shadow-lg z-50 overflow-hidden py-1 text-body">
                         <a href="{{ route('profile') }}"
                            class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-ink hover:bg-surface transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
@@ -125,14 +125,14 @@
 {{-- Full-viewport mobile menu --}}
 <div id="mobile-nav" class="lg:hidden fixed inset-0 z-[80] hidden" aria-hidden="true" data-mobile-nav-root>
     <div
-        class="fixed inset-0 flex flex-col bg-white/80 backdrop-blur-xl border-r border-white/40 shadow-xl translate-x-full transition-transform duration-300 ease-out"
+        class="fixed inset-0 flex flex-col bg-card/80 backdrop-blur-xl border-r border-white/40 shadow-xl translate-x-full transition-transform duration-300 ease-out"
         style="top:0;right:0;bottom:0;left:0;width:100%;height:100%;min-height:100vh;min-height:100dvh;min-height:-webkit-fill-available;"
         data-mobile-nav-panel
         role="dialog"
         aria-modal="true"
         aria-label="{{ __('body.menu') }}"
     >
-        <div class="flex items-center justify-between gap-3 px-4 min-h-16 border-b border-line/70 shrink-0 bg-white/50" style="padding-top: env(safe-area-inset-top);">
+        <div class="flex items-center justify-between gap-3 px-4 min-h-16 border-b border-line/70 shrink-0 bg-card/50" style="padding-top: env(safe-area-inset-top);">
             <p class="font-semibold text-ink">{{ __('body.menu') }}</p>
             <button type="button" onclick="toggleMobileNav(false)" class="p-2 rounded-lg text-ink hover:bg-surface" aria-label="{{ __('body.close') }}">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -146,7 +146,7 @@
                     @foreach ($navItems as $item)
                         <a
                             href="{{ $item['href'] }}"
-                            class="flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium transition-colors {{ $item['active'] ? 'bg-brand-light/90 text-brand' : 'text-ink hover:bg-white/70' }}"
+                            class="flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium transition-colors {{ $item['active'] ? 'bg-brand-light/90 text-brand' : 'text-ink hover:bg-card/70' }}"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $item['icon'] }}"/></svg>
                             <span>{{ $item['label'] }}</span>
@@ -160,11 +160,11 @@
                 <p class="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted">{{ __('body.account') }}</p>
                 <nav class="space-y-1">
                     @auth('customer')
-                        <a href="{{ route('profile') }}" class="flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium text-ink hover:bg-white/70 transition-colors {{ request()->routeIs('profile') ? 'bg-brand-light/90 text-brand' : '' }}">
+                        <a href="{{ route('profile') }}" class="flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium text-ink hover:bg-card/70 transition-colors {{ request()->routeIs('profile') ? 'bg-brand-light/90 text-brand' : '' }}">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                             <span class="min-w-0 truncate">{{ $customer->name }}</span>
                         </a>
-                        <a href="{{ route('account.profile') }}" class="flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium text-ink hover:bg-white/70 transition-colors {{ request()->routeIs('account.profile') ? 'bg-brand-light/90 text-brand' : '' }}">
+                        <a href="{{ route('account.profile') }}" class="flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium text-ink hover:bg-card/70 transition-colors {{ request()->routeIs('account.profile') ? 'bg-brand-light/90 text-brand' : '' }}">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                             <span>{{ __('body.profile') }}</span>
                         </a>
@@ -176,12 +176,12 @@
                             </button>
                         </form>
                     @else
-                        <a href="{{ route('login') }}" class="flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium text-ink hover:bg-white/70 transition-colors">
+                        <a href="{{ route('login') }}" class="flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium text-ink hover:bg-card/70 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
                             <span>{{ __('body.log_in') }}</span>
                         </a>
                         @if ($canRegister)
-                        <a href="{{ route('register') }}" class="flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium text-ink hover:bg-white/70 transition-colors">
+                        <a href="{{ route('register') }}" class="flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium text-ink hover:bg-card/70 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
                             <span>{{ __('body.sign_up') }}</span>
                         </a>
@@ -192,7 +192,7 @@
             @endif
         </div>
 
-        <div class="shrink-0 border-t border-line/70 p-4 bg-white/50" style="padding-bottom: max(1rem, env(safe-area-inset-bottom));">
+        <div class="shrink-0 border-t border-line/70 p-4 bg-card/50" style="padding-bottom: max(1rem, env(safe-area-inset-bottom));">
             <x-common.button href="{{ route('contact') }}" class="w-full justify-center">
                 {{ __('body.contact_us') }}
             </x-common.button>

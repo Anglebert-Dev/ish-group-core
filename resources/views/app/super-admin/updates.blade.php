@@ -20,13 +20,13 @@
     @endunless
 
     @unless ($linked)
-        <div class="mb-6 rounded-xl border border-line bg-white px-5 py-4 text-sm text-muted">{{ __('updates.not_linked_hint') }}</div>
+        <div class="mb-6 rounded-xl border border-line bg-card px-5 py-4 text-sm text-muted">{{ __('updates.not_linked_hint') }}</div>
     @endunless
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         <div class="xl:col-span-2 space-y-6">
             @if ($coreOffer)
-                <div class="bg-white border border-amber-200 rounded-xl overflow-hidden">
+                <div class="bg-card border border-amber-200 rounded-xl overflow-hidden">
                     <div class="px-5 py-4 bg-amber-50 border-b border-amber-200 flex flex-wrap items-start justify-between gap-3">
                         <div>
                             <p class="font-semibold text-ink">{{ __('updates.core_title') }}
@@ -42,7 +42,7 @@
                 </div>
             @endif
 
-            <div class="bg-white border border-line rounded-xl overflow-hidden">
+            <div class="bg-card border border-line rounded-xl overflow-hidden">
                 <div class="px-5 py-4 border-b border-line flex items-center justify-between gap-3">
                     <p class="font-semibold text-ink">{{ __('updates.available') }}</p>
                     @if ($offers && $writable)
@@ -76,7 +76,7 @@
                 </ul>
             </div>
 
-            <div class="bg-white border border-line rounded-xl overflow-hidden">
+            <div class="bg-card border border-line rounded-xl overflow-hidden">
                 <div class="px-5 py-4 border-b border-line"><p class="font-semibold text-ink">{{ __('updates.history') }}</p></div>
                 <ul class="divide-y divide-line text-sm">
                     @forelse ($history as $item)
@@ -97,7 +97,7 @@
             </div>
         </div>
 
-        <div class="bg-white border border-line rounded-xl p-5 text-sm space-y-3">
+        <div class="bg-card border border-line rounded-xl p-5 text-sm space-y-3">
             <div>
                 <p class="text-muted">{{ __('updates.mode') }}</p>
                 <p class="font-medium text-ink">{{ __('updates.mode_'.($mode === 'auto' ? 'auto' : 'manual')) }}</p>

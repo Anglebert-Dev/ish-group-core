@@ -17,7 +17,7 @@
         var v = variants[type];
 
         var el = document.createElement('div');
-        el.className = 'pointer-events-auto flex items-start gap-3 bg-white border border-line ' + v.border + ' border-l-4 rounded-lg shadow-lg p-4 opacity-0 -translate-y-2 transition-all duration-300';
+        el.className = 'pointer-events-auto flex items-start gap-3 bg-card border border-line ' + v.border + ' border-l-4 rounded-lg shadow-lg p-4 opacity-0 -translate-y-2 transition-all duration-300';
         el.innerHTML =
             '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 mt-0.5 ' + v.icon + '" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">' +
                 '<path stroke-linecap="round" stroke-linejoin="round" d="' + v.path + '"/>' +

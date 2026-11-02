@@ -8,7 +8,7 @@
     </x-common.page-header>
 
     <div class="grid gap-6 lg:grid-cols-3 mb-6">
-        <div class="bg-white border border-line rounded-xl p-5 space-y-2 text-sm">
+        <div class="bg-card border border-line rounded-xl p-5 space-y-2 text-sm">
             <div class="flex justify-between gap-3"><span class="text-muted">{{ __('body.status') }}</span><x-common.badge :color="$site->status->color()">{{ $site->status->label() }}</x-common.badge></div>
             <div class="flex justify-between gap-3"><span class="text-muted">{{ __('distribution::distribution.update_mode') }}</span><span>{{ $site->update_mode->label() }}</span></div>
             @if ($site->is_test)
@@ -17,7 +17,7 @@
             <div class="flex justify-between gap-3"><span class="text-muted">{{ __('distribution::distribution.app_url') }}</span><span class="truncate">{{ $site->app_url ?: '—' }}</span></div>
             <div class="flex justify-between gap-3"><span class="text-muted">{{ __('distribution::distribution.contact_email') }}</span><span class="truncate">{{ $site->contact_email ?: '—' }}</span></div>
         </div>
-        <div class="bg-white border border-line rounded-xl p-5 space-y-2 text-sm lg:col-span-2">
+        <div class="bg-card border border-line rounded-xl p-5 space-y-2 text-sm lg:col-span-2">
             <p class="font-semibold text-ink mb-1">{{ __('distribution::distribution.reported') }}</p>
             <div class="grid sm:grid-cols-2 gap-x-8 gap-y-2">
                 <div class="flex justify-between gap-3"><span class="text-muted">{{ __('distribution::distribution.last_check_in') }}</span><span>{{ $site->last_check_in_at?->diffForHumans() ?? __('distribution::distribution.never') }}</span></div>
@@ -37,7 +37,7 @@
     </div>
 
     {{-- Modules --}}
-    <div class="bg-white border border-line rounded-xl overflow-hidden mb-6">
+    <div class="bg-card border border-line rounded-xl overflow-hidden mb-6">
         <div class="px-5 py-4 border-b border-line">
             <p class="font-semibold text-ink">{{ __('distribution::distribution.modules') }}</p>
             <p class="text-sm text-muted">
@@ -120,7 +120,7 @@
         $server = (array) $site->server_details;
         $serverProblems = \Modules\Distribution\Support\ServerDetails::problems($server);
     @endphp
-    <div class="bg-white border border-line rounded-xl overflow-hidden mb-6">
+    <div class="bg-card border border-line rounded-xl overflow-hidden mb-6">
         <div class="px-5 py-4 border-b border-line flex flex-wrap items-start justify-between gap-3">
             <div>
                 <p class="font-semibold text-ink">{{ __('distribution::distribution.server_details') }}</p>
@@ -157,7 +157,7 @@
             @csrf
             <div class="flex-1 min-w-[240px]">
                 <label class="block text-sm font-semibold text-ink mb-1.5" for="server-csv">{{ __('distribution::distribution.server_upload') }}</label>
-                <input id="server-csv" type="file" name="file" accept=".csv,text/csv" required class="block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border file:border-line file:bg-white file:px-3 file:py-2 file:text-sm file:font-semibold">
+                <input id="server-csv" type="file" name="file" accept=".csv,text/csv" required class="block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border file:border-line file:bg-card file:px-3 file:py-2 file:text-sm file:font-semibold">
             </div>
             <x-common.button type="submit" size="sm">{{ __('distribution::distribution.server_upload') }}</x-common.button>
         </form>
@@ -172,7 +172,7 @@
     </div>
 
     {{-- Zips --}}
-    <div class="bg-white border border-line rounded-xl overflow-hidden mb-6">
+    <div class="bg-card border border-line rounded-xl overflow-hidden mb-6">
         <div class="px-5 py-4 border-b border-line flex flex-wrap items-start justify-between gap-3">
             <div>
                 <p class="font-semibold text-ink">{{ __('distribution::distribution.builds') }}</p>
@@ -244,7 +244,7 @@
 
     {{-- Reported by the site --}}
     <div class="grid gap-6 lg:grid-cols-2 mb-6">
-        <div class="bg-white border border-line rounded-xl overflow-hidden">
+        <div class="bg-card border border-line rounded-xl overflow-hidden">
             <div class="px-5 py-4 border-b border-line"><p class="font-semibold text-ink">{{ __('distribution::distribution.update_history') }}</p></div>
             <ul class="divide-y divide-line text-sm">
                 @forelse ($site->updateReports as $report)
@@ -261,7 +261,7 @@
                 @endforelse
             </ul>
         </div>
-        <div class="bg-white border border-line rounded-xl overflow-hidden">
+        <div class="bg-card border border-line rounded-xl overflow-hidden">
             <div class="px-5 py-4 border-b border-line"><p class="font-semibold text-ink">{{ __('distribution::distribution.recent_check_ins') }}</p></div>
             <ul class="divide-y divide-line text-sm">
                 @forelse ($site->checkIns as $checkIn)
@@ -277,7 +277,7 @@
     </div>
 
     {{-- Tokens --}}
-    <div class="bg-white border border-line rounded-xl overflow-hidden">
+    <div class="bg-card border border-line rounded-xl overflow-hidden">
         <div class="px-5 py-4 border-b border-line">
             <p class="font-semibold text-ink">{{ __('distribution::distribution.tokens') }}</p>
             <p class="text-sm text-muted">{{ __('distribution::distribution.tokens_hint') }}</p>
@@ -286,7 +286,7 @@
         @if (session('link_key'))
             <div class="m-5 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
                 <p class="text-sm text-amber-900">{{ __('distribution::distribution.link_key_once') }}</p>
-                <p class="mt-2 font-mono text-xs break-all text-ink select-all bg-white border border-amber-200 rounded-lg p-3">{{ session('link_key') }}</p>
+                <p class="mt-2 font-mono text-xs break-all text-ink select-all bg-card border border-amber-200 rounded-lg p-3">{{ session('link_key') }}</p>
             </div>
         @endif
 

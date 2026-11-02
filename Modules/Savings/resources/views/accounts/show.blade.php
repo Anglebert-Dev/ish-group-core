@@ -9,12 +9,12 @@
 
     <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         @foreach (['balance' => $balance, 'committed' => $available['commitments'], 'earmarked' => $available['earmarks'], 'kept_minimum' => $available['minimum'], 'available' => $available['available']] as $label => $value)
-            <div class="bg-white border border-line rounded-xl p-4"><p class="text-xs font-semibold uppercase text-muted">{{ __('savings::savings.'.$label) }}</p><p class="text-lg font-display font-bold mt-1 {{ $value < 0 ? 'text-danger' : 'text-ink' }}">{{ $m($value) }}</p></div>
+            <div class="bg-card border border-line rounded-xl p-4"><p class="text-xs font-semibold uppercase text-muted">{{ __('savings::savings.'.$label) }}</p><p class="text-lg font-display font-bold mt-1 {{ $value < 0 ? 'text-danger' : 'text-ink' }}">{{ $m($value) }}</p></div>
         @endforeach
     </div>
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-        <div class="xl:col-span-2 bg-white border border-line rounded-xl overflow-hidden">
+        <div class="xl:col-span-2 bg-card border border-line rounded-xl overflow-hidden">
             <div class="px-5 py-4 border-b border-line"><h2 class="font-display font-bold text-ink">{{ __('savings::savings.ledger') }}</h2></div>
             <table class="w-full text-sm">
                 <tbody class="divide-y divide-line">
@@ -37,7 +37,7 @@
 
         <div class="space-y-4">
             @if (\App\Helpers\AuthHelper::can('update savings.account'))
-                <details class="bg-white border border-line rounded-xl p-5">
+                <details class="bg-card border border-line rounded-xl p-5">
                     <summary class="cursor-pointer font-display font-bold text-ink">{{ __('savings::savings.account_edit') }}</summary>
                     <form action="{{ route('savings.accounts.update', $account) }}" method="POST" class="mt-4 space-y-4">
                         @csrf @method('PUT')
@@ -47,7 +47,7 @@
                 </details>
                 <x-common.action-button :action="route('savings.accounts.archive', $account)" method="PUT" :color="$account->isArchived() ? 'success' : 'warning'">{{ $account->isArchived() ? __('savings::savings.unarchive') : __('savings::savings.archive') }}</x-common.action-button>
             @endif
-            <div class="bg-white border border-line rounded-xl p-5 space-y-2">
+            <div class="bg-card border border-line rounded-xl p-5 space-y-2">
                 <div class="flex justify-between"><h2 class="font-display font-bold text-ink">{{ __('savings::savings.reconcile') }}</h2><a href="{{ route('savings.reconcile.index') }}" class="text-sm font-semibold text-brand">→</a></div>
                 @forelse ($reconciliations as $rec)
                     <a href="{{ route('savings.reconcile.show', $rec) }}" class="flex justify-between text-sm"><span>{{ $rec->statement_date->format('d/m/Y') }}</span><span class="{{ $rec->difference ? 'text-danger' : 'text-success' }}">{{ __('savings::savings.status_'.$rec->status) }} {{ $rec->difference ? $m($rec->difference) : '' }}</span></a>

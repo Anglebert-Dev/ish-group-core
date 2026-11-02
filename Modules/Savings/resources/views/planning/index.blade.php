@@ -17,7 +17,7 @@
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         <div class="xl:col-span-2 space-y-6">
-            <div class="bg-white border border-line rounded-xl overflow-hidden">
+            <div class="bg-card border border-line rounded-xl overflow-hidden">
                 <div class="px-5 py-4 border-b border-line"><h2 class="font-display font-bold text-ink">{{ __('savings::savings.expected') }}</h2></div>
                 <div class="divide-y divide-line">
                     @forelse ($expected as $e)
@@ -68,7 +68,7 @@
                 </div>
             </div>
 
-            <div class="bg-white border border-line rounded-xl overflow-hidden">
+            <div class="bg-card border border-line rounded-xl overflow-hidden">
                 <div class="px-5 py-4 border-b border-line"><h2 class="font-display font-bold text-ink">{{ __('savings::savings.recurring') }}</h2></div>
                 <div class="divide-y divide-line">
                     @forelse ($rules as $rule)
@@ -90,7 +90,7 @@
                 </div>
             </div>
 
-            <div class="bg-white border border-line rounded-xl overflow-hidden">
+            <div class="bg-card border border-line rounded-xl overflow-hidden">
                 <div class="px-5 py-4 border-b border-line"><h2 class="font-display font-bold text-ink">{{ __('savings::savings.commitments') }}</h2><p class="text-xs text-muted">{{ __('savings::savings.commitments_hint') }}</p></div>
                 <div class="divide-y divide-line">
                     @forelse ($commitments as $c)
@@ -116,7 +116,7 @@
 
         @if ($can('create savings.planning'))
             <div class="space-y-4">
-                <form action="{{ route('savings.planning.expected.store') }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-3" data-parts>
+                <form action="{{ route('savings.planning.expected.store') }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-3" data-parts>
                     @csrf
                     <h2 class="font-display font-bold text-ink">{{ __('savings::savings.expected_add') }}</h2>
                     <x-common.select name="kind" id="x-kind" :label="__('savings::savings.kind')" :options="$kinds" hide-placeholder required />
@@ -134,14 +134,14 @@
                     <x-common.button type="submit" size="sm">{{ __('body.save') }}</x-common.button>
                 </form>
 
-                <form action="{{ route('savings.planning.rules.store') }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-3">
+                <form action="{{ route('savings.planning.rules.store') }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-3">
                     @csrf
                     <h2 class="font-display font-bold text-ink">{{ __('savings::savings.rule_add') }}</h2>
                     @include('savings::planning.rule-fields', ['rule' => null, 'p' => 'new-'])
                     <x-common.button type="submit" size="sm">{{ __('body.save') }}</x-common.button>
                 </form>
 
-                <form action="{{ route('savings.planning.commitments.store') }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-3">
+                <form action="{{ route('savings.planning.commitments.store') }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-3">
                     @csrf
                     <h2 class="font-display font-bold text-ink">{{ __('savings::savings.commitment_add') }}</h2>
                     <x-common.select name="account" id="c-acc" :label="__('savings::savings.account')" :options="$accountOptions" hide-placeholder required />

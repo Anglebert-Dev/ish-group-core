@@ -1,7 +1,7 @@
 <x-layouts.app :title="__('invoicing::invoicing.settings')">
     <x-common.page-header :title="__('invoicing::invoicing.settings')" :description="__('invoicing::invoicing.settings_description')" />
 
-    <form action="{{ route('invoicing.settings.update') }}" method="POST" class="bg-white border border-line rounded-xl p-5 sm:p-6 space-y-5 max-w-2xl">
+    <form action="{{ route('invoicing.settings.update') }}" method="POST" class="bg-card border border-line rounded-xl p-5 sm:p-6 space-y-5 max-w-2xl">
         @csrf @method('PUT')
         <x-common.input name="tax_rate" type="number" step="any" min="0" max="100" :label="__('invoicing::invoicing.tax_rate')" :value="old('tax_rate', $values['tax_rate'])" :hint="__('invoicing::invoicing.tax_rate_hint')" required />
 

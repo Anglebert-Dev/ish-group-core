@@ -10,37 +10,7 @@
         <meta name="description" content="{{ $site->get('general.seo_description') }}">
     @endif
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        display: ['var(--font-body)'],
-                        sans: ['var(--font-body)'],
-                    },
-                    colors: {
-                        brand: {
-                            DEFAULT: 'var(--brand)',
-                            dark: 'var(--brand-dark)',
-                            light: 'var(--brand-light)',
-                        },
-                        ink: '#111827',
-                        body: '#1F2937',
-                        muted: '#6B7280',
-                        surface: '#F8FAFC',
-                        line: '#E5E7EB',
-                        success: '#16A34A',
-                        warning: '#F59E0B',
-                        danger: '#DC2626',
-                    },
-                    boxShadow: {
-                        card: '0 1px 2px 0 rgba(17, 24, 39, 0.04)',
-                    },
-                },
-            },
-        };
-    </script>
+    <x-common.tailwind />
 
     <style>
         html { scroll-behavior: smooth; }
@@ -77,7 +47,7 @@
         .brand-marquee-item {
             flex: 0 0 auto;
             min-width: 7.5rem;
-            color: #111827;
+            color: rgb(var(--c-ink));
         }
         @keyframes brand-marquee-scroll {
             from { transform: translateX(0); }
@@ -96,10 +66,10 @@
             border-bottom: 1px solid transparent;
         }
         .landing-nav[data-solid="true"] {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgb(var(--c-card) / 0.95);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            border-bottom: 1px solid #E5E7EB;
+            border-bottom: 1px solid rgb(var(--c-line));
             box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
         }
         .landing-nav[data-solid="false"] .landing-nav-link {
@@ -110,7 +80,7 @@
             color: #fff;
         }
         .landing-nav[data-solid="true"] .landing-nav-link {
-            color: #1F2937;
+            color: rgb(var(--c-body));
         }
         .landing-nav[data-solid="true"] .landing-nav-link:hover {
             color: var(--brand);
@@ -125,7 +95,7 @@
             color: #fff;
         }
         .landing-nav[data-solid="true"] .landing-nav-muted {
-            color: #1F2937;
+            color: rgb(var(--c-body));
         }
         .landing-nav[data-solid="true"] .landing-nav-muted:hover {
             color: var(--brand);
@@ -138,7 +108,7 @@
             background: rgba(255, 255, 255, 0.1);
         }
         .landing-nav[data-solid="true"] .landing-nav-login {
-            color: #1F2937;
+            color: rgb(var(--c-body));
             border: 1px solid transparent;
         }
         .landing-nav[data-solid="true"] .landing-nav-login:hover {
@@ -148,11 +118,11 @@
             color: #fff;
         }
         .landing-nav[data-solid="true"] .landing-nav-toggle {
-            color: #111827;
+            color: rgb(var(--c-ink));
         }
     </style>
 </head>
-<body class="{{ $panel ? 'bg-surface' : 'bg-white' }} text-body antialiased">
+<body class="{{ $panel ? 'bg-surface' : 'bg-card' }} text-body antialiased">
 
     <x-frontend::navbar />
 

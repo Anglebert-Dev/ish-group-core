@@ -6,7 +6,7 @@
 <div id="password-confirm-modal" class="fixed inset-0 z-[70] {{ $open ? '' : 'hidden' }}" role="dialog" aria-modal="true" aria-labelledby="password-confirm-title">
     <div class="absolute inset-0 bg-ink/50" data-password-confirm-close></div>
     <div class="relative flex min-h-full items-center justify-center p-4">
-        <form action="{{ route('staff.password.confirm.store') }}" method="POST" class="w-full max-w-md bg-white rounded-2xl shadow-xl p-6 sm:p-8" data-password-confirm-form>
+        <form action="{{ route('staff.password.confirm.store') }}" method="POST" class="w-full max-w-md bg-card rounded-2xl shadow-xl p-6 sm:p-8" data-password-confirm-form>
             @csrf
             <div class="h-11 w-11 rounded-xl bg-brand-light text-brand flex items-center justify-center mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>

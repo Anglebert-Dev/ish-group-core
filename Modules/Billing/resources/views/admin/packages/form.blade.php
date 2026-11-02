@@ -10,7 +10,7 @@
 
     <x-common.page-header :title="__('billing::billing.packages')" :description="$isNew ? __('billing::billing.add_package') : __('billing::billing.edit_package', ['name' => $package->name])" />
 
-    <form action="{{ $isNew ? route('superadmin.billing.packages.store') : route('superadmin.billing.packages.update', $package) }}" method="POST" class="bg-white border border-line rounded-xl p-5 sm:p-8 space-y-8">
+    <form action="{{ $isNew ? route('superadmin.billing.packages.store') : route('superadmin.billing.packages.update', $package) }}" method="POST" class="bg-card border border-line rounded-xl p-5 sm:p-8 space-y-8">
         @csrf
         @unless ($isNew) @method('PUT') @endunless
 
@@ -55,7 +55,7 @@
         <div>
             <p class="text-sm font-semibold text-ink mb-1">{{ __('billing::billing.only_for_businesses') }}</p>
             <p class="text-sm text-muted mb-3">{{ __('billing::billing.only_for_businesses_hint') }}</p>
-            <select name="business_ids[]" multiple size="6" class="w-full rounded-xl border border-line bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand">
+            <select name="business_ids[]" multiple size="6" class="w-full rounded-xl border border-line bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand">
                 @foreach ($businesses as $id => $name)
                     <option value="{{ $id }}" @selected(in_array((int) $id, $selectedBusinesses, true))>{{ $name }}</option>
                 @endforeach

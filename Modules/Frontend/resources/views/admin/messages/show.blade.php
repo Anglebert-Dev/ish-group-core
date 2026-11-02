@@ -7,7 +7,7 @@
     </x-common.page-header>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        <div class="lg:col-span-2 bg-white border border-line rounded-xl p-5 sm:p-6 text-body leading-relaxed">{!! nl2br(e($message->message)) !!}</div>
+        <div class="lg:col-span-2 bg-card border border-line rounded-xl p-5 sm:p-6 text-body leading-relaxed">{!! nl2br(e($message->message)) !!}</div>
         <div class="space-y-4">
             <x-common.info-card :rows="[
                 [__('body.full_name'), $message->name],

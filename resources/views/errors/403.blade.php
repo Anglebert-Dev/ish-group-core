@@ -4,20 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <x-common.brand-head :title="__('body.access_denied')" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = { theme: { extend: {
-            fontFamily: { display: ['var(--font-body)'], sans: ['var(--font-body)'] },
-            colors: {
-                brand: { DEFAULT: 'var(--brand)', dark: 'var(--brand-dark)', light: 'var(--brand-light)' },
-                ink: '#111827', body: '#1F2937', muted: '#6B7280', surface: '#F8FAFC', line: '#E5E7EB',
-                danger: '#DC2626',
-            },
-        }}};
-    </script>
+    <x-common.tailwind />
     <style>body { font-family: var(--font-body); }</style>
 </head>
-<body class="bg-surface text-body antialiased min-h-screen flex items-center justify-center px-6">
+<body class="bg-page text-body antialiased min-h-screen flex items-center justify-center px-6">
     <div class="max-w-sm w-full text-center">
         <div class="mx-auto h-16 w-16 rounded-full bg-danger/10 flex items-center justify-center mb-6">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7">

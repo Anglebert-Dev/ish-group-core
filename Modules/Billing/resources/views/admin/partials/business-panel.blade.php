@@ -1,6 +1,6 @@
 @php use Modules\Billing\Support\Money; @endphp
 {{-- Rendered on the superadmin business page (superadmin_business_panel hook). --}}
-<div class="bg-white border border-line rounded-xl p-5">
+<div class="bg-card border border-line rounded-xl p-5">
     <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
         <div class="space-y-1.5">
             <h2 class="font-display font-bold text-ink">{{ __('billing::billing.subscription') }}</h2>

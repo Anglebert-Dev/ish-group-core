@@ -3,10 +3,10 @@
 @php
     $colors = [
         'brand'   => 'bg-brand-light text-brand-dark',
-        'success' => 'bg-green-50 text-success',
-        'warning' => 'bg-amber-50 text-warning',
-        'danger'  => 'bg-red-50 text-danger',
-        'muted'   => 'bg-slate-100 text-muted',
+        'success' => 'bg-success/10 text-success',
+        'warning' => 'bg-warning/10 text-warning',
+        'danger'  => 'bg-danger/10 text-danger',
+        'muted'   => 'bg-surface text-muted',
     ];
 @endphp
 

@@ -23,7 +23,7 @@
 
     <x-common.page-header :title="__('distribution::distribution.server_details')" :description="$site->name" />
 
-    <form action="{{ route('superadmin.distribution.sites.server.update', $site) }}" method="POST" class="bg-white border border-line rounded-xl p-5 sm:p-8 space-y-8">
+    <form action="{{ route('superadmin.distribution.sites.server.update', $site) }}" method="POST" class="bg-card border border-line rounded-xl p-5 sm:p-8 space-y-8">
         @csrf
         @method('PUT')
         <p class="text-sm text-muted">{{ __('distribution::distribution.server_form_intro') }}</p>

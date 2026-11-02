@@ -10,11 +10,11 @@
 
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
         @foreach (['income' => $income, 'budgeted' => $rows->sum('budgeted'), 'spent' => $rows->sum('spent'), 'remaining' => $rows->sum('budgeted') - $rows->whereNotNull('budgeted')->sum('spent')] as $label => $value)
-            <div class="bg-white border border-line rounded-xl p-4"><p class="text-xs uppercase text-muted font-semibold">{{ __('savings::savings.'.$label) }}</p><p class="text-lg font-display font-bold {{ $value < 0 ? 'text-danger' : 'text-ink' }}">{{ $m($value) }}</p></div>
+            <div class="bg-card border border-line rounded-xl p-4"><p class="text-xs uppercase text-muted font-semibold">{{ __('savings::savings.'.$label) }}</p><p class="text-lg font-display font-bold {{ $value < 0 ? 'text-danger' : 'text-ink' }}">{{ $m($value) }}</p></div>
         @endforeach
     </div>
 
-    <form action="{{ route('savings.budgets.update') }}" method="POST" class="bg-white border border-line rounded-xl overflow-hidden">
+    <form action="{{ route('savings.budgets.update') }}" method="POST" class="bg-card border border-line rounded-xl overflow-hidden">
         @csrf @method('PUT')
         <input type="hidden" name="date" value="{{ $period[0]->toDateString() }}">
         <div class="overflow-x-auto">

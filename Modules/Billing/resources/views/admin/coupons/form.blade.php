@@ -7,7 +7,7 @@
 
     <x-common.page-header :title="__('billing::billing.coupons')" :description="$isNew ? __('billing::billing.add_coupon') : $coupon->code" />
 
-    <form action="{{ $isNew ? route('superadmin.billing.coupons.store') : route('superadmin.billing.coupons.update', $coupon) }}" method="POST" class="bg-white border border-line rounded-xl p-5 sm:p-8 space-y-6 max-w-4xl">
+    <form action="{{ $isNew ? route('superadmin.billing.coupons.store') : route('superadmin.billing.coupons.update', $coupon) }}" method="POST" class="bg-card border border-line rounded-xl p-5 sm:p-8 space-y-6 max-w-4xl">
         @csrf
         @unless ($isNew) @method('PUT') @endunless
 

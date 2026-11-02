@@ -12,7 +12,7 @@
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         <div class="xl:col-span-2 space-y-6">
-            <div class="bg-white border border-line rounded-xl p-5 space-y-3">
+            <div class="bg-card border border-line rounded-xl p-5 space-y-3">
                 <h2 class="font-display font-bold text-ink">{{ __('garmentpack::garment.bom') }}</h2>
                 <table class="w-full text-sm">
                     <thead><tr class="text-left text-xs text-muted uppercase tracking-wide border-b border-line">
@@ -37,7 +37,7 @@
                 @if ($missingCost)<p class="text-xs text-warning">{{ __('garmentpack::garment.no_cost_price') }}</p>@endif
             </div>
 
-            <div class="bg-white border border-line rounded-xl p-5 space-y-3">
+            <div class="bg-card border border-line rounded-xl p-5 space-y-3">
                 <h2 class="font-display font-bold text-ink">{{ __('garmentpack::garment.margin') }}</h2>
                 <table class="w-full text-sm">
                     <thead><tr class="text-left text-xs text-muted uppercase tracking-wide border-b border-line">
@@ -61,7 +61,7 @@
             </div>
         </div>
 
-        <div class="bg-white border border-line rounded-xl p-5 space-y-2">
+        <div class="bg-card border border-line rounded-xl p-5 space-y-2">
             <h2 class="font-display font-bold text-ink">{{ __('garmentpack::garment.costing') }}</h2>
             @foreach (['materials' => 'cost_materials', 'labour' => 'cost_labour', 'overhead' => 'cost_overhead'] as $key => $label)
                 <div class="flex justify-between text-sm"><span class="text-muted">{{ __('garmentpack::garment.'.$label) }}</span><span>{{ money($costing[$key]) }}</span></div>

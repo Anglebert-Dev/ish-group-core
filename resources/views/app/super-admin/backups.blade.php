@@ -11,7 +11,7 @@
     </x-common.page-header>
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-        <div class="xl:col-span-2 bg-white border border-line rounded-xl overflow-hidden">
+        <div class="xl:col-span-2 bg-card border border-line rounded-xl overflow-hidden">
             <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
@@ -43,7 +43,7 @@
         </div>
 
         <div class="space-y-4">
-            <form action="{{ route('superadmin.backups.settings') }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-4">
+            <form action="{{ route('superadmin.backups.settings') }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-4">
                 @csrf @method('PUT')
                 @if ($lastAt)
                     <p class="text-sm text-muted">{{ __('body.backup_last') }}: @datetime($lastAt)</p>

@@ -59,7 +59,7 @@
             .($disabled ? 'opacity-50 cursor-not-allowed ' : '')
             .($readonly ? 'bg-surface ' : '');
     } else {
-        $controlClass = 'h-12 w-full rounded-xl border text-sm bg-white shadow-sm hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand placeholder:text-muted '
+        $controlClass = 'h-12 w-full rounded-xl border text-sm bg-card shadow-sm hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand placeholder:text-muted '
             .($isPassword ? 'pl-4 pr-12' : 'px-4').' '
             .($isAmount ? 'tabular-nums ' : '')
             .($hasError ? 'border-danger' : 'border-line').' '

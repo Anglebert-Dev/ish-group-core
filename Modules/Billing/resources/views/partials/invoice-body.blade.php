@@ -1,6 +1,6 @@
 @php use Modules\Billing\Support\Money; @endphp
 {{-- Invoice document (business and superadmin views). --}}
-<div class="bg-white border border-line rounded-xl overflow-hidden">
+<div class="bg-card border border-line rounded-xl overflow-hidden">
     <div class="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-line">
         <div>
             <p class="text-xs font-semibold uppercase tracking-wide text-muted">{{ __('billing::billing.invoice') }}</p>

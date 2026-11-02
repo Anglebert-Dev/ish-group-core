@@ -12,7 +12,7 @@
             <div class="rounded-xl border border-brand/30 bg-brand-light/50 p-4 text-sm text-ink">{{ __('invoicing::invoicing.from_order_hint') }}</div>
         @endif
 
-        <div class="bg-white border border-line rounded-xl p-5 sm:p-6">
+        <div class="bg-card border border-line rounded-xl p-5 sm:p-6">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 <x-common.select name="customer" :label="__('invoicing::invoicing.customer')" :value="old('customer', $selectedCustomer)" :options="$customers" searchable required />
                 <x-common.input name="invoice_date" type="date" :label="__('invoicing::invoicing.invoice_date')" :value="old('invoice_date', $invoice->invoice_date?->format('Y-m-d'))" required />
@@ -23,12 +23,12 @@
             </div>
         </div>
 
-        <div class="bg-white border border-line rounded-xl p-5 sm:p-6 space-y-4">
+        <div class="bg-card border border-line rounded-xl p-5 sm:p-6 space-y-4">
             <h2 class="font-display font-bold text-ink">{{ __('invoicing::invoicing.lines') }}</h2>
             @include('inventory::partials.line-editor', ['lines' => old('lines', $rows), 'options' => $lineOptions, 'name' => 'lines'])
         </div>
 
-        <div class="bg-white border border-line rounded-xl p-5 sm:p-6">
+        <div class="bg-card border border-line rounded-xl p-5 sm:p-6">
             <x-common.textarea name="notes" :label="__('invoicing::invoicing.notes')" :value="old('notes')" :rows="3" />
         </div>
 

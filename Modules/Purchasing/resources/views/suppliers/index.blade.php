@@ -11,7 +11,7 @@
         <x-common.input name="q" :label="__('body.search')" :value="$q" compact />
     </x-common.filter-panel>
 
-    <div class="bg-white border border-line rounded-xl overflow-hidden">
+    <div class="bg-card border border-line rounded-xl overflow-hidden">
         <table class="w-full text-sm">
             <thead>
                 <tr class="text-left text-xs text-muted uppercase tracking-wide border-b border-line bg-surface/60">

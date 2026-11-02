@@ -6,7 +6,7 @@
 
 <div
     data-wizard-panel="{{ $step }}"
-    class="form-wizard-step-panel bg-white border border-line rounded-xl p-4 sm:p-6 space-y-5"
+    class="form-wizard-step-panel bg-card border border-line rounded-xl p-4 sm:p-6 space-y-5"
     @unless ($active) hidden @endunless
     {{ $attributes }}
 >

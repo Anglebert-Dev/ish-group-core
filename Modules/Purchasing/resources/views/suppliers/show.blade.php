@@ -17,7 +17,7 @@
                 [__('purchasing::purchasing.tax_id'), $supplier->tax_id], [__('purchasing::purchasing.address'), $supplier->address],
             ]" />
 
-            <div class="bg-white border border-line rounded-xl overflow-hidden">
+            <div class="bg-card border border-line rounded-xl overflow-hidden">
                 <div class="px-5 py-4 border-b border-line flex items-center justify-between">
                     <h2 class="font-display font-bold text-ink">{{ __('purchasing::purchasing.orders') }}</h2>
                     @if ($can('create purchasing.order'))<x-common.button href="{{ route('purchasing.orders.create') }}" size="sm">+ {{ __('purchasing::purchasing.order_add') }}</x-common.button>@endif
@@ -36,7 +36,7 @@
                 </tbody></table>
             </div>
 
-            <div class="bg-white border border-line rounded-xl overflow-hidden">
+            <div class="bg-card border border-line rounded-xl overflow-hidden">
                 <div class="px-5 py-4 border-b border-line"><h2 class="font-display font-bold text-ink">{{ __('purchasing::purchasing.payments') }}</h2></div>
                 <table class="w-full text-sm"><tbody class="divide-y divide-line">
                     @forelse ($payments as $payment)
@@ -68,13 +68,13 @@
         </div>
 
         <div class="space-y-4">
-            <div class="bg-white border border-line rounded-xl p-5">
+            <div class="bg-card border border-line rounded-xl p-5">
                 <p class="text-xs font-semibold uppercase tracking-wide text-muted">{{ __('purchasing::purchasing.balance') }}</p>
                 <p class="text-2xl font-display font-bold {{ $balance > 0 ? 'text-danger' : 'text-ink' }} mt-1">{{ money($balance) }}</p>
                 <p class="text-xs text-muted">{{ __('purchasing::purchasing.balance_hint') }}</p>
             </div>
             @if ($balance > 0 && $can('create purchasing.payment'))
-                <form action="{{ route('purchasing.suppliers.pay', $supplier) }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-4">
+                <form action="{{ route('purchasing.suppliers.pay', $supplier) }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-4">
                     @csrf
                     <h2 class="font-display font-bold text-ink">{{ __('purchasing::purchasing.payment_add') }}</h2>
                     <x-common.input name="amount" type="number" step="any" min="0" :label="__('purchasing::purchasing.amount')" :value="$balance" required />

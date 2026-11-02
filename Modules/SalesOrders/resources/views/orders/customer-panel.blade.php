@@ -1,4 +1,4 @@
-<div class="bg-white border border-line rounded-xl overflow-hidden">
+<div class="bg-card border border-line rounded-xl overflow-hidden">
     <div class="px-5 py-4 border-b border-line flex items-center justify-between gap-3">
         <h2 class="font-display font-bold text-ink">{{ __('salesorders::orders.customer_orders') }}</h2>
         <div class="flex items-center gap-3">

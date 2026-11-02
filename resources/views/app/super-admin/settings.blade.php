@@ -11,7 +11,7 @@
 
     <x-common.page-header :title="__('body.platform_settings')" :description="__('body.platform_settings_description')" />
 
-    <div class="bg-white border border-line rounded-xl p-4 sm:p-6 grid grid-cols-1 md:grid-cols-[14rem_1fr] gap-6">
+    <div class="bg-card border border-line rounded-xl p-4 sm:p-6 grid grid-cols-1 md:grid-cols-[14rem_1fr] gap-6">
         {{-- Vertical tab list --}}
         <nav class="flex md:flex-col gap-1 overflow-x-auto">
             @foreach ($tabs as $key => $label)

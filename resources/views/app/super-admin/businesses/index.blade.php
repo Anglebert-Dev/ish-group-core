@@ -17,7 +17,7 @@
             :options="['' => __('body.all'), 'active' => __('body.active'), 'inactive' => __('body.inactive')]" hide-placeholder />
     </x-common.filter-panel>
 
-    <div class="bg-white border border-line rounded-xl overflow-hidden">
+    <div class="bg-card border border-line rounded-xl overflow-hidden">
         <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead>

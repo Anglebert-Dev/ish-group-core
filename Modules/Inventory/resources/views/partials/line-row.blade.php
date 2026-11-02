@@ -1,6 +1,6 @@
 @php
     $field = fn ($key) => $name.'['.$index.']['.$key.']';
-    $cell = 'w-full rounded-lg border border-line bg-white px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand';
+    $cell = 'w-full rounded-lg border border-line bg-card px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand';
     $selected = $row['variant'] ?? '';
 @endphp
 <tr class="align-top">

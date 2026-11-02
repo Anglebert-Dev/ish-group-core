@@ -1,5 +1,5 @@
 {{-- Public contact form (posts to the current site). --}}
-<form action="{{ route('contact.send') }}" method="POST" class="relative overflow-hidden rounded-3xl border border-line bg-white p-6 sm:p-8 shadow-sm shadow-slate-200/60 space-y-5">
+<form action="{{ route('contact.send') }}" method="POST" class="relative overflow-hidden rounded-3xl border border-line bg-card p-6 sm:p-8 shadow-sm shadow-line/60 space-y-5">
     @csrf
     <div class="absolute inset-x-0 top-0 h-1 bg-brand"></div>
     <div>

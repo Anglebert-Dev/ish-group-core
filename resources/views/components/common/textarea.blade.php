@@ -14,7 +14,7 @@
     $errorKey = str_replace(['[', ']'], ['.', ''], rtrim($name, '[]'));
     $errorMessage = $error ?? ($errors->first($errorKey) ?: null);
     $hasError = filled($errorMessage);
-    $controlClass = 'box-border min-w-0 w-full resize-none rounded-xl border bg-white px-4 py-3 text-sm shadow-sm hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand placeholder:text-muted '
+    $controlClass = 'box-border min-w-0 w-full resize-none rounded-xl border bg-card px-4 py-3 text-sm shadow-sm hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand placeholder:text-muted '
         .($hasError ? 'border-danger' : 'border-line').' '
         .($disabled ? 'opacity-50 cursor-not-allowed' : '');
 @endphp

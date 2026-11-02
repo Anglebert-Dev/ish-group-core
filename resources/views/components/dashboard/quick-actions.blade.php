@@ -13,12 +13,12 @@
         'purple' => 'bg-violet-50 hover:bg-violet-100 text-violet-700 border-violet-200',
         'indigo' => 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border-indigo-200',
         'pink' => 'bg-pink-50 hover:bg-pink-100 text-pink-600 border-pink-200',
-        'gray' => 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200',
+        'gray' => 'bg-surface hover:bg-line/60 text-body border-line',
         'teal' => 'bg-teal-50 hover:bg-teal-100 text-teal-700 border-teal-200',
     ];
 @endphp
 
-<div class="bg-white border border-line rounded-xl p-4">
+<div class="bg-card border border-line rounded-xl p-4">
     <div class="flex items-center gap-2 mb-4">
         <div class="w-1.5 h-6 rounded-full bg-brand"></div>
         <h2 class="text-base font-semibold text-ink">{{ __('body.quick_actions') }}</h2>
@@ -33,7 +33,7 @@
                    title="{{ $action['description'] }}"
                    class="p-2 rounded-md border transition-all duration-200 hover:scale-105 hover:shadow-sm {{ $colors[$action['color']] ?? $colors['blue'] }}">
                     <div class="flex flex-col items-center gap-1.5">
-                        <div class="p-1 rounded-md bg-white shadow-sm">
+                        <div class="p-1 rounded-md bg-card shadow-sm">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="{{ $action['icon'] }}"/>
                             </svg>

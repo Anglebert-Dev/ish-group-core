@@ -4,7 +4,7 @@
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         <div class="xl:col-span-2 space-y-6">
-            <div class="bg-white border border-line rounded-xl overflow-hidden">
+            <div class="bg-card border border-line rounded-xl overflow-hidden">
                 <form method="GET" class="px-5 py-4 border-b border-line flex flex-wrap items-end gap-3">
                     <h2 class="font-display font-bold text-ink mr-auto">{{ __('garmentpack::garment.payroll') }}</h2>
                     <div class="w-40"><x-common.input name="from" type="date" :label="__('garmentpack::garment.from')" :value="$from" compact /></div>
@@ -42,7 +42,7 @@
                 </table>
             </div>
 
-            <div class="bg-white border border-line rounded-xl overflow-hidden">
+            <div class="bg-card border border-line rounded-xl overflow-hidden">
                 <div class="px-5 py-4 border-b border-line"><h2 class="font-display font-bold text-ink">{{ __('garmentpack::garment.workers') }}</h2></div>
                 <div class="divide-y divide-line">
                     @forelse ($workers as $worker)
@@ -73,7 +73,7 @@
         </div>
 
         @if ($can('create garments.worker'))
-            <form action="{{ route('garmentpack.workers.store') }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-4">
+            <form action="{{ route('garmentpack.workers.store') }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-4">
                 @csrf
                 <h2 class="font-display font-bold text-ink">{{ __('garmentpack::garment.worker_add') }}</h2>
                 <x-common.input name="name" :label="__('body.name')" required />

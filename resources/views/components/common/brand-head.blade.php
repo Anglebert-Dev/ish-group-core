@@ -11,11 +11,7 @@
 <link rel="stylesheet" href="{{ asset('css/responsive.css') }}{{ file_exists(public_path('css/responsive.css')) ? '?v='.filemtime(public_path('css/responsive.css')) : '' }}">
 <x-common.brand-font />
 <style>
-    :root {
-        --brand: {{ $branding->brandColor() }};
-        --brand-dark: {{ $branding->brandColorDark() }};
-        --brand-light: {{ $branding->brandColorLight() }};
-    }
+    {!! \App\Support\Branding\ThemeTokens::css(app(\App\Services\Branding\BrandingService::class)->tokens($branding)) !!}
 
     /* Shared date / datetime fields */
     .date-field-wrap {
@@ -46,17 +42,17 @@
         min-width: 0;
         height: 2.75rem;
         border-radius: 0.75rem;
-        border: 1px solid #E5E7EB;
-        background: #fff;
+        border: 1px solid rgb(var(--c-line));
+        background: rgb(var(--c-card));
         padding: 0 0.75rem 0 2.55rem;
         font-size: 0.875rem;
         font-weight: 500;
-        color: #111827;
+        color: rgb(var(--c-ink));
         box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
         transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
     }
     input.date-field:hover {
-        border-color: color-mix(in srgb, var(--brand) 35%, #E5E7EB);
+        border-color: color-mix(in srgb, var(--brand) 35%, rgb(var(--c-line)));
     }
     input.date-field:focus {
         outline: none;
@@ -66,10 +62,10 @@
     input.date-field:disabled {
         opacity: 0.55;
         cursor: not-allowed;
-        background: #F8FAFC;
+        background: rgb(var(--c-surface));
     }
     input.date-field.date-field--error {
-        border-color: #DC2626;
+        border-color: rgb(var(--c-danger));
     }
     input.date-field.date-field--sm {
         height: 2.5rem;
@@ -99,7 +95,7 @@
         margin: 0 0 0.45rem;
         font-size: 0.8125rem;
         font-weight: 600;
-        color: #111827;
+        color: rgb(var(--c-ink));
         line-height: 1.2;
     }
     .dt-split-row {
@@ -121,9 +117,9 @@
         min-width: 0;
         min-height: 3.1rem;
         padding: 0.65rem 0.8rem;
-        border: 1px solid #D1D5DB;
+        border: 1px solid rgb(var(--c-line));
         border-radius: 0.35rem;
-        background: #fff;
+        background: rgb(var(--c-card));
         cursor: pointer;
         text-align: left;
         transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -133,7 +129,7 @@
         padding: 0.45rem 0.65rem;
     }
     .dt-split-box:hover {
-        border-color: color-mix(in srgb, var(--brand) 55%, #D1D5DB);
+        border-color: color-mix(in srgb, var(--brand) 55%, rgb(var(--c-line)));
     }
     .dt-split-box:focus-within,
     .dt-split-box.is-active {
@@ -151,7 +147,7 @@
     .dt-split-text {
         font-size: 0.9rem;
         font-weight: 500;
-        color: #9CA3AF;
+        color: rgb(var(--c-muted));
         line-height: 1.2;
         white-space: nowrap;
         overflow: hidden;
@@ -162,7 +158,7 @@
         font-size: 0.8125rem;
     }
     .dt-split-text.is-filled {
-        color: #111827;
+        color: rgb(var(--c-ink));
         font-weight: 600;
     }
     .dt-split-native {

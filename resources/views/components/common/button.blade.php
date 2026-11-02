@@ -9,7 +9,7 @@
 
     $variants = [
         'primary'   => 'bg-brand text-white hover:bg-brand-dark',
-        'secondary' => 'bg-white text-body border border-line hover:border-brand hover:text-brand',
+        'secondary' => 'bg-card text-body border border-line hover:border-brand hover:text-brand',
         'ghost'     => 'text-body hover:text-brand',
         'danger'    => 'bg-danger text-white hover:opacity-90',
     ];

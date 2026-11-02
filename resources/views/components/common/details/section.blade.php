@@ -15,7 +15,7 @@
     $toneClass = $tones[$tone] ?? $tones['brand'];
 @endphp
 
-<div {{ $attributes->merge(['class' => 'bg-white rounded-xl sm:rounded-2xl shadow-sm border border-line p-4 sm:p-5 md:p-6 lg:p-8 min-w-0']) }}>
+<div {{ $attributes->merge(['class' => 'bg-card rounded-xl sm:rounded-2xl shadow-sm border border-line p-4 sm:p-5 md:p-6 lg:p-8 min-w-0']) }}>
     <div class="flex items-center gap-3 mb-5 sm:mb-6 pb-4 border-b border-line">
         @if ($icon)
             <div class="p-2.5 rounded-xl {{ $toneClass }} shrink-0">

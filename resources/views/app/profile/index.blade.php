@@ -4,7 +4,7 @@
     <div class="w-full space-y-6">
 
         {{-- ACCOUNT DETAILS --}}
-        <div class="bg-white border border-line rounded-xl p-4 sm:p-6 w-full">
+        <div class="bg-card border border-line rounded-xl p-4 sm:p-6 w-full">
             <h2 class="font-display font-bold text-ink">{{ __('body.account_details') }}</h2>
             <p class="text-sm text-muted mt-1 mb-5">{{ __('body.account_details_description') }}</p>
 
@@ -32,7 +32,7 @@
         </div>
 
         {{-- CHANGE PASSWORD --}}
-        <div class="bg-white border border-line rounded-xl p-4 sm:p-6 w-full">
+        <div class="bg-card border border-line rounded-xl p-4 sm:p-6 w-full">
             <h2 class="font-display font-bold text-ink">{{ __('body.change_password') }}</h2>
             <p class="text-sm text-muted mt-1 mb-5">{{ __('body.change_password_description') }}</p>
 
@@ -51,7 +51,7 @@
         </div>
 
         {{-- MFA --}}
-        <div class="bg-white border border-line rounded-xl p-4 sm:p-6 w-full space-y-4">
+        <div class="bg-card border border-line rounded-xl p-4 sm:p-6 w-full space-y-4">
             <div>
                 <h2 class="font-display font-bold text-ink">{{ __('body.mfa_setup_title') }}</h2>
                 <p class="text-sm text-muted mt-1">{{ __('body.mfa_secret_hint') }}</p>
@@ -78,7 +78,7 @@
                 </div>
             @elseif ($mfaSetup)
                 <div class="flex flex-col sm:flex-row gap-5 items-start">
-                    <img src="{{ $mfaQrCode }}" alt="{{ __('body.mfa_qr_alt') }}" class="h-44 w-44 rounded-lg border border-line p-2 bg-white shrink-0">
+                    <img src="{{ $mfaQrCode }}" alt="{{ __('body.mfa_qr_alt') }}" class="h-44 w-44 rounded-lg border border-line p-2 bg-card shrink-0">
                     <div class="space-y-2 min-w-0">
                         <p class="text-sm text-muted">{{ __('body.mfa_secret_hint') }}</p>
                         <p class="text-sm text-body break-all font-mono bg-surface border border-line rounded-lg p-3">{{ $mfaSetup['secret'] }}</p>
@@ -102,7 +102,7 @@
 
         {{-- RECOVERY CODES (shown once, right after they're generated) --}}
         @if ($mfaRecoveryCodes)
-            <div class="bg-white border border-line rounded-xl p-4 sm:p-6 w-full space-y-4">
+            <div class="bg-card border border-line rounded-xl p-4 sm:p-6 w-full space-y-4">
                 <div>
                     <h2 class="font-display font-bold text-ink">{{ __('body.mfa_recovery_codes_title') }}</h2>
                     <p class="text-sm text-muted mt-1">{{ __('body.mfa_recovery_codes_hint') }}</p>
@@ -121,7 +121,7 @@
         @endif
 
         {{-- LOGOUT --}}
-        <div class="bg-white border border-line rounded-xl p-4 sm:p-6 w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="bg-card border border-line rounded-xl p-4 sm:p-6 w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
                 <h2 class="font-display font-bold text-ink">{{ __('body.log_out') }}</h2>
                 <p class="text-sm text-muted mt-1">{{ __('body.log_out_of_account') }}</p>

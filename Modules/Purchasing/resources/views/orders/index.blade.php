@@ -12,7 +12,7 @@
             :options="['' => __('body.all')] + collect(\Modules\Purchasing\Enums\PurchaseStatus::cases())->mapWithKeys(fn ($s) => [$s->value => $s->label()])->all()" />
     </x-common.filter-panel>
 
-    <div class="bg-white border border-line rounded-xl overflow-hidden">
+    <div class="bg-card border border-line rounded-xl overflow-hidden">
         <table class="w-full text-sm">
             <thead>
                 <tr class="text-left text-xs text-muted uppercase tracking-wide border-b border-line bg-surface/60">

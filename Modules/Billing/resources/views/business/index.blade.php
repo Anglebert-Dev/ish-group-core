@@ -14,7 +14,7 @@
         @endif
 
         {{-- Current plan --}}
-        <div class="bg-white border border-line rounded-xl p-5 sm:p-6">
+        <div class="bg-card border border-line rounded-xl p-5 sm:p-6">
             @if ($subscription)
                 <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
                     <div class="space-y-2">
@@ -86,7 +86,7 @@
 
         {{-- Usage --}}
         @if ($usage->isNotEmpty())
-            <div class="bg-white border border-line rounded-xl p-5 sm:p-6">
+            <div class="bg-card border border-line rounded-xl p-5 sm:p-6">
                 <h2 class="font-display font-bold text-ink mb-4">{{ __('billing::billing.usage') }}</h2>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     @foreach ($usage as $row)
@@ -96,7 +96,7 @@
                                 <span class="font-semibold text-ink">{{ ucfirst($row['label']) }}</span>
                                 <span class="text-muted">{{ $row['used'] }} / {{ $row['limit'] ?? '∞' }}</span>
                             </div>
-                            <div class="h-2 rounded-full bg-white border border-line mt-3 overflow-hidden">
+                            <div class="h-2 rounded-full bg-card border border-line mt-3 overflow-hidden">
                                 <div class="h-full {{ $pct >= 100 ? 'bg-danger' : ($pct >= 80 ? 'bg-warning' : 'bg-brand') }}" style="width: {{ $row['limit'] ? $pct : 5 }}%"></div>
                             </div>
                         </div>
@@ -107,7 +107,7 @@
 
         {{-- Invoices to pay --}}
         @if ($openInvoices->isNotEmpty())
-            <div class="bg-white border border-warning/40 rounded-xl overflow-hidden">
+            <div class="bg-card border border-warning/40 rounded-xl overflow-hidden">
                 <div class="px-5 py-4 border-b border-line">
                     <h2 class="font-display font-bold text-ink">{{ __('billing::billing.invoices_to_pay') }}</h2>
                 </div>
@@ -128,7 +128,7 @@
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
             {{-- History --}}
             <div class="xl:col-span-2 space-y-6">
-                <div class="bg-white border border-line rounded-xl overflow-hidden">
+                <div class="bg-card border border-line rounded-xl overflow-hidden">
                     <div class="px-5 py-4 border-b border-line"><h2 class="font-display font-bold text-ink">{{ __('billing::billing.invoice_history') }}</h2></div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm">
@@ -161,7 +161,7 @@
                     </div>
                 </div>
 
-                <div class="bg-white border border-line rounded-xl overflow-hidden">
+                <div class="bg-card border border-line rounded-xl overflow-hidden">
                     <div class="px-5 py-4 border-b border-line"><h2 class="font-display font-bold text-ink">{{ __('billing::billing.payments') }}</h2></div>
                     <x-billing::payments-table :payments="$payments" />
                 </div>
@@ -170,13 +170,13 @@
             {{-- Billing details --}}
             <div class="space-y-6">
                 @if (filled($instructions))
-                    <div class="bg-white border border-line rounded-xl p-5">
+                    <div class="bg-card border border-line rounded-xl p-5">
                         <h2 class="font-display font-bold text-ink mb-2">{{ __('billing::billing.how_to_pay') }}</h2>
                         <p class="text-sm text-body leading-relaxed">{!! nl2br(e($instructions)) !!}</p>
                     </div>
                 @endif
 
-                <form action="{{ route('billing.account') }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-4">
+                <form action="{{ route('billing.account') }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-4">
                     @csrf @method('PUT')
                     <div>
                         <h2 class="font-display font-bold text-ink">{{ __('billing::billing.details') }}</h2>

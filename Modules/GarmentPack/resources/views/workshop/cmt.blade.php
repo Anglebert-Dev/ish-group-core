@@ -1,7 +1,7 @@
 <x-layouts.app :title="__('garmentpack::garment.cmt')">
     <x-common.page-header :title="__('garmentpack::garment.cmt')" :description="__('garmentpack::garment.cmt_description')" />
 
-    <div class="bg-white border border-line rounded-xl overflow-hidden">
+    <div class="bg-card border border-line rounded-xl overflow-hidden">
         <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead><tr class="text-left text-xs text-muted uppercase tracking-wide border-b border-line bg-surface/60">

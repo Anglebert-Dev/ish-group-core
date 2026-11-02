@@ -4,7 +4,7 @@
         'variant' => $m->variant?->uuid, 'quantity' => $m->quantity, 'waste_percent' => $m->waste_percent, 'note' => $m->note,
     ])->all() : []);
     $rows = $rows ?: [[]];
-    $cell = 'w-full rounded-lg border border-line bg-white px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand';
+    $cell = 'w-full rounded-lg border border-line bg-card px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand';
     $row = function ($index, $values) use ($materialOptions, $cell) {
         $html = '<tr class="align-top">';
         $html .= '<td class="px-1 py-1.5"><select name="materials['.$index.'][variant]" class="'.$cell.'"><option value="">'.e(__('garmentpack::garment.material_choose')).'</option>';
@@ -30,7 +30,7 @@
     <form action="{{ $isNew ? route('garmentpack.styles.store') : route('garmentpack.styles.update', $style) }}" method="POST" class="space-y-6 max-w-5xl" data-style-form>
         @csrf
         @unless ($isNew) @method('PUT') @endunless
-        <div class="bg-white border border-line rounded-xl p-5 sm:p-6 space-y-5">
+        <div class="bg-card border border-line rounded-xl p-5 sm:p-6 space-y-5">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 <x-common.input name="code" :label="__('garmentpack::garment.code')" :value="old('code', $style->code)" required />
                 <x-common.input name="name" :label="__('garmentpack::garment.name')" :value="old('name', $style->name)" required />
@@ -54,7 +54,7 @@
             @endunless
         </div>
 
-        <div class="bg-white border border-line rounded-xl p-5 sm:p-6 space-y-4">
+        <div class="bg-card border border-line rounded-xl p-5 sm:p-6 space-y-4">
             <div>
                 <h2 class="font-display font-bold text-ink">{{ __('garmentpack::garment.bom') }}</h2>
                 <p class="text-sm text-muted">{{ __('garmentpack::garment.bom_hint') }}</p>

@@ -10,7 +10,7 @@
     @if ($sites->isEmpty())
         <x-common.empty-state :title="__('distribution::distribution.no_sites')" :description="__('distribution::distribution.no_sites_hint')" />
     @else
-        <div class="bg-white border border-line rounded-xl overflow-hidden">
+        <div class="bg-card border border-line rounded-xl overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead>

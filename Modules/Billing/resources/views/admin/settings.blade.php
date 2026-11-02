@@ -6,7 +6,7 @@
     <form action="{{ route('superadmin.billing.settings.update') }}" method="POST" class="space-y-6 max-w-5xl">
         @csrf @method('PUT')
 
-        <div class="bg-white border border-line rounded-xl p-5 sm:p-6 space-y-5">
+        <div class="bg-card border border-line rounded-xl p-5 sm:p-6 space-y-5">
             <h2 class="font-display font-bold text-ink">{{ __('billing::billing.money') }}</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 <x-common.input name="currency" :label="__('billing::billing.currency')" :value="old('currency', $settings['currency'])" :hint="__('billing::billing.currency_hint')" maxlength="3" required />
@@ -18,7 +18,7 @@
             <x-common.checkbox name="tax_inclusive" :label="__('billing::billing.tax_inclusive')" :description="__('billing::billing.tax_inclusive_hint')" :checked="$settings['tax_inclusive'] === '1'" />
         </div>
 
-        <div class="bg-white border border-line rounded-xl p-5 sm:p-6 space-y-5">
+        <div class="bg-card border border-line rounded-xl p-5 sm:p-6 space-y-5">
             <h2 class="font-display font-bold text-ink">{{ __('billing::billing.rules') }}</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 <x-common.input name="due_days" type="number" min="0" :label="__('billing::billing.due_days')" :value="old('due_days', $settings['due_days'])" :hint="__('billing::billing.due_days_hint')" required />
@@ -29,12 +29,12 @@
             </div>
         </div>
 
-        <div class="bg-white border border-line rounded-xl p-5 sm:p-6 space-y-5">
+        <div class="bg-card border border-line rounded-xl p-5 sm:p-6 space-y-5">
             <h2 class="font-display font-bold text-ink">{{ __('billing::billing.how_to_pay') }}</h2>
             <x-common.textarea name="payment_instructions" :label="__('billing::billing.payment_instructions')" :value="old('payment_instructions', $settings['payment_instructions'])" :rows="5" :hint="__('billing::billing.payment_instructions_hint')" />
         </div>
 
-        <div class="bg-white border border-line rounded-xl p-5 sm:p-6 space-y-5">
+        <div class="bg-card border border-line rounded-xl p-5 sm:p-6 space-y-5">
             <h2 class="font-display font-bold text-ink">{{ __('billing::billing.issuer') }}</h2>
             <p class="text-sm text-muted -mt-3">{{ __('billing::billing.issuer_hint') }}</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">

@@ -31,13 +31,13 @@
                 ]" />
             </div>
 
-            <div class="bg-white border border-line rounded-xl p-5 space-y-3">
+            <div class="bg-card border border-line rounded-xl p-5 space-y-3">
                 <h2 class="font-display font-bold text-ink">{{ __('salesorders::orders.lines') }}</h2>
                 @include('salesorders::orders.lines-table', ['order' => $order, 'available' => $closed ? null : $available])
             </div>
 
             @if ($order->notes)
-                <div class="bg-white border border-line rounded-xl p-5">
+                <div class="bg-card border border-line rounded-xl p-5">
                     <h2 class="font-display font-bold text-ink mb-2">{{ __('salesorders::orders.notes') }}</h2>
                     <p class="text-sm text-body leading-relaxed">{!! nl2br(e($order->notes)) !!}</p>
                 </div>
@@ -50,7 +50,7 @@
         </div>
 
         <div class="space-y-4">
-            <div class="bg-white border border-line rounded-xl p-5 space-y-4">
+            <div class="bg-card border border-line rounded-xl p-5 space-y-4">
                 <div class="flex items-center justify-between">
                     <h2 class="font-display font-bold text-ink">{{ __('body.status') }}</h2>
                     <div class="flex gap-1.5">
@@ -102,7 +102,7 @@
             </div>
 
             @if (! $closed && $can('delete sales.order'))
-                <form action="{{ route('salesorders.orders.cancel', $order) }}" method="POST" class="bg-white border border-danger/40 rounded-xl p-5 space-y-3">
+                <form action="{{ route('salesorders.orders.cancel', $order) }}" method="POST" class="bg-card border border-danger/40 rounded-xl p-5 space-y-3">
                     @csrf
                     <h2 class="font-display font-bold text-danger">{{ __('salesorders::orders.action_cancel') }}</h2>
                     <x-common.input name="reason" :label="__('salesorders::orders.cancel_reason')" required />

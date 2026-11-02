@@ -27,7 +27,7 @@
                 ]" />
             </div>
 
-            <div class="bg-white border border-line rounded-xl p-5 space-y-3">
+            <div class="bg-card border border-line rounded-xl p-5 space-y-3">
                 <h2 class="font-display font-bold text-ink">{{ __('invoicing::invoicing.lines') }}</h2>
                 <div class="overflow-x-auto">
                 <table class="w-full text-sm">
@@ -55,7 +55,7 @@
                 <p class="text-xs text-muted">{{ $invoice->stock_issued ? __('invoicing::invoicing.stock_issued', ['store' => $invoice->store?->name]) : __('invoicing::invoicing.stock_with_order') }}</p>
             </div>
 
-            <div class="bg-white border border-line rounded-xl overflow-hidden">
+            <div class="bg-card border border-line rounded-xl overflow-hidden">
                 <div class="px-5 py-4 border-b border-line"><h2 class="font-display font-bold text-ink">{{ __('invoicing::invoicing.payments') }}</h2></div>
                 <div class="overflow-x-auto">
                 <table class="w-full text-sm">
@@ -94,7 +94,7 @@
         </div>
 
         <div class="space-y-4">
-            <div class="bg-white border border-line rounded-xl p-5 space-y-2">
+            <div class="bg-card border border-line rounded-xl p-5 space-y-2">
                 <div class="flex items-center justify-between">
                     <h2 class="font-display font-bold text-ink">{{ __('body.status') }}</h2>
                     <x-common.badge :color="$invoice->status->color()">{{ $invoice->status->label() }}</x-common.badge>
@@ -110,7 +110,7 @@
             </div>
 
             @if (! $cancelled && $invoice->balance() > 0 && $can('create invoicing.payment'))
-                <form action="{{ route('invoicing.invoices.pay', $invoice) }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-4">
+                <form action="{{ route('invoicing.invoices.pay', $invoice) }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-4">
                     @csrf
                     <h2 class="font-display font-bold text-ink">{{ __('invoicing::invoicing.payment_add') }}</h2>
                     <x-common.input name="amount" type="number" step="any" min="0" :max="$invoice->balance()" :label="__('invoicing::invoicing.amount')" :value="old('amount', $invoice->balance())" required />
@@ -123,7 +123,7 @@
             @endif
 
             @if (! $cancelled && $can('delete invoicing.invoice'))
-                <form action="{{ route('invoicing.invoices.cancel', $invoice) }}" method="POST" class="bg-white border border-danger/40 rounded-xl p-5 space-y-3">
+                <form action="{{ route('invoicing.invoices.cancel', $invoice) }}" method="POST" class="bg-card border border-danger/40 rounded-xl p-5 space-y-3">
                     @csrf
                     <h2 class="font-display font-bold text-danger">{{ __('invoicing::invoicing.action_cancel') }}</h2>
                     <p class="text-xs text-muted">{{ __('invoicing::invoicing.cancel_hint') }}</p>

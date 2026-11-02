@@ -4,14 +4,14 @@
     <x-common.page-header :title="__('body.communicator')" :description="__('body.communicator_description')" />
 
     <div class="grid grid-cols-1 xl:grid-cols-5 gap-6 items-start">
-        <form action="{{ route('superadmin.communicator.send') }}" method="POST" class="xl:col-span-3 bg-white border border-line rounded-xl p-5 sm:p-6 space-y-5">
+        <form action="{{ route('superadmin.communicator.send') }}" method="POST" class="xl:col-span-3 bg-card border border-line rounded-xl p-5 sm:p-6 space-y-5">
             @csrf
             <x-common.select name="audience" :label="__('body.communicator_audience')" :value="old('audience', 'active')" hide-placeholder
                 :options="['active' => __('body.communicator_active'), 'all' => __('body.communicator_all'), 'selected' => __('body.communicator_selected')]" />
             <div>
                 <label class="text-sm font-semibold text-ink">{{ __('body.businesses') }}</label>
                 <p class="text-xs text-muted mb-2">{{ __('body.communicator_selected_hint') }}</p>
-                <select name="business_ids[]" multiple size="6" class="w-full rounded-xl border border-line bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand">
+                <select name="business_ids[]" multiple size="6" class="w-full rounded-xl border border-line bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand">
                     @foreach ($businesses as $id => $name)
                         <option value="{{ $id }}" @selected(in_array($id, old('business_ids', [])))>{{ $name }}</option>
                     @endforeach
@@ -30,7 +30,7 @@
             <x-common.button type="submit" data-confirm data-confirm-title="{{ __('body.communicator_confirm') }}">{{ __('body.communicator_send') }}</x-common.button>
         </form>
 
-        <div class="xl:col-span-2 bg-white border border-line rounded-xl overflow-hidden">
+        <div class="xl:col-span-2 bg-card border border-line rounded-xl overflow-hidden">
             <div class="px-5 py-4 border-b border-line"><h2 class="font-display font-bold text-ink">{{ __('body.communicator_history') }}</h2></div>
             <ul class="divide-y divide-line">
                 @forelse ($history as $item)

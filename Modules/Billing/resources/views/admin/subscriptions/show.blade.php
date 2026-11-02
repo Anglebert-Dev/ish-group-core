@@ -32,7 +32,7 @@
 
     @if ($subscription->isCurrent())
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <form action="{{ route('superadmin.billing.subscriptions.extend', $subscription) }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-4">
+            <form action="{{ route('superadmin.billing.subscriptions.extend', $subscription) }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-4">
                 @csrf @method('PUT')
                 <div>
                     <h2 class="font-display font-bold text-ink">{{ __('billing::billing.extend') }}</h2>
@@ -42,7 +42,7 @@
                 <x-common.button type="submit" size="sm">{{ __('body.save') }}</x-common.button>
             </form>
 
-            <form action="{{ route('superadmin.billing.subscriptions.cancel', $subscription) }}" method="POST" class="bg-white border border-danger/40 rounded-xl p-5 space-y-4">
+            <form action="{{ route('superadmin.billing.subscriptions.cancel', $subscription) }}" method="POST" class="bg-card border border-danger/40 rounded-xl p-5 space-y-4">
                 @csrf
                 <div>
                     <h2 class="font-display font-bold text-danger">{{ __('billing::billing.cancel_now') }}</h2>
@@ -54,7 +54,7 @@
         </div>
     @endif
 
-    <div class="bg-white border border-line rounded-xl overflow-hidden">
+    <div class="bg-card border border-line rounded-xl overflow-hidden">
         <div class="px-5 py-4 border-b border-line"><h2 class="font-display font-bold text-ink">{{ __('billing::billing.invoices') }}</h2></div>
         @include('billing::admin.invoices.table', ['invoices' => $subscription->invoices, 'showBusiness' => false])
     </div>

@@ -24,7 +24,7 @@
 
     // Match NDFIS SelectField control styling (brand tokens instead of blue/gray).
     $controlClass = ($isCompact ? 'h-10 min-h-10 ' : 'h-12 min-h-12 ')
-        .'w-full px-3 sm:px-4 rounded-xl border text-sm bg-white shadow-sm hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand cursor-pointer text-ink '
+        .'w-full px-3 sm:px-4 rounded-xl border text-sm bg-card shadow-sm hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand cursor-pointer text-ink '
         .($hasError ? 'border-danger' : 'border-line').' '
         .($disabled ? 'opacity-70 cursor-not-allowed' : '');
 

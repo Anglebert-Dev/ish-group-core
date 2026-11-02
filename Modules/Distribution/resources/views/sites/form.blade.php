@@ -7,7 +7,7 @@
 
     <x-common.page-header :title="$isNew ? __('distribution::distribution.add_site') : __('distribution::distribution.edit_site')" :description="$isNew ? __('distribution::distribution.sites_description') : $site->name" />
 
-    <form action="{{ $isNew ? route('superadmin.distribution.sites.store') : route('superadmin.distribution.sites.update', $site) }}" method="POST" class="bg-white border border-line rounded-xl p-5 sm:p-8 space-y-8">
+    <form action="{{ $isNew ? route('superadmin.distribution.sites.store') : route('superadmin.distribution.sites.update', $site) }}" method="POST" class="bg-card border border-line rounded-xl p-5 sm:p-8 space-y-8">
         @csrf
         @unless ($isNew) @method('PUT') @endunless
 

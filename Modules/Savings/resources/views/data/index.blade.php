@@ -2,7 +2,7 @@
 <x-layouts.app :title="__('savings::savings.data')">
     <x-common.page-header :title="__('savings::savings.data')" />
     @if (session('savings_json_errors'))
-        <div class="mb-6 bg-white border border-danger/40 rounded-xl p-5">
+        <div class="mb-6 bg-card border border-danger/40 rounded-xl p-5">
             <p class="text-sm font-semibold text-danger mb-2">{{ __('savings::savings.json_problems') }}</p>
             <ul class="text-xs text-ink space-y-1 font-mono">
                 @foreach (session('savings_json_errors') as $problem)
@@ -13,7 +13,7 @@
     @endif
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         @if ($can('create savings.data'))
-            <form action="{{ route('savings.data.preview') }}" method="POST" enctype="multipart/form-data" class="bg-white border border-line rounded-xl p-5 space-y-3">
+            <form action="{{ route('savings.data.preview') }}" method="POST" enctype="multipart/form-data" class="bg-card border border-line rounded-xl p-5 space-y-3">
                 @csrf
                 <h2 class="font-display font-bold text-ink">{{ __('savings::savings.import') }}</h2>
                 <p class="text-xs text-muted">{{ __('savings::savings.import_hint') }}</p>
@@ -30,7 +30,7 @@
             </form>
         @endif
         @if ($can('create savings.data'))
-            <form action="{{ route('savings.data.fill') }}" method="POST" enctype="multipart/form-data" class="bg-white border border-line rounded-xl p-5 space-y-3">
+            <form action="{{ route('savings.data.fill') }}" method="POST" enctype="multipart/form-data" class="bg-card border border-line rounded-xl p-5 space-y-3">
                 @csrf
                 <h2 class="font-display font-bold text-ink">{{ __('savings::savings.fill') }}</h2>
                 <p class="text-xs text-muted">{{ __('savings::savings.fill_hint') }}</p>
@@ -40,14 +40,14 @@
             </form>
         @endif
         @if ($can('read savings.data'))
-            <div class="bg-white border border-line rounded-xl p-5 space-y-3">
+            <div class="bg-card border border-line rounded-xl p-5 space-y-3">
                 <h2 class="font-display font-bold text-ink">{{ __('savings::savings.backup') }}</h2>
                 <p class="text-xs text-muted">{{ __('savings::savings.backup_hint') }}</p>
                 <x-common.button href="{{ route('savings.data.backup') }}" size="sm">{{ __('savings::savings.download_backup') }}</x-common.button>
             </div>
         @endif
         @if ($can('update savings.data'))
-            <form action="{{ route('savings.data.restore') }}" method="POST" enctype="multipart/form-data" class="bg-white border border-danger/40 rounded-xl p-5 space-y-3">
+            <form action="{{ route('savings.data.restore') }}" method="POST" enctype="multipart/form-data" class="bg-card border border-danger/40 rounded-xl p-5 space-y-3">
                 @csrf
                 <h2 class="font-display font-bold text-ink">{{ __('savings::savings.restore') }}</h2>
                 <p class="text-xs text-muted">{{ __('savings::savings.restore_backup_hint') }}</p>

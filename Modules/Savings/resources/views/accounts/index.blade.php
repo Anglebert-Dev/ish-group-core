@@ -2,7 +2,7 @@
 <x-layouts.app :title="__('savings::savings.accounts')">
     <x-common.page-header :title="__('savings::savings.accounts')" />
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-        <div class="xl:col-span-2 bg-white border border-line rounded-xl overflow-hidden">
+        <div class="xl:col-span-2 bg-card border border-line rounded-xl overflow-hidden">
             <table class="w-full text-sm">
                 <thead><tr class="text-left text-xs text-muted uppercase border-b border-line bg-surface/60">
                     <th class="px-5 py-3">{{ __('savings::savings.account') }}</th><th class="px-5 py-3 text-right">{{ __('savings::savings.balance') }}</th><th class="px-5 py-3 text-right">{{ __('savings::savings.available') }}</th>
@@ -22,7 +22,7 @@
             </table>
         </div>
         @if (\App\Helpers\AuthHelper::can('create savings.account'))
-            <form action="{{ route('savings.accounts.store') }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-4">
+            <form action="{{ route('savings.accounts.store') }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-4">
                 @csrf
                 <h2 class="font-display font-bold text-ink">{{ __('savings::savings.account_add') }}</h2>
                 @include('savings::accounts.form-fields', ['account' => null, 'prefix' => 'new-'])

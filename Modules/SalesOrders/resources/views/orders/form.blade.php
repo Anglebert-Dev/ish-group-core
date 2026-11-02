@@ -17,7 +17,7 @@
         @csrf
         @unless ($isNew) @method('PUT') @endunless
 
-        <div class="bg-white border border-line rounded-xl p-5 sm:p-6 space-y-5">
+        <div class="bg-card border border-line rounded-xl p-5 sm:p-6 space-y-5">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 <div class="space-y-1">
                     <x-common.select name="customer" :label="__('salesorders::orders.customer')" :value="old('customer', $order->customer?->uuid)" :options="$customers" searchable required />
@@ -33,7 +33,7 @@
             </div>
         </div>
 
-        <div class="bg-white border border-line rounded-xl p-5 sm:p-6 space-y-4">
+        <div class="bg-card border border-line rounded-xl p-5 sm:p-6 space-y-4">
             <h2 class="font-display font-bold text-ink">{{ __('salesorders::orders.lines') }}</h2>
             @if ($linesEditable)
                 @include('inventory::partials.line-editor', ['lines' => $rows, 'options' => $lineOptions, 'name' => 'lines'])
@@ -43,7 +43,7 @@
             @endif
         </div>
 
-        <div class="bg-white border border-line rounded-xl p-5 sm:p-6">
+        <div class="bg-card border border-line rounded-xl p-5 sm:p-6">
             <x-common.textarea name="notes" :label="__('salesorders::orders.notes')" :value="old('notes', $order->notes)" :rows="3" />
         </div>
 

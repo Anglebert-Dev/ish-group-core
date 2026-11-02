@@ -1,7 +1,7 @@
 <x-layouts.app :title="__('purchasing::purchasing.reorder')">
     <x-common.page-header :title="__('purchasing::purchasing.reorder')" :description="__('purchasing::purchasing.reorder_description')" />
 
-    <form action="{{ route('purchasing.orders.create') }}" method="GET" class="bg-white border border-line rounded-xl overflow-hidden">
+    <form action="{{ route('purchasing.orders.create') }}" method="GET" class="bg-card border border-line rounded-xl overflow-hidden">
         <table class="w-full text-sm">
             <thead>
                 <tr class="text-left text-xs text-muted uppercase tracking-wide border-b border-line bg-surface/60">

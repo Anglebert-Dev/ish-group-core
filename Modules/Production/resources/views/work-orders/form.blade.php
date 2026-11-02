@@ -6,7 +6,7 @@
         </x-slot:actions>
     </x-common.page-header>
 
-    <form action="{{ $isNew ? route('production.work-orders.store') : route('production.work-orders.update', $workOrder) }}" method="POST" class="bg-white border border-line rounded-xl p-5 sm:p-6 space-y-5 max-w-4xl">
+    <form action="{{ $isNew ? route('production.work-orders.store') : route('production.work-orders.update', $workOrder) }}" method="POST" class="bg-card border border-line rounded-xl p-5 sm:p-6 space-y-5 max-w-4xl">
         @csrf
         @unless ($isNew) @method('PUT') @endunless
         @if ($started)

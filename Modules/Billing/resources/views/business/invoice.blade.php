@@ -11,7 +11,7 @@
         <div class="xl:col-span-2 space-y-6">
             @include('billing::partials.invoice-body')
 
-            <div class="bg-white border border-line rounded-xl overflow-hidden">
+            <div class="bg-card border border-line rounded-xl overflow-hidden">
                 <div class="px-5 py-4 border-b border-line"><h2 class="font-display font-bold text-ink">{{ __('billing::billing.payments') }}</h2></div>
                 <x-billing::payments-table :payments="$invoice->payments" />
             </div>
@@ -19,7 +19,7 @@
 
         <div class="space-y-6">
             @if (filled($instructions))
-                <div class="bg-white border border-line rounded-xl p-5">
+                <div class="bg-card border border-line rounded-xl p-5">
                     <h2 class="font-display font-bold text-ink mb-2">{{ __('billing::billing.how_to_pay') }}</h2>
                     <p class="text-sm text-body leading-relaxed">{!! nl2br(e($instructions)) !!}</p>
                 </div>

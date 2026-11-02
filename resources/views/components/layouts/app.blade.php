@@ -5,23 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <x-common.brand-head :title="$title ?? 'Dashboard'" />
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: { extend: {
-                fontFamily: {
-                    display: ['var(--font-body)'],
-                    sans: ['var(--font-body)'],
-                },
-                colors: {
-                    brand: { DEFAULT: 'var(--brand)', dark: 'var(--brand-dark)', light: 'var(--brand-light)' },
-                    ink: '#111827', body: '#1F2937', muted: '#6B7280',
-                    surface: '#F8FAFC', line: '#E5E7EB',
-                    success: '#16A34A', warning: '#F59E0B', danger: '#DC2626',
-                },
-            }},
-        };
-    </script>
+    <x-common.tailwind />
     <style>
         body { font-family: var(--font-body); }
         .font-display { font-family: var(--font-body); }
@@ -37,7 +21,7 @@
         }
     </style>
 </head>
-<body class="bg-surface text-body antialiased">
+<body class="bg-page text-body antialiased">
 
     <div class="min-h-screen lg:flex">
 

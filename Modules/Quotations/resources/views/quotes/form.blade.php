@@ -16,7 +16,7 @@
         @csrf
         @unless ($isNew) @method('PUT') @endunless
 
-        <div class="bg-white border border-line rounded-xl p-5 sm:p-6 space-y-5">
+        <div class="bg-card border border-line rounded-xl p-5 sm:p-6 space-y-5">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 <x-common.select name="customer" :label="__('quotations::quotations.customer')" :value="old('customer', $quote->customer?->uuid)" :options="$customers" searchable required />
                 <x-common.input name="quote_date" type="date" :label="__('quotations::quotations.quote_date')" :value="old('quote_date', $quote->quote_date?->format('Y-m-d'))" required />
@@ -31,12 +31,12 @@
             @endif
         </div>
 
-        <div class="bg-white border border-line rounded-xl p-5 sm:p-6 space-y-4">
+        <div class="bg-card border border-line rounded-xl p-5 sm:p-6 space-y-4">
             <h2 class="font-display font-bold text-ink">{{ __('quotations::quotations.lines') }}</h2>
             @include('inventory::partials.line-editor', ['lines' => $rows, 'options' => $lineOptions, 'name' => 'lines'])
         </div>
 
-        <div class="bg-white border border-line rounded-xl p-5 sm:p-6">
+        <div class="bg-card border border-line rounded-xl p-5 sm:p-6">
             <x-common.textarea name="notes" :label="__('quotations::quotations.notes')" :value="old('notes', $quote->notes)" :rows="3" />
         </div>
 

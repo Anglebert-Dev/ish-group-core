@@ -21,7 +21,7 @@
     @endphp
     <div class="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
         @foreach ([['actual', 'actual'], ['committed', 'committed'], ['available', 'available'], ['owed', 'owed_to_me'], ['owe', 'i_owe'], ['restore', 'to_put_back']] as [$key, $label])
-            <div class="bg-white border border-line rounded-xl p-4 {{ $key === 'available' ? 'ring-2 ring-brand/30' : '' }}">
+            <div class="bg-card border border-line rounded-xl p-4 {{ $key === 'available' ? 'ring-2 ring-brand/30' : '' }}">
                 <p class="text-xs font-semibold uppercase tracking-wide text-muted">{{ __('savings::savings.'.$label) }}</p>
                 <p class="text-lg font-display font-bold mt-1 {{ $key === 'available' && $totals[$key] < 0 ? 'text-danger' : 'text-ink' }}">{{ $m($totals[$key], $base) }}</p>
             </div>
@@ -40,7 +40,7 @@
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         <div class="xl:col-span-2 space-y-6">
-            <div class="bg-white border border-line rounded-xl overflow-hidden">
+            <div class="bg-card border border-line rounded-xl overflow-hidden">
                 <div class="px-5 py-4 border-b border-line flex justify-between"><h2 class="font-display font-bold text-ink">{{ __('savings::savings.accounts') }}</h2><a href="{{ route('savings.accounts.index') }}" class="text-sm font-semibold text-brand">{{ __('savings::savings.see_all') }} →</a></div>
                 <table class="w-full text-sm">
                     <thead><tr class="text-left text-xs text-muted uppercase border-b border-line bg-surface/60">
@@ -63,14 +63,14 @@
                 </table>
             </div>
 
-            <div class="bg-white border border-line rounded-xl overflow-hidden">
+            <div class="bg-card border border-line rounded-xl overflow-hidden">
                 <div class="px-5 py-4 border-b border-line flex justify-between"><h2 class="font-display font-bold text-ink">{{ __('savings::savings.transactions') }}</h2><a href="{{ route('savings.transactions.index') }}" class="text-sm font-semibold text-brand">{{ __('savings::savings.see_all') }} →</a></div>
                 @include('savings::transactions.table', ['transactions' => $recent])
             </div>
         </div>
 
         <div class="space-y-4">
-            <div class="bg-white border border-line rounded-xl p-5 space-y-2">
+            <div class="bg-card border border-line rounded-xl p-5 space-y-2">
                 <h2 class="font-display font-bold text-ink">{{ __('savings::savings.upcoming') }}</h2>
                 @forelse ($soon->take(10) as $e)
                     <div class="flex justify-between gap-2 text-sm">
@@ -82,7 +82,7 @@
                 @endforelse
             </div>
 
-            <div class="bg-white border border-line rounded-xl p-5 space-y-3">
+            <div class="bg-card border border-line rounded-xl p-5 space-y-3">
                 <div class="flex justify-between"><h2 class="font-display font-bold text-ink">{{ __('savings::savings.this_period') }}</h2><span class="text-xs text-muted">{{ $periodLabel }}</span></div>
                 @forelse ($budgetRows as $row)
                     <div>
@@ -94,7 +94,7 @@
                 @endforelse
             </div>
 
-            <div class="bg-white border border-line rounded-xl p-5 space-y-2">
+            <div class="bg-card border border-line rounded-xl p-5 space-y-2">
                 <h2 class="font-display font-bold text-ink">{{ __('savings::savings.obligations') }}</h2>
                 @forelse ($owed->take(8) as $r)
                     <a href="{{ route('savings.obligations.show', $r['o']) }}" class="flex justify-between text-sm hover:text-brand">

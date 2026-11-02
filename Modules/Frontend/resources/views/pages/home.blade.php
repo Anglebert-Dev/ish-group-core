@@ -49,7 +49,7 @@
     @endif
 
     @if ($features['show'])
-    <section class="bg-white border-b border-line">
+    <section class="bg-card border-b border-line">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-24">
             <div class="max-w-2xl">
                 <p class="text-brand text-xs font-semibold tracking-[0.18em] uppercase mb-4">{{ $features['tagline'] }}</p>
@@ -89,7 +89,7 @@
     @endif
 
     @if ($cta['show'] && $canRegister)
-    <section class="bg-[#f4f6f8]">
+    <section class="bg-surface">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
             <div class="rounded-[1.75rem] bg-brand px-5 py-8 sm:px-12 sm:py-12 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 shadow-lg shadow-brand/20">
                 <div>
@@ -97,7 +97,7 @@
                     <p class="text-white/80 mt-2 max-w-md">{{ $cta['subtitle'] }}</p>
                 </div>
                 <a href="{{ route('register') }}"
-                   class="inline-flex items-center justify-center gap-2 rounded-full bg-white text-brand hover:bg-brand-light font-semibold text-sm px-7 py-3.5 transition-colors shrink-0 w-full sm:w-auto">
+                   class="inline-flex items-center justify-center gap-2 rounded-full bg-card text-brand hover:bg-brand-light font-semibold text-sm px-7 py-3.5 transition-colors shrink-0 w-full sm:w-auto">
                     {{ $cta['button'] }}
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
                 </a>
@@ -107,7 +107,7 @@
     @endif
 
     @if ($contactSection['show'])
-    <section id="contact" class="scroll-mt-24 bg-[#f4f6f8] border-t border-line">
+    <section id="contact" class="scroll-mt-24 bg-surface border-t border-line">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-24">
             <div class="max-w-2xl">
                 <p class="text-brand text-xs font-semibold tracking-[0.18em] uppercase mb-4">{{ $contactSection['tagline'] }}</p>

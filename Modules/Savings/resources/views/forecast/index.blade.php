@@ -1,6 +1,6 @@
 <x-layouts.app :title="__('savings::savings.forecast')">
     <x-common.page-header :title="__('savings::savings.forecast')" :description="__('savings::savings.forecast_description')" />
-    <form method="GET" class="bg-white border border-line rounded-xl p-4 mb-4 flex flex-wrap items-end gap-3" data-forecast>
+    <form method="GET" class="bg-card border border-line rounded-xl p-4 mb-4 flex flex-wrap items-end gap-3" data-forecast>
         <div class="w-56"><x-common.select name="account" :label="__('savings::savings.account')" :value="$account" :options="['' => __('savings::savings.liquid')] + $accounts->mapWithKeys(fn ($a) => [$a->uuid => $a->name])->all()" hide-placeholder compact /></div>
         <div class="w-32"><x-common.input name="days" type="number" min="7" max="365" :label="__('savings::savings.days')" :value="$days" compact /></div>
         <x-common.button type="submit" size="sm">{{ __('savings::savings.show') }}</x-common.button>

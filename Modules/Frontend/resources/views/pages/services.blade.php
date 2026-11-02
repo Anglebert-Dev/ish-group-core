@@ -9,7 +9,7 @@
         @else
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 @foreach ($page['items'] as $item)
-                    <div class="border border-line rounded-xl p-6 bg-white">
+                    <div class="border border-line rounded-xl p-6 bg-card">
                         <p class="font-semibold text-ink">{{ $item['title'] ?? '' }}</p>
                         <p class="text-sm text-muted mt-2 leading-relaxed">{{ $item['description'] ?? '' }}</p>
                     </div>

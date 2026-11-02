@@ -1,6 +1,6 @@
 <x-layouts.app :title="__('savings::savings.settings')">
     <x-common.page-header :title="__('savings::savings.settings')" :description="__('savings::savings.settings_description')" />
-    <form action="{{ route('savings.settings.update') }}" method="POST" class="bg-white border border-line rounded-xl p-5 sm:p-6 space-y-5 max-w-2xl">
+    <form action="{{ route('savings.settings.update') }}" method="POST" class="bg-card border border-line rounded-xl p-5 sm:p-6 space-y-5 max-w-2xl">
         @csrf @method('PUT')
         <x-common.select name="currency" :label="__('savings::savings.base_currency')" :value="$currency" :options="array_combine($currencies, $currencies)" hide-placeholder required />
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -26,7 +26,7 @@
         <x-common.button type="submit">{{ __('body.save') }}</x-common.button>
     </form>
 
-    <form action="{{ route('savings.settings.reset') }}" method="POST" class="mt-6 bg-white border border-danger/40 rounded-xl p-5 sm:p-6 space-y-4 max-w-2xl">
+    <form action="{{ route('savings.settings.reset') }}" method="POST" class="mt-6 bg-card border border-danger/40 rounded-xl p-5 sm:p-6 space-y-4 max-w-2xl">
         @csrf
         <h2 class="font-display font-bold text-danger">{{ __('savings::savings.reset') }}</h2>
         <p class="text-sm text-body">{{ __('savings::savings.reset_hint') }}</p>

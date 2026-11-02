@@ -13,7 +13,7 @@
 
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
         @foreach (\Modules\Billing\Enums\SubscriptionStatus::cases() as $status)
-            <a href="{{ route('superadmin.billing.subscriptions.index', ['status' => $status->value]) }}" class="bg-white border border-line rounded-xl p-4 hover:border-brand/40 transition-colors">
+            <a href="{{ route('superadmin.billing.subscriptions.index', ['status' => $status->value]) }}" class="bg-card border border-line rounded-xl p-4 hover:border-brand/40 transition-colors">
                 <x-common.badge :color="$status->color()">{{ $status->label() }}</x-common.badge>
                 <p class="font-display font-bold text-2xl text-ink mt-2">{{ $statusCounts[$status->value] ?? 0 }}</p>
             </a>
@@ -21,7 +21,7 @@
     </div>
 
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <div class="bg-white border border-warning/40 rounded-xl overflow-hidden">
+        <div class="bg-card border border-warning/40 rounded-xl overflow-hidden">
             <div class="flex items-center justify-between px-5 py-4 border-b border-line">
                 <h2 class="font-display font-bold text-ink">{{ __('billing::billing.awaiting_approval') }}</h2>
                 <a href="{{ route('superadmin.billing.payments.index') }}" class="text-sm font-medium text-brand">{{ __('body.view_all') }}</a>
@@ -41,7 +41,7 @@
             </ul>
         </div>
 
-        <div class="bg-white border border-line rounded-xl overflow-hidden">
+        <div class="bg-card border border-line rounded-xl overflow-hidden">
             <div class="px-5 py-4 border-b border-line"><h2 class="font-display font-bold text-ink">{{ __('billing::billing.recent_payments') }}</h2></div>
             <ul class="divide-y divide-line">
                 @forelse ($recentPayments as $payment)

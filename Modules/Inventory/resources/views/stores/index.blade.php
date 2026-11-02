@@ -5,7 +5,7 @@
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         <div class="xl:col-span-2 space-y-4">
             @forelse ($stores as $store)
-                <div class="bg-white border border-line rounded-xl p-5 space-y-4">
+                <div class="bg-card border border-line rounded-xl p-5 space-y-4">
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <div>
                             <p class="font-display font-bold text-ink">{{ $store->name }} @if ($store->code)<span class="text-sm font-normal text-muted">· {{ $store->code }}</span>@endif</p>
@@ -24,7 +24,7 @@
                             @if (! $store->is_default && \App\Helpers\AuthHelper::can('delete inventory.store'))
                                 <form action="{{ route('inventory.stores.destroy', $store) }}" method="POST" class="inline">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="inline-flex items-center rounded-lg border border-red-300 bg-white px-2.5 py-1 text-xs font-semibold text-danger hover:bg-red-50"
+                                    <button type="submit" class="inline-flex items-center rounded-lg border border-red-300 bg-card px-2.5 py-1 text-xs font-semibold text-danger hover:bg-red-50"
                                         data-confirm data-confirm-title="{{ __('body.delete') }} {{ $store->name }}?" data-confirm-variant="danger">{{ __('body.delete') }}</button>
                                 </form>
                             @endif
@@ -48,12 +48,12 @@
                     @endif
                 </div>
             @empty
-                <div class="bg-white border border-line rounded-xl p-10 text-center text-muted">{{ __('inventory::inventory.store_none') }}</div>
+                <div class="bg-card border border-line rounded-xl p-10 text-center text-muted">{{ __('inventory::inventory.store_none') }}</div>
             @endforelse
         </div>
 
         @if (\App\Helpers\AuthHelper::can('create inventory.store'))
-            <form action="{{ route('inventory.stores.store') }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-4">
+            <form action="{{ route('inventory.stores.store') }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-4">
                 @csrf
                 <h2 class="font-display font-bold text-ink">{{ __('inventory::inventory.store_add') }}</h2>
                 <x-common.input name="name" :label="__('body.name')" :value="old('name')" required />

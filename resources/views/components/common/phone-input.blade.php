@@ -34,7 +34,7 @@
 
     <div class="relative">
         <div
-            class="flex items-stretch rounded-xl border bg-white shadow-sm transition-all duration-200 overflow-hidden
+            class="flex items-stretch rounded-xl border bg-card shadow-sm transition-all duration-200 overflow-hidden
                 {{ $hasError ? 'border-danger' : 'border-line' }}
                 focus-within:ring-2 focus-within:ring-brand/20 focus-within:border-brand"
             data-phone-shell
@@ -78,7 +78,7 @@
 
         <div
             id="{{ $uid }}-list"
-            class="absolute z-40 left-0 right-0 mt-2 rounded-xl border border-line bg-white shadow-[0_16px_40px_rgba(15,23,42,0.12)] overflow-hidden hidden"
+            class="absolute z-40 left-0 right-0 mt-2 rounded-xl border border-line bg-card shadow-[0_16px_40px_rgba(15,23,42,0.12)] overflow-hidden hidden"
             data-phone-dropdown
             hidden
             role="listbox"

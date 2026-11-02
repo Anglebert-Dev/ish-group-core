@@ -4,7 +4,7 @@
     </x-common.page-header>
     <form action="{{ route('savings.data.commit', $batch) }}" method="POST" class="space-y-4">
         @csrf
-        <div class="bg-white border border-line rounded-xl overflow-hidden">
+        <div class="bg-card border border-line rounded-xl overflow-hidden">
             <table class="w-full text-sm">
                 <tbody class="divide-y divide-line">
                     @foreach ($batch->rows as $i => $row)
@@ -25,7 +25,7 @@
             </table>
         </div>
         @if ($batch->status === 'preview')
-            <div class="bg-white border border-line rounded-xl p-5 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+            <div class="bg-card border border-line rounded-xl p-5 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
                 <x-common.select name="income_category" :label="__('savings::savings.import_income_category')" :options="$income->mapWithKeys(fn ($c) => [$c->uuid => $c->name])->all()" hide-placeholder required />
                 <x-common.select name="expense_category" :label="__('savings::savings.import_expense_category')" :options="$expense->mapWithKeys(fn ($c) => [$c->uuid => $c->name])->all()" hide-placeholder required />
                 <x-common.button type="submit">{{ __('savings::savings.import_confirm') }}</x-common.button>

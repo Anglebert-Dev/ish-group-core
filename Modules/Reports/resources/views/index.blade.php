@@ -11,16 +11,16 @@
     </x-common.page-header>
 
     @if ($available === [])
-        <div class="bg-white border border-line rounded-xl p-10 text-center text-muted">{{ __('reports::reports.none') }}</div>
+        <div class="bg-card border border-line rounded-xl p-10 text-center text-muted">{{ __('reports::reports.none') }}</div>
     @else
         <div class="flex flex-wrap gap-2 mb-4">
             @foreach ($available as $key)
                 <a href="{{ route('reports.index', ['report' => $key, 'from' => $from, 'to' => $to]) }}"
-                   class="px-4 py-2 rounded-lg text-sm font-semibold border transition-colors {{ $report === $key ? 'bg-brand text-white border-brand' : 'bg-white text-body border-line hover:border-brand hover:text-brand' }}">{{ __('reports::reports.'.$key) }}</a>
+                   class="px-4 py-2 rounded-lg text-sm font-semibold border transition-colors {{ $report === $key ? 'bg-brand text-white border-brand' : 'bg-card text-body border-line hover:border-brand hover:text-brand' }}">{{ __('reports::reports.'.$key) }}</a>
             @endforeach
         </div>
 
-        <form method="GET" class="bg-white border border-line rounded-xl p-4 mb-4 flex flex-wrap items-end gap-3">
+        <form method="GET" class="bg-card border border-line rounded-xl p-4 mb-4 flex flex-wrap items-end gap-3">
             <input type="hidden" name="report" value="{{ $report }}">
             <div class="w-44"><x-common.input name="from" type="date" :label="__('reports::reports.from')" :value="$from" compact /></div>
             <div class="w-44"><x-common.input name="to" type="date" :label="__('reports::reports.to')" :value="$to" compact /></div>
@@ -30,14 +30,14 @@
 
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
             @foreach ($result['totals'] as $label => $value)
-                <div class="bg-white border border-line rounded-xl p-4">
+                <div class="bg-card border border-line rounded-xl p-4">
                     <p class="text-xs font-semibold uppercase tracking-wide text-muted">{{ $label }}</p>
                     <p class="text-xl font-display font-bold text-ink mt-1">{{ $value }}</p>
                 </div>
             @endforeach
         </div>
 
-        <div class="bg-white border border-line rounded-xl overflow-hidden">
+        <div class="bg-card border border-line rounded-xl overflow-hidden">
             <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead><tr class="text-left text-xs text-muted uppercase tracking-wide border-b border-line bg-surface/60">

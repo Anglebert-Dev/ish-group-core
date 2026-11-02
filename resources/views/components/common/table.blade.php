@@ -3,7 +3,7 @@
      border and horizontal scroll behaviour used across the dashboard. --}}
 @props(['headers' => []])
 
-<div {{ $attributes->merge(['class' => 'bg-white border border-line rounded-xl overflow-hidden']) }}>
+<div {{ $attributes->merge(['class' => 'bg-card border border-line rounded-xl overflow-hidden']) }}>
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
             @if (count($headers))

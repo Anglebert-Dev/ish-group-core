@@ -8,7 +8,7 @@
 @endphp
 
 <div
-    {{ $attributes->merge(['class' => 'border-b border-line bg-white px-2 sm:px-4']) }}
+    {{ $attributes->merge(['class' => 'border-b border-line bg-card px-2 sm:px-4']) }}
     data-details-tabs
     data-active-tab="{{ $active }}"
 >

@@ -16,7 +16,7 @@
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         <div class="xl:col-span-2 space-y-6">
-            <div class="bg-white border border-line rounded-xl p-5 space-y-4">
+            <div class="bg-card border border-line rounded-xl p-5 space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <h2 class="font-display font-bold text-ink">{{ __('production::production.stages') }}</h2>
                     <span class="text-sm text-muted">{{ __('production::production.finished') }}: <b class="text-ink">@include('inventory::partials.qty', ['value' => $workOrder->finished()])</b> {{ __('production::production.of', ['total' => \Modules\Inventory\Exceptions\InsufficientStock::format($workOrder->quantity)]) }} {{ $unit }}</span>
@@ -27,7 +27,7 @@
                         <div class="rounded-xl border border-line p-3 {{ $i === $workOrder->lastStage() ? 'bg-brand-light/60' : 'bg-surface' }}">
                             <p class="text-xs font-semibold uppercase tracking-wide text-muted truncate">{{ $i + 1 }}. {{ $stage }}</p>
                             <p class="text-xl font-display font-bold text-ink mt-1">@include('inventory::partials.qty', ['value' => $count])</p>
-                            <div class="h-1.5 rounded-full bg-white overflow-hidden mt-2"><div class="h-full bg-brand" style="width: {{ $pct }}%"></div></div>
+                            <div class="h-1.5 rounded-full bg-card overflow-hidden mt-2"><div class="h-full bg-brand" style="width: {{ $pct }}%"></div></div>
                         </div>
                     @endforeach
                 </div>
@@ -47,7 +47,7 @@
                 ]" />
             </div>
 
-            <div class="bg-white border border-line rounded-xl overflow-hidden">
+            <div class="bg-card border border-line rounded-xl overflow-hidden">
                 <div class="px-5 py-4 border-b border-line"><h2 class="font-display font-bold text-ink">{{ __('production::production.history') }}</h2></div>
                 <div class="overflow-x-auto">
                 <table class="w-full text-sm">
@@ -84,7 +84,7 @@
                 @if (filled($panel)) {!! $panel !!} @endif
             @endforeach
 
-            <div class="bg-white border border-line rounded-xl p-5 space-y-4">
+            <div class="bg-card border border-line rounded-xl p-5 space-y-4">
                 <div>
                     <h2 class="font-display font-bold text-ink">{{ __('production::production.materials') }}</h2>
                     <p class="text-sm text-muted">{{ __('production::production.materials_hint') }}</p>
@@ -114,7 +114,7 @@
         </div>
 
         <div class="space-y-4">
-            <div class="bg-white border border-line rounded-xl p-5 space-y-3">
+            <div class="bg-card border border-line rounded-xl p-5 space-y-3">
                 <div class="flex items-center justify-between">
                     <h2 class="font-display font-bold text-ink">{{ __('body.status') }}</h2>
                     <x-common.badge :color="$workOrder->status->color()">{{ $workOrder->status->label() }}</x-common.badge>
@@ -125,7 +125,7 @@
             </div>
 
             @if ($open && $can('create production.entry'))
-                <form action="{{ route('production.work-orders.record', $workOrder) }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-4">
+                <form action="{{ route('production.work-orders.record', $workOrder) }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-4">
                     @csrf
                     <h2 class="font-display font-bold text-ink">{{ __('production::production.record') }}</h2>
                     <p class="text-xs text-muted">{{ __('production::production.record_hint') }}</p>
@@ -138,7 +138,7 @@
                 </form>
             @endif
 
-            <div class="bg-white border border-line rounded-xl p-5 space-y-3">
+            <div class="bg-card border border-line rounded-xl p-5 space-y-3">
                 <div class="flex items-center justify-between">
                     <h2 class="font-display font-bold text-ink">{{ __('production::production.qc') }}</h2>
                     <span class="text-sm {{ $workOrder->rejected > 0 ? 'text-danger font-semibold' : 'text-muted' }}">{{ __('production::production.rejected_count', ['count' => \Modules\Inventory\Exceptions\InsufficientStock::format($workOrder->rejected)]) }}</span>
@@ -155,7 +155,7 @@
             </div>
 
             @if ($open && $can('approve production.work_order'))
-                <form action="{{ route('production.work-orders.complete', $workOrder) }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-2">
+                <form action="{{ route('production.work-orders.complete', $workOrder) }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-2">
                     @csrf
                     <x-common.button type="submit" variant="secondary" size="sm" data-confirm data-confirm-title="{{ __('production::production.action_complete') }}?">{{ __('production::production.action_complete') }}</x-common.button>
                     <p class="text-xs text-muted">{{ __('production::production.action_complete_hint') }}</p>
@@ -163,7 +163,7 @@
             @endif
 
             @if ($open && $can('delete production.work_order'))
-                <form action="{{ route('production.work-orders.cancel', $workOrder) }}" method="POST" class="bg-white border border-danger/40 rounded-xl p-5 space-y-3">
+                <form action="{{ route('production.work-orders.cancel', $workOrder) }}" method="POST" class="bg-card border border-danger/40 rounded-xl p-5 space-y-3">
                     @csrf
                     <h2 class="font-display font-bold text-danger">{{ __('production::production.action_cancel') }}</h2>
                     <x-common.input name="reason" :label="__('production::production.cancel_reason')" required />

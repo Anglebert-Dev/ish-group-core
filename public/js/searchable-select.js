@@ -22,7 +22,7 @@
             + '[data-enhance-select].is-select-loading [data-ss-clear]{visibility:hidden;}'
             + '[data-enhance-select].is-select-loading [data-ss-trigger]{pointer-events:none;cursor:wait;}'
             + '[data-select-spinner][hidden]{display:none!important;}'
-            + '[data-ss-option-icon]{width:1.75rem;height:1.75rem;flex:0 0 1.75rem;border-radius:0.375rem;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;background:#F8FAFC;border:1px solid #E5E7EB;color:#6B7280;font-size:0.75rem;font-weight:600;line-height:1;}'
+            + '[data-ss-option-icon]{width:1.75rem;height:1.75rem;flex:0 0 1.75rem;border-radius:0.375rem;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;background:rgb(var(--c-surface));border:1px solid rgb(var(--c-line));color:rgb(var(--c-muted));font-size:0.75rem;font-weight:600;line-height:1;}'
             + '[data-ss-option-icon].is-logo{background:transparent;border-color:transparent;}'
             + '[data-ss-option-icon] img{width:100%;height:100%;object-fit:contain;padding:0;display:block;}'
             + '[data-ss-trigger] [data-ss-icon]:not([hidden]){display:inline-flex;align-items:center;}';
@@ -325,7 +325,7 @@
         trigger.setAttribute('aria-haspopup', 'listbox');
         trigger.setAttribute('aria-expanded', 'false');
         trigger.className = (isCompact ? 'h-10 min-h-10 ' : 'h-12 min-h-12 ')
-            + 'min-w-0 px-3 sm:px-4 border rounded-xl text-sm transition-all duration-200 w-full max-w-full bg-white shadow-sm hover:shadow-md flex items-center gap-2 '
+            + 'min-w-0 px-3 sm:px-4 border rounded-xl text-sm transition-all duration-200 w-full max-w-full bg-card shadow-sm hover:shadow-md flex items-center gap-2 '
             + (hasError ? 'border-danger' : 'border-line')
             + (select.disabled ? ' opacity-70 cursor-not-allowed' : ' cursor-pointer');
         trigger.innerHTML = ''
@@ -343,14 +343,14 @@
         var panel = document.createElement('div');
         panel.hidden = true;
         panel.setAttribute('data-ss-panel', '');
-        panel.className = 'bg-white border border-line rounded-xl shadow-lg overflow-hidden flex flex-col min-h-0';
+        panel.className = 'bg-card border border-line rounded-xl shadow-lg overflow-hidden flex flex-col min-h-0';
         // Keep closed panels out of the accessibility tree / layout.
         panel.style.display = 'none';
         panel.innerHTML = ''
             + '<div class="p-3 border-b border-line shrink-0">'
             +   '<div class="relative">'
             +     '<svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>'
-            +     '<input data-ss-search type="text" class="w-full pl-10 pr-4 py-2 border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand bg-white text-ink" placeholder="' + text(select, 'search', 'Search...') + '" />'
+            +     '<input data-ss-search type="text" class="w-full pl-10 pr-4 py-2 border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand bg-card text-ink" placeholder="' + text(select, 'search', 'Search...') + '" />'
             +   '</div>'
             + '</div>'
             + '<div data-ss-body class="flex-1 min-h-0 overflow-y-auto overscroll-contain"></div>'

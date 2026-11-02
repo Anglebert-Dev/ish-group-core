@@ -26,7 +26,7 @@
                 ]" />
             </div>
 
-            <div class="bg-white border border-line rounded-xl p-5 space-y-2">
+            <div class="bg-card border border-line rounded-xl p-5 space-y-2">
                 <h2 class="font-display font-bold text-ink">{{ __('body.customer_terms') }}</h2>
                 <p class="text-sm text-body">{{ $customer->payment_terms_days ? __('body.customer_terms_days', ['days' => $customer->payment_terms_days]) : __('body.customer_terms_none') }}</p>
                 @if ($customer->notes)
@@ -41,7 +41,7 @@
         </div>
 
         <div class="space-y-4">
-            <div class="bg-white border border-line rounded-xl p-5 space-y-3">
+            <div class="bg-card border border-line rounded-xl p-5 space-y-3">
                 <div class="flex items-center justify-between">
                     <h2 class="font-display font-bold text-ink">{{ __('body.status') }}</h2>
                     <x-common.badge :color="$customer->status->color()">{{ $customer->status->label() }}</x-common.badge>
@@ -60,7 +60,7 @@
             </div>
 
             @if ($portalAvailable)
-                <div class="bg-white border border-line rounded-xl p-5 space-y-3">
+                <div class="bg-card border border-line rounded-xl p-5 space-y-3">
                     <h2 class="font-display font-bold text-ink">{{ __('body.customer_portal') }}</h2>
                     <p class="text-sm text-muted">{{ $customer->hasPortalPassword() ? __('body.customer_portal_on') : __('body.customer_portal_off') }}</p>
                     @if ($customer->last_login_at)
@@ -83,7 +83,7 @@
             @endif
 
             @if (\App\Helpers\AuthHelper::can('delete customers.customer'))
-                <div class="bg-white border border-danger/40 rounded-xl p-5 space-y-3">
+                <div class="bg-card border border-danger/40 rounded-xl p-5 space-y-3">
                     <h2 class="font-display font-bold text-danger">{{ __('body.delete') }}</h2>
                     @if ($links !== [])
                         <p class="text-sm text-muted">{{ __('body.customer_has_links') }}</p>

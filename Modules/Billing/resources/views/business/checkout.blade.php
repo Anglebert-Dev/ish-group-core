@@ -13,7 +13,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <x-billing::package-card :package="$package" />
 
-        <div class="lg:col-span-2 bg-white border border-line rounded-xl p-5 sm:p-6 space-y-5">
+        <div class="lg:col-span-2 bg-card border border-line rounded-xl p-5 sm:p-6 space-y-5">
             <h2 class="font-display font-bold text-ink">{{ __('billing::billing.summary') }}</h2>
 
             <p class="text-sm text-body">{{ __('billing::billing.mode_'.$mode, [

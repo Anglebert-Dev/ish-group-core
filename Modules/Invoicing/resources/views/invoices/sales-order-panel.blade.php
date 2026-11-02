@@ -1,4 +1,4 @@
-<div class="bg-white border border-line rounded-xl overflow-hidden">
+<div class="bg-card border border-line rounded-xl overflow-hidden">
     <div class="px-5 py-4 border-b border-line flex items-center justify-between gap-3">
         <h2 class="font-display font-bold text-ink">{{ __('invoicing::invoicing.order_invoices') }}</h2>
         @if ($invoices->where('status', '!=', \Modules\Invoicing\Enums\InvoiceStatus::Cancelled)->isEmpty()

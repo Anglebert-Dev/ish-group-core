@@ -2,7 +2,7 @@
     <x-common.page-header :title="__('body.profile')" :description="__('body.profile_description')" />
 
     <div class="w-full space-y-6">
-        <div class="bg-white border border-line rounded-xl p-4 sm:p-6 w-full">
+        <div class="bg-card border border-line rounded-xl p-4 sm:p-6 w-full">
             <h2 class="font-display font-bold text-ink">{{ __('body.account_details') }}</h2>
             <p class="text-sm text-muted mt-1 mb-5">{{ __('body.account_details_description') }}</p>
 
@@ -20,7 +20,7 @@
             </form>
         </div>
 
-        <div class="bg-white border border-line rounded-xl p-4 sm:p-6 w-full">
+        <div class="bg-card border border-line rounded-xl p-4 sm:p-6 w-full">
             <h2 class="font-display font-bold text-ink">{{ __('body.change_password') }}</h2>
             <p class="text-sm text-muted mt-1 mb-5">{{ __('body.change_password_description') }}</p>
 
@@ -38,7 +38,7 @@
             </form>
         </div>
 
-        <div class="bg-white border border-line rounded-xl p-4 sm:p-6 w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="bg-card border border-line rounded-xl p-4 sm:p-6 w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
                 <h2 class="font-display font-bold text-ink">{{ __('body.log_out') }}</h2>
                 <p class="text-sm text-muted mt-1">{{ __('body.log_out_of_account') }}</p>

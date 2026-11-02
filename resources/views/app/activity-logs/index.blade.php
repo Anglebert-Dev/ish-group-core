@@ -36,7 +36,7 @@
         <x-common.input name="to" type="date" :label="__('body.audit_to')" :value="$filters['to'] ?? ''" compact />
     </x-common.filter-panel>
 
-    <div class="bg-white border border-line rounded-xl overflow-hidden">
+    <div class="bg-card border border-line rounded-xl overflow-hidden">
         <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead>

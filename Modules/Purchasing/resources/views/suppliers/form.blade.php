@@ -2,7 +2,7 @@
 <x-layouts.app :title="$isNew ? __('purchasing::purchasing.supplier_add') : $supplier->name">
     <x-common.page-header :title="$isNew ? __('purchasing::purchasing.supplier_add') : __('purchasing::purchasing.supplier_edit')" />
 
-    <form action="{{ $isNew ? route('purchasing.suppliers.store') : route('purchasing.suppliers.update', $supplier) }}" method="POST" class="bg-white border border-line rounded-xl p-5 sm:p-6 space-y-5 max-w-3xl">
+    <form action="{{ $isNew ? route('purchasing.suppliers.store') : route('purchasing.suppliers.update', $supplier) }}" method="POST" class="bg-card border border-line rounded-xl p-5 sm:p-6 space-y-5 max-w-3xl">
         @csrf
         @unless ($isNew) @method('PUT') @endunless
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">

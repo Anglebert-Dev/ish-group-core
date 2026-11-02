@@ -1,7 +1,7 @@
 <x-layouts.app :title="__('body.website_messages')">
     <x-common.page-header :title="__('body.website_messages')" :description="__('body.website_messages_description')" />
 
-    <div class="bg-white border border-line rounded-xl overflow-hidden">
+    <div class="bg-card border border-line rounded-xl overflow-hidden">
         <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead>

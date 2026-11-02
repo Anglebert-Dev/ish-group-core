@@ -27,7 +27,7 @@
 @endphp
 
 <aside id="account-sidebar"
-       class="hidden lg:flex lg:flex-col fixed top-16 sm:top-20 bottom-0 left-0 z-30 w-64 bg-white border-r border-line overflow-hidden"
+       class="hidden lg:flex lg:flex-col fixed top-16 sm:top-20 bottom-0 left-0 z-30 w-64 bg-card border-r border-line overflow-hidden"
        aria-label="{{ __('body.my_account') }}">
 
     @if ($customer)
@@ -79,7 +79,7 @@
         </div>
     </nav>
 
-    <div class="p-4 border-t border-line shrink-0 space-y-2 bg-white">
+    <div class="p-4 border-t border-line shrink-0 space-y-2 bg-card">
         <a href="{{ route('site.home') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-muted hover:bg-surface">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
             {{ __('body.back_to_website') }}

@@ -4,18 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <x-common.brand-head :title="__('billing::billing.pricing_title')" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = { theme: { extend: {
-            fontFamily: { display: ['var(--font-body)'], sans: ['var(--font-body)'] },
-            colors: { brand: { DEFAULT: 'var(--brand)', dark: 'var(--brand-dark)', light: 'var(--brand-light)' },
-                ink: '#111827', body: '#1F2937', muted: '#6B7280', surface: '#F8FAFC', line: '#E5E7EB',
-                success: '#16A34A', warning: '#F59E0B', danger: '#DC2626' },
-        }}};
-    </script>
+    <x-common.tailwind />
 </head>
 <body class="bg-surface text-body antialiased font-sans">
-    <header class="bg-white border-b border-line">
+    <header class="bg-card border-b border-line">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
             <x-common.logo :href="route('pricing')" />
             <div class="flex items-center gap-2">

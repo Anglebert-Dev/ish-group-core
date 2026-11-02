@@ -3,7 +3,7 @@
 <div id="sidebar-backdrop" onclick="toggleSidebar()" class="hidden fixed inset-0 bg-black/30 z-30 lg:hidden"></div>
 
 <aside id="dashboard-sidebar"
-       class="fixed inset-y-0 left-0 z-40 w-[min(18rem,100%)] max-w-xs lg:w-64 lg:max-w-none bg-white border-r border-line -translate-x-full lg:translate-x-0 transition-transform duration-200 flex flex-col overflow-hidden"
+       class="fixed inset-y-0 left-0 z-40 w-[min(18rem,100%)] max-w-xs lg:w-64 lg:max-w-none bg-sidebar text-sidebar-ink border-r border-line -translate-x-full lg:translate-x-0 transition-transform duration-200 flex flex-col overflow-hidden"
        aria-hidden="true">
 
     <div class="h-16 flex items-center justify-between gap-2 px-5 border-b border-line shrink-0">
@@ -36,7 +36,7 @@
         @endforeach
     </nav>
 
-    <div class="p-4 border-t border-line shrink-0 space-y-2 bg-white">
+    <div class="p-4 border-t border-line shrink-0 space-y-2 bg-sidebar">
         <x-common.timezone-note compact class="px-3" />
         <form action="{{ route('staff.logout') }}" method="POST">
             @csrf

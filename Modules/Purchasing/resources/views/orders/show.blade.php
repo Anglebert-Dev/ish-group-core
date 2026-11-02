@@ -1,7 +1,7 @@
 @php
     $can = fn (string $p) => \App\Helpers\AuthHelper::can($p);
     $S = \Modules\Purchasing\Enums\PurchaseStatus::class;
-    $cell = 'w-28 rounded-lg border border-line bg-white px-2.5 py-2 text-sm text-right';
+    $cell = 'w-28 rounded-lg border border-line bg-card px-2.5 py-2 text-sm text-right';
 @endphp
 <x-layouts.app :title="$order->number">
     <x-common.page-header :title="$order->number" :description="$order->supplier?->name">
@@ -16,7 +16,7 @@
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         <div class="xl:col-span-2 space-y-6">
-            <form action="{{ route('purchasing.orders.receive', $order) }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-4">
+            <form action="{{ route('purchasing.orders.receive', $order) }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-4">
                 @csrf
                 @if ($order->status->canReceive() && $can('create purchasing.receipt'))
                     <p class="text-sm text-muted">{{ __('purchasing::purchasing.receive_hint', ['store' => $order->store?->name]) }}</p>
@@ -58,7 +58,7 @@
                 @endif
             </form>
 
-            <div class="bg-white border border-line rounded-xl overflow-hidden">
+            <div class="bg-card border border-line rounded-xl overflow-hidden">
                 <div class="px-5 py-4 border-b border-line"><h2 class="font-display font-bold text-ink">{{ __('purchasing::purchasing.receipts') }}</h2></div>
                 <table class="w-full text-sm"><tbody class="divide-y divide-line">
                     @forelse ($order->receipts as $receipt)
@@ -76,7 +76,7 @@
         </div>
 
         <div class="space-y-4">
-            <div class="bg-white border border-line rounded-xl p-5 space-y-3">
+            <div class="bg-card border border-line rounded-xl p-5 space-y-3">
                 <div class="flex items-center justify-between">
                     <h2 class="font-display font-bold text-ink">{{ __('body.status') }}</h2>
                     <x-common.badge :color="$order->status->color()">{{ $order->status->label() }}</x-common.badge>
@@ -93,7 +93,7 @@
                 @if ($order->status === $S::Cancelled)<p class="text-sm text-muted">{{ $order->cancel_reason }}</p>@endif
             </div>
             @if (in_array($order->status, [$S::Draft, $S::Ordered], true) && $can('delete purchasing.order'))
-                <form action="{{ route('purchasing.orders.cancel', $order) }}" method="POST" class="bg-white border border-danger/40 rounded-xl p-5 space-y-3">
+                <form action="{{ route('purchasing.orders.cancel', $order) }}" method="POST" class="bg-card border border-danger/40 rounded-xl p-5 space-y-3">
                     @csrf
                     <h2 class="font-display font-bold text-danger">{{ __('purchasing::purchasing.cancel') }}</h2>
                     <x-common.input name="reason" :label="__('purchasing::purchasing.cancel_reason')" required />

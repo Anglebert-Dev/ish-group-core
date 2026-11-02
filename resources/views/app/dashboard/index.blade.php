@@ -23,7 +23,7 @@
         @endforeach
 
         @if ($recentActivity->isNotEmpty())
-            <div class="bg-white border border-line rounded-xl overflow-hidden">
+            <div class="bg-card border border-line rounded-xl overflow-hidden">
                 <div class="flex items-center justify-between gap-3 px-5 py-4 border-b border-line">
                     <h2 class="text-base font-semibold text-ink">{{ __('body.recent_activity') }}</h2>
                     <a href="{{ route('activity-logs.index') }}" class="text-sm font-medium text-brand hover:text-brand-dark">{{ __('body.view_all') }}</a>

@@ -18,20 +18,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <x-common.brand-head :title="$title ?? null" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = { theme: { extend: {
-            fontFamily: { display: ['var(--font-body)'], sans: ['var(--font-body)'] },
-            colors: {
-                brand: { DEFAULT: 'var(--brand)', dark: 'var(--brand-dark)', light: 'var(--brand-light)' },
-                ink: '#111827', body: '#1F2937', muted: '#6B7280', surface: '#F8FAFC', line: '#E5E7EB',
-                success: '#16A34A', warning: '#F59E0B', danger: '#DC2626',
-            },
-            boxShadow: {
-                card: '0 1px 2px 0 rgba(17, 24, 39, 0.04)',
-            },
-        }}};
-    </script>
+    <x-common.tailwind />
     <style>
         body { font-family: var(--font-body); }
         .font-display { font-family: var(--font-body); }
@@ -39,7 +26,7 @@
             background:
                 radial-gradient(ellipse 80% 50% at 10% 0%, color-mix(in srgb, var(--brand) 12%, transparent), transparent 55%),
                 radial-gradient(ellipse 60% 40% at 100% 100%, color-mix(in srgb, var(--brand) 8%, transparent), transparent 50%),
-                #F3F4F6;
+                color-mix(in srgb, rgb(var(--c-ink)) 4%, rgb(var(--c-card)));
         }
         .auth-panel-frame {
             position: relative;
@@ -57,44 +44,44 @@
         .auth-input-soft input:not([type="checkbox"]):not([type="radio"]):not(.date-field),
         .auth-input-soft textarea,
         .auth-input-soft select {
-            background: #F3F4F6 !important;
+            background: color-mix(in srgb, rgb(var(--c-ink)) 4%, rgb(var(--c-card))) !important;
             border-color: transparent !important;
             box-shadow: none !important;
         }
         .auth-input-soft input:not([type="checkbox"]):not([type="radio"]):not(.date-field):hover,
         .auth-input-soft textarea:hover,
         .auth-input-soft select:hover {
-            background: #ECEEF1 !important;
+            background: color-mix(in srgb, rgb(var(--c-ink)) 7%, rgb(var(--c-card))) !important;
         }
         .auth-input-soft input:not([type="checkbox"]):not([type="radio"]):not(.date-field):focus,
         .auth-input-soft textarea:focus,
         .auth-input-soft select:focus {
-            background: #fff !important;
+            background: rgb(var(--c-card)) !important;
             border-color: var(--brand) !important;
             box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 16%, transparent) !important;
         }
         .auth-input-soft input.is-password-weak,
         .auth-input-soft input.is-password-weak:focus {
-            border-color: #DC2626 !important;
-            box-shadow: 0 0 0 3px color-mix(in srgb, #DC2626 16%, transparent) !important;
-            background: #fff !important;
+            border-color: rgb(var(--c-danger)) !important;
+            box-shadow: 0 0 0 3px color-mix(in srgb, rgb(var(--c-danger)) 16%, transparent) !important;
+            background: rgb(var(--c-card)) !important;
         }
         .auth-input-soft input.is-password-strong,
         .auth-input-soft input.is-password-strong:focus {
-            border-color: #16A34A !important;
-            box-shadow: 0 0 0 3px color-mix(in srgb, #16A34A 16%, transparent) !important;
-            background: #fff !important;
+            border-color: rgb(var(--c-success)) !important;
+            box-shadow: 0 0 0 3px color-mix(in srgb, rgb(var(--c-success)) 16%, transparent) !important;
+            background: rgb(var(--c-card)) !important;
         }
         .auth-input-soft [data-phone-shell] {
-            background: #F3F4F6 !important;
+            background: color-mix(in srgb, rgb(var(--c-ink)) 4%, rgb(var(--c-card))) !important;
             border-color: transparent !important;
             box-shadow: none !important;
         }
         .auth-input-soft [data-phone-shell]:hover {
-            background: #ECEEF1 !important;
+            background: color-mix(in srgb, rgb(var(--c-ink)) 7%, rgb(var(--c-card))) !important;
         }
         .auth-input-soft [data-phone-shell]:focus-within {
-            background: #fff !important;
+            background: rgb(var(--c-card)) !important;
             border-color: var(--brand) !important;
             box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 16%, transparent) !important;
         }
@@ -113,7 +100,7 @@
 </head>
 <body class="auth-shell text-body antialiased min-h-screen flex items-center justify-center px-3 py-6 sm:px-6 sm:py-10">
 
-    <div class="w-full max-w-6xl bg-white rounded-[1.5rem] sm:rounded-[2rem] border border-white/80 shadow-[0_24px_60px_rgba(15,23,42,0.08)] overflow-hidden">
+    <div class="w-full max-w-6xl bg-card rounded-[1.5rem] sm:rounded-[2rem] border border-white/80 shadow-[0_24px_60px_rgba(15,23,42,0.08)] overflow-hidden">
         <div class="grid grid-cols-1 lg:grid-cols-2 min-h-0 lg:min-h-[680px]">
 
             {{-- Form column --}}

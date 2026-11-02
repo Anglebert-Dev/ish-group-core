@@ -24,7 +24,7 @@
             :options="['' => __('body.all'), 'active' => __('savings::savings.active'), 'reversed' => __('savings::savings.reversed')]" />
     </x-common.filter-panel>
 
-    <div class="bg-white border border-line rounded-xl overflow-hidden">
+    <div class="bg-card border border-line rounded-xl overflow-hidden">
         @include('savings::transactions.table', ['transactions' => $transactions])
         <x-common.pagination :paginator="$transactions" />
     </div>

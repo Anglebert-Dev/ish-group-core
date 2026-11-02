@@ -10,7 +10,7 @@
         @csrf
         @unless ($isNew) @method('PUT') @endunless
 
-        <div class="bg-white border border-line rounded-xl p-5 sm:p-6 space-y-5">
+        <div class="bg-card border border-line rounded-xl p-5 sm:p-6 space-y-5">
             <h2 class="font-display font-bold text-ink">{{ __('body.customer_identity') }}</h2>
             <x-common.select name="type" :label="__('body.type')" :value="old('type', $customer->type?->value ?? 'company')" hide-placeholder required
                 :options="['company' => __('body.customer_type_company'), 'person' => __('body.customer_type_person')]" />
@@ -22,7 +22,7 @@
             </div>
         </div>
 
-        <div class="bg-white border border-line rounded-xl p-5 sm:p-6 space-y-5">
+        <div class="bg-card border border-line rounded-xl p-5 sm:p-6 space-y-5">
             <h2 class="font-display font-bold text-ink">{{ __('body.customer_contact') }}</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <x-common.input name="phone" :label="__('body.phone')" :value="old('phone', $customer->phone)" />
@@ -34,7 +34,7 @@
             </div>
         </div>
 
-        <div class="bg-white border border-line rounded-xl p-5 sm:p-6 space-y-5">
+        <div class="bg-card border border-line rounded-xl p-5 sm:p-6 space-y-5">
             <h2 class="font-display font-bold text-ink">{{ __('body.customer_terms') }}</h2>
             <x-common.input name="payment_terms_days" type="number" min="0" :label="__('body.customer_payment_terms')" :value="old('payment_terms_days', $customer->payment_terms_days)" :hint="__('body.customer_payment_terms_hint')" class="max-w-xs" />
             <x-common.textarea name="notes" :label="__('body.notes')" :value="old('notes', $customer->notes)" :rows="4" />

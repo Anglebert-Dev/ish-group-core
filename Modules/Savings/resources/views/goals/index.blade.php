@@ -9,7 +9,7 @@
                     $pf = $g->target_amount > 0 ? min(100, intdiv(max(0, $r['funded']) * 100, $g->target_amount)) : 0;
                     $pe = $g->target_amount > 0 ? min(100, intdiv(max(0, $r['earmarked']) * 100, $g->target_amount)) : 0;
                 @endphp
-                <div class="bg-white border border-line rounded-xl p-5 space-y-3 {{ $g->status !== 'active' ? 'opacity-60' : '' }}">
+                <div class="bg-card border border-line rounded-xl p-5 space-y-3 {{ $g->status !== 'active' ? 'opacity-60' : '' }}">
                     <div class="flex justify-between"><h2 class="font-display font-bold text-ink">{{ $g->name }}</h2><span class="text-sm text-muted">{{ $g->target_date?->format('d/m/Y') }}</span></div>
                     <p class="text-sm">{{ __('savings::savings.target') }}: <b>{{ $m($g->target_amount) }}</b>{{ $g->account ? ' · '.__('savings::savings.held_in').' '.$g->account->name : '' }}</p>
                     <div class="h-2.5 rounded-full bg-surface overflow-hidden relative">
@@ -49,11 +49,11 @@
                     @endif
                 </div>
             @empty
-                <div class="bg-white border border-line rounded-xl p-10 text-center text-muted md:col-span-2">{{ __('savings::savings.none') }}</div>
+                <div class="bg-card border border-line rounded-xl p-10 text-center text-muted md:col-span-2">{{ __('savings::savings.none') }}</div>
             @endforelse
         </div>
         @if ($can('create savings.goal'))
-            <form action="{{ route('savings.goals.store') }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-3">
+            <form action="{{ route('savings.goals.store') }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-3">
                 @csrf
                 <h2 class="font-display font-bold text-ink">{{ __('savings::savings.goal_add') }}</h2>
                 <x-common.input name="name" :label="__('body.name')" required />

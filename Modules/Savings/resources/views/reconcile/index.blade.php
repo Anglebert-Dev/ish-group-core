@@ -1,7 +1,7 @@
 <x-layouts.app :title="__('savings::savings.reconcile')">
     <x-common.page-header :title="__('savings::savings.reconcile')" :description="__('savings::savings.reconcile_description')" />
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-        <div class="xl:col-span-2 bg-white border border-line rounded-xl overflow-hidden">
+        <div class="xl:col-span-2 bg-card border border-line rounded-xl overflow-hidden">
             <div class="px-5 py-4 border-b border-line"><h2 class="font-display font-bold text-ink">{{ __('savings::savings.history') }}</h2></div>
             <table class="w-full text-sm">
                 <tbody class="divide-y divide-line">
@@ -21,7 +21,7 @@
             <x-common.pagination :paginator="$history" />
         </div>
         @if (\App\Helpers\AuthHelper::can('create savings.reconciliation'))
-            <form action="{{ route('savings.reconcile.store') }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-3">
+            <form action="{{ route('savings.reconcile.store') }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-3">
                 @csrf
                 <x-common.select name="account" :label="__('savings::savings.account')" :options="$accounts->mapWithKeys(fn ($a) => [$a->uuid => $a->name.' ('.$a->currency.')'])->all()" hide-placeholder required />
                 <x-common.input name="statement_date" type="date" :label="__('savings::savings.statement_date')" :value="now()->toDateString()" required />

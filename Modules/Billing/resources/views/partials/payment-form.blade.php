@@ -1,6 +1,6 @@
 @php use Modules\Billing\Support\Money; @endphp
 {{-- $action, $invoice, $title, $submitLabel --}}
-<form action="{{ $action }}" method="POST" enctype="multipart/form-data" class="bg-white border border-line rounded-xl p-5 space-y-4">
+<form action="{{ $action }}" method="POST" enctype="multipart/form-data" class="bg-card border border-line rounded-xl p-5 space-y-4">
     @csrf
     <div>
         <h2 class="font-display font-bold text-ink">{{ $title }}</h2>

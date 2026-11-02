@@ -2,7 +2,7 @@
 @props(['package', 'current' => false, 'action' => null, 'actionLabel' => null, 'admin' => false])
 
 {{-- Pricing card (plans page and superadmin package list). --}}
-<div class="relative flex flex-col bg-white border {{ $current ? 'border-brand ring-2 ring-brand/20' : 'border-line' }} rounded-2xl overflow-hidden">
+<div class="relative flex flex-col bg-card border {{ $current ? 'border-brand ring-2 ring-brand/20' : 'border-line' }} rounded-2xl overflow-hidden">
     <div class="h-1 {{ $package->is_active ? 'bg-success' : 'bg-line' }}"></div>
     <div class="p-6 text-center border-b border-line">
         <div class="flex items-center justify-center gap-2">

@@ -9,7 +9,7 @@
     $rows = $rows ?: [[]];
     $option1 = old('option1_name', $item->option1_name);
     $option2 = old('option2_name', $item->option2_name);
-    $cell = 'w-full min-w-[6rem] rounded-lg border border-line bg-white px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand';
+    $cell = 'w-full min-w-[6rem] rounded-lg border border-line bg-card px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand';
 @endphp
 <x-layouts.app :title="$isNew ? __('inventory::inventory.item_add') : $item->name">
     <x-common.page-header :title="$isNew ? __('inventory::inventory.item_add') : __('inventory::inventory.item_edit')" :description="$isNew ? null : $item->name">
@@ -22,7 +22,7 @@
         @csrf
         @unless ($isNew) @method('PUT') @endunless
 
-        <div class="bg-white border border-line rounded-xl p-5 sm:p-6 space-y-5">
+        <div class="bg-card border border-line rounded-xl p-5 sm:p-6 space-y-5">
             <h2 class="font-display font-bold text-ink">{{ __('inventory::inventory.item_details') }}</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 <x-common.select name="type" :label="__('body.type')" :value="old('type', $item->type?->value)" hide-placeholder required
@@ -40,7 +40,7 @@
             <x-common.textarea name="description" :label="__('body.description')" :value="old('description', $item->description)" :rows="2" />
         </div>
 
-        <div class="bg-white border border-line rounded-xl p-5 sm:p-6 space-y-5">
+        <div class="bg-card border border-line rounded-xl p-5 sm:p-6 space-y-5">
             <div>
                 <h2 class="font-display font-bold text-ink">{{ __('inventory::inventory.options') }}</h2>
                 <p class="text-sm text-muted mt-1">{{ __('inventory::inventory.options_hint') }}</p>
@@ -61,7 +61,7 @@
             </div>
         </div>
 
-        <div class="bg-white border border-line rounded-xl p-5 sm:p-6 space-y-4">
+        <div class="bg-card border border-line rounded-xl p-5 sm:p-6 space-y-4">
             <div>
                 <h2 class="font-display font-bold text-ink">{{ __('inventory::inventory.pricing') }}</h2>
                 <p class="text-sm text-muted mt-1" data-variants-hint>{{ __('inventory::inventory.variants_hint') }}</p>

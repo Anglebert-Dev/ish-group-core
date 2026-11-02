@@ -8,7 +8,7 @@
         href="{{ $pdf.(str_contains($pdf, '?') ? '&' : '?').'print=1' }}"
         target="_blank"
         rel="noopener"
-        class="inline-flex items-center justify-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg border border-line bg-white text-ink hover:border-brand hover:text-brand transition-colors whitespace-nowrap"
+        class="inline-flex items-center justify-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg border border-line bg-card text-ink hover:border-brand hover:text-brand transition-colors whitespace-nowrap"
         title="{{ __('body.print') }}"
         aria-label="{{ __('body.print') }}"
     >
@@ -17,7 +17,7 @@
     </a>
     <a
         href="{{ $pdf }}"
-        class="inline-flex items-center justify-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg border border-line bg-white text-red-600 hover:border-red-500 hover:bg-red-50 transition-colors whitespace-nowrap"
+        class="inline-flex items-center justify-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg border border-line bg-card text-red-600 hover:border-red-500 hover:bg-red-50 transition-colors whitespace-nowrap"
         title="{{ __('body.export_pdf') }}"
         aria-label="{{ __('body.export_pdf') }}"
     >
@@ -28,7 +28,7 @@
     </a>
     <a
         href="{{ $excel }}"
-        class="inline-flex items-center justify-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg border border-line bg-white text-green-700 hover:border-green-600 hover:bg-green-50 transition-colors whitespace-nowrap"
+        class="inline-flex items-center justify-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg border border-line bg-card text-green-700 hover:border-green-600 hover:bg-green-50 transition-colors whitespace-nowrap"
         title="{{ __('body.export_excel') }}"
         aria-label="{{ __('body.export_excel') }}"
     >

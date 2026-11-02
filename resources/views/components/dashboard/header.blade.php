@@ -11,7 +11,7 @@
     $headerUnreadCount = $headerUnreadCount ?? 0;
 @endphp
 
-<header class="h-16 bg-white border-b border-line flex items-center justify-between gap-3 px-4 sm:px-5 lg:px-8 sticky top-0 z-20">
+<header class="h-16 bg-header text-header-ink border-b border-line flex items-center justify-between gap-3 px-4 sm:px-5 lg:px-8 sticky top-0 z-20">
 
     <div class="flex items-center gap-3 min-w-0">
         <button type="button" onclick="toggleSidebar(true)" class="lg:hidden text-ink p-2 -ml-2 rounded-lg hover:bg-surface" aria-label="Open menu">
@@ -37,7 +37,7 @@
 
             <div hidden
                  data-notification-panel
-                 class="absolute right-0 mt-2 w-[min(22rem,calc(100vw-2rem))] bg-white border border-line rounded-xl shadow-lg z-50 overflow-hidden">
+                 class="absolute right-0 mt-2 w-[min(22rem,calc(100vw-2rem))] bg-card border border-line rounded-xl shadow-lg z-50 overflow-hidden">
                 <div class="px-4 py-3 border-b border-line flex items-center justify-between gap-3">
                     <p class="text-sm font-semibold text-ink">{{ __('body.notifications') }}</p>
                     @if ($headerUnreadCount > 0)
@@ -101,7 +101,7 @@
 
             <div hidden
                  data-user-panel
-                 class="absolute right-0 mt-2 w-56 bg-white border border-line rounded-xl shadow-lg z-50 overflow-hidden py-1">
+                 class="absolute right-0 mt-2 w-56 bg-card border border-line rounded-xl shadow-lg z-50 overflow-hidden py-1">
                 <a href="{{ route('staff.profile') }}"
                    class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-ink hover:bg-surface transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>

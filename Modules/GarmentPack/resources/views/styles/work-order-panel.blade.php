@@ -1,4 +1,4 @@
-<div class="bg-white border border-line rounded-xl p-5 space-y-3">
+<div class="bg-card border border-line rounded-xl p-5 space-y-3">
     <h2 class="font-display font-bold text-ink">{{ __('garmentpack::garment.wo_panel', ['code' => $style->code]) }}</h2>
     <table class="w-full text-sm">
         <thead><tr class="text-left text-xs text-muted uppercase tracking-wide border-b border-line">
@@ -32,7 +32,7 @@
     $open = $workOrder->status->isOpen();
     $stageOptions = collect($workOrder->stages)->mapWithKeys(fn ($s, $i) => [$i => ($i + 1).'. '.$s])->all();
 @endphp
-<div class="bg-white border border-line rounded-xl p-5 space-y-4">
+<div class="bg-card border border-line rounded-xl p-5 space-y-4">
     <div>
         <h2 class="font-display font-bold text-ink">{{ __('garmentpack::garment.piece_work') }}</h2>
         <p class="text-xs text-muted">{{ __('garmentpack::garment.piece_work_hint') }}</p>
@@ -55,7 +55,7 @@
     @endif
 </div>
 
-<div class="bg-white border border-line rounded-xl p-5 space-y-4">
+<div class="bg-card border border-line rounded-xl p-5 space-y-4">
     <div>
         <h2 class="font-display font-bold text-ink">{{ __('garmentpack::garment.cmt') }}</h2>
         <p class="text-xs text-muted">{{ __('garmentpack::garment.cmt_hint') }}</p>
@@ -90,7 +90,7 @@
     @endif
 </div>
 
-<div class="bg-white border border-line rounded-xl p-5 space-y-3">
+<div class="bg-card border border-line rounded-xl p-5 space-y-3">
     <div class="flex items-center justify-between">
         <div>
             <h2 class="font-display font-bold text-ink">{{ __('garmentpack::garment.bundles') }}</h2>

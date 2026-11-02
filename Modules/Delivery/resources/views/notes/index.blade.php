@@ -5,7 +5,7 @@
         <x-common.input name="q" :label="__('body.search')" :value="$q" :placeholder="__('delivery::delivery.search_placeholder')" compact />
     </x-common.filter-panel>
 
-    <div class="bg-white border border-line rounded-xl overflow-hidden">
+    <div class="bg-card border border-line rounded-xl overflow-hidden">
         <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead>

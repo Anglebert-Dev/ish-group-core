@@ -20,7 +20,7 @@
         @if ($replaces)<input type="hidden" name="replaces" value="{{ $replaces->uuid }}">@endif
         @include('savings::partials.duplicates')
 
-        <div class="bg-white border border-line rounded-xl p-5 space-y-3">
+        <div class="bg-card border border-line rounded-xl p-5 space-y-3">
             <p class="text-sm font-semibold text-ink">{{ __('savings::savings.pick_type') }}</p>
             <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
                 @foreach (\Modules\Savings\Http\Controllers\TransactionController::FORM_TYPES as $t)
@@ -35,7 +35,7 @@
             </div>
         </div>
 
-        <div class="bg-white border border-line rounded-xl p-5 space-y-4">
+        <div class="bg-card border border-line rounded-xl p-5 space-y-4">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <x-common.select name="account" :label="__('savings::savings.account')" :value="old('account', $prefillAccount)" :options="$accountOptions" hide-placeholder required />
                 <div data-show="transfer"><x-common.select name="to_account" :label="__('savings::savings.to_account')" :value="old('to_account', $prefillTo)" :options="['' => '—'] + $accountOptions" hide-placeholder /></div>

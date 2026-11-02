@@ -14,8 +14,8 @@
         ? 'inline-flex items-center gap-2 text-sm text-body cursor-pointer select-none'
         : 'flex items-start gap-3 p-4 rounded-xl bg-surface border border-line cursor-pointer transition-colors hover:border-brand';
     $boxClass = $inline
-        ? 'pointer-events-none flex h-4 w-4 items-center justify-center rounded border border-line bg-white text-transparent peer-checked:bg-brand peer-checked:border-brand peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-brand/30 transition-colors'
-        : 'pointer-events-none flex h-5 w-5 items-center justify-center rounded-md border border-line bg-white text-transparent peer-checked:bg-brand peer-checked:border-brand peer-checked:text-white transition-colors';
+        ? 'pointer-events-none flex h-4 w-4 items-center justify-center rounded border border-line bg-card text-transparent peer-checked:bg-brand peer-checked:border-brand peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-brand/30 transition-colors'
+        : 'pointer-events-none flex h-5 w-5 items-center justify-center rounded-md border border-line bg-card text-transparent peer-checked:bg-brand peer-checked:border-brand peer-checked:text-white transition-colors';
     $inputClass = $inline
         ? 'peer absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0'
         : 'peer sr-only';

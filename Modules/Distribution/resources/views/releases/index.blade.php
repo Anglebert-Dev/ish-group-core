@@ -7,7 +7,7 @@
         <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
             <p class="font-semibold text-amber-900">{{ __('distribution::distribution.secret_backup_title') }}</p>
             <p class="text-sm text-amber-900 mt-1">{{ __('distribution::distribution.secret_backup_hint') }}</p>
-            <p class="mt-3 font-mono text-xs break-all bg-white border border-amber-200 rounded-lg p-3 select-all">{{ session('signing_secret') }}</p>
+            <p class="mt-3 font-mono text-xs break-all bg-card border border-amber-200 rounded-lg p-3 select-all">{{ session('signing_secret') }}</p>
         </div>
     @endif
     @if (session('signing_env_lines'))
@@ -25,7 +25,7 @@
     @endunless
 
     <div class="grid gap-6 lg:grid-cols-3 mb-6">
-        <form method="POST" action="{{ route('superadmin.distribution.releases.store') }}" class="bg-white border border-line rounded-xl p-5 space-y-4 lg:col-span-2">
+        <form method="POST" action="{{ route('superadmin.distribution.releases.store') }}" class="bg-card border border-line rounded-xl p-5 space-y-4 lg:col-span-2">
             @csrf
             <div>
                 <p class="font-semibold text-ink">{{ __('distribution::distribution.publish_release') }}</p>
@@ -43,7 +43,7 @@
             <x-common.button type="submit" :disabled="! $keysConfigured">{{ __('distribution::distribution.publish') }}</x-common.button>
         </form>
 
-        <div class="bg-white border border-line rounded-xl p-5 text-sm space-y-2">
+        <div class="bg-card border border-line rounded-xl p-5 text-sm space-y-2">
             <p class="font-semibold text-ink">{{ __('distribution::distribution.signing_key') }}</p>
             @if ($publicKey)
                 <p class="text-muted">{{ __('distribution::distribution.public_key_hint') }}</p>
@@ -58,7 +58,7 @@
         </div>
     </div>
 
-    <form method="POST" action="{{ route('superadmin.distribution.releases.core') }}" class="bg-white border border-line rounded-xl p-5 space-y-4 mb-6"
+    <form method="POST" action="{{ route('superadmin.distribution.releases.core') }}" class="bg-card border border-line rounded-xl p-5 space-y-4 mb-6"
           onsubmit="var b=this.querySelector('button[type=submit]'); b.disabled=true; b.textContent=@js(__('distribution::distribution.building_wait'));">
         @csrf
         <div>
@@ -80,7 +80,7 @@
     @if ($releases->isEmpty())
         <x-common.empty-state :title="__('distribution::distribution.no_releases')" :description="__('distribution::distribution.no_releases_hint')" />
     @else
-        <div class="bg-white border border-line rounded-xl overflow-hidden">
+        <div class="bg-card border border-line rounded-xl overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead>

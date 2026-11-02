@@ -38,7 +38,7 @@
 
     <div class="space-y-6">
         {{-- Overview cards --}}
-        <div class="bg-white border border-line rounded-xl p-5">
+        <div class="bg-card border border-line rounded-xl p-5">
             <p class="flex items-center gap-2 font-display font-bold text-ink mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $icon['building'] }}"/></svg>
                 {{ $business->name }}
@@ -71,7 +71,7 @@
         @endforeach
 
         {{-- Users --}}
-        <div class="bg-white border border-line rounded-xl overflow-hidden">
+        <div class="bg-card border border-line rounded-xl overflow-hidden">
             <div class="px-5 py-4 border-b border-line">
                 <h2 class="font-display font-bold text-ink">{{ __('body.all_users') }}</h2>
             </div>
@@ -105,7 +105,7 @@
                                         <button type="button" data-password-dialog
                                             data-url="{{ route('superadmin.users.password', $user->uuid) }}"
                                             data-name="{{ $user->name }}"
-                                            class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border bg-white px-2.5 py-1 text-xs font-semibold transition-colors border-brand/40 text-brand hover:bg-brand-light">
+                                            class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border bg-card px-2.5 py-1 text-xs font-semibold transition-colors border-brand/40 text-brand hover:bg-brand-light">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $icon['key'] }}"/></svg>
                                             {{ __('body.update_password') }}
                                         </button>
@@ -132,12 +132,12 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {{-- Modules: per-business switches only when no billing module decides --}}
             @if ($modulesFromPackage)
-                <div class="bg-white border border-line rounded-xl p-5 space-y-2">
+                <div class="bg-card border border-line rounded-xl p-5 space-y-2">
                     <h2 class="font-display font-bold text-ink">{{ __('body.business_modules') }}</h2>
                     <p class="text-sm text-muted">{{ __('body.business_modules_from_package') }}</p>
                 </div>
             @else
-                <form action="{{ route('superadmin.businesses.modules', $business) }}" method="POST" class="bg-white border border-line rounded-xl p-5 space-y-4">
+                <form action="{{ route('superadmin.businesses.modules', $business) }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-4">
                     @csrf @method('PUT')
                     <div>
                         <h2 class="font-display font-bold text-ink">{{ __('body.business_modules') }}</h2>
@@ -158,7 +158,7 @@
 
             {{-- Danger zone --}}
             @unless ($isOwnBusiness)
-                <form id="delete-business" action="{{ route('superadmin.businesses.destroy', $business) }}" method="POST" class="bg-white border border-danger/40 rounded-xl p-5 space-y-4 scroll-mt-24">
+                <form id="delete-business" action="{{ route('superadmin.businesses.destroy', $business) }}" method="POST" class="bg-card border border-danger/40 rounded-xl p-5 space-y-4 scroll-mt-24">
                     @csrf @method('DELETE')
                     <div>
                         <h2 class="font-display font-bold text-danger">{{ __('body.delete_business') }}</h2>

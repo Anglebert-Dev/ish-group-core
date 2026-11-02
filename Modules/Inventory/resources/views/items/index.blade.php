@@ -18,7 +18,7 @@
     <div class="flex flex-wrap gap-2 mb-4">
         @foreach ($tabs as $value => $label)
             <a href="{{ route('inventory.items.index', array_filter(['type' => $value] + $filters)) }}"
-               class="px-4 py-2 rounded-lg text-sm font-semibold border transition-colors {{ $type === $value ? 'bg-brand text-white border-brand' : 'bg-white text-body border-line hover:border-brand hover:text-brand' }}">{{ $label }}</a>
+               class="px-4 py-2 rounded-lg text-sm font-semibold border transition-colors {{ $type === $value ? 'bg-brand text-white border-brand' : 'bg-card text-body border-line hover:border-brand hover:text-brand' }}">{{ $label }}</a>
         @endforeach
     </div>
 
@@ -33,7 +33,7 @@
             :options="['active' => __('inventory::inventory.status_active'), 'inactive' => __('inventory::inventory.status_inactive'), 'all' => __('body.all')]" />
     </x-common.filter-panel>
 
-    <div class="bg-white border border-line rounded-xl overflow-hidden">
+    <div class="bg-card border border-line rounded-xl overflow-hidden">
         <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead>

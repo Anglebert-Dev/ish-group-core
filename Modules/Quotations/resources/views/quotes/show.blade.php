@@ -32,12 +32,12 @@
                 ]" />
             </div>
 
-            <div class="bg-white border border-line rounded-xl p-5 space-y-3">
+            <div class="bg-card border border-line rounded-xl p-5 space-y-3">
                 <h2 class="font-display font-bold text-ink">{{ __('quotations::quotations.lines') }}</h2>
                 @include('salesorders::orders.lines-table', ['order' => $quote])
             </div>
 
-            <div class="bg-white border border-line rounded-xl p-5 space-y-4">
+            <div class="bg-card border border-line rounded-xl p-5 space-y-4">
                 <div>
                     <h2 class="font-display font-bold text-ink">{{ __('quotations::quotations.deposits') }}</h2>
                     <p class="text-sm text-muted">{{ __('quotations::quotations.deposits_hint') }}</p>
@@ -87,7 +87,7 @@
         </div>
 
         <div class="space-y-4">
-            <div class="bg-white border border-line rounded-xl p-5 space-y-3">
+            <div class="bg-card border border-line rounded-xl p-5 space-y-3">
                 <div class="flex items-center justify-between">
                     <h2 class="font-display font-bold text-ink">{{ __('body.status') }}</h2>
                     <x-common.badge :color="$quote->status->color()">{{ $quote->status->label() }}</x-common.badge>
@@ -120,7 +120,7 @@
             </div>
 
             @if ($quote->is_sample)
-                <div class="bg-white border border-line rounded-xl p-5 space-y-3">
+                <div class="bg-card border border-line rounded-xl p-5 space-y-3">
                     <div class="flex items-center justify-between">
                         <h2 class="font-display font-bold text-ink">{{ __('quotations::quotations.sample') }}</h2>
                         <x-common.badge :color="$quote->sample_status->color()">{{ $quote->sample_status->label() }}</x-common.badge>

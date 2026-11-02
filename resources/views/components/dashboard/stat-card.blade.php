@@ -11,7 +11,7 @@
 
 @php
     $tag = $href ? 'a' : 'div';
-    $classes = 'relative group h-full min-h-[7.5rem] overflow-hidden bg-white border border-line rounded-xl p-4 sm:p-5 transition-all duration-200';
+    $classes = 'relative group h-full min-h-[7.5rem] overflow-hidden bg-card border border-line rounded-xl p-4 sm:p-5 transition-all duration-200';
     if ($href) {
         $classes .= ' hover:-translate-y-0.5 hover:shadow-md hover:border-brand/30';
     }

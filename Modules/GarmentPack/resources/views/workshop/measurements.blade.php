@@ -1,5 +1,5 @@
 @php $canEdit = \App\Helpers\AuthHelper::can('update customers.customer'); @endphp
-<div class="bg-white border border-line rounded-xl p-5 space-y-4">
+<div class="bg-card border border-line rounded-xl p-5 space-y-4">
     <div>
         <h2 class="font-display font-bold text-ink">{{ __('garmentpack::garment.measurements') }}</h2>
         <p class="text-sm text-muted">{{ __('garmentpack::garment.measurements_hint') }}</p>

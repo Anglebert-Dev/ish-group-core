@@ -41,7 +41,7 @@
                     $state = $i < $index ? 'done' : ($i === $index ? 'current' : 'todo');
                 @endphp
                 <li class="flex items-center gap-2 whitespace-nowrap {{ $state === 'current' ? 'font-semibold text-ink' : ($state === 'done' ? 'text-success' : 'text-muted') }}">
-                    <span class="inline-flex h-6 w-6 items-center justify-center rounded-full text-xs {{ $state === 'current' ? 'bg-brand text-white' : ($state === 'done' ? 'bg-green-100' : 'bg-white border border-line') }}">
+                    <span class="inline-flex h-6 w-6 items-center justify-center rounded-full text-xs {{ $state === 'current' ? 'bg-brand text-white' : ($state === 'done' ? 'bg-green-100' : 'bg-card border border-line') }}">
                         {{ $state === 'done' ? '✓' : $i + 1 }}
                     </span>
                     {{ __('install.step_'.$step) }}
@@ -49,7 +49,7 @@
             @endforeach
         </ol>
 
-        <main class="bg-white rounded-2xl border border-line p-5 sm:p-7 shadow-sm">
+        <main class="bg-card rounded-2xl border border-line p-5 sm:p-7 shadow-sm">
             @if (session('status'))
                 <div class="mb-4 rounded-xl bg-green-50 text-green-800 px-4 py-3 text-sm">{{ session('status') }}</div>
             @endif

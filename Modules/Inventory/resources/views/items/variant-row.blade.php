@@ -1,6 +1,6 @@
 @php
     $field = fn ($key) => 'variants['.$index.']['.$key.']';
-    $cell = 'w-full min-w-[6rem] rounded-lg border border-line bg-white px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand';
+    $cell = 'w-full min-w-[6rem] rounded-lg border border-line bg-card px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand';
 @endphp
 <tr class="align-top">
     <td class="px-1 py-1.5" data-option-col="1">
