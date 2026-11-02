@@ -44,13 +44,14 @@ class ServerDetailsTest extends TestCase
         $this->get(route('superadmin.distribution.sites.server.edit', $this->site))->assertOk()->assertSee(__('distribution::distribution.server_php_path'));
 
         $this->put(route('superadmin.distribution.sites.server.update', $this->site), [
-            'hosting_type' => 'Shared', 'php_version' => '8.3', 'php_path' => '/usr/local/bin/php', 'cron_only' => '1',
+            'hosting_type' => 'Shared', 'web_server' => 'Apache2', 'php_version' => '8.3', 'php_path' => '/usr/local/bin/php', 'cron_only' => '1',
             'db_driver' => 'PostgreSQL', 'db_port' => '5432', 'app_url' => 'https://finance.acme.com', 'admin_email' => 'jane@acme.com',
             'db_password' => 'never-stored',
         ])->assertRedirect(route('superadmin.distribution.sites.show', $this->site));
 
         $details = $this->site->fresh()->server_details;
         $this->assertSame('shared', $details['hosting_type']);
+        $this->assertSame('apache', $details['web_server']);
         $this->assertSame('pgsql', $details['db_driver']);
         $this->assertSame(5432, $details['db_port']);
         $this->assertTrue($details['cron_only']);
@@ -124,6 +125,26 @@ class ServerDetailsTest extends TestCase
             ->assertSee('/home/acme/finance/public');
 
         $this->get(route('superadmin.distribution.sites.show', $this->site))->assertOk()->assertSee('/usr/local/bin/php');
+    }
+
+    public function test_the_guide_gives_the_web_server_setup_for_their_server(): void
+    {
+        app(SiteService::class)->saveServerDetails($this->site, ['web_server' => 'nginx', 'install_path' => '/var/www/finance', 'app_url' => 'https://finance.acme.com'], 'form');
+
+        $this->get(route('superadmin.distribution.sites.guide', $this->site))->assertOk()
+            ->assertSee('server_name finance.acme.com;', false)
+            ->assertSee('root /var/www/finance/public;', false)
+            ->assertSee('try_files $uri $uri/ /index.php?$query_string;', false)
+            ->assertSee(__('distribution::distribution.guide_req_outbound', ['url' => config('app.url')]))
+            ->assertSee('intl')
+            ->assertDontSee('&lt;VirtualHost', false);
+
+        app(SiteService::class)->saveServerDetails($this->site, ['web_server' => 'other'], 'form');
+
+        $this->get(route('superadmin.distribution.sites.guide', $this->site))->assertOk()
+            ->assertSee('&lt;VirtualHost *:80&gt;', false)
+            ->assertSee(__('distribution::distribution.guide_web_litespeed'))
+            ->assertSee('server_name finance.acme.com;', false); // still known from the site's address
     }
 
     public function test_a_server_with_old_php_is_not_built_for(): void

@@ -98,6 +98,7 @@ class ServerDetailsController extends Controller
             'cronLine' => ServerDetails::cronLine($details),
             'problems' => ServerDetails::problems($details),
             'provider' => config('app.name'),
+            'providerUrl' => rtrim((string) config('app.url'), '/'),
         ]);
     }
 }

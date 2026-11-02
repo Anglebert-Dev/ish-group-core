@@ -10,8 +10,19 @@ class RequirementsChecker
 {
     public const MIN_PHP = '8.3.0';
 
-    /** Extensions the app needs (one database driver is checked separately). */
-    public const EXTENSIONS = ['pdo', 'mbstring', 'openssl', 'tokenizer', 'xml', 'dom', 'ctype', 'fileinfo', 'curl', 'zip', 'sodium', 'json', 'bcmath', 'gd'];
+    /**
+     * Extensions the app needs (one database driver is checked separately):
+     * what the locked packages require, plus curl (updates), sodium
+     * (signatures), bcmath (money) and intl (number formatting).
+     */
+    public const EXTENSIONS = [
+        'bcmath', 'ctype', 'curl', 'dom', 'fileinfo', 'filter', 'gd', 'hash', 'iconv', 'intl', 'json', 'libxml',
+        'mbstring', 'openssl', 'pcre', 'pdo', 'session', 'simplexml', 'sodium', 'tokenizer', 'xml', 'xmlreader',
+        'xmlwriter', 'zip', 'zlib',
+    ];
+
+    /** Recommended memory for exports, PDFs and updates. */
+    public const MIN_MEMORY_MB = 256;
 
     /**
      * @return list<array{label: string, ok: bool, required: bool, detail: ?string}>
@@ -61,6 +72,21 @@ class RequirementsChecker
         ];
 
         $checks[] = [
+            'label' => __('install.req_proc_open'),
+            'ok' => function_exists('proc_open') && ! in_array('proc_open', array_map('trim', explode(',', (string) ini_get('disable_functions'))), true),
+            'required' => false,
+            'detail' => __('install.req_proc_open_hint'),
+        ];
+
+        $memory = $this->megabytes((string) ini_get('memory_limit'));
+        $checks[] = [
+            'label' => __('install.req_memory', ['mb' => self::MIN_MEMORY_MB]),
+            'ok' => $memory === -1 || $memory >= self::MIN_MEMORY_MB,
+            'required' => false,
+            'detail' => __('install.req_memory_hint', ['now' => ini_get('memory_limit')]),
+        ];
+
+        $checks[] = [
             'label' => __('install.req_symlink'),
             'ok' => function_exists('symlink'),
             'required' => false,
@@ -81,6 +107,25 @@ class RequirementsChecker
     public function databaseDrivers(): array
     {
         return array_values(array_filter(['mysql', 'pgsql'], fn (string $driver) => extension_loaded('pdo_'.$driver)));
+    }
+
+    /** "256M" → 256, "1G" → 1024, "-1" → -1 (no limit). */
+    private function megabytes(string $value): int
+    {
+        $value = trim($value);
+
+        if ($value === '-1') {
+            return -1;
+        }
+
+        $number = (int) $value;
+
+        return match (strtoupper(substr($value, -1))) {
+            'G' => $number * 1024,
+            'M' => $number,
+            'K' => intdiv($number, 1024),
+            default => intdiv($number, 1048576),
+        };
     }
 
     private function writableTree(string $path): bool

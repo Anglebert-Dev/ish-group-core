@@ -1,12 +1,13 @@
 @php
     $sections = [
-        'server' => ['hosting_type', 'php_version', 'php_path', 'install_path', 'web_root_is_public', 'app_url', 'timezone', 'cron_only'],
+        'server' => ['hosting_type', 'web_server', 'php_version', 'php_path', 'install_path', 'web_root_is_public', 'app_url', 'timezone', 'cron_only'],
         'database' => ['db_driver', 'db_host', 'db_port', 'db_database', 'db_username'],
         'mail' => ['mail_host', 'mail_port', 'mail_encryption', 'mail_username', 'mail_from_address'],
         'account' => ['business_name', 'admin_name', 'admin_email'],
     ];
     $choices = [
         'hosting_type' => ['shared' => 'Shared (cPanel/Plesk)', 'vps' => 'VPS / own server', 'docker' => 'Docker'],
+        'web_server' => ['apache' => 'Apache', 'nginx' => 'nginx', 'litespeed' => 'LiteSpeed', 'other' => __('distribution::distribution.web_server_other')],
         'db_driver' => ['mysql' => 'MySQL / MariaDB', 'pgsql' => 'PostgreSQL'],
         'mail_encryption' => ['tls' => 'TLS (587)', 'ssl' => 'SSL (465)', 'none' => __('distribution::distribution.mail_encryption_none')],
         'web_root_is_public' => ['1' => __('distribution::distribution.yes'), '0' => __('distribution::distribution.no')],

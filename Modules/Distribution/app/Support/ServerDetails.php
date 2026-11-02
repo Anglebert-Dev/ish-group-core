@@ -25,6 +25,7 @@ final class ServerDetails
     {
         return [
             'hosting_type' => [['nullable', 'in:shared,vps,docker'], 'shared'],
+            'web_server' => [['nullable', 'in:apache,nginx,litespeed,other'], 'apache'],
             'php_version' => [['nullable', 'regex:/^\d+\.\d+(\.\d+)?$/'], '8.3'],
             'php_path' => [['nullable', 'string', 'max:255', 'regex:/^\/[^\s;|&`$]*$/'], '/usr/local/bin/php'],
             'install_path' => [['nullable', 'string', 'max:255', 'regex:/^\/[^\s;|&`$]*$/'], '/home/acme/finance'],
@@ -70,9 +71,9 @@ final class ServerDetails
                 $value = self::bool($value);
             }
 
-            if (in_array($key, ['hosting_type', 'db_driver', 'mail_encryption'], true)) {
+            if (in_array($key, ['hosting_type', 'web_server', 'db_driver', 'mail_encryption'], true)) {
                 $value = strtolower((string) $value);
-                $value = ['postgres' => 'pgsql', 'postgresql' => 'pgsql', 'mariadb' => 'mysql'][$value] ?? $value;
+                $value = ['postgres' => 'pgsql', 'postgresql' => 'pgsql', 'mariadb' => 'mysql', 'httpd' => 'apache', 'apache2' => 'apache', 'openlitespeed' => 'litespeed'][$value] ?? $value;
             }
 
             $values[$key] = $value;
