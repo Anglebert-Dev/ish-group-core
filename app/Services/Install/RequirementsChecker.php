@@ -63,6 +63,18 @@ class RequirementsChecker
             $checks[] = ['label' => __('install.req_writable', ['path' => $path]), 'ok' => $ok, 'required' => true, 'detail' => null];
         }
 
+        // "php artisan serve" restarts itself when .env changes, which is the
+        // installer's first step: the restart cuts the install off. --no-reload
+        // prevents it (we can't see from here whether it was used).
+        if (PHP_SAPI === 'cli-server') {
+            $checks[] = [
+                'label' => __('install.req_dev_server'),
+                'ok' => false,
+                'required' => false,
+                'detail' => __('install.req_dev_server_hint'),
+            ];
+        }
+
         // Module updates replace folders here; without it updates can't install.
         $checks[] = [
             'label' => __('install.req_writable', ['path' => 'Modules']),

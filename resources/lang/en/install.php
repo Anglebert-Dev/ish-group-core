@@ -126,4 +126,6 @@ return [
 
     'app_behind_proxy' => 'Reached through a proxy or tunnel',
     'app_behind_proxy_hint' => 'Tick when people reach this site through ngrok, Cloudflare Tunnel or a load balancer that handles HTTPS. Ticked for you when we can see one. Without it, pages behind such a tunnel load without their styles.',
+    'req_dev_server' => 'Running on php artisan serve',
+    'req_dev_server_hint' => 'Make sure it was started with --no-reload (php artisan serve --port=9000 --no-reload). Without it, the server restarts when the installer writes .env and the install is cut off. Fine to continue if it was.',
 ];

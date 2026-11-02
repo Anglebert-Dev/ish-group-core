@@ -10,12 +10,12 @@ You need PHP 8.3 or newer, Composer, and an empty PostgreSQL or MySQL database.
 composer install
 cp .env.example .env         # the installer fills it in
 php artisan storage:link     # makes uploaded logos and files visible
-php artisan serve --port=9000
+php artisan serve --port=9000 --no-reload
 ```
 
 Open the site in a browser (`http://localhost:9000`). The installer asks for the database, the app's address, email settings and your admin account, then sets everything up. Prefer the terminal? `php artisan core:setup` asks the same questions.
 
-There is no npm step: the styles and scripts ship ready in `public/`.
+There is no npm step: the styles and scripts ship ready in `public/`. Keep `--no-reload`: without it `php artisan serve` restarts whenever `.env` changes, and the installer writing `.env` would cut itself off.
 
 **Reached through a tunnel or proxy** (ngrok, Cloudflare Tunnel, a load balancer)? Open the installer through it: it fills in the `https://` address and ticks "Reached through a proxy or tunnel", which writes `TRUSTED_PROXIES=*` to `.env` so pages keep their styles and logins work over HTTPS. (An installed site moved behind a tunnel later: add `TRUSTED_PROXIES=*` and the `https://` `APP_URL` to `.env` yourself.) With ngrok:
 
@@ -31,7 +31,7 @@ Claim the free static domain in the ngrok dashboard (Domains) so the address nev
 Keep these running in separate terminals:
 
 ```bash
-php artisan serve --port=9000   # the app
+php artisan serve --port=9000 --no-reload   # the app
 php artisan queue:work          # sends emails — without it, no email goes out
 php artisan schedule:work       # daily jobs (billing renewals, support reminders, alerts)
 ```
