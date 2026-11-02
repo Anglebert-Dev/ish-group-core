@@ -42,6 +42,13 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Behind a proxy or tunnel (nginx, a load balancer, ngrok) that ends HTTPS:
+        // TRUSTED_PROXIES=* (or a comma list of proxy IPs) in .env makes links,
+        // secure cookies and visitor IPs right. Off by default: without a proxy,
+        // trusting these headers would let anyone fake their IP.
+        if ($proxies = env('TRUSTED_PROXIES')) {
+            $middleware->trustProxies(at: $proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)));
+        }
         $middleware->prepend(RedirectToInstaller::class);
         $middleware->append(SecurityHeaders::class);
 

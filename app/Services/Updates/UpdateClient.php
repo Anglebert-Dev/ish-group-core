@@ -146,6 +146,9 @@ class UpdateClient
         return Http::withToken(Crypt::decryptString((string) System::getProperty('distribution_token')))
             ->acceptJson()
             ->timeout(30)
+            // An update server reached through ngrok's free plan would otherwise
+            // answer with its "you are about to visit" page instead of the API.
+            ->withHeaders(['ngrok-skip-browser-warning' => '1'])
             ->withUserAgent('ish-core/'.config('core.version'));
     }
 }
