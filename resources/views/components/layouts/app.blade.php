@@ -9,6 +9,10 @@
     <x-common.brand-head :title="$title ?? 'Dashboard'" />
 
     <x-common.tailwind />
+    @if ($businessCss = app(\App\Services\Branding\BrandingService::class)->customCss($branding))
+        {{-- The business's own CSS: sanitised and scoped to the page content (Branding → Advanced). --}}
+        <style id="business-css">{!! $businessCss !!}</style>
+    @endif
     <style>
         body { font-family: var(--font-body); }
         .font-display { font-family: var(--font-body); }

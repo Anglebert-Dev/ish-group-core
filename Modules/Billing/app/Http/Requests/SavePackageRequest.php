@@ -3,6 +3,7 @@
 namespace Modules\Billing\Http\Requests;
 
 use App\Services\Module\ModuleManager;
+use App\Support\Entitlements\Capabilities;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Modules\Billing\Enums\BillingInterval;
@@ -28,6 +29,8 @@ class SavePackageRequest extends FormRequest
             'limits' => ['nullable', 'array'],
             'limits.*' => ['nullable', 'integer', 'min:0', 'max:1000000'],
             'features' => ['nullable', 'string', 'max:3000'],
+            'capabilities' => ['nullable', 'array'],
+            'capabilities.*' => ['string', Rule::in(array_keys(Capabilities::LIST))],
             'is_active' => ['boolean'],
             'is_private' => ['boolean'],
             'once_per_business' => ['boolean'],
@@ -57,6 +60,7 @@ class SavePackageRequest extends FormRequest
             'modules' => app(ModuleManager::class)->withRequirements(array_values($data['modules'] ?? [])),
             'limits' => array_map('intval', array_filter($data['limits'] ?? [], fn ($v) => $v !== null && $v !== '')),
             'features' => array_values(array_filter(array_map('trim', preg_split('/\R/', (string) ($data['features'] ?? ''))))),
+            'capabilities' => array_values($data['capabilities'] ?? []),
             'is_active' => $this->boolean('is_active'),
             'is_private' => $this->boolean('is_private'),
             'once_per_business' => $this->boolean('once_per_business'),

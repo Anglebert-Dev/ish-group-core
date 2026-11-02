@@ -26,9 +26,7 @@ class BillingEntitlements implements Entitlements
     /** @var array<int, bool> */
     private array $platformOwners = [];
 
-    public function __construct(protected ModuleManager $modules)
-    {
-    }
+    public function __construct(protected ModuleManager $modules) {}
 
     public function controlsModules(): bool
     {
@@ -66,6 +64,17 @@ class BillingEntitlements implements Entitlements
         }
 
         return null;
+    }
+
+    public function allowsCapability(Business $business, string $key): bool
+    {
+        if (! $this->billingActive() || $this->isPlatformOwner($business)) {
+            return true;
+        }
+
+        $subscription = $this->subscription($business);
+
+        return $subscription && $subscription->status->grantsAccess() && $subscription->allowsCapability($key);
     }
 
     public function upgradeUrl(): ?string

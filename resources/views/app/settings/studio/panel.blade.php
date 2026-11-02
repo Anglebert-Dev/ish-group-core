@@ -53,7 +53,7 @@
         var device = 1280, appearance = 'light', timer;
 
         // The form, as the theme document's sections.
-        var SECTIONS = ['colors', 'colors_dark', 'layout', 'switches', 'mode', 'heading_font', 'user_mode', 'dashboard', 'menu', 'announcement', 'landing'];
+        var SECTIONS = ['colors', 'colors_dark', 'layout', 'switches', 'mode', 'heading_font', 'user_mode', 'dashboard', 'menu', 'announcement', 'landing', 'custom_css'];
 
         // "a[b][c]" names → nested objects, as PHP reads them ("a[b][]" lists are handled in payload()).
         function put(data, name, value) {

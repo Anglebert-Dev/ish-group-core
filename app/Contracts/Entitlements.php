@@ -28,6 +28,12 @@ interface Entitlements
     public function limit(Business $business, string $key): ?int;
 
     /**
+     * May this business use an extra (App\Support\Entitlements\Capabilities),
+     * e.g. "branding.custom_css"?
+     */
+    public function allowsCapability(Business $business, string $key): bool;
+
+    /**
      * Where to send a business that hit a module lock or a limit
      * (e.g. its billing page). Null = no such page.
      */

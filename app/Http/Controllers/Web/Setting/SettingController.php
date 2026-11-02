@@ -8,13 +8,16 @@ use App\Libraries\ColorLibrary;
 use App\Models\Branding\BrandingVersion;
 use App\Models\Business\Business;
 use App\Models\Role\Role;
+use App\Models\System\System;
 use App\Services\Branding\BrandingService;
 use App\Services\Branding\ThemeService;
 use App\Services\Dashboard\DashboardService;
 use App\Services\Printing\PrintService;
 use App\Services\Setting\SettingService;
+use App\Support\Branding\CssSanitizer;
 use App\Support\Branding\Fonts;
 use App\Support\Branding\LoginBranding;
+use App\Support\Branding\Terminology;
 use App\Support\Branding\ThemeSchema;
 use App\Support\Branding\ThemeTokens;
 use App\Support\Locale\Locales;
@@ -38,7 +41,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class SettingController extends Controller
 {
-    public const TABS = ['details', 'look', 'theme', 'layout', 'dashboard', 'menu', 'login', 'emails', 'stamp', 'payments', 'documents', 'history'];
+    public const TABS = ['details', 'look', 'theme', 'layout', 'dashboard', 'menu', 'login', 'emails', 'stamp', 'payments', 'documents', 'advanced', 'history'];
 
     public function __construct(
         protected SettingService $settings,
@@ -71,6 +74,16 @@ class SettingController extends Controller
             'dashboardBlocks' => $tab === 'dashboard' ? $this->dashboardBlocks() : [],
             'roles' => $tab === 'dashboard' ? Role::query()->where('business_id', $business->id)->orderBy('name')->get() : collect(),
             'menuItems' => in_array($tab, ['dashboard', 'menu'], true) ? app(AdminMenu::class)->allowedItems() : collect(),
+            'advanced' => $tab === 'advanced' ? [
+                'css' => ($this->themes->draft($business)?->payload ?? $this->themes->published($business)?->payload ?? [])['custom_css'] ?? '',
+                'cssAllowed' => $this->branding->capable($business, 'branding.custom_css'),
+                'cssPlatformOff' => System::getProperty('allow_custom_css', '1') === '0',
+                'fontsAllowed' => $this->branding->capable($business, 'branding.fonts'),
+                'font' => $this->branding->customFont($business),
+                'wordsAllowed' => $this->branding->capable($business, 'branding.terminology'),
+                'terms' => Terminology::terms(),
+                'words' => Terminology::for($business),
+            ] : [],
             'emailSettings' => $tab === 'emails' ? $this->branding->emailSettings($business) : [],
             'loginPage' => $this->branding->loginPage($business) + ['suggested' => $tab === 'login' ? $this->branding->suggestHandle($business) : null],
             'brandOnScreen' => ['light' => $this->themes->tokens($business), 'dark' => $this->themes->tokens($business, dark: true)],
@@ -130,6 +143,7 @@ class SettingController extends Controller
             'layout' => $this->saveLayout($request, $business),
             'login' => $this->saveLoginPage($request, $business),
             'emails' => $this->branding->saveEmails($business, $this->emailInput($request)),
+            'advanced' => $this->saveAdvanced($request, $business),
             // Cleaned by ThemeSchema (unknown keys dropped, text trimmed to length).
             'dashboard' => $this->themes->saveDraft($business, [
                 'dashboard' => (array) $request->input('dashboard', []),
@@ -291,6 +305,37 @@ class SettingController extends Controller
             ->all();
     }
 
+    /**
+     * Branding → Advanced: custom CSS into the draft; own font and words saved
+     * straight away. Each only when the business's plan includes it.
+     */
+    private function saveAdvanced(Request $request, Business $business): array
+    {
+        if ($this->branding->capable($business, 'branding.custom_css') && System::getProperty('allow_custom_css', '1') !== '0' && $request->has('custom_css')) {
+            $css = (string) $request->validate(['custom_css' => ['nullable', 'string', 'max:'.CssSanitizer::MAX_BYTES]])['custom_css'];
+            if ($errors = CssSanitizer::clean($css)['errors']) {
+                throw ValidationException::withMessages(['custom_css' => $errors]);
+            }
+            $this->themes->saveDraft($business, ['custom_css' => $css]);
+        }
+
+        if ($this->branding->capable($business, 'branding.fonts')) {
+            $request->validate([
+                'font_name' => ['nullable', 'string', 'max:40'],
+                'font_woff2' => ['nullable', 'file', 'max:2048', 'extensions:woff2'],
+                'font_ttf' => ['nullable', 'file', 'max:4096', 'extensions:ttf'],
+                'font_licence' => ['nullable', 'required_with:font_woff2', 'in:1,on,true,yes'],
+            ], ['font_licence.required_with' => __('body.font_licence_required')]);
+            $this->branding->saveCustomFont($business, $request->input('font_name'), $request->file('font_woff2'), $request->file('font_ttf'), $request->boolean('remove_font'));
+        }
+
+        if ($this->branding->capable($business, 'branding.terminology')) {
+            $this->branding->saveTerminology($business, (array) $request->input('words', []));
+        }
+
+        return ['status' => true, 'message' => __('body.advanced_saved')];
+    }
+
     private function saveLoginPage(Request $request, Business $business): array
     {
         $request->merge(['login_handle' => strtolower(trim((string) $request->input('login_handle')))]);
@@ -407,7 +452,7 @@ class SettingController extends Controller
         $data = $request->validate([
             'brand_color' => ['required', 'string', 'regex:/^#[0-9A-F]{6}$/'],
             'secondary_color' => ['nullable', 'string', 'regex:/^#[0-9A-F]{6}$/'],
-            'font' => ['nullable', Rule::in(array_keys(Fonts::LIST))],
+            'font' => ['nullable', Rule::in([...array_keys(Fonts::LIST), ...($this->branding->customFont($this->settings->current()) ? ['custom'] : [])])],
             'logo' => ['nullable', 'image', 'max:4096'],
             'logo_dark' => ['nullable', 'image', 'max:4096'],
             'logo_login' => ['nullable', 'image', 'max:4096'],

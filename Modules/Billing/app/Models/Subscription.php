@@ -94,6 +94,14 @@ class Subscription extends BaseModel
         return $value === null || (int) $value <= 0 ? null : (int) $value;
     }
 
+    /** Packages made before capabilities existed list none: everything is allowed. */
+    public function allowsCapability(string $key): bool
+    {
+        $capabilities = $this->snapshot['capabilities'] ?? null;
+
+        return ! is_array($capabilities) || in_array($key, $capabilities, true);
+    }
+
     public function isCurrent(): bool
     {
         return in_array($this->status, SubscriptionStatus::current(), true);

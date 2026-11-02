@@ -3,7 +3,7 @@
     "alias": "billing",
     "description": "Packages and subscriptions: which modules and limits each business gets, invoices, offline payments approved by a superadmin, coupons, trials, proration, grace periods.",
     "keywords": ["billing", "subscriptions", "packages"],
-    "version": "1.0.0",
+    "version": "1.1.0",
     "billing_exempt": true,
     "menu_group": "Billing",
     "priority": 0,

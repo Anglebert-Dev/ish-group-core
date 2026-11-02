@@ -212,6 +212,8 @@ final class ThemeSchema
             'menu' => self::cleanMenu($payload['menu'] ?? null),
             'landing' => is_string($payload['landing'] ?? null) && preg_match('/^[a-z0-9_.-]{1,100}$/i', $payload['landing']) ? $payload['landing'] : null,
             'announcement' => self::cleanAnnouncement($payload['announcement'] ?? null),
+            // Rebuilt by the sanitizer every time it is read: never trusted as stored.
+            'custom_css' => CssSanitizer::clean(is_string($payload['custom_css'] ?? null) ? $payload['custom_css'] : null)['css'] ?: null,
             // Light, dark, or follow each device.
             'mode' => in_array($payload['mode'] ?? null, ThemeTokens::MODES, true) ? $payload['mode'] : null,
             // May each person pick their own light/dark? (Unset = yes.)

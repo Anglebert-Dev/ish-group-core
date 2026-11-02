@@ -2,19 +2,23 @@
 
 namespace App\Services\Branding;
 
+use App\Contracts\Entitlements;
 use App\Helpers\AuthHelper;
 use App\Libraries\UploadLibrary;
 use App\Models\Business\Business;
+use App\Models\System\System;
 use App\Services\BaseService;
 use App\Support\Branding\Brand;
 use App\Support\Branding\Fonts;
 use App\Support\Branding\LoginBranding;
+use App\Support\Branding\Terminology;
 use App\Support\Branding\ThemeLayout;
 use App\Support\Branding\ThemeTokens;
 use App\Support\Menu\AdminMenu;
 use App\Support\Printing\PrintDesign;
 use App\Support\Settings\BusinessSettings;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -55,7 +59,7 @@ class BrandingService extends BaseService
             website: $get('website'),
             primaryColor: $business->brandColor(),
             secondaryColor: $this->color($get('secondary_color')) ?? '#111827',
-            font: Fonts::normalise($get('font')),
+            font: $this->font($business),
             logoPath: $business->logo_path,
             logoDarkPath: $get('logo_dark_path'),
             stampPath: $get('stamp_path'),
@@ -226,6 +230,62 @@ class BrandingService extends BaseService
         return $route && app(AdminMenu::class)->allowedItems()->contains('route', $route) ? $route : 'dashboard';
     }
 
+    /**
+     * @param  array<string, ?string>  $words  lang key => new word (blank = default)
+     */
+    public function saveTerminology(Business $business, array $words): array
+    {
+        $allowed = Terminology::terms();
+        $clean = collect($words)
+            ->filter(fn ($word, $key) => array_key_exists($key, $allowed) && is_string($word) && trim($word) !== '' && trim($word) !== $allowed[$key])
+            ->map(fn ($word) => mb_substr(trim(strip_tags($word)), 0, Terminology::MAX_LENGTH))
+            ->all();
+
+        $clean === [] ? $this->settings->forget('branding.terminology', $business) : $this->settings->set('branding.terminology', $clean, $business);
+
+        return $this->success($business, __('body.branding_saved'));
+    }
+
+    /**
+     * Home-screen app (web manifest): name, short name, icon, colours.
+     *
+     * @return array<string, mixed>
+     */
+    public function manifest(Business $business): array
+    {
+        $icon = $this->logoFor($business, 'mobile') ?? $business->logoUrl() ?? $business->faviconUrl();
+        $type = match (strtolower(pathinfo((string) $icon, PATHINFO_EXTENSION))) {
+            'svg' => 'image/svg+xml', 'jpg', 'jpeg' => 'image/jpeg', 'webp' => 'image/webp', default => 'image/png',
+        };
+
+        return [
+            'name' => $business->companyName(),
+            'short_name' => $this->detail($business, 'short_name') ?? mb_substr($business->companyName(), 0, 12),
+            'start_url' => route('staff.home', [], false),
+            'scope' => '/app/',
+            'display' => 'standalone',
+            'theme_color' => $business->brandColor(),
+            'background_color' => app(ThemeService::class)->tokens($business)['page'],
+            'icons' => $icon ? [['src' => url($icon), 'sizes' => 'any', 'type' => $type, 'purpose' => 'any']] : [],
+        ];
+    }
+
+    /** Does this business's package include the extra (App\Support\Entitlements\Capabilities)? */
+    public function capable(Business $business, string $capability): bool
+    {
+        return $business->exists && app(Entitlements::class)->allowsCapability($business, $capability);
+    }
+
+    /** The business's custom CSS for app pages, when its plan and the platform allow it. */
+    public function customCss(Business $business): ?string
+    {
+        if (System::getProperty('allow_custom_css', '1') === '0' || ! $this->capable($business, 'branding.custom_css')) {
+            return null;
+        }
+
+        return $this->theme($business)['custom_css'] ?? null;
+    }
+
     /** Layout & typography for this business's pages (draft while previewing). */
     public function layout(Business $business): ThemeLayout
     {
@@ -263,7 +323,60 @@ class BrandingService extends BaseService
     public function font(Business $business): string
     {
         // Before the first business exists, pages show an unsaved stand-in.
-        return $business->exists ? Fonts::normalise($this->settings->get('branding.font', null, $business)) : Fonts::DEFAULT;
+        if (! $business->exists) {
+            Fonts::useCustom(null);
+
+            return Fonts::DEFAULT;
+        }
+
+        // Its own uploaded font, when there is one and its plan includes it.
+        $custom = $this->customFont($business);
+        Fonts::useCustom($custom && $this->capable($business, 'branding.fonts') ? [
+            'name' => $custom['name'],
+            'woff2' => asset('storage/'.$custom['woff2']),
+            'ttf' => $custom['ttf'] ? Storage::disk('public')->path($custom['ttf']) : null,
+        ] : null);
+
+        return Fonts::normalise($this->settings->get('branding.font', null, $business));
+    }
+
+    /** @return array{name: string, woff2: string, ttf: ?string}|null */
+    public function customFont(Business $business): ?array
+    {
+        $font = $business->exists ? $this->settings->get('branding.custom_font', null, $business) : null;
+
+        return is_array($font) && isset($font['name'], $font['woff2']) ? $font + ['ttf' => null] : null;
+    }
+
+    /**
+     * Upload (or remove) the business's own font: woff2 for screens, TTF
+     * (optional) so PDFs use it too. The licence must allow embedding.
+     */
+    public function saveCustomFont(Business $business, ?string $name, ?UploadedFile $woff2, ?UploadedFile $ttf, bool $remove): array
+    {
+        $current = $this->customFont($business);
+
+        if ($remove || $woff2) {
+            foreach (array_filter([$current['woff2'] ?? null, $current['ttf'] ?? null]) as $path) {
+                UploadLibrary::delete($path, 'public');
+            }
+            $this->settings->forget('branding.custom_font', $business);
+            if ($this->settings->get('branding.font', null, $business) === 'custom' && ! $woff2) {
+                $this->settings->forget('branding.font', $business);
+            }
+        }
+
+        if ($woff2) {
+            $this->settings->set('branding.custom_font', [
+                'name' => trim((string) $name) ?: 'Custom',
+                'woff2' => $woff2->storeAs('branding/fonts', Str::uuid().'.woff2', 'public'),
+                'ttf' => $ttf?->storeAs('branding/fonts', Str::uuid().'.ttf', 'public'),
+            ], $business);
+        } elseif ($current && ! $remove && $name !== null && trim($name) !== '' && trim($name) !== $current['name']) {
+            $this->settings->set('branding.custom_font', ['name' => trim($name)] + $current, $business);
+        }
+
+        return $this->success($business, __('body.branding_saved'));
     }
 
     /**

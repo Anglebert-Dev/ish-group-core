@@ -193,7 +193,7 @@
             </div>
         @endif
 
-        @if (in_array($tab, ['theme', 'layout', 'dashboard', 'menu'], true))
+        @if (in_array($tab, ['theme', 'layout', 'dashboard', 'menu', 'advanced'], true))
             <div class="grid gap-6 2xl:grid-cols-2 items-start">
                 <div class="min-w-0">
         @endif
@@ -577,7 +577,57 @@
             </script>
         @endif
 
-        @if (in_array($tab, ['theme', 'layout', 'dashboard', 'menu'], true))
+        @if ($tab === 'advanced')
+            @php $locked = fn () => '<div class="rounded-xl border border-line bg-surface p-4 text-sm"><p class="font-semibold text-ink">'.e(__('body.not_in_plan')).'</p><p class="text-muted">'.e(__('body.not_in_plan_hint')).'</p></div>'; @endphp
+            <div class="space-y-6">
+                <div class="bg-card border border-line rounded-xl p-4 sm:p-6 space-y-3">
+                    <p class="text-sm font-bold text-ink">{{ __('body.css_title') }}</p>
+                    <p class="text-xs text-muted">{{ __('body.css_hint') }}</p>
+                    @if (! $advanced['cssAllowed'])
+                        {!! $locked() !!}
+                    @elseif ($advanced['cssPlatformOff'])
+                        <p class="text-sm text-warning">{{ __('body.css_platform_off') }}</p>
+                    @else
+                        <x-common.textarea name="custom_css" :label="__('body.css_label')" :value="old('custom_css', $advanced['css'])" :rows="10" class="font-mono" placeholder=".page-subtitle { font-style: italic; }" />
+                    @endif
+                </div>
+
+                <div class="bg-card border border-line rounded-xl p-4 sm:p-6 space-y-3">
+                    <p class="text-sm font-bold text-ink">{{ __('body.font_upload_title') }}</p>
+                    <p class="text-xs text-muted">{{ __('body.font_upload_hint') }}</p>
+                    @if (! $advanced['fontsAllowed'])
+                        {!! $locked() !!}
+                    @else
+                        @if ($advanced['font'])
+                            <p class="text-sm text-body">{{ __('body.font_current', ['name' => $advanced['font']['name']]) }} @if (! $advanced['font']['ttf']) <span class="text-muted">· {{ __('body.font_no_ttf') }}</span> @endif</p>
+                            <x-common.checkbox name="remove_font" value="1" inline :label="__('body.brand_remove')" />
+                        @endif
+                        <x-common.input name="font_name" :label="__('body.font_name')" :value="old('font_name', $advanced['font']['name'] ?? '')" maxlength="40" />
+                        <div class="grid sm:grid-cols-2 gap-4">
+                            <x-common.input type="file" name="font_woff2" :label="__('body.font_woff2')" accept=".woff2" />
+                            <x-common.input type="file" name="font_ttf" :label="__('body.font_ttf')" accept=".ttf" :hint="__('body.font_ttf_hint')" />
+                        </div>
+                        <x-common.checkbox name="font_licence" value="1" :label="__('body.font_licence')" />
+                    @endif
+                </div>
+
+                <div class="bg-card border border-line rounded-xl p-4 sm:p-6 space-y-3">
+                    <p class="text-sm font-bold text-ink">{{ __('body.words_title') }}</p>
+                    <p class="text-xs text-muted">{{ __('body.words_hint') }}</p>
+                    @if (! $advanced['wordsAllowed'])
+                        {!! $locked() !!}
+                    @else
+                        <div class="grid sm:grid-cols-2 gap-3">
+                            @foreach ($advanced['terms'] as $key => $word)
+                                <x-common.input :name="'words['.$key.']'" :label="$word" :value="old('words.'.$key, $advanced['words'][$key] ?? '')" :placeholder="$word" maxlength="40" />
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            </div>
+        @endif
+
+        @if (in_array($tab, ['theme', 'layout', 'dashboard', 'menu', 'advanced'], true))
                 </div>
                 @include('app.settings.studio.panel')
             </div>

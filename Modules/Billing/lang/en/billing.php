@@ -360,4 +360,8 @@ return [
     'amount' => 'Amount',
     'watermark_paid' => 'PAID',
     'watermark_void' => 'VOID',
+
+    // Capabilities (docs/branding.md §2.6)
+    'capabilities_included' => 'Extras included',
+    'capabilities_included_hint' => 'Advanced branding a business on this package may use. Unticked: shown as "Not in your plan".',
 ];

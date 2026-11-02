@@ -25,6 +25,11 @@ class UnlimitedEntitlements implements Entitlements
         return null;
     }
 
+    public function allowsCapability(Business $business, string $key): bool
+    {
+        return true;
+    }
+
     public function upgradeUrl(): ?string
     {
         return null;

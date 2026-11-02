@@ -40,6 +40,20 @@ final class Fonts
 
     private const WEIGHTS = [400, 500, 600, 700];
 
+    /**
+     * The business's own uploaded font for this request, if it uses one
+     * (key "custom"; set by BrandingService::font()).
+     *
+     * @var array{name: string, woff2: string, ttf: ?string}|null
+     */
+    private static ?array $custom = null;
+
+    /** @param  array{name: string, woff2: string, ttf: ?string}|null  $font  woff2 = public URL, ttf = local file */
+    public static function useCustom(?array $font): void
+    {
+        self::$custom = $font;
+    }
+
     private const FALLBACK = [
         'sans' => 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
         'serif' => 'Georgia, Cambria, "Times New Roman", Times, serif',
@@ -50,6 +64,9 @@ final class Fonts
 
     public static function normalise(?string $key): string
     {
+        if ($key === 'custom' && self::$custom) {
+            return 'custom';
+        }
         $key = self::LEGACY[$key] ?? $key;
 
         return isset(self::LIST[$key]) ? $key : self::DEFAULT;
@@ -58,18 +75,23 @@ final class Fonts
     /** @return array<string, string> key => label */
     public static function options(): array
     {
-        return array_map(fn (array $font) => $font['label'], self::LIST);
+        return array_map(fn (array $font) => $font['label'], self::LIST) + (self::$custom ? ['custom' => self::$custom['name']] : []);
     }
 
     /** The font's real name (for Excel and email), null for the system font. */
     public static function family(string $key): ?string
     {
-        return self::LIST[self::normalise($key)]['family'];
+        $key = self::normalise($key);
+
+        return $key === 'custom' ? self::$custom['name'] : self::LIST[$key]['family'];
     }
 
     /** CSS font stack for screens and emails. */
     public static function stack(string $key): string
     {
+        if (self::normalise($key) === 'custom') {
+            return '"'.self::FAMILY.'", '.self::FALLBACK['sans'];
+        }
         $font = self::LIST[self::normalise($key)];
 
         return ($font['family'] ? '"'.self::FAMILY.'", "'.$font['family'].'", ' : '').self::FALLBACK[$font['kind']];
@@ -79,6 +101,9 @@ final class Fonts
     public static function pdfStack(string $key): string
     {
         $key = self::normalise($key);
+        if ($key === 'custom') {
+            return (self::$custom['ttf'] ? '"'.self::pdfFamily('custom').'", ' : '').self::PDF_FALLBACK['sans'];
+        }
 
         return (self::LIST[$key]['family'] ? '"'.self::pdfFamily($key).'", ' : '').self::PDF_FALLBACK[self::LIST[$key]['kind']];
     }
@@ -87,6 +112,9 @@ final class Fonts
     public static function faceCss(string $key): string
     {
         $key = self::normalise($key);
+        if ($key === 'custom') {
+            return '@font-face{font-family:"'.self::FAMILY.'";font-style:normal;font-weight:100 900;font-display:swap;src:url("'.self::$custom['woff2'].'") format("woff2");}';
+        }
         if (! self::LIST[$key]['family']) {
             return '';
         }
@@ -128,7 +156,7 @@ final class Fonts
     /** @return array<string, string> key => CSS stack using the preview names */
     public static function previewStacks(): array
     {
-        $stacks = [];
+        $stacks = self::$custom ? ['custom' => '"'.self::FAMILY.'", '.self::FALLBACK['sans']] : [];
         foreach (self::LIST as $key => $font) {
             $stacks[$key] = ($font['family'] ? '"Preview-'.$key.'", ' : '').self::FALLBACK[$font['kind']];
         }
@@ -140,6 +168,9 @@ final class Fonts
     public static function pdfFaceCss(string $key): string
     {
         $key = self::normalise($key);
+        if ($key === 'custom') {
+            return self::$custom['ttf'] ? '@font-face{font-family:"'.self::pdfFamily('custom').'";font-style:normal;font-weight:normal;src:url("'.self::$custom['ttf'].'") format("truetype");}' : '';
+        }
         if (! self::LIST[$key]['family']) {
             return '';
         }

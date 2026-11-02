@@ -961,6 +961,8 @@ return [
 
     // Branding → Emails (docs/branding.md §3.10)
     'brand_tab_emails' => 'Emails',
+    'allow_custom_css' => 'Businesses may add custom CSS',
+    'allow_custom_css_hint' => 'Branding → Advanced. Off: no business\'s custom CSS is used, whatever its package.',
     'emails_hint' => 'How every email from your business looks: invoices, password resets, invitations, notifications. Saved straight away; the preview shows your changes as you type.',
     'emails_header_color' => 'Header colour',
     'emails_header_color_hint' => 'Blank: your brand colour. Text and logo on it adjust to stay readable (the logo for dark backgrounds is used on a dark header).',
@@ -995,6 +997,36 @@ return [
     'brand_app_footer' => 'Footer text',
     'brand_copyright' => 'Copyright line',
     'help_support' => 'Help & support',
+
+    // Branding → Advanced (docs/branding.md §3.13, 3.17)
+    'brand_tab_advanced' => 'Advanced',
+    'advanced_saved' => 'Saved. Custom CSS goes into the theme draft: preview it, then publish.',
+    'css_title' => 'Custom CSS',
+    'css_hint' => 'For fine touches the other tabs do not cover. It applies inside the page content only (not the menu, top bar or sign-in pages). Not allowed: @import, url(), scripts, HTML and fixed positioning. Up to 20 KB. Saved into the theme draft, so preview it before publishing.',
+    'css_label' => 'CSS',
+    'css_platform_off' => 'Custom CSS is switched off on this platform.',
+    'css_too_long' => 'Custom CSS can be up to :max KB.',
+    'css_forbidden' => 'Not allowed in custom CSS: :what.',
+    'css_unbalanced' => 'Every { needs a matching }.',
+    'font_upload_title' => 'Your own font',
+    'font_upload_hint' => 'Upload a font your business owns or licenses. Once uploaded, pick it on Look → Font.',
+    'font_current' => 'Current: :name',
+    'font_no_ttf' => 'Printed documents use a standard font (add a TTF file for them to match).',
+    'font_name' => 'Font name',
+    'font_woff2' => 'Font file for screens (.woff2)',
+    'font_ttf' => 'Same font for documents (.ttf, optional)',
+    'font_ttf_hint' => 'PDFs can only use TTF files.',
+    'font_licence' => 'Our licence allows using and embedding this font in our app and documents.',
+    'font_licence_required' => 'Confirm that your licence allows using this font.',
+    'words_title' => 'Your own words',
+    'words_hint' => 'Rename words across the app, e.g. "Customers" to "Clients" or "Work orders" to "Job cards". Blank keeps the usual word. Printed legal wording is not affected.',
+
+    // Capabilities (packages)
+    'capability_custom_css' => 'Branding: custom CSS',
+    'capability_fonts' => 'Branding: upload your own font',
+    'capability_terminology' => 'Branding: rename words in the app',
+    'not_in_plan' => 'Not in your plan',
+    'not_in_plan_hint' => 'Your package does not include this. Ask your provider to add it.',
 
     // Error pages (docs/branding.md §3.17)
     'error_home' => 'Back to the start',

@@ -8,6 +8,14 @@
 <title>{{ $pageTitle }}</title>
 <link rel="icon" href="{{ $favicon }}">
 <link rel="apple-touch-icon" href="{{ $favicon }}">
+@if ($branding->exists)
+    {{-- Add to home screen: the business's name, icon and colour. --}}
+    <link rel="manifest" href="{{ route('manifest') }}">
+    <meta name="theme-color" content="{{ $branding->brandColor() }}">
+    <meta name="application-name" content="{{ $name }}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="{{ app(\App\Services\Branding\BrandingService::class)->detail($branding, 'short_name') ?? $name }}">
+@endif
 <link rel="stylesheet" href="{{ asset('css/responsive.css') }}{{ file_exists(public_path('css/responsive.css')) ? '?v='.filemtime(public_path('css/responsive.css')) : '' }}">
 <x-common.brand-font />
 <link rel="stylesheet" href="{{ asset('css/theme.css') }}{{ file_exists(public_path('css/theme.css')) ? '?v='.filemtime(public_path('css/theme.css')) : '' }}">

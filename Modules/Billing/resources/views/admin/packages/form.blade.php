@@ -33,6 +33,17 @@
         <x-common.textarea name="features" :label="__('billing::billing.features')" :value="old('features', implode(PHP_EOL, $package->features ?? []))" :rows="4" :hint="__('billing::billing.features_hint')" />
 
         <div>
+            <p class="text-sm font-semibold text-ink mb-1">{{ __('billing::billing.capabilities_included') }}</p>
+            <p class="text-sm text-muted mb-3">{{ __('billing::billing.capabilities_included_hint') }}</p>
+            @php $selectedCapabilities = old('capabilities', $package->capabilities ?? array_keys(\App\Support\Entitlements\Capabilities::LIST)); @endphp
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                @foreach (\App\Support\Entitlements\Capabilities::options() as $key => $label)
+                    <x-common.checkbox name="capabilities[]" :value="$key" :label="$label" :checked="in_array($key, $selectedCapabilities, true)" />
+                @endforeach
+            </div>
+        </div>
+
+        <div>
             <p class="text-sm font-semibold text-ink mb-1">{{ __('billing::billing.modules_included') }}</p>
             <p class="text-sm text-muted mb-3">{{ __('billing::billing.modules_included_hint') }}</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">

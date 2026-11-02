@@ -1,6 +1,6 @@
 # Branding & Appearance: Plan
 
-Created: 02/11/2026. Status: **B0–B8 done (02/11/2026).** Update §8 after each phase, so work can pick up where it stopped.
+Created: 02/11/2026. Status: **B0–B8 and B10 done (02/11/2026); B9 (QA) next.** Update §8 after each phase, so work can pick up where it stopped.
 
 This takes the full "Branding & Appearance Module" requirements and sets out, section by section, **what we already have**, **what we build**, and **what we leave out and why**. Printing and document branding are already built (`docs/branding-print-build-guide.md`); this plan builds on them.
 
@@ -341,6 +341,20 @@ Off by default. Needs package feature `branding.custom_css` and permission `publ
 - **Support & footer** (Business details): support email and phone, help page link, footer text, copyright line. A footer shows at the bottom of every app page when something is set, and "Help & support" appears in the user menu when there is a help link.
 - **Left out:** custom empty-state text per page (empty states already use the theme's colours).
 
+**B10 notes:**
+- **Package extras** (`App\Support\Entitlements\Capabilities`): `Entitlements::allowsCapability()`. Unlimited (no Billing) means everything; with Billing, the package's `capabilities` (Billing 1.1.0, copied into the subscription snapshot) decide, and the platform's own business always may. Packages made before capabilities existed list none, so everything stays allowed and nothing is taken from current customers. Package form: "Extras included" checkboxes. Locked parts say "Not in your plan".
+- **Custom CSS** (`branding.custom_css`):
+  - stored in the theme document, so drafted, previewed in the studio, published (approve permission) and kept in History
+  - `CssSanitizer` **rebuilds** it: comments dropped; `@import`, `@charset`, `@namespace`, `@font-face`, `url()`, `expression()`, `javascript:`, behaviours, HTML and backslash escapes refused
+  - every selector is scoped to `.app-content` (siblings can't reach outside); `position: fixed` dropped; 20 KB limit
+  - cleaned again whenever read (scoping is idempotent); rendered only on app pages, never on sign-in pages
+  - platform switch: Super Admin → Settings → "Businesses may add custom CSS"
+- **Own font** (`branding.fonts`): one per business, a woff2 for screens plus an optional TTF for PDFs, with a licence confirmation. Picked as "custom" on Look → Font (`Fonts::useCustom()` per request).
+- **Own words** (`branding.terminology`): core terms (dashboard, customers, users, roles) and every module's menu label, except settings and never-sold platform modules. Applied by `SetLocale` with `Terminology::apply()`, which loads the whole group before adding lines. Legal printed wording isn't in the list.
+- **Home-screen app:** `/manifest.webmanifest` (name, short name, icon = phone logo → logo → favicon, theme and background colours), plus `theme-color` and Apple web-app tags.
+- **Left out:** custom domains (DNS, SSL, routing: its own project), loading screens, sounds, QR logos.
+- **Run** `php artisan core:module update Billing` on servers with Billing (new `capabilities` column).
+
 ## 4. What the B1 clean-up involves
 
 **B1 notes:**
@@ -423,4 +437,4 @@ For each phase:
 | B7 | Emails: header, footer, signature, contacts, sender name/Reply-To, every mail on the template, previews | P2 | ✅ 02/11/2026 |
 | B8 | Documents extras, branded error pages, footer/copyright/support links, date and number formats | P2 | ✅ 02/11/2026 |
 | B9 | QA: every module page at three widths, light and dark, with presets; README | P2 | ☐ |
-| B10 | Advanced: custom CSS (sanitised, scoped), uploaded fonts, terminology, PWA manifest | P3 | ☐ |
+| B10 | Advanced: custom CSS (sanitised, scoped), uploaded fonts, terminology, PWA manifest | P3 | ✅ 02/11/2026 |

@@ -23,6 +23,7 @@ use App\Http\Controllers\Web\SuperAdmin\SuperAdminDashboardController;
 use App\Http\Controllers\Web\SuperAdmin\UpdateController;
 use App\Http\Controllers\Web\User\UserController;
 use App\Services\Branding\BrandingService;
+use App\Services\Setting\SettingService;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -33,6 +34,12 @@ use Illuminate\Support\Facades\Route;
 | public landing page through its landing_page() hook.
 */
 Route::get('/', LandingController::class)->name('home');
+// Home-screen app for the signed-in (or remembered) business: name, icon, colours.
+Route::get('/manifest.webmanifest', fn () => response()->json(
+    app(BrandingService::class)->manifest(app(SettingService::class)->current()),
+    200, ['Content-Type' => 'application/manifest+json'], JSON_UNESCAPED_SLASHES,
+))->name('manifest');
+
 // Language switcher: staff (saved on the user) and guests (session).
 Route::post('/locale', [LocaleController::class, 'update'])->middleware('throttle:30,1')->name('locale.update');
 

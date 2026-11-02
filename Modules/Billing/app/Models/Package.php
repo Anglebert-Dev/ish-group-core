@@ -14,7 +14,7 @@ class Package extends BaseModel
 
     protected $fillable = [
         'name', 'description', 'price', 'interval', 'interval_count', 'trial_days',
-        'modules', 'limits', 'features', 'is_active', 'is_private', 'business_ids',
+        'modules', 'limits', 'features', 'capabilities', 'is_active', 'is_private', 'business_ids',
         'once_per_business', 'is_popular', 'sort_order',
     ];
 
@@ -28,6 +28,7 @@ class Package extends BaseModel
             'modules' => 'array',
             'limits' => 'array',
             'features' => 'array',
+            'capabilities' => 'array',
             'is_active' => 'boolean',
             'is_private' => 'boolean',
             'business_ids' => 'array',
@@ -94,6 +95,8 @@ class Package extends BaseModel
             'interval_count' => $this->interval_count,
             'modules' => array_values($this->modules ?? []),
             'limits' => $this->limits ?? [],
+            // Null on packages made before capabilities: everything allowed.
+            'capabilities' => $this->capabilities,
         ];
     }
 }

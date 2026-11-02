@@ -31,6 +31,8 @@
                             :description="__('body.allow_registration_hint')" :checked="$settings['allow_registration'] === '1'" />
                         <x-common.checkbox name="default_business_active_status" :label="__('body.default_business_active_status')"
                             :description="__('body.default_business_active_status_hint')" :checked="$settings['default_business_active_status'] === '1'" />
+                        <x-common.checkbox name="allow_custom_css" :label="__('body.allow_custom_css')"
+                            :description="__('body.allow_custom_css_hint')" :checked="$settings['allow_custom_css'] === '1'" />
                     </div>
                     <x-common.button type="submit">{{ __('body.update') }}</x-common.button>
                 </form>

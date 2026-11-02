@@ -2,17 +2,18 @@
 
 namespace App\Services\SuperAdmin;
 
+use App\Contracts\Entitlements;
 use App\Enums\ActivityLogAction;
 use App\Enums\ActivityLogStatus;
+use App\Libraries\GeneralLibrary;
+use App\Libraries\ListExport;
 use App\Models\ActivityLog\ActivityLog;
 use App\Models\Business\Business;
-use App\Models\System\System;
 use App\Models\Role\Role;
+use App\Models\System\System;
 use App\Models\User;
 use App\Repositories\Business\BusinessRepository;
 use App\Repositories\User\UserRepository;
-use App\Libraries\GeneralLibrary;
-use App\Libraries\ListExport;
 use App\Services\BaseService;
 use App\Services\Module\ModuleManager;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -32,14 +33,15 @@ class PlatformService extends BaseService
     public const SETTINGS = [
         'allow_registration' => '0',
         'default_business_active_status' => '1',
+        // Businesses may add custom CSS (Branding → Advanced); off = ignored everywhere.
+        'allow_custom_css' => '1',
     ];
 
     public function __construct(
         protected BusinessRepository $businesses,
         protected UserRepository $users,
         protected ModuleManager $modules,
-    ) {
-    }
+    ) {}
 
     public function overview(): array
     {
@@ -140,7 +142,7 @@ class PlatformService extends BaseService
      */
     public function updateEnabledModules(Business $business, array $modules): array
     {
-        if (app(\App\Contracts\Entitlements::class)->controlsModules()) {
+        if (app(Entitlements::class)->controlsModules()) {
             return $this->failure(__('body.business_modules_from_package'));
         }
 
@@ -267,5 +269,4 @@ class PlatformService extends BaseService
 
         return $this->success(null, __('body.settings_updated'));
     }
-
 }

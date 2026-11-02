@@ -16,6 +16,7 @@ class UpdatePlatformSettingsRequest extends FormRequest
         return [
             'allow_registration' => ['boolean'],
             'default_business_active_status' => ['boolean'],
+            'allow_custom_css' => ['boolean'],
         ];
     }
 }
