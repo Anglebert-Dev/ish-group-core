@@ -27,7 +27,31 @@ class ThemeService extends BaseService
     /** Session flag: this user is previewing their business's draft. */
     public const PREVIEW = 'branding.preview';
 
+    /**
+     * Unsaved choices from the studio, for this request only (business id =>
+     * sections). Set by the ThemeStudio middleware for people who may edit.
+     *
+     * @var array<int, array<string, mixed>>
+     */
+    private array $studio = [];
+
     public function __construct(protected SettingService $settings) {}
+
+    /** @param  array<string, mixed>  $sections  each one replaces the draft's */
+    public function useStudio(int $businessId, array $sections): void
+    {
+        $this->studio[$businessId] = $sections;
+    }
+
+    public function clearStudio(): void
+    {
+        $this->studio = [];
+    }
+
+    public function inStudio(Business $business): bool
+    {
+        return isset($this->studio[$business->id]);
+    }
 
     /**
      * @return array<string, mixed>
@@ -47,7 +71,14 @@ class ThemeService extends BaseService
             }
         }
 
-        return ThemeSchema::clean(array_replace_recursive([], ...$layers ?: [[]]));
+        $theme = ThemeSchema::clean(array_replace_recursive([], ...$layers ?: [[]]));
+
+        // The studio's form, as typed: whole sections, so a cleared field means "default".
+        if ($withDraft && $business->exists && isset($this->studio[$business->id])) {
+            $theme = ThemeSchema::clean(array_replace($theme, ThemeSchema::clean($this->studio[$business->id])));
+        }
+
+        return $theme;
     }
 
     /**
@@ -86,6 +117,11 @@ class ThemeService extends BaseService
         $mode = $this->mode($business, $withDraft);
         if ($user && $this->allowsUserMode($business, $withDraft) && in_array($user->appearance, ThemeTokens::MODES, true)) {
             $mode = $user->appearance;
+        }
+        // The studio's light/dark switch.
+        $forced = $withDraft ? ($this->studio[$business->id]['_appearance'] ?? null) : null;
+        if (in_array($forced, ['light', 'dark'], true)) {
+            $mode = $forced;
         }
 
         return ThemeTokens::css(

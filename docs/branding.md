@@ -1,6 +1,6 @@
 # Branding & Appearance: Plan
 
-Created: 02/11/2026. Status: **B0, B1 and B2 done (02/11/2026).** Update §8 after each phase, so work can pick up where it stopped.
+Created: 02/11/2026. Status: **B0–B4 done (02/11/2026).** Update §8 after each phase, so work can pick up where it stopped.
 
 This takes the full "Branding & Appearance Module" requirements and sets out, section by section, **what we already have**, **what we build**, and **what we leave out and why**. Printing and document branding are already built (`docs/branding-print-build-guide.md`); this plan builds on them.
 
@@ -286,6 +286,20 @@ Off by default. Needs package feature `branding.custom_css` and permission `publ
 - **Found:** the products table on order and invoice pages scrolls sideways at 1280px in both modes (an existing layout limit). To fix in B3 (content width).
 - **Run `php artisan migrate`** after pulling (`users.appearance`).
 
+**B3 notes:**
+- **Where it lives:** `ThemeSchema::LAYOUT` (11 choices; the first value of each is today's look) and `ThemeSchema::SWITCHES` (page subtitles, back-to-top, animations, loading bar), plus `heading_font`. All are part of the theme document, so they're drafted, previewed, published and kept in History.
+- **How it reaches views:** `ThemeLayout` writes CSS variables (`--sidebar-w-open`, `--header-h`, `--content-max`, `--radius-md/lg/xl/2xl`, `--radius-button`, `--font-heading`, `--line-height`, root font size) and `data-density`, `data-cards`, `data-sidebar`, `data-sidebar-start`, `data-motion` and `data-subtitles` on `<html>`. A small static file, `public/css/theme.css`, reads them.
+  - Tailwind's `rounded-*` sizes map to the radius variables, so "corners" changes every card, field and badge.
+  - `rounded-button` is used by `x-common.button` and the login and auth buttons.
+- **Menu:** collapses to icons on large screens (button at the bottom of the menu). Each person's choice is kept in their browser; the business sets the starting state. Styles: solid, minimal (no lines) or floating card.
+- **Fixed on the way:** `responsive.css` pinned the menu to 16rem by id, so it now uses `--sidebar-w`. With a narrow or collapsed menu, the order and invoice product tables fit at 1280px (the issue noted in B2).
+- **Left out:** breadcrumbs, because the app has none.
+
+**B4 notes:**
+- **Live preview** on the Theme and Layout tabs: page (dashboard, a list, a form, buttons/fields/alerts, login, email, printed document), phone, tablet or desktop, light or dark. It updates as you type, before saving.
+- **How:** the frame's page carries the unsaved form in `?studio=` (base64 JSON). The `ThemeStudio` middleware hands it to `ThemeService::useStudio()` only for someone with `update settings.setting`, only for their own business, and only for that request. `ThemeService` is now **scoped** and cleared at the start of each request, so nothing can carry over. Nothing is saved, and bad input is cleaned like any theme.
+- **Studio pages:** `settings.studio.components` (one of everything), `settings.studio.login`, `settings.studio.email`. The preview banner is hidden inside the frame.
+
 ## 4. What the B1 clean-up involves
 
 **B1 notes:**
@@ -361,8 +375,8 @@ For each phase:
 | B0 | System font: one font choice for the whole system (app, login, emails, error pages, website, PDF), bundled font files, dompdf registration | P0 | ✅ 02/11/2026 |
 | B1 | Foundation: theme document + `ThemeSchema`, versions (draft/publish/restore/reset), tokens + compiler + cache, platform defaults, fallbacks; identity extras (short name, slogan, description, login and mobile logos); **move all views and components onto tokens** + raw-colour guard. Package features moved to B10. | P0 | ✅ 02/11/2026 |
 | B2 | Colours & themes: full palette, picker/HEX/RGB/HSL, palettes, contrast check + suggestions, dark and system mode, user override, chart palette | P0 | ✅ 02/11/2026 |
-| B3 | Layout & typography: sidebar, header, density, content width, cards, corners, buttons, switches (breadcrumbs, titles, footer, back-to-top, transitions); fonts and type scale | P0 | ☐ |
-| B4 | Studio: live preview with devices, pages, light/dark; history screen | P0 | ☐ |
+| B3 | Layout & typography: sidebar, header, density, content width, cards, corners, buttons, switches (breadcrumbs, titles, footer, back-to-top, transitions); fonts and type scale | P0 | ✅ 02/11/2026 |
+| B4 | Studio: live preview with devices, pages, light/dark; history screen | P0 | ✅ 02/11/2026 |
 | B5 | Login & authentication branding, business login link | P1 | ☐ |
 | B6 | Dashboard (welcome, banner, widgets, per role), navigation overrides, landing page, announcement banner, presets | P1 | ☐ |
 | B7 | Emails: header, footer, signature, contacts, sender name/Reply-To, every mail on the template, previews | P2 | ☐ |

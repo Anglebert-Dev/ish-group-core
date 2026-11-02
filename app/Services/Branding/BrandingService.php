@@ -149,7 +149,7 @@ class BrandingService extends BaseService
         $user = auth('staff')->user();
 
         return $business->exists && $user && $user->business_id === $business->id
-            && session(ThemeService::PREVIEW) === $business->id
+            && (session(ThemeService::PREVIEW) === $business->id || app(ThemeService::class)->inStudio($business))
             && AuthHelper::can('update settings.setting');
     }
 

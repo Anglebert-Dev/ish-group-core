@@ -6,20 +6,21 @@ use App\Contracts\Entitlements;
 use App\Listeners\AuditAuthEvents;
 use App\Models\Business\Business;
 use App\Models\User;
-use App\Support\Mail\BrandedMail;
+use App\Services\Branding\ThemeService;
 use App\Services\Module\ModuleManager;
 use App\Services\Notification\NotificationService;
 use App\Services\Setting\SettingService;
-use App\Support\Installer\Installer;
-use App\Support\Menu\AdminMenu;
 use App\Support\Entitlements\Quota;
 use App\Support\Entitlements\UnlimitedEntitlements;
+use App\Support\Installer\Installer;
+use App\Support\Mail\BrandedMail;
+use App\Support\Menu\AdminMenu;
 use App\Support\Settings\BusinessSettings;
 use App\Support\Tenancy\CurrentBusiness;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
-use Illuminate\Http\Request;
 use Illuminate\Foundation\Http\Events\RequestHandled;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -47,6 +48,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(CurrentBusiness::class);
         $this->app->scoped(ModuleManager::class);
         $this->app->scoped(BusinessSettings::class);
+        // Holds the studio's unsaved preview for one request only.
+        $this->app->scoped(ThemeService::class);
 
         // A billing module rebinds Entitlements; Quota counters are global.
         $this->app->bindIf(Entitlements::class, UnlimitedEntitlements::class);

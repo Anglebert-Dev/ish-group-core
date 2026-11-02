@@ -1,5 +1,6 @@
 {{-- Shown while this user previews their business's unpublished branding (docs/branding.md §3.15). --}}
-@if (isset($branding) && app(\App\Services\Branding\BrandingService::class)->previewing($branding))
+{{-- Not inside the studio's own preview frame: there it would only get in the way. --}}
+@if (isset($branding) && app(\App\Services\Branding\BrandingService::class)->previewing($branding) && ! app(\App\Services\Branding\ThemeService::class)->inStudio($branding))
     <div class="sticky top-0 z-30 bg-night text-white">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 sm:px-5 lg:px-8 py-2 text-sm">
             <p class="font-medium">{{ __('body.theme_previewing') }}</p>

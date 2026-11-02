@@ -13,6 +13,7 @@ use App\Http\Middleware\PreventWhileImpersonating;
 use App\Http\Middleware\RedirectToInstaller;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
+use App\Http\Middleware\ThemeStudio;
 use App\Support\Installer\PreInstall;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -55,6 +56,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->appendToGroup('web', NormalizeFormattedAmounts::class);
         $middleware->appendToGroup('web', SetLocale::class);
+        $middleware->appendToGroup('web', ThemeStudio::class);
 
         $middleware->alias([
             'business.active' => EnsureBusinessActive::class,

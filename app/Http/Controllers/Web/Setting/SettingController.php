@@ -15,6 +15,7 @@ use App\Support\Branding\Fonts;
 use App\Support\Branding\ThemeSchema;
 use App\Support\Branding\ThemeTokens;
 use App\Support\Locale\Locales;
+use App\Support\Mail\BrandedMail;
 use App\Support\Printing\PrintDesign;
 use App\Support\Printing\PrintRegistry;
 use App\Support\Printing\SampleDocument;
@@ -178,6 +179,26 @@ class SettingController extends Controller
             'mode' => $data['mode'] ?? null,
             'user_mode' => $request->has('user_mode') ? $request->boolean('user_mode') : null,
         ], fn ($value) => $value !== null));
+    }
+
+    /** Studio preview: one of every component. */
+    public function studioComponents(): View
+    {
+        return view('app.settings.studio.components');
+    }
+
+    /** Studio preview: the login page as this business's staff see it. */
+    public function studioLogin(): Response
+    {
+        return response(view('auth.login', ['registrationIsOpen' => false, 'isFirstRegistration' => false])->render());
+    }
+
+    /** Studio preview: a sample email. */
+    public function studioEmail(): Response
+    {
+        $business = $this->settings->current();
+
+        return response((string) BrandedMail::make($business, __('body.studio_email_subject'), [__('body.studio_email_line')], __('body.view'), url('/'))->render());
     }
 
     private function saveLayout(Request $request, Business $business): array

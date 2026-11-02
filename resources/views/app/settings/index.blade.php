@@ -174,6 +174,11 @@
             </div>
         @endif
 
+        @if (in_array($tab, ['theme', 'layout'], true))
+            <div class="grid gap-6 2xl:grid-cols-2 items-start">
+                <div class="min-w-0">
+        @endif
+
         @if ($tab === 'theme')
             @php
                 $saved = ($draft ?? $live)?->payload ?? [];
@@ -318,6 +323,12 @@
                         <x-common.checkbox :name="'switches['.$switch.']'" value="1" :checked="(bool) old('switches.'.$switch, $themeLayout->on($switch))" :label="__('body.layout_switch_'.$switch)" />
                     @endforeach
                 </fieldset>
+            </div>
+        @endif
+
+        @if (in_array($tab, ['theme', 'layout'], true))
+                </div>
+                @include('app.settings.studio.panel')
             </div>
         @endif
 

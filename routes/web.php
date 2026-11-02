@@ -154,6 +154,11 @@ Route::prefix('app')->middleware(['auth:staff', 'auth.session', 'exclusive.porta
         Route::post('/preview', [SettingController::class, 'previewTheme'])->name('preview');
         Route::post('/preview/stop', [SettingController::class, 'stopPreview'])->name('preview.stop');
     });
+    Route::middleware('permission:update settings.setting')->prefix('settings/studio')->name('settings.studio.')->group(function () {
+        Route::get('/components', [SettingController::class, 'studioComponents'])->name('components');
+        Route::get('/login', [SettingController::class, 'studioLogin'])->name('login');
+        Route::get('/email', [SettingController::class, 'studioEmail'])->name('email');
+    });
     Route::post('/settings/theme/publish', [SettingController::class, 'publishTheme'])->middleware('permission:approve settings.setting')->name('settings.theme.publish');
     Route::get('/settings/image/{kind}', [SettingController::class, 'image'])->middleware('permission:list settings.setting')->whereIn('kind', ['stamp', 'signature'])->name('settings.image');
 
