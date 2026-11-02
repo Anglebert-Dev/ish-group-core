@@ -28,7 +28,7 @@ return [
     'status_hint' => 'A suspended site gets no updates.',
     'notes' => 'Notes',
     'modules' => 'Modules',
-    'modules_hint' => 'Modules a module needs are added with it.',
+    'modules_hint' => 'Tick what this customer gets. Anything a module can\'t work without comes with it automatically: for example, Quotations also brings Sales orders and Inventory. Modules they already have are not listed.',
     'site_created' => 'Site added.',
     'site_updated' => 'Site saved.',
     'last_check_in' => 'Last check-in',
