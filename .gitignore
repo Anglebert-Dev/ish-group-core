@@ -31,4 +31,5 @@ Thumbs.db
 /PROGRESS.md
 /docs/*
 !/docs/self-hosting-build-guide.md
+!/docs/branding-print-build-guide.md
 /modules_statuses.json
