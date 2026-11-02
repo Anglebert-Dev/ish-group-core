@@ -22,7 +22,7 @@
             <a href="{{ route('customer.password.request') }}" class="font-medium text-brand hover:text-brand-dark">{{ __('body.auth_forgot_password') }}</a>
         </div>
 
-        <button type="submit" class="w-full h-12 rounded-xl bg-brand hover:bg-brand-dark text-on-brand font-semibold text-[15px] transition-colors shadow-sm shadow-brand/25">
+        <button type="submit" class="w-full h-12 rounded-button bg-brand hover:bg-brand-dark text-on-brand font-semibold text-[15px] transition-colors shadow-sm shadow-brand/25">
             {{ __('body.auth_sign_in') }}
         </button>
     </form>
@@ -37,7 +37,8 @@
             @endif
             <p>
                 {{ __('body.auth_staff_member') }}
-                <a href="{{ route('staff.login') }}" class="font-semibold text-brand hover:text-brand-dark">{{ __('body.auth_login_as_staff') }}</a>
+                @php $staffHandle = app(\App\Services\Branding\BrandingService::class)->loginPage($branding)["handle"]; @endphp
+                <a href="{{ $staffHandle ? route('staff.business-login', $staffHandle) : route('staff.login') }}" class="font-semibold text-brand hover:text-brand-dark">{{ __('body.auth_login_as_staff') }}</a>
             </p>
         </div>
     </x-slot:footer>

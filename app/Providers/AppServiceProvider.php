@@ -10,6 +10,7 @@ use App\Services\Branding\ThemeService;
 use App\Services\Module\ModuleManager;
 use App\Services\Notification\NotificationService;
 use App\Services\Setting\SettingService;
+use App\Support\Branding\LoginBranding;
 use App\Support\Entitlements\Quota;
 use App\Support\Entitlements\UnlimitedEntitlements;
 use App\Support\Installer\Installer;
@@ -50,6 +51,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(BusinessSettings::class);
         // Holds the studio's unsaved preview for one request only.
         $this->app->scoped(ThemeService::class);
+        $this->app->scoped(LoginBranding::class);
 
         // A billing module rebinds Entitlements; Quota counters are global.
         $this->app->bindIf(Entitlements::class, UnlimitedEntitlements::class);

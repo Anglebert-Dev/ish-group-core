@@ -1,6 +1,6 @@
 # Branding & Appearance: Plan
 
-Created: 02/11/2026. Status: **B0–B4 done (02/11/2026).** Update §8 after each phase, so work can pick up where it stopped.
+Created: 02/11/2026. Status: **B0–B5 done (02/11/2026).** Update §8 after each phase, so work can pick up where it stopped.
 
 This takes the full "Branding & Appearance Module" requirements and sets out, section by section, **what we already have**, **what we build**, and **what we leave out and why**. Printing and document branding are already built (`docs/branding-print-build-guide.md`); this plan builds on them.
 
@@ -300,6 +300,11 @@ Off by default. Needs package feature `branding.custom_css` and permission `publ
 - **How:** the frame's page carries the unsaved form in `?studio=` (base64 JSON). The `ThemeStudio` middleware hands it to `ThemeService::useStudio()` only for someone with `update settings.setting`, only for their own business, and only for that request. `ThemeService` is now **scoped** and cleared at the start of each request, so nothing can carry over. Nothing is saved, and bad input is cleaned like any theme.
 - **Studio pages:** `settings.studio.components` (one of everything), `settings.studio.login`, `settings.studio.email`. The preview banner is hidden inside the frame.
 
+**B5 notes:**
+- **Which business:** `App\Support\Branding\LoginBranding` (scoped). `/app/login/{handle}` remembers the business in the session; a successful sign-in sets a one-year cookie, so plain `/app/login` keeps the brand on that device. `SettingService::current()` uses it **only** on the sign-in routes (login, two-step check, forgot and reset password); registration, pricing and the home page keep the platform brand. It's look only: signing in is unchanged, and a user of business B can still sign in through A's link.
+- **Login page tab** (saved immediately, audited per key): link name (unique, suggested from the business name), heading, welcome message, picture-panel text (else the slogan, with the description under it), panel image (else brand colours), text under the form, show contacts. A business's own login page hides "Create account" and "plans & pricing".
+- **The business website's** "staff login" link uses the business login link when there is one.
+
 ## 4. What the B1 clean-up involves
 
 **B1 notes:**
@@ -377,7 +382,7 @@ For each phase:
 | B2 | Colours & themes: full palette, picker/HEX/RGB/HSL, palettes, contrast check + suggestions, dark and system mode, user override, chart palette | P0 | ✅ 02/11/2026 |
 | B3 | Layout & typography: sidebar, header, density, content width, cards, corners, buttons, switches (breadcrumbs, titles, footer, back-to-top, transitions); fonts and type scale | P0 | ✅ 02/11/2026 |
 | B4 | Studio: live preview with devices, pages, light/dark; history screen | P0 | ✅ 02/11/2026 |
-| B5 | Login & authentication branding, business login link | P1 | ☐ |
+| B5 | Login & authentication branding, business login link | P1 | ✅ 02/11/2026 |
 | B6 | Dashboard (welcome, banner, widgets, per role), navigation overrides, landing page, announcement banner, presets | P1 | ☐ |
 | B7 | Emails: header, footer, signature, contacts, sender name/Reply-To, every mail on the template, previews | P2 | ☐ |
 | B8 | Documents extras, branded error pages, footer/copyright/support links, date and number formats | P2 | ☐ |

@@ -12,6 +12,7 @@ use App\Http\Requests\Auth\VerifyStaffMfaRequest;
 use App\Models\User;
 use App\Services\Auth\AuthService;
 use App\Services\Module\ModuleManager;
+use App\Support\Branding\LoginBranding;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,8 +29,7 @@ class AuthController extends Controller
     public function __construct(
         protected AuthService $auth,
         protected ModuleManager $modules,
-    ) {
-    }
+    ) {}
 
     public function showRegisterForm(): View|RedirectResponse
     {
@@ -92,8 +92,30 @@ class AuthController extends Controller
         }
 
         $request->session()->regenerate();
+        $this->rememberBrand();
 
         return redirect()->route('dashboard')->with('success', $result['message']);
+    }
+
+    /**
+     * The business login link: remember the business (look only) and open
+     * the normal login page in its brand. An unknown link opens it plainly.
+     */
+    public function businessLogin(string $handle, LoginBranding $branding): RedirectResponse
+    {
+        if ($business = $branding->findByHandle($handle)) {
+            $branding->remember($business);
+        }
+
+        return redirect()->route('staff.login');
+    }
+
+    /** Next time, /app/login on this device shows this business's brand. */
+    private function rememberBrand(): void
+    {
+        if ($business = auth('staff')->user()?->business) {
+            app(LoginBranding::class)->remember($business);
+        }
     }
 
     public function showMfaChallenge(): View|RedirectResponse
@@ -114,6 +136,7 @@ class AuthController extends Controller
         }
 
         $request->session()->regenerate();
+        $this->rememberBrand();
 
         return redirect()->route('dashboard')->with('success', $result['message']);
     }

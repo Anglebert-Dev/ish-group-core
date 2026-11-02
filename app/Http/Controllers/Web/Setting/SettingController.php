@@ -12,6 +12,7 @@ use App\Services\Branding\ThemeService;
 use App\Services\Printing\PrintService;
 use App\Services\Setting\SettingService;
 use App\Support\Branding\Fonts;
+use App\Support\Branding\LoginBranding;
 use App\Support\Branding\ThemeSchema;
 use App\Support\Branding\ThemeTokens;
 use App\Support\Locale\Locales;
@@ -33,7 +34,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class SettingController extends Controller
 {
-    public const TABS = ['details', 'look', 'theme', 'layout', 'stamp', 'payments', 'documents', 'history'];
+    public const TABS = ['details', 'look', 'theme', 'layout', 'login', 'stamp', 'payments', 'documents', 'history'];
 
     public function __construct(
         protected SettingService $settings,
@@ -62,6 +63,7 @@ class SettingController extends Controller
             'themeDefaults' => ThemeTokens::resolve($business->brandColor(), $this->themes->effective($business)['colors'] ?? []),
             'themeDarkDefaults' => ThemeTokens::resolve($business->brandColor(), $this->themes->effective($business)['colors_dark'] ?? [], dark: true),
             'contrast' => $tab === 'theme' ? $this->themes->contrast($business) : [],
+            'loginPage' => $this->branding->loginPage($business) + ['suggested' => $tab === 'login' ? $this->branding->suggestHandle($business) : null],
             'brandOnScreen' => ['light' => $this->themes->tokens($business), 'dark' => $this->themes->tokens($business, dark: true)],
             'versions' => $tab === 'history' ? $this->themes->history($business) : collect(),
             'previewing' => $this->branding->previewing($business),
@@ -110,6 +112,7 @@ class SettingController extends Controller
             'documents' => $this->branding->saveDesign($business, $this->designInput($request)),
             'theme' => $this->saveTheme($request, $business),
             'layout' => $this->saveLayout($request, $business),
+            'login' => $this->saveLoginPage($request, $business),
             default => $this->legacy(app(UpdateSettingRequest::class)),
         };
 
@@ -199,6 +202,26 @@ class SettingController extends Controller
         $business = $this->settings->current();
 
         return response((string) BrandedMail::make($business, __('body.studio_email_subject'), [__('body.studio_email_line')], __('body.view'), url('/'))->render());
+    }
+
+    private function saveLoginPage(Request $request, Business $business): array
+    {
+        $request->merge(['login_handle' => strtolower(trim((string) $request->input('login_handle')))]);
+        $data = $request->validate([
+            'login_handle' => ['required', 'string', 'regex:'.LoginBranding::HANDLE_PATTERN, function ($attribute, $value, $fail) use ($business) {
+                if (app(LoginBranding::class)->handleTaken($value, $business)) {
+                    $fail(__('body.login_handle_taken'));
+                }
+            }],
+            'login_heading' => ['nullable', 'string', 'max:120'],
+            'login_welcome' => ['nullable', 'string', 'max:300'],
+            'login_panel_text' => ['nullable', 'string', 'max:200'],
+            'login_footer' => ['nullable', 'string', 'max:300'],
+            'login_show_contact' => ['boolean'],
+            'login_image' => ['nullable', 'image', 'max:4096'],
+        ]);
+
+        return $this->branding->saveLoginPage($business, $data, $request->file('login_image'), $request->boolean('remove_login_image'));
     }
 
     private function saveLayout(Request $request, Business $business): array

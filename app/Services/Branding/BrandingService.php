@@ -8,11 +8,13 @@ use App\Models\Business\Business;
 use App\Services\BaseService;
 use App\Support\Branding\Brand;
 use App\Support\Branding\Fonts;
+use App\Support\Branding\LoginBranding;
 use App\Support\Branding\ThemeLayout;
 use App\Support\Branding\ThemeTokens;
 use App\Support\Printing\PrintDesign;
 use App\Support\Settings\BusinessSettings;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
 
 /**
  * A business's branding (docs/branding-print-build-guide.md §3). Colour, logo
@@ -71,6 +73,61 @@ class BrandingService extends BaseService
     public function tokens(Business $business): array
     {
         return app(ThemeService::class)->tokens($business, $this->previewing($business));
+    }
+
+    /** Login page fields (Branding → Login page): text, saved as branding.login_*. */
+    public const LOGIN_TEXT = ['login_heading', 'login_welcome', 'login_panel_text', 'login_footer'];
+
+    /**
+     * What the sign-in pages show for this business (docs/branding.md §3.6).
+     *
+     * @return array{handle: ?string, heading: ?string, welcome: ?string, panel_text: ?string, panel_note: ?string, image: ?string, footer: ?string, show_contact: bool, contact: list<string>}
+     */
+    public function loginPage(Business $business): array
+    {
+        $get = fn (string $key) => $business->exists ? $this->settings->get('branding.'.$key, null, $business) : null;
+        $brand = $business->exists ? $this->brand($business) : null;
+
+        return [
+            'handle' => $get('login_handle'),
+            'heading' => $get('login_heading'),
+            'welcome' => $get('login_welcome'),
+            // The slogan and description fill the picture panel unless it has its own text.
+            'panel_text' => $get('login_panel_text') ?? $get('slogan'),
+            'panel_note' => $get('description'),
+            'image' => $this->publicImage($business, 'login_image_path'),
+            'footer' => $get('login_footer'),
+            'show_contact' => (bool) $get('login_show_contact'),
+            'contact' => $brand && $get('login_show_contact') ? array_values(array_filter([$brand->phone, $brand->email, $brand->address ? str_replace("\n", ', ', $brand->address) : null])) : [],
+        ];
+    }
+
+    /**
+     * @param  array{login_handle: string, login_heading?: ?string, login_welcome?: ?string, login_panel_text?: ?string, login_footer?: ?string, login_show_contact?: bool}  $data
+     */
+    public function saveLoginPage(Business $business, array $data, ?UploadedFile $image = null, bool $removeImage = false): array
+    {
+        $this->put($business, 'login_handle', strtolower($data['login_handle']));
+        foreach (self::LOGIN_TEXT as $key) {
+            $this->put($business, $key, $data[$key] ?? null);
+        }
+        $this->put($business, 'login_show_contact', ! empty($data['login_show_contact']) ? true : null);
+        $this->replaceImage($business, 'login_image_path', $image, $removeImage, 'public');
+
+        return $this->success($business, __('body.branding_saved'));
+    }
+
+    /** A free login link name from the business name ("kigali-sun-garments", "kigali-sun-garments-2"…). */
+    public function suggestHandle(Business $business): string
+    {
+        $base = substr(trim(Str::slug($business->companyName()), '-'), 0, 34) ?: 'business';
+        $base = strlen($base) < 3 ? $base.'-'.$business->id : $base;
+        $handle = $base;
+        for ($i = 2; app(LoginBranding::class)->handleTaken($handle, $business); $i++) {
+            $handle = $base.'-'.$i;
+        }
+
+        return $handle;
     }
 
     /** Public URL of the logo for dark backgrounds, if uploaded. */

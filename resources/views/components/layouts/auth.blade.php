@@ -9,7 +9,10 @@
 ])
 
 @php
-    $panelText = $panelText ?: __('body.auth_panel_text');
+    // The business's own login page (Branding → Login page), when one is remembered (LoginBranding).
+    $loginPage = app(\App\Services\Branding\BrandingService::class)->loginPage($branding);
+    $panelText = $loginPage['panel_text'] ?: ($panelText ?: __('body.auth_panel_text'));
+    $panelImage = $loginPage['image'] ?: $panelImage;
 @endphp
 
 <!DOCTYPE html>
@@ -139,6 +142,13 @@
                     @endif
                 @endisset
 
+                @if ($loginPage['footer'] || $loginPage['contact'])
+                    <div class="mt-6 text-xs text-muted max-w-md space-y-1">
+                        @if ($loginPage['footer'])<p>{!! nl2br(e($loginPage['footer'])) !!}</p>@endif
+                        @if ($loginPage['contact'])<p>{{ implode(' · ', $loginPage['contact']) }}</p>@endif
+                    </div>
+                @endif
+
                 {{-- Shows only when more than one language is installed. --}}
                 <x-common.language-switcher class="mt-6" />
             </div>
@@ -157,9 +167,12 @@
                         <div class="absolute inset-0 bg-gradient-to-br from-brand via-brand-dark to-ink"></div>
                     @endif
                     <div class="relative z-10 h-full p-6 sm:p-8 lg:p-10 flex flex-col justify-between">
-                        <p class="text-white font-display font-bold text-lg sm:text-xl lg:text-2xl leading-snug max-w-sm drop-shadow-sm">
-                            {{ $panelText }}
-                        </p>
+                        <div class="max-w-sm">
+                            <p class="text-white font-display font-bold text-lg sm:text-xl lg:text-2xl leading-snug drop-shadow-sm">{{ $panelText }}</p>
+                            @if ($loginPage['panel_note'])
+                                <p class="hidden sm:block text-white/80 text-sm mt-3 leading-relaxed">{{ $loginPage['panel_note'] }}</p>
+                            @endif
+                        </div>
                         <p class="text-white/70 text-xs sm:text-sm tracking-wide">
                             {{ $branding->companyName() }}
                         </p>

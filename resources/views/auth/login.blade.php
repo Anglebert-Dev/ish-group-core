@@ -1,8 +1,9 @@
+@php $loginPage = app(\App\Services\Branding\BrandingService::class)->loginPage($branding); @endphp
 <x-layouts.auth
     :title="__('body.log_in')"
     :eyebrow="__('body.auth_staff_login')"
-    :heading="__('body.auth_welcome_back')"
-    :subtitle="__('body.auth_login_subtitle_staff')"
+    :heading="$loginPage['heading'] ?: __('body.auth_welcome_back')"
+    :subtitle="$loginPage['welcome'] ?: __('body.auth_login_subtitle_staff')"
     :panel-text="__('body.auth_panel_text_staff')"
 >
     <form action="{{ route('staff.login.store') }}" method="POST" class="space-y-4">
@@ -29,6 +30,8 @@
     </form>
 
     <x-slot:footer>
+        {{-- A business's own login page is for its staff: no sign-up or plans there. --}}
+        @unless (app(\App\Support\Branding\LoginBranding::class)->business())
         <div class="space-y-2">
             {{-- Plans exist only while Billing is on (its routes stay registered when it's off). --}}
             @if (Route::has('pricing') && app(\App\Services\Module\ModuleManager::class)->isActive('Billing'))
@@ -44,5 +47,6 @@
                 </p>
             @endif
         </div>
+        @endunless
     </x-slot:footer>
 </x-layouts.auth>

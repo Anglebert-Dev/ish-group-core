@@ -57,6 +57,8 @@ Route::prefix('app')->group(function () {
             ->middleware('throttle:register')
             ->name('staff.register.store');
         Route::get('/login', [AuthController::class, 'showLoginForm'])->name('staff.login');
+        // A business's own login link: its brand on the login page (look only).
+        Route::get('/login/{handle}', [AuthController::class, 'businessLogin'])->where('handle', '[a-z0-9-]{3,40}')->middleware('throttle:60,1')->name('staff.business-login');
         Route::post('/login', [AuthController::class, 'login'])
             ->middleware('throttle:login')
             ->name('staff.login.store');

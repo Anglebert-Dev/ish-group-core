@@ -7,6 +7,7 @@ use App\Models\Business\Business;
 use App\Models\System\System;
 use App\Repositories\Business\BusinessRepository;
 use App\Services\BaseService;
+use App\Support\Branding\LoginBranding;
 use App\Support\Tenancy\CurrentBusiness;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Schema;
@@ -21,8 +22,7 @@ class SettingService extends BaseService
     public function __construct(
         protected BusinessRepository $businesses,
         protected CurrentBusiness $current,
-    ) {
-    }
+    ) {}
 
     public function current(): Business
     {
@@ -30,7 +30,8 @@ class SettingService extends BaseService
             return $this->fallback();
         }
 
-        return $this->current->get() ?? $this->primary() ?? $this->fallback();
+        // Sign-in pages wear the remembered business's brand (LoginBranding).
+        return $this->current->get() ?? app(LoginBranding::class)->business() ?? $this->primary() ?? $this->fallback();
     }
 
     /**

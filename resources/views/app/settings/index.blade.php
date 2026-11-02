@@ -326,6 +326,35 @@
             </div>
         @endif
 
+        @if ($tab === 'login')
+            @php $handle = old('login_handle', $loginPage['handle'] ?? $loginPage['suggested']); @endphp
+            <div class="bg-card border border-line rounded-xl p-4 sm:p-6 space-y-5">
+                <p class="text-sm text-muted">{{ __('body.login_hint') }}</p>
+                <div class="rounded-xl border border-line bg-surface p-4 space-y-2">
+                    <x-common.input name="login_handle" :label="__('body.login_handle')" :value="$handle" required maxlength="40" :hint="__('body.login_handle_hint')" />
+                    @if ($loginPage['handle'])
+                        <p class="text-sm text-body">{{ __('body.login_link') }}
+                            <a href="{{ route('staff.business-login', $loginPage['handle']) }}" target="_blank" rel="noopener" class="font-semibold text-link break-all">{{ route('staff.business-login', $loginPage['handle']) }}</a>
+                        </p>
+                    @endif
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    <x-common.input name="login_heading" :label="__('body.login_heading')" :value="old('login_heading', $loginPage['heading'])" :placeholder="__('body.auth_welcome_back')" maxlength="120" />
+                    <x-common.input name="login_panel_text" :label="__('body.login_panel_text')" :value="old('login_panel_text', $loginPage['panel_text'])" :placeholder="__('body.auth_panel_text_staff')" maxlength="200" :hint="__('body.login_panel_text_hint')" />
+                </div>
+                <x-common.textarea name="login_welcome" :label="__('body.login_welcome')" :value="old('login_welcome', $loginPage['welcome'])" :rows="2" :placeholder="__('body.auth_login_subtitle_staff')" />
+                <x-common.textarea name="login_footer" :label="__('body.login_footer')" :value="old('login_footer', $loginPage['footer'])" :rows="2" :hint="__('body.login_footer_hint')" />
+                <input type="hidden" name="login_show_contact" value="0">
+                <x-common.checkbox name="login_show_contact" value="1" :checked="(bool) old('login_show_contact', $loginPage['show_contact'])" :label="__('body.login_show_contact')" :description="__('body.login_show_contact_hint')" />
+                <div class="space-y-2 max-w-md">
+                    <x-common.file-input name="login_image" :label="__('body.login_image')" accept="image/*" :max-size-mb="4" :existing-url="$loginPage['image']" :hint="__('body.login_image_hint')" />
+                    @if ($loginPage['image'])
+                        <x-common.checkbox name="remove_login_image" value="1" inline :label="__('body.brand_remove')" />
+                    @endif
+                </div>
+            </div>
+        @endif
+
         @if (in_array($tab, ['theme', 'layout'], true))
                 </div>
                 @include('app.settings.studio.panel')
