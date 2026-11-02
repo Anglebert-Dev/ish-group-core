@@ -1169,6 +1169,11 @@ return [
     'back_to_top' => 'Back to top',
     'sidebar_collapse' => 'Collapse menu',
 
+    // Background jobs health (superadmins)
+    'health_queue_stuck' => '{1} 1 email or task has been waiting more than :minutes minutes: nothing is sending it.|[2,*] :count emails or tasks have been waiting more than :minutes minutes: nothing is sending them.',
+    'health_scheduler_stopped' => 'Scheduled tasks are not running (daily jobs, reminders, update checks).',
+    'health_start' => 'Keep this running on the server:',
+
     // Language
     'language' => 'Language',
     'brand_locale' => 'Default language',

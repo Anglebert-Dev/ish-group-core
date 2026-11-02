@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\System\System;
+use App\Support\Health\BackgroundJobs;
 use Illuminate\Support\Facades\Schedule;
 
 /*
@@ -10,6 +12,10 @@ use Illuminate\Support\Facades\Schedule;
 | automatically. Modules register their own commands and schedules in
 | their service providers.
 */
+
+
+Schedule::call(fn () => System::addProperty(BackgroundJobs::HEARTBEAT, now()->toIso8601String()))
+    ->everyMinute()->name('scheduler-heartbeat');
 
 // Daily backup, only when switched on in Super Admin → Backups.
 Schedule::command('core:backup --scheduled')->dailyAt('02:00')->withoutOverlapping();

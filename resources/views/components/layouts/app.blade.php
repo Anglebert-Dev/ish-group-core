@@ -38,6 +38,7 @@
             <x-dashboard.impersonation-banner />
             <x-dashboard.preview-banner />
             <x-dashboard.header :title="$title ?? 'Dashboard'" />
+            <x-dashboard.health-banner />
             <x-dashboard.announcement />
 
             <main class="app-content p-4 sm:p-5 lg:p-8">

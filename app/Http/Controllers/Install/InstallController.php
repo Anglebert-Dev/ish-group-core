@@ -238,6 +238,8 @@ class InstallController extends Controller
             'basePath' => base_path(),
             'cronLine' => $manifest->cronLine(base_path()),
             'queueViaScheduler' => (bool) ($data['app']['queue_via_scheduler'] ?? false),
+            // php artisan serve: a PC, not a server with cron and Supervisor.
+            'devServer' => PHP_SAPI === 'cli-server',
             'loginUrl' => rtrim($data['app']['url'], '/').'/app/login',
         ]);
     }

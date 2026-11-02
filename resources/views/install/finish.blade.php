@@ -4,7 +4,17 @@
     <h2 class="text-lg font-semibold mb-1">{{ __('install.finish_title') }}</h2>
     <p class="text-sm text-muted mb-5">{{ __('install.finish_intro') }}</p>
 
+    <div class="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm mb-5">{{ __('install.finish_warning') }}</div>
+
     <div class="space-y-5 text-sm">
+        @if ($devServer)
+            <div>
+                <p class="mb-2">{{ __('install.finish_dev') }}</p>
+                <pre class="rounded-xl bg-gray-900 text-gray-100 p-3 overflow-x-auto text-xs">cd {{ $basePath }}
+php artisan schedule:work{{ $queueViaScheduler ? '' : "\nphp artisan queue:work --tries=3" }}</pre>
+                <p class="text-muted mt-2">{{ __('install.finish_dev_hint') }}</p>
+            </div>
+        @endif
         <div>
             <p class="mb-2">{{ __('install.finish_cron') }}</p>
             <pre class="rounded-xl bg-gray-900 text-gray-100 p-3 overflow-x-auto text-xs">{{ $cronLine }}</pre>
