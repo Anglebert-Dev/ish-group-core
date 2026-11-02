@@ -184,7 +184,7 @@ return [
     'guide_req_extensions_label' => 'PHP extensions',
     'guide_req_extensions' => ':extensions — and pdo_mysql (MySQL/MariaDB) or pdo_pgsql (PostgreSQL). Most are on by default; in cPanel: "Select PHP Version" → Extensions.',
     'guide_req_settings_label' => 'PHP settings',
-    'guide_req_settings' => 'memory_limit 256M or more; max_execution_time 120 or more; upload_max_filesize and post_max_size 20M or more; the functions proc_open and exec must not be disabled (they install updates).',
+    'guide_req_settings' => 'memory_limit 256M or more; max_execution_time 120 or more; upload_max_filesize and post_max_size 20M or more; the functions proc_open and exec must not be disabled (they install updates). If opcache.validate_timestamps is set to 0 (some tuned servers), reload PHP-FPM after each update.',
     'guide_req_db_label' => 'Database',
     'guide_req_db' => 'MySQL 8.0+, MariaDB 10.6+ or PostgreSQL 13+. An EMPTY database (MySQL: character set utf8mb4) and a user with ALL privileges on it (create, alter, drop, index, references).',
     'guide_req_web_label' => 'Web server',

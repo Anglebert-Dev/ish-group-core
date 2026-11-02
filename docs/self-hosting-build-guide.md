@@ -450,6 +450,18 @@ Commit after each phase. Run `php artisan test` before every commit.
 | Savings 1.2.0 needing core 1.0.3, then core 1.0.3 | Savings waited; the hourly check installed core 1.0.3, the next one Savings 1.2.0 |
 | **Bug found and fixed** | moving `public/` left PHP's built-in server (`php artisan serve`) serving from the backup folder (500s). Now only the entries inside `public/` are swapped, and the package's own script is used. Proven: 1.0.4, applied by the old updater, still hit it; 1.0.5, applied by the new one, kept the site at 200 with no restart |
 
+### Web servers (added 02/11/2026)
+
+- **Apache and LiteSpeed:** the shipped `public/.htaccess`, plus the root `.htaccess` for hosts that can't point to `public/`. Needs `mod_rewrite` and `AllowOverride All`; the guide gives a vhost.
+- **nginx + PHP-FPM:** needs a server block. The guide prints one with the customer's folder and domain (`root …/public`, `try_files … /index.php?$query_string`, only `index.php` passed to PHP, dotfiles denied). The customer only adjusts the PHP-FPM socket.
+- **The web server is a question** in the server form and CSV (`web_server`: apache, nginx, litespeed, other). The guide shows only that server's setup, or all three when unknown.
+- **Requirements in the guide:** PHP version, every extension from `composer.lock` (`RequirementsChecker::EXTENSIONS`, the same list the installer checks), PHP settings, database versions and privileges, web server, HTTPS, disk, cron, outbound HTTPS to us, email, folder permissions, and what's not needed. The installer also warns, without blocking, when `proc_open` is disabled or `memory_limit` is below 256M.
+- **Tested 02/11/2026:** the guide's nginx block, taken from the rendered guide, on nginx 1.27 + PHP-FPM 8.3 + MySQL 8.4 in Docker with a real zip:
+  - `nginx -t` OK; installer 35/35 checks green, pre-filled, installed
+  - sign-in, dashboard, Savings, Updates and static files all 200
+  - `.env`, `.git`, `../`, `storage/`, `vendor/` refused
+  - Core updates under nginx weren't run in this setup; the swap is independent of the web server, and `public/` stays in place.
+
 ## 12. Open points
 
 - **HTTPS:** nothing enforces HTTPS for the update server address yet. Our `APP_URL` must be `https://` in production, because builds put it in every `site.json`.
