@@ -12,6 +12,7 @@ use Modules\Distribution\Console\KeygenCommand;
 use Modules\Distribution\Console\PruneCommand;
 use Modules\Distribution\Console\PublishCoreCommand;
 use Modules\Distribution\Console\PublishReleaseCommand;
+use Modules\Distribution\Console\SupportRemindersCommand;
 
 /**
  * Self-hosting, our side (docs/self-hosting-build-guide.md §6): sites,
@@ -29,6 +30,7 @@ class DistributionServiceProvider extends CoreModuleServiceProvider
         PruneCommand::class,
         PublishCoreCommand::class,
         PublishReleaseCommand::class,
+        SupportRemindersCommand::class,
     ];
 
     protected array $providers = [
@@ -46,5 +48,6 @@ class DistributionServiceProvider extends CoreModuleServiceProvider
     protected function configureSchedules(Schedule $schedule): void
     {
         $schedule->command('distribution:prune')->dailyAt('03:30')->withoutOverlapping();
+        $schedule->command('distribution:support-reminders')->dailyAt('08:00')->withoutOverlapping();
     }
 }

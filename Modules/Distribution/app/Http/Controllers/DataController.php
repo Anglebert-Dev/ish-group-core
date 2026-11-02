@@ -2,11 +2,21 @@
 
 namespace Modules\Distribution\Http\Controllers;
 
+use Modules\Distribution\Printing\ChargePrintable;
+
 /**
  * Hook implementations the core calls through ModuleManager::hook().
  */
 class DataController
 {
+    /**
+     * Documents this module prints through the core print engine.
+     */
+    public function printables(): array
+    {
+        return ['distribution_charge' => ChargePrintable::class];
+    }
+
     public function modifyAdminMenu(): array
     {
         return [

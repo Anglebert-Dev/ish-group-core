@@ -37,7 +37,7 @@ class UpdateClient
 
     /**
      * @param  array<string, mixed>  $payload  everything but site_uuid and nonce
-     * @return array{update_mode: string, poll_minutes: int, offers: list<array<string, mixed>>, assigned: list<string>|null}
+     * @return array{update_mode: string, poll_minutes: int, offers: list<array<string, mixed>>, assigned: list<string>|null, support: array{until: ?string, active: bool}|null}
      */
     public function checkIn(array $payload): array
     {
@@ -89,6 +89,11 @@ class UpdateClient
             'assigned' => isset($answer['assigned']) && is_array($answer['assigned'])
                 ? array_values(array_filter($answer['assigned'], fn ($name) => is_string($name) && preg_match('/^[A-Z][A-Za-z0-9]{0,63}$/', $name)))
                 : null,
+            // Support & updates end date (null from an older update server).
+            'support' => isset($answer['support']) && is_array($answer['support']) ? [
+                'until' => is_string($answer['support']['until'] ?? null) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $answer['support']['until']) ? $answer['support']['until'] : null,
+                'active' => (bool) ($answer['support']['active'] ?? true),
+            ] : null,
         ];
     }
 

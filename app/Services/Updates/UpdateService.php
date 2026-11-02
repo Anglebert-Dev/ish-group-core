@@ -2,14 +2,14 @@
 
 namespace App\Services\Updates;
 
+use App\Enums\NotificationType;
 use App\Models\System\System;
 use App\Services\BaseService;
-use App\Enums\NotificationType;
 use App\Services\Module\ModuleManager;
 use App\Services\Notification\NotificationService;
 use App\Support\Distribution\LinkKey;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Throwable;
@@ -33,8 +33,7 @@ class UpdateService extends BaseService
         protected UpdateClient $client,
         protected ModulePackageInstaller $installer,
         protected ModuleManager $modules,
-    ) {
-    }
+    ) {}
 
     public function linked(): bool
     {
@@ -64,6 +63,9 @@ class UpdateService extends BaseService
         System::addProperty('distribution_offers', json_encode($answer['offers']));
         System::addProperty('distribution_last_check_at', now()->toIso8601String());
         System::addProperty('distribution_last_error', '');
+        if (($answer['support'] ?? null) !== null) {
+            System::addProperty('distribution_support', json_encode($answer['support']));
+        }
 
         if ($answer['assigned'] !== null) {
             $this->followPlan($answer['assigned'], $answer['offers'], $answer['update_mode']);

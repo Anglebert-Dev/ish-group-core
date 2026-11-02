@@ -15,7 +15,7 @@ class Site extends BaseModel
     protected $table = 'distribution_sites';
 
     protected $fillable = [
-        'name', 'customer_name', 'contact_email', 'app_url', 'update_mode', 'status', 'is_test', 'notes', 'server_details',
+        'name', 'customer_name', 'contact_email', 'app_url', 'update_mode', 'status', 'support_until', 'is_test', 'notes', 'server_details',
         'core_version', 'php_version', 'db_driver', 'modules_writable', 'last_check_in_at', 'last_ip', 'installed_at',
     ];
 
@@ -29,6 +29,8 @@ class Site extends BaseModel
             'server_details' => 'array',
             'last_check_in_at' => 'datetime',
             'installed_at' => 'datetime',
+            'support_until' => 'date',
+            'support_reminded_for' => 'date',
         ];
     }
 
@@ -68,5 +70,25 @@ class Site extends BaseModel
     public function isActive(): bool
     {
         return $this->status === SiteStatus::Active;
+    }
+
+    public function charges(): HasMany
+    {
+        return $this->hasMany(Charge::class)->latest('id');
+    }
+
+    /**
+     * Updates and support still included? No end date = yes. The app keeps
+     * working either way; only updates stop.
+     */
+    public function hasSupport(): bool
+    {
+        return $this->support_until === null || ! $this->support_until->isBefore(today());
+    }
+
+    /** Days until support ends (negative once ended); null = no end date. */
+    public function supportDaysLeft(): ?int
+    {
+        return $this->support_until ? (int) today()->diffInDays($this->support_until, false) : null;
     }
 }

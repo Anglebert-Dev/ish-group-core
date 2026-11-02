@@ -23,9 +23,7 @@ class UpdateOfferService
     /** How often sites are asked to check (minutes). */
     public const POLL_MINUTES = 60;
 
-    public function __construct(protected ModuleManager $modules)
-    {
-    }
+    public function __construct(protected ModuleManager $modules) {}
 
     /**
      * Record a check-in and work out the offers.
@@ -54,6 +52,12 @@ class UpdateOfferService
                 ->all();
 
             $offers = $this->offers($site, $installed, Release::plainVersion($reported['core_version'] ?? null));
+
+            // Support ended: the site keeps everything it has, but nothing new
+            // (module statuses above are still brought up to date).
+            if (! $site->hasSupport()) {
+                $offers = [];
+            }
 
             CheckIn::query()->create([
                 'site_id' => $site->id,

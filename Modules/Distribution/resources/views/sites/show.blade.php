@@ -11,6 +11,15 @@
         <div class="bg-card border border-line rounded-xl p-5 space-y-2 text-sm">
             <div class="flex justify-between gap-3"><span class="text-muted">{{ __('body.status') }}</span><x-common.badge :color="$site->status->color()">{{ $site->status->label() }}</x-common.badge></div>
             <div class="flex justify-between gap-3"><span class="text-muted">{{ __('distribution::distribution.update_mode') }}</span><span>{{ $site->update_mode->label() }}</span></div>
+            <div class="flex justify-between gap-3"><span class="text-muted">{{ __('distribution::distribution.support_until') }}</span>
+                @if (! $site->support_until)
+                    <span>{{ __('distribution::distribution.support_no_end') }}</span>
+                @elseif (! $site->hasSupport())
+                    <x-common.badge color="danger">{{ __('distribution::distribution.support_ended_on', ['date' => $site->support_until->format('d M Y')]) }}</x-common.badge>
+                @else
+                    <x-common.badge :color="$site->supportDaysLeft() <= 30 ? 'warning' : 'success'">{{ $site->support_until->format('d M Y') }}</x-common.badge>
+                @endif
+            </div>
             @if ($site->is_test)
                 <div class="flex justify-between gap-3"><span class="text-muted">{{ __('distribution::distribution.is_test') }}</span><x-common.badge color="warning">{{ __('distribution::distribution.test_site') }}</x-common.badge></div>
             @endif
@@ -33,6 +42,127 @@
                 <div class="flex justify-between gap-3"><span class="text-muted">{{ __('distribution::distribution.modules_writable') }}</span>
                     <span>{{ $site->modules_writable === null ? '—' : ($site->modules_writable ? __('distribution::distribution.yes') : __('distribution::distribution.no')) }}</span></div>
             </div>
+        </div>
+    </div>
+
+    {{-- Licence & support (docs/self-hosting-build-guide.md §11) --}}
+    <div id="licence" class="bg-card border border-line rounded-xl overflow-hidden mb-6">
+        <div class="px-5 py-4 border-b border-line flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+                <p class="font-semibold text-ink">{{ __('distribution::distribution.licence_title') }}</p>
+                <p class="text-xs text-muted">{{ __('distribution::distribution.licence_hint') }}</p>
+            </div>
+            @if ($site->support_until)
+                <form action="{{ route('superadmin.distribution.sites.support.remind', $site) }}" method="POST" class="shrink-0">
+                    @csrf
+                    <x-common.button type="submit" variant="secondary" size="sm">{{ __('distribution::distribution.reminder_send_now') }}</x-common.button>
+                </form>
+            @endif
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-xs text-muted uppercase tracking-wide border-b border-line bg-surface/60">
+                        <th class="px-5 py-3 font-semibold">{{ __('distribution::distribution.charge_number') }}</th>
+                        <th class="px-5 py-3 font-semibold">{{ __('distribution::distribution.charge_description') }}</th>
+                        <th class="px-5 py-3 font-semibold text-right">{{ __('distribution::distribution.charge_amount') }}</th>
+                        <th class="px-5 py-3 font-semibold">{{ __('body.status') }}</th>
+                        <th class="px-5 py-3 font-semibold">{{ __('body.actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-line">
+                    @forelse ($site->charges as $charge)
+                        <tr class="align-top">
+                            <td class="px-5 py-3 whitespace-nowrap">
+                                <p class="font-medium text-ink">{{ $charge->number }}</p>
+                                <p class="text-xs text-muted">{{ $charge->issued_on->format('d M Y') }} · {{ __('distribution::distribution.charge_kind_'.$charge->kind) }}</p>
+                            </td>
+                            <td class="px-5 py-3">
+                                <p class="text-body">{{ $charge->description }}</p>
+                                @if ($charge->period_until)
+                                    <p class="text-xs text-muted">{{ __('distribution::distribution.print_period', ['from' => $charge->period_from?->format('d M Y'), 'until' => $charge->period_until->format('d M Y')]) }}</p>
+                                @endif
+                                @if ($charge->paid_on)
+                                    <p class="text-xs text-muted">{{ __('distribution::distribution.charge_paid_meta', ['date' => $charge->paid_on->format('d M Y'), 'method' => $charge->payment_method ? __('distribution::distribution.method_'.$charge->payment_method) : '—', 'reference' => $charge->payment_reference ?: '—']) }}</p>
+                                @endif
+                            </td>
+                            <td class="px-5 py-3 text-right whitespace-nowrap font-semibold text-ink">{{ money($charge->amount) }}</td>
+                            <td class="px-5 py-3 whitespace-nowrap">
+                                <x-common.badge :color="$charge->status->color()">{{ $charge->status->label() }}</x-common.badge>
+                                @if ($charge->isOpen() && $charge->due_on?->isPast())
+                                    <x-common.badge color="danger">{{ __('distribution::distribution.charge_overdue') }}</x-common.badge>
+                                @endif
+                            </td>
+                            <td class="px-5 py-3">
+                                <div class="flex flex-col items-start gap-2">
+                                    <div class="flex flex-wrap gap-3 text-xs font-semibold">
+                                        <a href="{{ route('print.show', ['distribution_charge', $charge->getRouteKey()]) }}" target="_blank" rel="noopener" class="text-brand hover:text-brand-dark">{{ __('body.print') }}</a>
+                                        <a href="{{ route('print.pdf', ['distribution_charge', $charge->getRouteKey()]) }}" class="text-brand hover:text-brand-dark">PDF</a>
+                                    </div>
+                                    <form action="{{ route('superadmin.distribution.sites.charges.email', [$site, $charge]) }}" method="POST" class="flex gap-2">
+                                        @csrf
+                                        <input type="email" name="email" value="{{ $site->contact_email }}" required placeholder="{{ __('distribution::distribution.contact_email') }}" class="h-8 w-44 rounded-lg border border-line bg-card px-2 text-xs">
+                                        <x-common.button type="submit" variant="secondary" size="sm">{{ __('distribution::distribution.charge_email') }}</x-common.button>
+                                    </form>
+                                    @if ($charge->emailed_at)
+                                        <p class="text-xs text-muted">{{ __('distribution::distribution.charge_emailed', ['when' => $charge->emailed_at->diffForHumans()]) }}</p>
+                                    @endif
+                                    @if ($charge->isOpen())
+                                        <details>
+                                            <summary class="cursor-pointer text-xs font-semibold text-success">{{ __('distribution::distribution.charge_mark_paid') }}</summary>
+                                            <form action="{{ route('superadmin.distribution.sites.charges.pay', [$site, $charge]) }}" method="POST" class="mt-2 space-y-2">
+                                                @csrf
+                                                <x-common.input name="paid_on" type="date" :label="__('distribution::distribution.charge_paid_on')" :value="today()->toDateString()" required />
+                                                <x-common.select name="payment_method" :label="__('distribution::distribution.charge_method')" :options="collect(\Modules\Distribution\Models\Charge::METHODS)->mapWithKeys(fn ($m) => [$m => __('distribution::distribution.method_'.$m)])->all()" />
+                                                <x-common.input name="payment_reference" :label="__('distribution::distribution.charge_reference')" />
+                                                <x-common.button type="submit" size="sm">{{ __('distribution::distribution.charge_mark_paid') }}</x-common.button>
+                                            </form>
+                                        </details>
+                                        <details>
+                                            <summary class="cursor-pointer text-xs font-semibold text-danger">{{ __('distribution::distribution.charge_cancel') }}</summary>
+                                            <form action="{{ route('superadmin.distribution.sites.charges.cancel', [$site, $charge]) }}" method="POST" class="mt-2 space-y-2">
+                                                @csrf
+                                                <x-common.input name="reason" :label="__('distribution::distribution.charge_cancel_reason')" required />
+                                                <x-common.button type="submit" variant="danger" size="sm">{{ __('distribution::distribution.charge_cancel') }}</x-common.button>
+                                            </form>
+                                        </details>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="5" class="px-5 py-8 text-center text-muted">{{ __('distribution::distribution.charges_none') }}</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <div class="grid gap-6 lg:grid-cols-2 p-5 border-t border-line">
+            <form action="{{ route('superadmin.distribution.sites.charges.store', $site) }}" method="POST" class="space-y-3">
+                @csrf
+                <p class="font-semibold text-ink text-sm">{{ __('distribution::distribution.charge_new') }}</p>
+                <div class="grid sm:grid-cols-2 gap-3">
+                    <x-common.select name="kind" :label="__('distribution::distribution.charge_kind')" hide-placeholder required
+                        :value="$site->charges->isEmpty() ? 'licence' : 'support'"
+                        :options="collect(\Modules\Distribution\Models\Charge::KINDS)->mapWithKeys(fn ($k) => [$k => __('distribution::distribution.charge_kind_'.$k)])->all()" />
+                    <x-common.input name="amount" type="number" step="0.01" min="0" :label="__('distribution::distribution.charge_amount')" required />
+                    <x-common.input name="support_months" type="number" min="0" max="60" :value="\Modules\Distribution\Services\LicenceService::DEFAULT_SUPPORT_MONTHS" :label="__('distribution::distribution.charge_support_months')" :hint="__('distribution::distribution.charge_support_months_hint')" />
+                    <x-common.input name="due_days" type="number" min="0" max="180" value="14" :label="__('distribution::distribution.charge_due_days')" />
+                </div>
+                <x-common.input name="description" :label="__('distribution::distribution.charge_description')" :hint="__('distribution::distribution.charge_description_hint')" />
+                <x-common.button type="submit" size="sm">{{ __('distribution::distribution.charge_create') }}</x-common.button>
+            </form>
+
+            <form action="{{ route('superadmin.distribution.sites.support', $site) }}" method="POST" class="space-y-3">
+                @csrf
+                @method('PUT')
+                <p class="font-semibold text-ink text-sm">{{ __('distribution::distribution.support_change') }}</p>
+                <p class="text-xs text-muted">{{ __('distribution::distribution.support_change_hint') }}</p>
+                <x-common.input name="support_until" type="date" :label="__('distribution::distribution.support_until')" :value="$site->support_until?->toDateString()" />
+                <x-common.input name="reason" :label="__('distribution::distribution.support_change_reason')" required />
+                <x-common.button type="submit" variant="secondary" size="sm">{{ __('distribution::distribution.support_change_save') }}</x-common.button>
+            </form>
         </div>
     </div>
 

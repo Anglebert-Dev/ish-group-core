@@ -24,6 +24,9 @@
                 :hint="__('distribution::distribution.status_hint')" />
         </div>
 
+        @if ($isNew)
+            <x-common.input name="support_until" type="date" :label="__('distribution::distribution.support_until')" :value="old('support_until', $site->support_until?->toDateString())" :hint="__('distribution::distribution.support_until_hint')" />
+        @endif
         <input type="hidden" name="is_test" value="0">
         <x-common.checkbox name="is_test" value="1" :label="__('distribution::distribution.is_test')" :description="__('distribution::distribution.is_test_hint')" :checked="(bool) old('is_test', $site->is_test)" />
 

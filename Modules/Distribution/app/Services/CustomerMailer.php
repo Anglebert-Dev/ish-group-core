@@ -2,14 +2,18 @@
 
 namespace Modules\Distribution\Services;
 
+use App\Models\Business\Business;
 use App\Models\System\System;
 use App\Services\BaseService;
+use App\Services\Printing\PrintService;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Modules\Distribution\Models\Build;
+use Modules\Distribution\Models\Charge;
 use Modules\Distribution\Models\Site;
 use Modules\Distribution\Notifications\CustomerEmail;
+use Modules\Distribution\Printing\ChargePrintable;
 use Modules\Distribution\Support\PlatformAudit;
 use Modules\Distribution\Support\ServerDetails;
 
@@ -118,6 +122,63 @@ class CustomerMailer extends BaseService
         return $this->success(null, __('distribution::distribution.email_link_sent', ['email' => $email]));
     }
 
+    /**
+     * A licence or support invoice, with its PDF.
+     */
+    public function sendCharge(Charge $charge, string $email): array
+    {
+        $printable = new ChargePrintable;
+        $pdf = app(PrintService::class)->pdfBytes($printable->document($charge), $printable->business($charge));
+        $site = $charge->site;
+
+        $this->send($email, new CustomerEmail(
+            $this->businessId(),
+            __('distribution::distribution.email_charge_subject', ['number' => $charge->number, 'provider' => $this->provider()]),
+            [
+                __('distribution::distribution.email_hello', ['name' => $site->customer_name ?: '']),
+                __('distribution::distribution.email_charge_intro', ['number' => $charge->number, 'amount' => money($charge->amount), 'due' => $charge->due_on?->format('d M Y') ?? '—']),
+                $charge->description,
+            ],
+            null,
+            null,
+            [__('distribution::distribution.email_charge_pay'), __('distribution::distribution.email_reply_questions')],
+            [$charge->number.'.pdf' => $pdf],
+        ));
+
+        $charge->forceFill(['emailed_at' => now()])->saveQuietly();
+        PlatformAudit::log('distribution_charge_emailed', "Charge {$charge->number} emailed to {$email}", $charge, ['email' => $email]);
+
+        return $this->success(null, __('distribution::distribution.email_charge_sent', ['email' => $email]));
+    }
+
+    /**
+     * Support is ending (or has ended): what that means and how to renew.
+     */
+    public function sendSupportReminder(Site $site, string $email, ?Charge $renewal = null): void
+    {
+        $date = $site->support_until->format('d M Y');
+        $ended = ! $site->hasSupport();
+
+        $this->send($email, new CustomerEmail(
+            $this->businessId(),
+            $ended
+                ? __('distribution::distribution.email_support_ended_subject', ['site' => $site->name])
+                : __('distribution::distribution.email_support_ending_subject', ['site' => $site->name, 'date' => $date]),
+            array_values(array_filter([
+                __('distribution::distribution.email_hello', ['name' => $site->customer_name ?: '']),
+                $ended
+                    ? __('distribution::distribution.email_support_ended', ['site' => $site->name, 'date' => $date])
+                    : __('distribution::distribution.email_support_ending', ['site' => $site->name, 'date' => $date, 'days' => max(0, (int) $site->supportDaysLeft())]),
+                __('distribution::distribution.email_support_keeps_working'),
+                $renewal ? __('distribution::distribution.email_support_invoice', ['number' => $renewal->number, 'amount' => money($renewal->amount)]) : __('distribution::distribution.email_support_how'),
+            ])),
+            null,
+            null,
+            [__('distribution::distribution.email_reply_questions')],
+            $renewal ? [$renewal->number.'.pdf' => app(PrintService::class)->pdfBytes((new ChargePrintable)->document($renewal), (new ChargePrintable)->business($renewal))] : [],
+        ));
+    }
+
     public function guideUrl(Site $site): string
     {
         return URL::temporarySignedRoute('distribution.customer.guide', now()->addDays(self::LINK_DAYS), ['site' => $site]);
@@ -136,7 +197,7 @@ class CustomerMailer extends BaseService
 
     private function provider(): string
     {
-        $business = $this->businessId() ? \App\Models\Business\Business::query()->find($this->businessId()) : null;
+        $business = $this->businessId() ? Business::query()->find($this->businessId()) : null;
 
         return $business?->companyName() ?: (string) config('app.name');
     }

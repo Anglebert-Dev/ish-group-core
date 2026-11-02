@@ -15,9 +15,7 @@ use Illuminate\View\View;
  */
 class UpdateController extends Controller
 {
-    public function __construct(protected UpdateService $updates)
-    {
-    }
+    public function __construct(protected UpdateService $updates) {}
 
     /**
      * Open on any server: unlinked ones only see "Link to your provider".
@@ -31,6 +29,7 @@ class UpdateController extends Controller
             'history' => $this->updates->history(),
             'mode' => System::getProperty('distribution_update_mode', 'manual'),
             'lastCheck' => System::getProperty('distribution_last_check_at'),
+            'support' => json_decode((string) System::getProperty('distribution_support', ''), true) ?: null,
             'lastError' => System::getProperty('distribution_last_error'),
             'writable' => is_writable(base_path('Modules')),
             'version' => config('core.version'),

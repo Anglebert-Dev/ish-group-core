@@ -462,6 +462,26 @@ Commit after each phase. Run `php artisan test` before every commit.
   - `.env`, `.git`, `../`, `storage/`, `vendor/` refused
   - Core updates under nginx weren't run in this setup; the swap is independent of the web server, and `public/` stays in place.
 
+## 13. Licence & support (added 02/11/2026)
+
+The usual model for software you install yourself: **a licence once, then yearly support & updates.** The app is never switched off remotely; only updates and support stop.
+
+- **Data:**
+  - `distribution_sites.support_until` (null = no end date, for sites made before this), plus reminder tracking (`support_reminder_stage`, `support_reminded_for`)
+  - `distribution_charges`: number `LIC-…`, kind licence/support, amount, support period, status unpaid/paid/cancelled, payment details, when emailed
+- **Code:**
+  - `Services\LicenceService`: charge, markPaid (extends support, never shortens it), cancel, setSupportUntil (reason required, audited), remind, sendDueReminders, dueStage
+  - `Printing\ChargePrintable` (`distribution_charge`): an invoice branded as the platform business, superadmins only
+  - `CustomerMailer::sendCharge` / `sendSupportReminder` (PDF attached; queued, attachments base64)
+  - `LicenceController`
+  - command `distribution:support-reminders` (daily 08:00)
+- **Defaults:** a new site's end date defaults to a year from today. A licence charge includes 12 months of support. A renewal runs from the day after the current end date (or today, if it has lapsed). Due in 14 days.
+- **Update API:** check-in sends `support: {until, active}`. When support has ended, offers are empty and downloads answer 403, while `assigned` is unchanged, so nothing installed is switched off. The customer's **Updates** page shows the end date, a warning in the last 30 days, and an "ended" notice explaining that the app keeps working.
+- **Reminders:** at 30 and 7 days before, and on the day. Each goes once per end date, and a new date starts over. They go to the site's contact email (with the open renewal invoice attached, if any) and to every superadmin in the app.
+- **Not done on purpose:** no remote kill switch or licence check inside the customer's app. They own the copy; we control updates and support.
+- **Tests:** `Modules/Distribution/tests/Feature/LicenceTest.php`, and `ModuleUpdatesTest::test_the_updates_page_says_when_support_has_ended`.
+- Distribution **1.5.0**: run `php artisan core:module update Distribution` (or Super Admin → Modules → Update) on our server for the new tables.
+
 ## 12. Open points
 
 - **HTTPS:** nothing enforces HTTPS for the update server address yet. Our `APP_URL` must be `https://` in production, because builds put it in every `site.json`.

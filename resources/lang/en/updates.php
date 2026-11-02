@@ -91,4 +91,10 @@ return [
     'zip_rejected' => 'The package was refused (:reason).',
     'move_failed' => 'Could not write :path.',
 
+    // Support & updates (docs/self-hosting-build-guide.md §11)
+    'support' => 'Support & updates until',
+    'support_no_end' => 'No end date',
+    'support_ending' => 'Your support & updates end on :date. Renew with your provider to keep receiving updates.',
+    'support_ended' => 'Your support & updates ended on :date.',
+    'support_ended_hint' => 'Everything you have keeps working. New versions and fixes are no longer installed until you renew with your provider.',
 ];

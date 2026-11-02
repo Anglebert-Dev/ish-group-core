@@ -51,6 +51,8 @@ class UpdateApiController extends Controller
             'offers' => $offers->checkIn($site, collect($data)->except(['site_uuid', 'nonce'])->all(), $request->ip()),
             // The site's plan: modules given are announced there, modules taken away are switched off.
             'assigned' => $site->moduleNames(),
+            // Support & updates: shown on the site's Updates page.
+            'support' => ['until' => $site->support_until?->toDateString(), 'active' => $site->hasSupport()],
         ], JSON_UNESCAPED_SLASHES);
 
         // Signed, so a site only acts on answers that really come from us.
@@ -64,6 +66,10 @@ class UpdateApiController extends Controller
     {
         $site = $this->site($request);
         $assigned = $release->module === Release::CORE || $site->modules()->where('module', $release->module)->exists();
+
+        if (! $site->hasSupport()) {
+            return response()->json(['message' => 'Support and updates for this site have ended. Contact your provider to renew.'], 403);
+        }
 
         if (! $assigned || $release->yanked_at || ! $release->published_at || ($release->test_only && ! $site->is_test) || ! is_file($releases->absolutePath($release))) {
             return response()->json(['message' => 'Not found.'], 404);

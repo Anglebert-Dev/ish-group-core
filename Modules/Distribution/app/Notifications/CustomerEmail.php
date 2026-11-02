@@ -31,6 +31,8 @@ class CustomerEmail extends Notification implements ShouldQueue
         public array $outro = [],
         public array $attachments = [],
     ) {
+        // Queued: binary files (PDF) are kept as base64 so the job stores safely.
+        $this->attachments = array_map('base64_encode', $attachments);
     }
 
     public function via(object $notifiable): array
@@ -44,7 +46,9 @@ class CustomerEmail extends Notification implements ShouldQueue
         $message = BrandedMail::make($business, $this->subject, $this->lines, $this->actionText, $this->actionUrl, $this->outro);
 
         foreach ($this->attachments as $name => $contents) {
-            $message->attachData($contents, $name, ['mime' => str_ends_with($name, '.csv') ? 'text/csv' : 'application/octet-stream']);
+            $message->attachData(base64_decode($contents), $name, ['mime' => match (true) {
+                str_ends_with($name, '.csv') => 'text/csv', str_ends_with($name, '.pdf') => 'application/pdf', default => 'application/octet-stream'
+            }]);
         }
 
         return $message;

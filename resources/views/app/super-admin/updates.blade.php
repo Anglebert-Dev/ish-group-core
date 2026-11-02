@@ -12,6 +12,18 @@
         @endif
     </x-common.page-header>
 
+    @if ($linked && $support && $support['until'])
+        @php $until = \Carbon\Carbon::parse($support['until']); @endphp
+        @if (! $support['active'])
+            <div class="mb-6 rounded-xl border border-warning/30 bg-warning/10 text-ink px-5 py-4 text-sm">
+                <p class="font-semibold">{{ __('updates.support_ended', ['date' => $until->format('d M Y')]) }}</p>
+                <p class="mt-1">{{ __('updates.support_ended_hint') }}</p>
+            </div>
+        @elseif ($until->diffInDays(today(), true) <= 30)
+            <div class="mb-6 rounded-xl border border-warning/30 bg-warning/10 text-ink px-5 py-4 text-sm">{{ __('updates.support_ending', ['date' => $until->format('d M Y')]) }}</div>
+        @endif
+    @endif
+
     @if ($lastError)
         <div class="mb-6 rounded-xl border border-danger/30 bg-danger/10 text-ink px-5 py-4 text-sm">{{ $lastError }}</div>
     @endif
@@ -103,6 +115,14 @@
                 <p class="font-medium text-ink">{{ __('updates.mode_'.($mode === 'auto' ? 'auto' : 'manual')) }}</p>
                 <p class="text-xs text-muted">{{ __('updates.mode_hint') }}</p>
             </div>
+            @if ($support)
+                <div>
+                    <p class="text-muted">{{ __('updates.support') }}</p>
+                    <p class="font-medium {{ $support['active'] ? 'text-ink' : 'text-danger' }}">
+                        {{ $support['until'] ? \Carbon\Carbon::parse($support['until'])->format('d M Y') : __('updates.support_no_end') }}
+                    </p>
+                </div>
+            @endif
             <div>
                 <p class="text-muted">{{ __('updates.last_check') }}</p>
                 <p class="font-medium text-ink">{{ $lastCheck ? \Carbon\Carbon::parse($lastCheck)->diffForHumans() : __('updates.never') }}</p>

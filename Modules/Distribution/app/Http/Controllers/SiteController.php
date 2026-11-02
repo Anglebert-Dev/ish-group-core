@@ -15,15 +15,14 @@ use Modules\Distribution\Models\Site;
 use Modules\Distribution\Models\SiteToken;
 use Modules\Distribution\Services\BuildService;
 use Modules\Distribution\Services\CustomerMailer;
+use Modules\Distribution\Services\LicenceService;
 use Modules\Distribution\Services\SiteService;
 use Modules\Distribution\Support\PlatformAudit;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class SiteController extends Controller
 {
-    public function __construct(protected SiteService $sites)
-    {
-    }
+    public function __construct(protected SiteService $sites) {}
 
     public function index(): View
     {
@@ -35,7 +34,7 @@ class SiteController extends Controller
     public function create(): View
     {
         return view('distribution::sites.form', [
-            'site' => new Site(['update_mode' => UpdateMode::Manual, 'status' => SiteStatus::Active]),
+            'site' => new Site(['update_mode' => UpdateMode::Manual, 'status' => SiteStatus::Active, 'support_until' => today()->addMonthsNoOverflow(LicenceService::DEFAULT_SUPPORT_MONTHS)->subDay()]),
             'modules' => $this->sites->assignableModules(),
         ]);
     }
@@ -43,7 +42,8 @@ class SiteController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->merge(['is_test' => $request->boolean('is_test')]);
-        $data = $request->validate($this->rules() + ['modules' => ['array'], 'modules.*' => ['string']]);
+        // The end date is set here once; afterwards payments or an audited change move it.
+        $data = $request->validate($this->rules() + ['modules' => ['array'], 'modules.*' => ['string'], 'support_until' => ['nullable', 'date']]);
         $result = $this->sites->create(collect($data)->except('modules')->all(), $data['modules'] ?? []);
 
         if (! $result['status']) {
@@ -55,7 +55,7 @@ class SiteController extends Controller
 
     public function show(Site $site): View
     {
-        $site->load('modules', 'tokens', 'builds');
+        $site->load('modules', 'tokens', 'builds', 'charges');
         $site->setRelation('updateReports', $site->updateReports()->limit(20)->get());
         $site->setRelation('checkIns', $site->checkIns()->limit(10)->get());
 

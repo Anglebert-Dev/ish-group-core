@@ -144,6 +144,12 @@ Then cron `* * * * * php artisan schedule:run` (and `queue:work`, unless they ti
 
 **Updates:** raise the module's `version` in its `module.json`, commit, then **Releases → Publish** (or `php artisan distribution:publish <Module>`). Sites check hourly: automatic ones install, manual ones show it under **Super Admin → Updates**. A failed update is undone. Write module migrations so they only add things.
 
+**Licence & support** (site page → Licence & support):
+- **Charges:** create the **licence** (once, for the site's modules, usually with 12 months of support included) and later **support renewals**. Each is numbered (`LIC-2026-00001`), prints as a branded invoice (PDF or Print) and can be emailed with the PDF attached.
+- **Paying extends support:** "Mark paid" extends **Support & updates until**. A renewal starts the day after the current period ends. The date can also be changed by hand, with a reason that goes into the audit log.
+- **After that date:** the site gets no updates or downloads, but **its app keeps working**. Its Updates page says support has ended.
+- **Reminders:** sent 30 and 7 days before, and on the day (daily `distribution:support-reminders`, or **Send reminder now**). An open renewal invoice is attached, and superadmins are notified too.
+
 **Docker:** `php artisan core:setup --skip-env --no-interaction …` with the environment set by the container; keep `storage/` and `Modules/` on volumes, or use manual updates and ship new images.
 
 ## Audit log

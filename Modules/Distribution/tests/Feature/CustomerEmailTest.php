@@ -6,6 +6,7 @@ use App\Models\ActivityLog\ActivityLog;
 use App\Models\User;
 use App\Services\Module\ModuleManager;
 use Illuminate\Notifications\AnonymousNotifiable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
@@ -52,7 +53,7 @@ class CustomerEmailTest extends TestCase
                 && str_contains($mail->subject, 'Acme Finance')
                 && str_contains((string) $mail->actionUrl, '/self-hosting/guide/')
                 && str_contains((string) $mail->actionUrl, 'signature=')
-                && str_contains(array_values($mail->attachments)[0], 'php_path,/usr/local/bin/php')
+                && str_contains(base64_decode(array_values($mail->attachments)[0]), 'php_path,/usr/local/bin/php')
                 && array_key_first($mail->attachments) === 'server-details-acme-finance.csv';
         });
         $this->assertTrue(ActivityLog::query()->where('action', 'distribution_preparation_emailed')->exists());
@@ -110,7 +111,7 @@ class CustomerEmailTest extends TestCase
 
         $build = $started['data']['build']->fresh();
         $this->assertSame($started['data']['code'], $build->install_code);
-        $this->assertNotSame($started['data']['code'], \Illuminate\Support\Facades\DB::table('distribution_builds')->value('install_code'), 'stored encrypted');
+        $this->assertNotSame($started['data']['code'], DB::table('distribution_builds')->value('install_code'), 'stored encrypted');
     }
 
     private function readyBuild(): Build
