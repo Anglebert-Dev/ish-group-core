@@ -27,6 +27,14 @@ class ColorLibrary
         );
     }
 
+    /** True when white text reads better on it than dark text. */
+    public static function isDark(string $hex): bool
+    {
+        [$r, $g, $b] = self::rgb($hex);
+
+        return (0.299 * $r + 0.587 * $g + 0.114 * $b) < 150;
+    }
+
     /**
      * @return array{0: int, 1: int, 2: int}
      */

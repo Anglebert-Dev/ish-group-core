@@ -7,6 +7,7 @@ use App\Http\Controllers\Web\Customer\CustomerController;
 use App\Http\Controllers\Web\Dashboard\DashboardController;
 use App\Http\Controllers\Web\Landing\LandingController;
 use App\Http\Controllers\Web\Notification\NotificationController;
+use App\Http\Controllers\Web\Print\PrintController;
 use App\Http\Controllers\Web\Role\RoleController;
 use App\Http\Controllers\Web\Setting\SettingController;
 use App\Http\Controllers\Web\SuperAdmin\AuditController;
@@ -138,9 +139,17 @@ Route::prefix('app')->middleware(['auth:staff', 'auth.session', 'exclusive.porta
 
     Route::get('/settings', [SettingController::class, 'index'])->middleware('permission:list settings.setting')->name('settings.index');
     Route::put('/settings', [SettingController::class, 'update'])->middleware('permission:update settings.setting')->name('settings.update');
-    Route::get('/print/{type}/{id}', [\App\Http\Controllers\Web\Print\PrintController::class, 'show'])->where('type', '[a-z_]+')->name('print.show');
-    Route::get('/print/{type}/{id}/pdf', [\App\Http\Controllers\Web\Print\PrintController::class, 'pdf'])->where('type', '[a-z_]+')->name('print.pdf');
+    Route::get('/print/{type}/{id}', [PrintController::class, 'show'])->where('type', '[a-z_]+')->name('print.show');
+    Route::get('/print/{type}/{id}/pdf', [PrintController::class, 'pdf'])->where('type', '[a-z_]+')->name('print.pdf');
     Route::get('/settings/print-preview', [SettingController::class, 'preview'])->middleware(['permission:list settings.setting', 'throttle:120,1'])->name('settings.print-preview');
+    Route::middleware('permission:update settings.setting')->prefix('settings/theme')->name('settings.theme.')->group(function () {
+        Route::post('/discard', [SettingController::class, 'discardTheme'])->name('discard');
+        Route::post('/reset', [SettingController::class, 'resetTheme'])->name('reset');
+        Route::post('/restore/{version}', [SettingController::class, 'restoreTheme'])->name('restore');
+        Route::post('/preview', [SettingController::class, 'previewTheme'])->name('preview');
+        Route::post('/preview/stop', [SettingController::class, 'stopPreview'])->name('preview.stop');
+    });
+    Route::post('/settings/theme/publish', [SettingController::class, 'publishTheme'])->middleware('permission:approve settings.setting')->name('settings.theme.publish');
     Route::get('/settings/image/{kind}', [SettingController::class, 'image'])->middleware('permission:list settings.setting')->whereIn('kind', ['stamp', 'signature'])->name('settings.image');
 
     Route::prefix('notifications')->name('notifications.')->group(function () {

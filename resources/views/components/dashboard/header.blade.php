@@ -11,10 +11,10 @@
     $headerUnreadCount = $headerUnreadCount ?? 0;
 @endphp
 
-<header class="h-16 bg-header text-header-ink border-b border-line flex items-center justify-between gap-3 px-4 sm:px-5 lg:px-8 sticky top-0 z-20">
+<header class="h-16 bg-header text-header-ink border-b border-header-ink/10 flex items-center justify-between gap-3 px-4 sm:px-5 lg:px-8 sticky top-0 z-20">
 
     <div class="flex items-center gap-3 min-w-0">
-        <button type="button" onclick="toggleSidebar(true)" class="lg:hidden text-ink p-2 -ml-2 rounded-lg hover:bg-surface" aria-label="Open menu">
+        <button type="button" onclick="toggleSidebar(true)" class="lg:hidden text-header-ink p-2 -ml-2 rounded-lg hover:bg-header-ink/5" aria-label="Open menu">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
         </button>
     </div>
@@ -22,7 +22,7 @@
     <div class="flex items-center gap-2 sm:gap-4 shrink-0">
         <div class="relative" data-notification-menu>
             <button type="button"
-                    class="relative p-2 text-muted hover:text-ink rounded-lg hover:bg-surface"
+                    class="relative p-2 text-header-ink/70 hover:text-header-ink rounded-lg hover:bg-header-ink/5"
                     aria-label="{{ __('body.notifications') }}"
                     aria-expanded="false"
                     aria-haspopup="true"
@@ -80,11 +80,11 @@
             </div>
         </div>
 
-        <div class="h-8 w-px bg-line hidden sm:block"></div>
+        <div class="h-8 w-px bg-header-ink/15 hidden sm:block"></div>
 
         <div class="relative" data-user-menu>
             <button type="button"
-                    class="flex items-center gap-3 min-w-0 rounded-lg p-1 -m-1 hover:bg-surface transition-colors"
+                    class="flex items-center gap-3 min-w-0 rounded-lg p-1 -m-1 hover:bg-header-ink/5 transition-colors"
                     aria-label="{{ __('body.profile') }}"
                     aria-expanded="false"
                     aria-haspopup="true"
@@ -93,10 +93,10 @@
                     {{ $initials }}
                 </div>
                 <div class="hidden sm:block leading-tight min-w-0 text-left">
-                    <p class="text-sm font-semibold text-ink truncate max-w-[10rem] lg:max-w-[14rem]">{{ $authUser->name }}</p>
-                    <p class="text-xs text-muted truncate">{{ $authUser->roleName() ?? ($authUser->isSuperAdmin() ? __('body.super_admin') : __('body.staff')) }}</p>
+                    <p class="text-sm font-semibold text-header-ink truncate max-w-[10rem] lg:max-w-[14rem]">{{ $authUser->name }}</p>
+                    <p class="text-xs text-header-ink/60 truncate">{{ $authUser->roleName() ?? ($authUser->isSuperAdmin() ? __('body.super_admin') : __('body.staff')) }}</p>
                 </div>
-                <svg xmlns="http://www.w3.org/2000/svg" class="hidden sm:block h-4 w-4 text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" class="hidden sm:block h-4 w-4 text-header-ink/60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
             </button>
 
             <div hidden

@@ -8,7 +8,9 @@
 @php
     // Uploaded business logo when there is one (Settings → Assets);
     // otherwise a text wordmark built from the business name.
-    $custom = $branding->logoUrl();
+    // On a dark background, the logo made for dark backgrounds (Branding → Look) when there is one.
+    $darkLogo = $dark ? app(\App\Services\Branding\BrandingService::class)->darkLogoUrl($branding) : null;
+    $custom = $darkLogo ?? $branding->logoUrl();
     $name = $branding->companyName();
     $initial = mb_strtoupper(mb_substr($name, 0, 1));
 

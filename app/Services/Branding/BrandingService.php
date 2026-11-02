@@ -2,12 +2,12 @@
 
 namespace App\Services\Branding;
 
+use App\Helpers\AuthHelper;
 use App\Libraries\UploadLibrary;
 use App\Models\Business\Business;
 use App\Services\BaseService;
 use App\Support\Branding\Brand;
 use App\Support\Branding\Fonts;
-use App\Support\Branding\ThemeTokens;
 use App\Support\Printing\PrintDesign;
 use App\Support\Settings\BusinessSettings;
 use Illuminate\Http\UploadedFile;
@@ -65,7 +65,27 @@ class BrandingService extends BaseService
      */
     public function tokens(Business $business): array
     {
-        return ThemeTokens::resolve($business->brandColor());
+        return app(ThemeService::class)->tokens($business, $this->previewing($business));
+    }
+
+    /** Public URL of the logo for dark backgrounds, if uploaded. */
+    public function darkLogoUrl(Business $business): ?string
+    {
+        $path = $business->exists ? $this->settings->get('branding.logo_dark_path', null, $business) : null;
+
+        return $path ? '/storage/'.$path : null;
+    }
+
+    /**
+     * Is the signed-in user looking at their business's unpublished draft?
+     */
+    public function previewing(Business $business): bool
+    {
+        $user = auth('staff')->user();
+
+        return $business->exists && $user && $user->business_id === $business->id
+            && session(ThemeService::PREVIEW) === $business->id
+            && AuthHelper::can('update settings.setting');
     }
 
     /**

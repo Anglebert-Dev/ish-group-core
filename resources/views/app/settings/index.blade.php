@@ -15,6 +15,69 @@
         @endforeach
     </nav>
 
+    @if ($draft)
+        <div class="mb-6 rounded-xl border border-warning/40 bg-warning/10 p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div class="min-w-0">
+                <p class="text-sm font-semibold text-ink">{{ __('body.theme_draft_title', ['number' => $draft->number]) }}</p>
+                <p class="text-xs text-muted">{{ __('body.theme_draft_meta', ['when' => \App\Libraries\GeneralLibrary::formatDateTime($draft->updated_at), 'who' => $draft->author?->name ?? '—']) }}</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                @unless ($previewing)
+                    <form action="{{ route('settings.theme.preview') }}" method="POST">
+                        @csrf
+                        <x-common.button type="submit" variant="secondary" size="sm">{{ __('body.theme_preview') }}</x-common.button>
+                    </form>
+                @endunless
+                @if (\App\Helpers\AuthHelper::can('approve settings.setting'))
+                    <form action="{{ route('settings.theme.publish') }}" method="POST">
+                        @csrf
+                        <x-common.button type="submit" size="sm">{{ __('body.theme_publish') }}</x-common.button>
+                    </form>
+                @endif
+                <form action="{{ route('settings.theme.discard') }}" method="POST">
+                    @csrf
+                    <x-common.button type="submit" variant="ghost" size="sm" data-confirm data-confirm-title="{{ __('body.theme_discard_confirm') }}" data-confirm-variant="danger">{{ __('body.theme_discard') }}</x-common.button>
+                </form>
+            </div>
+        </div>
+    @endif
+
+    @if ($tab === 'history')
+        <div class="bg-card border border-line rounded-xl overflow-hidden">
+            <div class="p-4 sm:p-6 border-b border-line flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <p class="text-sm text-muted">{{ __('body.theme_history_hint') }}</p>
+                <form action="{{ route('settings.theme.reset') }}" method="POST" class="shrink-0">
+                    @csrf
+                    <x-common.button type="submit" variant="secondary" size="sm" data-confirm data-confirm-title="{{ __('body.theme_reset_confirm') }}">{{ __('body.theme_reset_button') }}</x-common.button>
+                </form>
+            </div>
+            @forelse ($versions as $version)
+                <div class="px-4 sm:px-6 py-3 border-b border-line last:border-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div class="min-w-0">
+                        <p class="text-sm font-semibold text-ink">
+                            {{ __('body.theme_version', ['number' => $version->number]) }}
+                            <x-common.badge :color="['published' => 'success', 'draft' => 'warning'][$version->status] ?? 'muted'" class="ml-1">{{ __('body.theme_status_'.$version->status) }}</x-common.badge>
+                        </p>
+                        <p class="text-xs text-muted">
+                            @if ($version->published_at)
+                                {{ __('body.theme_published_meta', ['when' => \App\Libraries\GeneralLibrary::formatDateTime($version->published_at), 'who' => $version->publisher?->name ?? '—']) }}
+                            @else
+                                {{ __('body.theme_draft_meta', ['when' => \App\Libraries\GeneralLibrary::formatDateTime($version->updated_at), 'who' => $version->author?->name ?? '—']) }}
+                            @endif
+                        </p>
+                    </div>
+                    @if ($version->status !== 'draft')
+                        <form action="{{ route('settings.theme.restore', $version) }}" method="POST" class="shrink-0">
+                            @csrf
+                            <x-common.button type="submit" variant="secondary" size="sm">{{ __('body.theme_restore') }}</x-common.button>
+                        </form>
+                    @endif
+                </div>
+            @empty
+                <p class="p-6 text-sm text-muted">{{ __('body.theme_history_empty') }}</p>
+            @endforelse
+        </div>
+    @else
     <form action="{{ route('settings.update') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
         @csrf
         @method('PUT')
@@ -84,6 +147,33 @@
                     </div>
                     <x-common.file-input name="favicon" :label="__('body.favicon')" accept="image/*" :max-size-mb="1" :existing-url="$setting->faviconUrl()" />
                 </div>
+            </div>
+        @endif
+
+        @if ($tab === 'theme')
+            <div class="bg-card border border-line rounded-xl p-4 sm:p-6 space-y-6">
+                <div class="space-y-1">
+                    <p class="text-sm text-muted">{{ __('body.theme_hint') }}</p>
+                    <p class="text-xs text-muted">
+                        @if ($live)
+                            {{ __('body.theme_live', ['number' => $live->number, 'when' => \App\Libraries\GeneralLibrary::formatDateTime($live->published_at), 'who' => $live->publisher?->name ?? '—']) }}
+                        @else
+                            {{ __('body.theme_live_platform') }}
+                        @endif
+                    </p>
+                </div>
+                @foreach (['theme_group_brand' => ['accent', 'link'], 'theme_group_surfaces' => ['page', 'card', 'surface', 'line'], 'theme_group_text' => ['ink', 'body', 'muted'], 'theme_group_navigation' => ['sidebar', 'sidebar_ink', 'header', 'header_ink'], 'theme_group_status' => ['success', 'warning', 'danger', 'info']] as $group => $keys)
+                    <fieldset class="space-y-3">
+                        <legend class="text-sm font-bold text-ink">{{ __('body.'.$group) }}</legend>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                            @foreach ($keys as $key)
+                                <x-common.color-field :name="'colors['.$key.']'" :label="__('body.theme_color_'.$key)"
+                                    :value="old('colors.'.$key, ($draft ?? $live)?->payload['colors'][$key] ?? null)" :default="$themeDefaults[$key]" />
+                            @endforeach
+                        </div>
+                    </fieldset>
+                @endforeach
+                <p class="text-xs text-muted">{{ __('body.theme_blank_hint') }}</p>
             </div>
         @endif
 
@@ -236,7 +326,8 @@
         @endif
 
         <div class="flex [&>*]:w-full sm:[&>*]:w-auto sm:justify-end">
-            <x-common.button type="submit">{{ __('body.save_changes') }}</x-common.button>
+            <x-common.button type="submit">{{ $tab === 'theme' ? __('body.theme_save_draft') : __('body.save_changes') }}</x-common.button>
         </div>
     </form>
+    @endif
 </x-layouts.app>

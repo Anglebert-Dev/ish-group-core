@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Web\Setting;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Setting\UpdateSettingRequest;
+use App\Models\Branding\BrandingVersion;
 use App\Services\Branding\BrandingService;
+use App\Services\Branding\ThemeService;
 use App\Services\Printing\PrintService;
 use App\Services\Setting\SettingService;
 use App\Support\Branding\Fonts;
+use App\Support\Branding\ThemeTokens;
 use App\Support\Printing\PrintDesign;
 use App\Support\Printing\PrintRegistry;
 use App\Support\Printing\SampleDocument;
@@ -25,11 +28,12 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class SettingController extends Controller
 {
-    public const TABS = ['details', 'look', 'stamp', 'payments', 'documents'];
+    public const TABS = ['details', 'look', 'theme', 'stamp', 'payments', 'documents', 'history'];
 
     public function __construct(
         protected SettingService $settings,
         protected BrandingService $branding,
+        protected ThemeService $themes,
     ) {}
 
     public function index(Request $request): View
@@ -47,6 +51,12 @@ class SettingController extends Controller
             // Blank = documents use the system font.
             'printFont' => array_key_exists((string) app(BusinessSettings::class)->get('print.font', null, $business), Fonts::LIST) ? app(BusinessSettings::class)->get('print.font', null, $business) : '',
             'documentTypes' => ['list' => __('body.print_type_list')] + app(PrintRegistry::class)->labels(),
+            'draft' => $this->themes->draft($business),
+            'live' => $this->themes->published($business),
+            'theme' => $this->themes->effective($business, withDraft: true),
+            'themeDefaults' => ThemeTokens::resolve($business->brandColor(), $this->themes->effective($business)['colors'] ?? []),
+            'versions' => $tab === 'history' ? $this->themes->history($business) : collect(),
+            'previewing' => $this->branding->previewing($business),
         ]);
     }
 
@@ -84,11 +94,64 @@ class SettingController extends Controller
                 'methods.*.swift' => ['nullable', 'string', 'max:20'],
             ])['methods'] ?? []),
             'documents' => $this->branding->saveDesign($business, $this->designInput($request)),
+            'theme' => $this->themes->saveDraft($business, ['colors' => $request->validate([
+                'colors' => ['array'],
+                'colors.*' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            ])['colors'] ?? []]),
             default => $this->legacy(app(UpdateSettingRequest::class)),
         };
 
         return redirect()->route('settings.index', in_array($section, self::TABS, true) ? ['tab' => $section] : [])
             ->with($result['status'] ? 'success' : 'error', $result['message']);
+    }
+
+    public function publishTheme(Request $request): RedirectResponse
+    {
+        // Published or thrown away, there is no draft left to preview.
+        $request->session()->forget(ThemeService::PREVIEW);
+
+        return $this->back($this->themes->publish($this->settings->current()));
+    }
+
+    public function discardTheme(Request $request): RedirectResponse
+    {
+        $request->session()->forget(ThemeService::PREVIEW);
+
+        return $this->back($this->themes->discard($this->settings->current()));
+    }
+
+    public function resetTheme(): RedirectResponse
+    {
+        return $this->back($this->themes->reset($this->settings->current()), 'theme');
+    }
+
+    public function restoreTheme(BrandingVersion $version): RedirectResponse
+    {
+        return $this->back($this->themes->restore($this->settings->current(), $version), 'theme');
+    }
+
+    /** Show the whole app with the draft, for this user only, until stopped. */
+    public function previewTheme(Request $request): RedirectResponse
+    {
+        $business = $this->settings->current();
+        $request->session()->put(ThemeService::PREVIEW, $business->id);
+        audit('branding_previewed', 'Started previewing the branding draft', null, [], $business->id);
+
+        return redirect()->route('dashboard');
+    }
+
+    public function stopPreview(Request $request): RedirectResponse
+    {
+        $request->session()->forget(ThemeService::PREVIEW);
+
+        return redirect()->route('settings.index', ['tab' => 'theme']);
+    }
+
+    private function back(array $result, ?string $tab = null): RedirectResponse
+    {
+        $tab ??= in_array(request('tab'), self::TABS, true) ? request('tab') : 'theme';
+
+        return redirect()->route('settings.index', ['tab' => $tab])->with($result['status'] ? 'success' : 'error', $result['message']);
     }
 
     /**
