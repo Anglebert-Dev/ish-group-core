@@ -32,6 +32,13 @@
                 <span class="hint block">{{ __('install.app_queue_via_scheduler_hint') }}</span>
             </span>
         </label>
+        <label class="flex items-start gap-3 text-sm">
+            <input type="checkbox" name="behind_proxy" value="1" class="mt-1" @checked($v('behind_proxy'))>
+            <span>
+                <span class="font-semibold">{{ __('install.app_behind_proxy') }}</span>
+                <span class="hint block">{{ __('install.app_behind_proxy_hint') }}</span>
+            </span>
+        </label>
         <button class="btn btn-primary">{{ __('install.continue') }}</button>
     </form>
 @endsection

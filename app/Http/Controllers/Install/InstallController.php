@@ -108,12 +108,30 @@ class InstallController extends Controller
         return $this->guard('app') ?? $this->page('app', [
             'values' => session('install.data.app') ?? $manifest->defaults('app') + [
                 'name' => config('app.name'),
-                'url' => $request->getSchemeAndHttpHost().rtrim($request->getBasePath(), '/'),
+                'url' => $this->visitorUrl($request),
                 'timezone' => config('app.timezone'),
                 'queue_via_scheduler' => true,
+                'behind_proxy' => $this->throughProxy($request),
             ],
             'timezones' => DateTimeZone::listIdentifiers(),
         ]);
+    }
+
+    private function throughProxy(Request $request): bool
+    {
+        return strtolower((string) $request->headers->get('X-Forwarded-Proto')) === 'https' || $request->headers->has('X-Forwarded-Host');
+    }
+
+    private function visitorUrl(Request $request): string
+    {
+        if ($this->throughProxy($request)) {
+            $host = (string) ($request->headers->get('X-Forwarded-Host') ?: $request->getHttpHost());
+            $scheme = strtolower((string) $request->headers->get('X-Forwarded-Proto')) === 'https' ? 'https' : $request->getScheme();
+
+            return $scheme.'://'.explode(',', $host)[0].rtrim($request->getBasePath(), '/');
+        }
+
+        return $request->getSchemeAndHttpHost().rtrim($request->getBasePath(), '/');
     }
 
     public function saveApp(Request $request): RedirectResponse
@@ -122,7 +140,7 @@ class InstallController extends Controller
             return $redirect;
         }
 
-        $request->merge(['queue_via_scheduler' => $request->boolean('queue_via_scheduler')]);
+        $request->merge(['queue_via_scheduler' => $request->boolean('queue_via_scheduler'), 'behind_proxy' => $request->boolean('behind_proxy')]);
         $this->remember('app', $request->validate(InstallRules::app()));
         $this->complete('app');
 

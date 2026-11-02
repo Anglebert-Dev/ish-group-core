@@ -42,6 +42,7 @@ class SetupCommand extends Command
         {--app-url=}
         {--timezone=}
         {--queue-via-scheduler : Shared hosting: send queued emails from the cron job}
+        {--behind-proxy : Reached through a tunnel or proxy that ends HTTPS (ngrok, Cloudflare Tunnel, load balancer)}
         {--mail-host= : Leave out to skip email (written to the log)}
         {--mail-port=}
         {--mail-scheme= : smtps for SSL (port 465); empty for STARTTLS}
@@ -179,11 +180,13 @@ class SetupCommand extends Command
                 || ($this->input->isInteractive()
                     ? confirm(__('install.app_queue_via_scheduler'), default: (bool) ($given['queue_via_scheduler'] ?? false), hint: __('install.app_queue_via_scheduler_hint'))
                     : (bool) ($given['queue_via_scheduler'] ?? false)),
+            'behind_proxy' => $this->option('behind-proxy')
+                || ($this->input->isInteractive() && confirm(__('install.app_behind_proxy'), default: false, hint: __('install.app_behind_proxy_hint'))),
         ];
     }
 
     /**
-     * @return array<string, mixed>|null|false  null = skipped, false = invalid
+     * @return array<string, mixed>|null|false null = skipped, false = invalid
      */
     private function askMail(): array|null|false
     {

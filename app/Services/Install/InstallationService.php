@@ -43,8 +43,7 @@ class InstallationService extends BaseService
         protected ModuleManager $modules,
         protected PermissionService $permissions,
         protected DatabaseProbe $probe,
-    ) {
-    }
+    ) {}
 
     /**
      * @param  callable(string): void|null  $onStep  told the name of each step as it starts
@@ -141,6 +140,7 @@ class InstallationService extends BaseService
             'APP_ENV' => 'production',
             'APP_DEBUG' => false,
             'APP_URL' => rtrim($app['url'], '/'),
+            'TRUSTED_PROXIES' => ! empty($app['behind_proxy']) ? '*' : '',
             'APP_TIMEZONE' => $app['timezone'],
             'LOG_LEVEL' => 'warning',
             'DB_CONNECTION' => $db['driver'],

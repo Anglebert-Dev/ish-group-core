@@ -14,6 +14,7 @@ use App\Http\Middleware\RedirectToInstaller;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\ThemeStudio;
+use App\Support\Installer\Installer;
 use App\Support\Installer\PreInstall;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -48,6 +49,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // trusting these headers would let anyone fake their IP.
         if ($proxies = env('TRUSTED_PROXIES')) {
             $middleware->trustProxies(at: $proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)));
+        } elseif (! Installer::isInstalled()) {
+            // The installer itself, opened through a tunnel before .env says so:
+            // no data or accounts exist yet, and it writes TRUSTED_PROXIES when asked.
+            $middleware->trustProxies(at: '*');
         }
         $middleware->prepend(RedirectToInstaller::class);
         $middleware->append(SecurityHeaders::class);

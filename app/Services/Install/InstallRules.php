@@ -29,6 +29,7 @@ class InstallRules
             'url' => ['required', 'url:http,https', 'max:255'],
             'timezone' => ['required', 'timezone:all'],
             'queue_via_scheduler' => ['boolean'],
+            'behind_proxy' => ['boolean'],
         ];
     }
 

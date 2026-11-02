@@ -17,7 +17,7 @@ Open the site in a browser (`http://localhost:9000`). The installer asks for the
 
 There is no npm step: the styles and scripts ship ready in `public/`.
 
-**Reached through a tunnel or proxy** (ngrok, Cloudflare Tunnel, a load balancer)? Before opening the installer, put `TRUSTED_PROXIES=*` in `.env`, so links and logins work over its HTTPS. With ngrok:
+**Reached through a tunnel or proxy** (ngrok, Cloudflare Tunnel, a load balancer)? Open the installer through it: it fills in the `https://` address and ticks "Reached through a proxy or tunnel", which writes `TRUSTED_PROXIES=*` to `.env` so pages keep their styles and logins work over HTTPS. (An installed site moved behind a tunnel later: add `TRUSTED_PROXIES=*` and the `https://` `APP_URL` to `.env` yourself.) With ngrok:
 
 ```bash
 ngrok config add-authtoken YOUR_TOKEN          # once, from dashboard.ngrok.com

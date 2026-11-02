@@ -124,4 +124,6 @@ return [
     'env_value_newline' => 'Values cannot contain line breaks.',
     'session_expired' => 'Your session ended. Please start again.',
 
+    'app_behind_proxy' => 'Reached through a proxy or tunnel',
+    'app_behind_proxy_hint' => 'Tick when people reach this site through ngrok, Cloudflare Tunnel or a load balancer that handles HTTPS. Ticked for you when we can see one. Without it, pages behind such a tunnel load without their styles.',
 ];

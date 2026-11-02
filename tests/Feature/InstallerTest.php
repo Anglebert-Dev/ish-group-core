@@ -225,6 +225,24 @@ class InstallerTest extends TestCase
         $this->assertSame(['Inventory', 'Production', 'GarmentPack'], $this->installer()->installOrder(['GarmentPack']));
     }
 
+    public function test_through_a_tunnel_the_installer_fills_in_https_and_trusts_the_proxy(): void
+    {
+        $this->withoutInstalledFlag();
+        $this->withSession(['install.done' => ['code', 'requirements', 'database']]);
+
+        $this->get('/install/app', ['X-Forwarded-Proto' => 'https', 'X-Forwarded-Host' => 'demo.ngrok-free.app'])->assertOk()
+            ->assertSee('value="https://demo.ngrok-free.app"', false)
+            ->assertSee('name="behind_proxy" value="1" class="mt-1" checked', false);
+
+        $values = $this->installer()->envValues([
+            'database' => ['driver' => 'pgsql', 'host' => 'db', 'port' => 5432, 'database' => 'f', 'username' => 'u', 'password' => 'p'],
+            'app' => ['name' => 'Core', 'url' => 'https://demo.ngrok-free.app', 'timezone' => 'UTC', 'behind_proxy' => true],
+            'mail' => null,
+        ]);
+        $this->assertSame('*', $values['TRUSTED_PROXIES']);
+        $this->assertTrue($values['SESSION_SECURE_COOKIE']);
+    }
+
     public function test_env_values_follow_the_answers(): void
     {
         $values = $this->installer()->envValues([
@@ -239,6 +257,7 @@ class InstallerTest extends TestCase
         $this->assertTrue($values['QUEUE_VIA_SCHEDULER']);
         $this->assertSame('log', $values['MAIL_MAILER']);
         $this->assertFalse($values['APP_DEBUG']);
+        $this->assertSame('', $values['TRUSTED_PROXIES'], 'no proxy: its headers are not trusted');
     }
 
     // ── core:setup ───────────────────────────────────────────────
