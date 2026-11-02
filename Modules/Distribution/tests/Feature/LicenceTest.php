@@ -16,6 +16,7 @@ use Modules\Distribution\Services\BuildService;
 use Modules\Distribution\Services\LicenceService;
 use Modules\Distribution\Services\SigningKeys;
 use Modules\Distribution\Services\SiteService;
+use Modules\Distribution\Tests\Feature\Concerns\PaidSite;
 use Tests\TestCase;
 
 /**
@@ -23,6 +24,8 @@ use Tests\TestCase;
  */
 class LicenceTest extends TestCase
 {
+    use PaidSite;
+
     protected Site $site;
 
     protected function setUp(): void
@@ -115,12 +118,48 @@ class LicenceTest extends TestCase
         $this->assertSame('450000.00', $charge->amount);
         $this->assertSame(12, LicenceService::monthsOf($charge));
         $this->assertStringContainsString('12 months', $charge->description);
-        $this->assertTrue(ActivityLog::query()->where('action', 'distribution_charge_updated')->exists());
+        // The invoice's history shows what the edit changed.
+        $edit = ActivityLog::query()->where('action', 'distribution_charge_updated')->firstOrFail();
+        $this->assertSame(['from' => '500000.00', 'to' => '450000.00'], $edit->properties['changes']['amount']);
+        $this->get(route('superadmin.distribution.sites.show', ['site' => $this->site, 'tab' => 'licence']))->assertOk()
+            ->assertSee(__('distribution::distribution.history_title'))->assertSee(__('distribution::distribution.event_distribution_charge_updated'));
 
         // Paid charges are records: no more changes.
         app(LicenceService::class)->markPaid($charge, ['paid_on' => today()->toDateString()]);
         $this->put(route('superadmin.distribution.sites.charges.update', [$this->site, $charge]), ['amount' => '1'])->assertSessionHas('error');
         $this->assertSame('450000.00', $charge->fresh()->amount);
+    }
+
+    public function test_one_licence_per_site_and_renewals_only_after_it_is_paid(): void
+    {
+        $licences = app(LicenceService::class);
+
+        $early = $licences->charge($this->site, ['kind' => 'support', 'amount' => 300000, 'support_months' => 12]);
+        $this->assertFalse($early['status']);
+        $this->assertSame(__('distribution::distribution.renewal_needs_licence'), $early['message']);
+
+        $licence = $licences->charge($this->site, ['kind' => 'licence', 'amount' => 500000, 'support_months' => 12])['data'];
+        $licences->markPaid($licence, ['paid_on' => today()->toDateString()]);
+
+        $again = $licences->charge($this->site->fresh(), ['kind' => 'licence', 'amount' => 500000]);
+        $this->assertFalse($again['status']);
+        $this->assertSame(__('distribution::distribution.licence_already_paid'), $again['message']);
+
+        $this->assertTrue($licences->charge($this->site->fresh(), ['kind' => 'support', 'amount' => 300000, 'support_months' => 12])['status']);
+        $this->assertFalse($licences->charge($this->site->fresh(), ['kind' => 'support', 'amount' => 300000, 'support_months' => 12])['status'], 'one open renewal at a time');
+    }
+
+    public function test_the_page_shows_each_step_and_a_test_site_says_it_needs_no_licence(): void
+    {
+        $this->get(route('superadmin.distribution.sites.show', $this->site))->assertOk()
+            ->assertSee(__('distribution::distribution.steps_title'))
+            ->assertSee(__('distribution::distribution.step_licence_none'))
+            ->assertDontSee(__('distribution::distribution.test_site_banner_title'));
+
+        $this->site->forceFill(['is_test' => true])->save();
+        $this->get(route('superadmin.distribution.sites.show', $this->site))->assertOk()
+            ->assertSee(__('distribution::distribution.test_site_banner_title'))
+            ->assertSee(__('distribution::distribution.step_licence_test'));
     }
 
     public function test_other_businesses_cannot_print_our_charges(): void
@@ -178,7 +217,7 @@ class LicenceTest extends TestCase
 
     public function test_the_reminder_carries_an_open_renewal_invoice(): void
     {
-        $this->site->forceFill(['support_until' => today()->addDays(5)])->save();
+        $this->paid($this->site)->forceFill(['support_until' => today()->addDays(5)])->save();
         $renewal = app(LicenceService::class)->charge($this->site, ['kind' => 'support', 'amount' => 300000, 'support_months' => 12])['data'];
 
         $this->post(route('superadmin.distribution.sites.support.remind', $this->site))->assertRedirect()->assertSessionHas('success');

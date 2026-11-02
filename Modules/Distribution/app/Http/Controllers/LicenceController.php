@@ -91,7 +91,7 @@ class LicenceController extends Controller
 
     private function back(Site $site, array $result): RedirectResponse
     {
-        return redirect()->to(route('superadmin.distribution.sites.show', $site).'#licence')
+        return redirect()->to(route('superadmin.distribution.sites.show', ['site' => $site, 'tab' => 'licence']))
             ->with($result['status'] ? 'success' : 'error', $result['message']);
     }
 }

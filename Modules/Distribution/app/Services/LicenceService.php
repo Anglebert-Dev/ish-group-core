@@ -42,13 +42,20 @@ class LicenceService extends BaseService
      */
     public function charge(Site $site, array $data): array
     {
-        // One open licence at a time: a wrong one is edited, not duplicated.
-        if ($data['kind'] === Charge::LICENCE && ($open = $site->charges()->where('kind', Charge::LICENCE)->where('status', ChargeStatus::Unpaid->value)->first())) {
-            return $this->failure(__('distribution::distribution.charge_licence_open', ['number' => $open->number]));
+
+        $open = $site->charges()->where('kind', $data['kind'])->where('status', ChargeStatus::Unpaid->value)->first();
+        if ($open) {
+            return $this->failure(__('distribution::distribution.charge_open', ['number' => $open->number]));
+        }
+        $licencePaid = $site->charges()->where('kind', Charge::LICENCE)->where('status', ChargeStatus::Paid->value)->exists();
+        if ($data['kind'] === Charge::LICENCE && $licencePaid) {
+            return $this->failure(__('distribution::distribution.licence_already_paid'));
+        }
+        if ($data['kind'] === Charge::SUPPORT && ! $licencePaid) {
+            return $this->failure(__('distribution::distribution.renewal_needs_licence'));
         }
 
         $months = (int) ($data['support_months'] ?? 0);
-        // A renewal starts the day after the current period ends (or today, if it has lapsed).
         $from = $site->support_until && $site->support_until->isFuture() ? $site->support_until->copy()->addDay() : today();
 
         $charge = new Charge([
@@ -130,9 +137,17 @@ class LicenceService extends BaseService
             'description' => filled($data['description'] ?? null) ? $data['description'] : $this->defaultDescription($site, $charge->kind, $months),
         ])->save();
 
-        PlatformAudit::log('distribution_charge_updated', "Charge {$charge->number} corrected", $charge, ['before' => $before]);
+        $after = $charge->only(['amount', 'period_until', 'due_on', 'description']);
+        $changes = collect($after)->map(fn ($value, $field) => ['from' => self::plain($before[$field]), 'to' => self::plain($value)])
+            ->reject(fn ($change) => $change['from'] === $change['to'])->all();
+        PlatformAudit::log('distribution_charge_updated', "Charge {$charge->number} corrected", $charge, ['changes' => $changes]);
 
         return $this->success($charge, __('distribution::distribution.charge_updated', ['number' => $charge->number]));
+    }
+
+    private static function plain(mixed $value): ?string
+    {
+        return $value instanceof CarbonInterface ? $value->toDateString() : ($value === null ? null : (string) $value);
     }
 
     /** Support months a charge carries (from its period). */

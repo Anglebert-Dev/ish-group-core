@@ -3,13 +3,16 @@
 namespace Modules\Distribution\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog\ActivityLog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Modules\Distribution\Enums\ChargeStatus;
 use Modules\Distribution\Enums\SiteStatus;
 use Modules\Distribution\Enums\UpdateMode;
 use Modules\Distribution\Models\Build;
+use Modules\Distribution\Models\Charge;
 use Modules\Distribution\Models\Release;
 use Modules\Distribution\Models\Site;
 use Modules\Distribution\Models\SiteToken;
@@ -59,8 +62,18 @@ class SiteController extends Controller
         $site->setRelation('updateReports', $site->updateReports()->limit(20)->get());
         $site->setRelation('checkIns', $site->checkIns()->limit(10)->get());
 
+        $charges = $site->charges;
+
         return view('distribution::sites.show', [
             'site' => $site,
+            'tab' => request('tab', 'overview'),
+            // One licence per site: the paid one, else the one waiting for payment.
+            'licence' => $charges->first(fn (Charge $c) => $c->kind === Charge::LICENCE && $c->status === ChargeStatus::Paid)
+                ?? $charges->first(fn (Charge $c) => $c->kind === Charge::LICENCE && $c->isOpen()),
+            'renewal' => $charges->first(fn (Charge $c) => $c->kind === Charge::SUPPORT && $c->isOpen()),
+            'history' => ActivityLog::query()->withoutGlobalScopes()
+                ->where('subject_type', (new Charge)->getMorphClass())->whereIn('subject_id', $charges->modelKeys())
+                ->oldest('id')->get()->groupBy('subject_id'),
             'latest' => Release::latestFor($site->moduleNames(), $site->is_test),
             'assignable' => array_values(array_diff($this->sites->assignableModules(), $site->moduleNames())),
             'signingReady' => app(SigningKeys::class)->configured(),

@@ -50,7 +50,7 @@ class ServerDetailsTest extends TestCase
             'hosting_type' => 'Shared', 'web_server' => 'Apache2', 'php_version' => '8.3', 'php_path' => '/usr/local/bin/php', 'cron_only' => '1',
             'db_driver' => 'PostgreSQL', 'db_port' => '5432', 'app_url' => 'https://finance.acme.com', 'admin_email' => 'jane@acme.com',
             'db_password' => 'never-stored',
-        ])->assertRedirect(route('superadmin.distribution.sites.show', $this->site));
+        ])->assertRedirect(route('superadmin.distribution.sites.show', ['site' => $this->site, 'tab' => 'install']));
 
         $details = $this->site->fresh()->server_details;
         $this->assertSame('shared', $details['hosting_type']);
@@ -96,7 +96,7 @@ class ServerDetailsTest extends TestCase
             ."admin_email,jane@acme.com,,\ndb_password,secret,,\n";
 
         $this->post(route('superadmin.distribution.sites.server.upload', $this->site), ['file' => UploadedFile::fake()->createWithContent('server.csv', $filled)])
-            ->assertRedirect(route('superadmin.distribution.sites.show', $this->site))
+            ->assertRedirect(route('superadmin.distribution.sites.show', ['site' => $this->site, 'tab' => 'install']))
             ->assertSessionHas('success', fn (string $message) => str_contains($message, 'db_password'));
 
         $details = $this->site->fresh()->server_details;

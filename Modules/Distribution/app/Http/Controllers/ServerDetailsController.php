@@ -20,9 +20,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class ServerDetailsController extends Controller
 {
-    public function __construct(protected SiteService $sites)
-    {
-    }
+    public function __construct(protected SiteService $sites) {}
 
     public function edit(Site $site): View
     {
@@ -43,7 +41,7 @@ class ServerDetailsController extends Controller
 
         $result = $this->sites->saveServerDetails($site, $details, 'form');
 
-        return redirect()->route('superadmin.distribution.sites.show', $site)->with('success', $result['message']);
+        return redirect()->route('superadmin.distribution.sites.show', ['site' => $site, 'tab' => 'install'])->with('success', $result['message']);
     }
 
     public function upload(Request $request, Site $site): RedirectResponse
@@ -59,7 +57,7 @@ class ServerDetailsController extends Controller
         $result = $this->sites->saveServerDetails($site, $details, 'csv');
         $message = $result['message'].($unknown ? ' '.__('distribution::distribution.csv_unknown_fields', ['fields' => implode(', ', $unknown)]) : '');
 
-        return redirect()->route('superadmin.distribution.sites.show', $site)->with('success', $message);
+        return redirect()->route('superadmin.distribution.sites.show', ['site' => $site, 'tab' => 'install'])->with('success', $message);
     }
 
     public function template(Site $site): Response
