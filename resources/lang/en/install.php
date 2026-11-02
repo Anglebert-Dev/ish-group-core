@@ -117,6 +117,7 @@ return [
     'finish_cron' => 'Add this cron job (every minute). It runs daily tasks, alerts and update checks:',
     'finish_queue' => 'Keep this running with Supervisor or systemd so emails are sent:',
     'finish_queue_cron' => 'Emails are sent by the cron job above (shared hosting mode).',
+    'finish_queue_dev' => 'Emails are sent by schedule:work above (on a server: by the cron job).',
     'finish_login' => 'Go to sign in',
 
     // Errors

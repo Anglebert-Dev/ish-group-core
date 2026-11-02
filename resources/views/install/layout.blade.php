@@ -33,7 +33,7 @@
         <p class="text-muted text-sm mt-1">{{ __('install.subtitle') }}</p>
     </div>
 
-    <div class="grid gap-6 md:grid-cols-[200px_1fr]">
+    <div class="grid gap-6 md:grid-cols-[200px_minmax(0,1fr)]">
         <ol class="flex md:flex-col gap-2 overflow-x-auto text-sm">
             @foreach ($steps as $i => $step)
                 @php
@@ -49,7 +49,7 @@
             @endforeach
         </ol>
 
-        <main class="bg-card rounded-2xl border border-line p-5 sm:p-7 shadow-sm">
+        <main class="min-w-0 bg-card rounded-2xl border border-line p-5 sm:p-7 shadow-sm">
             @if (session('status'))
                 <div class="mb-4 rounded-xl bg-green-50 text-green-800 px-4 py-3 text-sm">{{ session('status') }}</div>
             @endif

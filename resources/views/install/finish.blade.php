@@ -21,7 +21,7 @@ php artisan schedule:work{{ $queueViaScheduler ? '' : "\nphp artisan queue:work 
         </div>
         <div>
             @if ($queueViaScheduler)
-                <p>{{ __('install.finish_queue_cron') }}</p>
+                <p>{{ $devServer ? __('install.finish_queue_dev') : __('install.finish_queue_cron') }}</p>
             @else
                 <p class="mb-2">{{ __('install.finish_queue') }}</p>
                 <pre class="rounded-xl bg-gray-900 text-gray-100 p-3 overflow-x-auto text-xs">cd {{ $basePath }} && php artisan queue:work --tries=3</pre>
