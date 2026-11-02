@@ -3,6 +3,8 @@
 namespace App\Support\Mail;
 
 use App\Models\Business\Business;
+use App\Services\Branding\BrandingService;
+use App\Support\Branding\Fonts;
 use Illuminate\Notifications\Messages\MailMessage;
 
 /**
@@ -60,11 +62,13 @@ class BrandedMail
     }
 
     /**
-     * @return array{name: string, color: string, logo: ?string}
+     * @return array{name: string, color: string, logo: ?string, font: string}
      */
     public static function brand(?Business $business): array
     {
         return [
+            // Many mail apps ignore web fonts: the stack falls back to safe ones.
+            'font' => $business ? app(BrandingService::class)->font($business) : Fonts::DEFAULT,
             'name' => $business ? $business->companyName() : (string) config('app.name'),
             'color' => $business ? $business->brandColor() : Business::DEFAULT_BRAND_COLOR,
             'logo' => $business?->logoUrl() ? url($business->logoUrl()) : null,

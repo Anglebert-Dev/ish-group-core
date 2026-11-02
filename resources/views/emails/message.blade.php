@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $subject }}</title>
+    <style>{!! \App\Support\Branding\Fonts::faceCss($brand['font'] ?? \App\Support\Branding\Fonts::DEFAULT) !!}</style>
 </head>
-<body style="margin:0;padding:0;background:#F3F4F6;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1F2937;">
+<body style="margin:0;padding:0;background:#F3F4F6;font-family:{{ \App\Support\Branding\Fonts::stack($brand['font'] ?? \App\Support\Branding\Fonts::DEFAULT) }};color:#1F2937;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F3F4F6;padding:32px 12px;">
     <tr>
         <td align="center">

@@ -56,7 +56,7 @@ class BrandingTest extends TestCase
         $owner = $this->actingAsStaff();
 
         $this->put(route('settings.update'), [
-            'section' => 'look', 'brand_color' => '#0a7a4b', 'secondary_color' => '#222222', 'font' => 'serif',
+            'section' => 'look', 'brand_color' => '#0a7a4b', 'secondary_color' => '#222222', 'font' => 'merriweather',
             'logo' => UploadedFile::fake()->image('logo.png'), 'logo_dark' => UploadedFile::fake()->image('logo-dark.png'),
         ])->assertSessionHasNoErrors();
 
@@ -64,7 +64,7 @@ class BrandingTest extends TestCase
         $brand = app(BrandingService::class)->brand($business);
         $this->assertSame('#0A7A4B', $brand->primaryColor);
         $this->assertSame('#222222', $brand->secondaryColor);
-        $this->assertSame('serif', $brand->font);
+        $this->assertSame('merriweather', $brand->font);
         Storage::disk('public')->assertExists($brand->logoDarkPath);
         $this->assertStringStartsWith('data:image/png;base64,', $brand->logoDataUri(dark: true));
 

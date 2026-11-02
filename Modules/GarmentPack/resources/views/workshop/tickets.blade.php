@@ -3,8 +3,9 @@
 <head>
     <meta charset="utf-8">
     <title>{{ __('garmentpack::garment.tickets_title', ['number' => $workOrder->number]) }}</title>
+    <x-common.brand-font />
     <style>
-        body { font-family: system-ui, sans-serif; margin: 16px; }
+        body { font-family: var(--font-body); margin: 16px; }
         .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .ticket { border: 1.5px dashed #6B7280; border-radius: 8px; padding: 10px; page-break-inside: avoid; }
         .big { font-size: 26px; font-weight: 800; }

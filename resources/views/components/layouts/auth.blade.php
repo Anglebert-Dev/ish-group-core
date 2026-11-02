@@ -18,13 +18,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <x-common.brand-head :title="$title ?? null" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..700;1,14..32,300..700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = { theme: { extend: {
-            fontFamily: { display: ['Inter', 'sans-serif'], sans: ['Inter', 'sans-serif'] },
+            fontFamily: { display: ['var(--font-body)'], sans: ['var(--font-body)'] },
             colors: {
                 brand: { DEFAULT: 'var(--brand)', dark: 'var(--brand-dark)', light: 'var(--brand-light)' },
                 ink: '#111827', body: '#1F2937', muted: '#6B7280', surface: '#F8FAFC', line: '#E5E7EB',
@@ -36,8 +33,8 @@
         }}};
     </script>
     <style>
-        body { font-family: Inter, sans-serif; }
-        .font-display { font-family: Inter, sans-serif; }
+        body { font-family: var(--font-body); }
+        .font-display { font-family: var(--font-body); }
         .auth-shell {
             background:
                 radial-gradient(ellipse 80% 50% at 10% 0%, color-mix(in srgb, var(--brand) 12%, transparent), transparent 55%),

@@ -7,7 +7,7 @@
     {{-- No referer, so the action's back() uses the page the user started on. --}}
     <meta name="referrer" content="no-referrer">
     <x-common.brand-head :title="__('body.confirm_password_title')" />
-    <style>body{font-family:Inter,system-ui,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0;color:#6B7280}</style>
+    <style>body{font-family:var(--font-body);display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0;color:#6B7280}</style>
 </head>
 <body>
     <form id="resume-action" action="{{ $url }}" method="POST">

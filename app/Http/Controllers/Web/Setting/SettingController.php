@@ -7,9 +7,11 @@ use App\Http\Requests\Setting\UpdateSettingRequest;
 use App\Services\Branding\BrandingService;
 use App\Services\Printing\PrintService;
 use App\Services\Setting\SettingService;
+use App\Support\Branding\Fonts;
 use App\Support\Printing\PrintDesign;
 use App\Support\Printing\PrintRegistry;
 use App\Support\Printing\SampleDocument;
+use App\Support\Settings\BusinessSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -28,8 +30,7 @@ class SettingController extends Controller
     public function __construct(
         protected SettingService $settings,
         protected BrandingService $branding,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): View
     {
@@ -41,8 +42,10 @@ class SettingController extends Controller
             'brand' => $this->branding->brand($business),
             'tab' => $tab,
             'tabs' => self::TABS,
-            'fonts' => BrandingService::FONTS,
+            'fonts' => Fonts::options(),
             'design' => PrintDesign::for($business),
+            // Blank = documents use the system font.
+            'printFont' => array_key_exists((string) app(BusinessSettings::class)->get('print.font', null, $business), Fonts::LIST) ? app(BusinessSettings::class)->get('print.font', null, $business) : '',
             'documentTypes' => ['list' => __('body.print_type_list')] + app(PrintRegistry::class)->labels(),
         ]);
     }
@@ -114,7 +117,7 @@ class SettingController extends Controller
             'layout' => ['nullable', Rule::in(PrintDesign::LAYOUTS)],
             'paper' => ['nullable', Rule::in(array_keys(PrintDesign::PAPERS))],
             'accent' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'font' => ['nullable', Rule::in(array_keys(BrandingService::FONTS))],
+            'font' => ['nullable', Rule::in(array_keys(Fonts::LIST))],
             'logo_position' => ['nullable', Rule::in(PrintDesign::LOGO_POSITIONS)],
             'logo_size' => ['nullable', Rule::in(array_keys(PrintDesign::LOGO_SIZES))],
             'header_note' => ['nullable', 'string', 'max:200'],
@@ -162,7 +165,7 @@ class SettingController extends Controller
         $data = $request->validate([
             'brand_color' => ['required', 'string', 'regex:/^#[0-9A-F]{6}$/'],
             'secondary_color' => ['nullable', 'string', 'regex:/^#[0-9A-F]{6}$/'],
-            'font' => ['nullable', Rule::in(array_keys(BrandingService::FONTS))],
+            'font' => ['nullable', Rule::in(array_keys(Fonts::LIST))],
             'logo' => ['nullable', 'image', 'max:4096'],
             'logo_dark' => ['nullable', 'image', 'max:4096'],
             'favicon' => ['nullable', 'image', 'max:1024'],

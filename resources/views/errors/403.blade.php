@@ -4,13 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <x-common.brand-head :title="__('body.access_denied')" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..700;1,14..32,300..700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = { theme: { extend: {
-            fontFamily: { display: ['Inter', 'sans-serif'], sans: ['Inter', 'sans-serif'] },
+            fontFamily: { display: ['var(--font-body)'], sans: ['var(--font-body)'] },
             colors: {
                 brand: { DEFAULT: 'var(--brand)', dark: 'var(--brand-dark)', light: 'var(--brand-light)' },
                 ink: '#111827', body: '#1F2937', muted: '#6B7280', surface: '#F8FAFC', line: '#E5E7EB',
@@ -18,7 +15,7 @@
             },
         }}};
     </script>
-    <style>body { font-family: Inter, sans-serif; }</style>
+    <style>body { font-family: var(--font-body); }</style>
 </head>
 <body class="bg-surface text-body antialiased min-h-screen flex items-center justify-center px-6">
     <div class="max-w-sm w-full text-center">

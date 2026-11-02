@@ -6,6 +6,8 @@ use App\Libraries\UploadLibrary;
 use App\Models\Business\Business;
 use App\Services\BaseService;
 use App\Support\Branding\Brand;
+use App\Support\Branding\Fonts;
+use App\Support\Printing\PrintDesign;
 use App\Support\Settings\BusinessSettings;
 use Illuminate\Http\UploadedFile;
 
@@ -17,14 +19,6 @@ use Illuminate\Http\UploadedFile;
  */
 class BrandingService extends BaseService
 {
-    /** Fonts dompdf ships, so PDFs look the same on every server. */
-    public const FONTS = [
-        'sans' => 'DejaVu Sans',
-        'serif' => 'DejaVu Serif',
-        'helvetica' => 'Helvetica',
-        'times' => 'Times',
-    ];
-
     public const PAYMENT_TYPES = ['bank', 'mobile'];
 
     public const MAX_PAYMENT_METHODS = 6;
@@ -32,9 +26,7 @@ class BrandingService extends BaseService
     /** Text fields of the Business details tab. */
     public const DETAILS = ['legal_name', 'tax_id', 'registration_no', 'address', 'phone', 'website'];
 
-    public function __construct(protected BusinessSettings $settings)
-    {
-    }
+    public function __construct(protected BusinessSettings $settings) {}
 
     public function brand(Business $business): Brand
     {
@@ -54,7 +46,7 @@ class BrandingService extends BaseService
             website: $get('website'),
             primaryColor: $business->brandColor(),
             secondaryColor: $this->color($get('secondary_color')) ?? '#111827',
-            font: array_key_exists((string) $get('font'), self::FONTS) ? (string) $get('font') : 'sans',
+            font: Fonts::normalise($get('font')),
             logoPath: $business->logo_path,
             logoDarkPath: $get('logo_dark_path'),
             stampPath: $get('stamp_path'),
@@ -63,6 +55,15 @@ class BrandingService extends BaseService
             signatoryTitle: $get('signatory_title'),
             paymentMethods: array_values(array_filter((array) $get('payment_methods', []), 'is_array')),
         );
+    }
+
+    /**
+     * The system font (docs/branding.md §3.5), for every page's <head>.
+     */
+    public function font(Business $business): string
+    {
+        // Before the first business exists, pages show an unsaved stand-in.
+        return $business->exists ? Fonts::normalise($this->settings->get('branding.font', null, $business)) : Fonts::DEFAULT;
     }
 
     /**
@@ -154,7 +155,7 @@ class BrandingService extends BaseService
                 : $this->settings->set('print.'.$key, $key === 'accent' ? strtoupper($value) : $value, $business);
         }
 
-        foreach (array_keys(\App\Support\Printing\PrintDesign::SWITCHES) as $key) {
+        foreach (array_keys(PrintDesign::SWITCHES) as $key) {
             $this->settings->set('print.'.$key, (bool) ($data[$key] ?? false), $business);
         }
 

@@ -5,6 +5,7 @@ namespace App\Support\Printing;
 use App\Models\Business\Business;
 use App\Services\Branding\BrandingService;
 use App\Support\Branding\Brand;
+use App\Support\Branding\Fonts;
 use App\Support\Settings\BusinessSettings;
 
 /**
@@ -50,8 +51,7 @@ final class PrintDesign
         public readonly bool $showSignature,
         public readonly bool $showStamp,
         public readonly array $types,
-    ) {
-    }
+    ) {}
 
     public static function for(Business $business, ?Brand $brand = null, array $overrides = []): self
     {
@@ -66,7 +66,8 @@ final class PrintDesign
             layout: $pick('layout', self::LAYOUTS, 'classic'),
             paper: $pick('paper', array_keys(self::PAPERS), 'a4'),
             accent: preg_match('/^#[0-9A-F]{6}$/', $accent) ? $accent : $brand->primaryColor,
-            font: $pick('font', array_keys(BrandingService::FONTS), $brand->font),
+            // Blank (or a print-only choice saved before B0) = the system font.
+            font: array_key_exists((string) $get('font'), Fonts::LIST) ? (string) $get('font') : $brand->font,
             logoPosition: $pick('logo_position', self::LOGO_POSITIONS, 'left'),
             logoSize: $pick('logo_size', array_keys(self::LOGO_SIZES), 'medium'),
             headerNote: self::text($get('header_note')),
@@ -97,15 +98,16 @@ final class PrintDesign
         return self::LOGO_SIZES[$this->logoSize];
     }
 
-    /** CSS font stack: dompdf uses the first, browsers fall back sensibly. */
-    public function fontStack(): string
+    /** CSS font stack: the bundled font for dompdf (pdf) or the browser (html). */
+    public function fontStack(string $mode = 'pdf'): string
     {
-        return match ($this->font) {
-            'serif' => '"DejaVu Serif", Georgia, "Times New Roman", serif',
-            'helvetica' => 'Helvetica, Arial, sans-serif',
-            'times' => 'Times, "Times New Roman", serif',
-            default => '"DejaVu Sans", "Segoe UI", Arial, sans-serif',
-        };
+        return $mode === 'pdf' ? Fonts::pdfStack($this->font) : Fonts::stack($this->font);
+    }
+
+    /** The @font-face rules that go with fontStack(). */
+    public function fontFaces(string $mode = 'pdf'): string
+    {
+        return $mode === 'pdf' ? Fonts::pdfFaceCss($this->font) : Fonts::faceCss($this->font);
     }
 
     private static function text(mixed $value): ?string

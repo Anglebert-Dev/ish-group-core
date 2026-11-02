@@ -13,8 +13,9 @@
             ink: '#111827', muted: '#6B7280', line: '#E5E7EB', success: '#16A34A', danger: '#DC2626', warning: '#F59E0B',
         }}}};
     </script>
+    <x-common.brand-font font="inter" />
     <style>
-        body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+        body { font-family: var(--font-body); }
         .field { display:block; width:100%; height:2.75rem; border:1px solid #E5E7EB; border-radius:.75rem; padding:0 .875rem; font-size:15px; background:#fff; }
         .field:focus { outline:2px solid #124EB0; outline-offset:-1px; }
         .label { display:block; font-size:13px; font-weight:600; color:#111827; margin-bottom:.375rem; }

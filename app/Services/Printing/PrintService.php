@@ -7,6 +7,7 @@ use App\Libraries\GeneralLibrary;
 use App\Models\Business\Business;
 use App\Services\Branding\BrandingService;
 use App\Support\Branding\Brand;
+use App\Support\Branding\Fonts;
 use App\Support\Printing\Document;
 use App\Support\Printing\PrintDesign;
 use Dompdf\Dompdf;
@@ -30,9 +31,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class PrintService
 {
-    public function __construct(protected BrandingService $branding)
-    {
-    }
+    public function __construct(protected BrandingService $branding) {}
 
     /**
      * Everything the template needs.
@@ -71,6 +70,9 @@ class PrintService
         $options->set('isHtml5ParserEnabled', true);
         $options->set('defaultFont', 'DejaVu Sans');
         $options->setChroot([base_path(), public_path(), storage_path('app/public')]);
+        // The bundled brand fonts are measured once and cached here.
+        $options->set('fontDir', $this->fontCache());
+        $options->set('fontCache', $this->fontCache());
 
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml(view('print.document', $data)->render());
@@ -84,6 +86,14 @@ class PrintService
         $canvas->page_text($canvas->get_width() - 42 - 40, $canvas->get_height() - 31, $text, $font, 7, [0.42, 0.45, 0.5]);
 
         return $dompdf->output();
+    }
+
+    private function fontCache(): string
+    {
+        $dir = storage_path('fonts');
+        is_dir($dir) || @mkdir($dir, 0755, true);
+
+        return $dir;
     }
 
     public function pdf(Document $document, Business $business, string $filename, bool $inline = false, ?PrintDesign $design = null): Response
@@ -112,6 +122,8 @@ class PrintService
         $brand = $this->branding->brand($business);
         $design = PrintDesign::for($business, $brand);
         $spreadsheet = new Spreadsheet;
+        // Excel uses the brand font when the computer has it, else its own.
+        $spreadsheet->getDefaultStyle()->getFont()->setName(Fonts::family($design->font) ?? 'Calibri');
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle(Str::limit(preg_replace('/[\\\\\/?*\[\]:]/', ' ', $document->title), 28, ''));
         $columns = max(1, count($document->columns));

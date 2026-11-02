@@ -1,6 +1,6 @@
 # Branding & Appearance: Plan
 
-Created: 02/11/2026. Status: **Plan, nothing built yet.** Update §8 after each phase, so work can pick up where it stopped.
+Created: 02/11/2026. Status: **B0 done (02/11/2026).** Update §8 after each phase, so work can pick up where it stopped.
 
 This takes the full "Branding & Appearance Module" requirements and sets out, section by section, **what we already have**, **what we build**, and **what we leave out and why**. Printing and document branding are already built (`docs/branding-print-build-guide.md`); this plan builds on them.
 
@@ -119,9 +119,20 @@ Today Inter is hard-coded in about 10 places (`layouts/app`, `layouts/auth`, `em
 - The page loads only the chosen font, at the weights the app uses (400, 500, 600, 700).
 - **Tests:** saving a font changes the CSS variable on the app, login, email and PDF; an unknown font is rejected; it's audited.
 
+**B0 notes:**
+- **Code:**
+  - `App\Support\Branding\Fonts`: the list, CSS stacks, `@font-face` for screens and PDFs, preview faces
+  - `BrandingService::font()`
+  - `<x-common.brand-font />`, which sets `--font-body` and is used by `brand-head` and the standalone pages
+- **Files:** `public/fonts` (woff2, about 1 MB) and `resources/fonts` (TTF, about 4 MB), licences in `resources/fonts/README.md`. Google Fonts links are removed from every page, and a test keeps it that way.
+- **PDF:** each font gets its own family name in dompdf (`BrandFont-{key}`), because dompdf caches fonts by name: with one shared name, switching fonts kept the old one. Font metrics are cached in `storage/fonts`.
+- **Document font:** the designer's font is now "Same as the system font" unless picked. Older print-only choices (sans, serif, helvetica, times) are read as "same as the system font" for documents, and as Inter or Source Serif for the system font.
+- **Not changed:** the installer always uses Inter, because there is no business before install. The printable-page toolbar keeps the system UI font.
+- **Checked:** screenshots of the dashboard, the Look tab (phone and desktop) and login with Poppins (headless Chrome in Docker, `ghcr.io/puppeteer/puppeteer`). PDFs were checked for embedded Merriweather, Lato and Playfair. The check also fixed the colour code boxes running off the screen on phones.
+
 | Item | Plan |
 |---|---|
-| System font (whole app, login, emails, website, PDF) | **B0, P0** (above) |
+| System font (whole app, login, emails, website, PDF) | ✅ **B0** (above) |
 | Separate heading font | **B3, P0**: defaults to the system font |
 | Base size (small, normal, large), heading scale, weight, line height | **B3, P0**: tokens |
 | Letter spacing, text alignment default | **Leave out**: breaks tables and forms; little value |
@@ -283,7 +294,7 @@ For each phase:
 
 | # | Phase | Priority | Status |
 |---|---|---|---|
-| B0 | System font: one font choice for the whole system (app, login, emails, error pages, website, PDF), bundled font files, dompdf registration | P0 | ☐ |
+| B0 | System font: one font choice for the whole system (app, login, emails, error pages, website, PDF), bundled font files, dompdf registration | P0 | ✅ 02/11/2026 |
 | B1 | Foundation: theme document + `ThemeSchema`, versions (draft/publish/restore/reset), tokens + compiler + cache, platform defaults, package features, fallbacks; identity extras (short name, slogan, description, login and mobile logos); **move all views and components onto tokens** + raw-colour guard | P0 | ☐ |
 | B2 | Colours & themes: full palette, picker/HEX/RGB/HSL, palettes, contrast check + suggestions, dark and system mode, user override, chart palette | P0 | ☐ |
 | B3 | Layout & typography: sidebar, header, density, content width, cards, corners, buttons, switches (breadcrumbs, titles, footer, back-to-top, transitions); fonts and type scale | P0 | ☐ |

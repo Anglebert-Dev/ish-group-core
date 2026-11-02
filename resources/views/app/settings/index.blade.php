@@ -48,14 +48,29 @@
                                        oninput="document.getElementById('{{ $field }}').value = this.value.toUpperCase()"
                                        class="h-12 w-16 shrink-0 rounded-xl border border-line bg-white p-1 cursor-pointer shadow-sm">
                                 <input type="text" name="{{ $field }}" id="{{ $field }}" value="{{ $value }}" maxlength="7" @required($required)
-                                       class="flex-1 h-12 rounded-xl border px-4 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand uppercase @error($field) border-danger @else border-line @enderror">
+                                       class="flex-1 min-w-0 h-12 rounded-xl border px-4 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand uppercase @error($field) border-danger @else border-line @enderror">
                             </div>
                             @if ($hint)<p class="text-xs text-muted">{{ $hint }}</p>@endif
                             @error($field)<p class="text-xs text-danger" role="alert">{{ $message }}</p>@enderror
                         </div>
                     @endforeach
 
-                    <x-common.select name="font" :label="__('body.brand_font')" :value="old('font', $brand->font)" :options="$fonts" hide-placeholder :hint="__('body.brand_font_hint')" />
+                    <div class="space-y-2">
+                        <x-common.select name="font" id="brand-font" :label="__('body.brand_font')" :value="old('font', $brand->font)" :options="$fonts" hide-placeholder :hint="__('body.brand_font_hint')" />
+                        <style>{!! \App\Support\Branding\Fonts::previewCss() !!}</style>
+                        <div id="brand-font-preview" class="rounded-xl border border-line bg-surface px-4 py-3" style="font-family: {{ \App\Support\Branding\Fonts::previewStacks()[$brand->font] }}">
+                            <p class="text-lg font-bold text-ink">{{ $setting->companyName() }}</p>
+                            <p class="text-sm text-body">{{ __('body.brand_font_sample') }}</p>
+                        </div>
+                        <script>
+                            (() => {
+                                const stacks = @json(\App\Support\Branding\Fonts::previewStacks());
+                                document.getElementById('brand-font').addEventListener('change', (event) => {
+                                    document.getElementById('brand-font-preview').style.fontFamily = stacks[event.target.value] || '';
+                                });
+                            })();
+                        </script>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -144,11 +159,11 @@
                                     <input type="color" value="{{ strtolower($design->accent) }}" aria-label="{{ __('body.design_accent') }}"
                                            oninput="document.getElementById('accent').value = this.value.toUpperCase(); document.getElementById('accent').dispatchEvent(new Event('input', {bubbles: true}))"
                                            class="h-11 w-14 shrink-0 rounded-xl border border-line bg-white p-1 cursor-pointer">
-                                    <input type="text" name="accent" id="accent" value="{{ $design->accent }}" maxlength="7" class="flex-1 h-11 rounded-xl border border-line px-3 text-sm uppercase">
+                                    <input type="text" name="accent" id="accent" value="{{ $design->accent }}" maxlength="7" class="flex-1 min-w-0 h-11 rounded-xl border border-line px-3 text-sm uppercase">
                                 </div>
                                 <p class="text-xs text-muted">{{ __('body.design_accent_hint') }}</p>
                             </div>
-                            <x-common.select name="font" :label="__('body.brand_font')" :value="$design->font" :options="$fonts" hide-placeholder />
+                            <x-common.select name="font" :label="__('body.design_font')" :value="$printFont" :options="$fonts" :placeholder="__('body.design_font_same')" />
                             <x-common.select name="paper" :label="__('body.design_paper')" :value="$design->paper" :options="\App\Support\Printing\PrintDesign::PAPERS" hide-placeholder />
                             <x-common.select name="logo_position" :label="__('body.design_logo_position')" :value="$design->logoPosition" hide-placeholder
                                 :options="collect(\App\Support\Printing\PrintDesign::LOGO_POSITIONS)->mapWithKeys(fn ($p) => [$p => __('body.design_position_'.$p)])->all()" />

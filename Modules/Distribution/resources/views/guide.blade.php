@@ -13,10 +13,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ __('distribution::distribution.guide_title', ['site' => $site->name]) }}</title>
+    <x-common.brand-font />
     <style>
         :root { --ink: #111827; --muted: #6B7280; --line: #E5E7EB; --brand: #124EB0; }
         * { box-sizing: border-box; }
-        body { margin: 0; background: #F3F4F6; color: var(--ink); font: 15px/1.6 Inter, ui-sans-serif, system-ui, sans-serif; }
+        body { margin: 0; background: #F3F4F6; color: var(--ink); font: 15px/1.6 var(--font-body); }
         main { max-width: 820px; margin: 32px auto; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 40px 44px; }
         h1 { font-size: 26px; line-height: 1.25; margin: 0 0 8px; }
         h2 { font-size: 18px; margin: 32px 0 10px; padding-top: 20px; border-top: 1px solid var(--line); }
