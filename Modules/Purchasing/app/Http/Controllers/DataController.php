@@ -5,6 +5,9 @@ namespace Modules\Purchasing\Http\Controllers;
 use App\Helpers\AuthHelper;
 use Modules\Purchasing\Enums\PurchaseStatus;
 use Modules\Purchasing\Models\PurchaseOrder;
+use Modules\Purchasing\Printing\PurchaseOrderPrintable;
+use Modules\Purchasing\Printing\PurchaseReceiptPrintable;
+use Modules\Purchasing\Printing\SupplierPaymentPrintable;
 use Modules\Purchasing\Services\PurchasingService;
 
 /**
@@ -12,6 +15,18 @@ use Modules\Purchasing\Services\PurchasingService;
  */
 class DataController
 {
+    /**
+     * Documents this module prints through the core print engine.
+     */
+    public function printables(): array
+    {
+        return [
+            'purchase_order' => PurchaseOrderPrintable::class,
+            'purchase_receipt' => PurchaseReceiptPrintable::class,
+            'supplier_payment' => SupplierPaymentPrintable::class,
+        ];
+    }
+
     public function user_permissions(): array
     {
         return [

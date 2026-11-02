@@ -2,6 +2,7 @@
 <x-layouts.app :title="$style->code">
     <x-common.page-header :title="$style->code.' · '.$style->name" :description="$style->item?->name">
         <x-slot:actions>
+            <x-print.buttons type="style_costing" :id="$style->getRouteKey()" />
             <x-common.button href="{{ route('garmentpack.styles.index') }}" variant="secondary" size="sm">← {{ __('garmentpack::garment.styles') }}</x-common.button>
             @if (\App\Helpers\AuthHelper::can('update garments.style'))
                 <x-common.button href="{{ route('garmentpack.styles.edit', $style) }}" size="sm">{{ __('body.edit') }}</x-common.button>

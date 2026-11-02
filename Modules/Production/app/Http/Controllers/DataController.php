@@ -3,8 +3,10 @@
 namespace Modules\Production\Http\Controllers;
 
 use App\Helpers\AuthHelper;
+use Modules\Inventory\Exceptions\InsufficientStock;
 use Modules\Production\Enums\WorkOrderStatus;
 use Modules\Production\Models\WorkOrder;
+use Modules\Production\Printing\WorkOrderPrintable;
 use Modules\Production\Services\WorkOrderService;
 
 /**
@@ -12,6 +14,16 @@ use Modules\Production\Services\WorkOrderService;
  */
 class DataController
 {
+    /**
+     * Documents this module prints through the core print engine.
+     */
+    public function printables(): array
+    {
+        return [
+            'work_order' => WorkOrderPrintable::class,
+        ];
+    }
+
     public function user_permissions(): array
     {
         return [
@@ -78,7 +90,7 @@ class DataController
             ],
             [
                 'label' => __('production::production.dashboard_today'),
-                'value' => \Modules\Inventory\Exceptions\InsufficientStock::format($finishedToday),
+                'value' => InsufficientStock::format($finishedToday),
                 'href' => route('production.work-orders.index'),
             ],
         ];

@@ -231,7 +231,7 @@
             @forelse ($doc->rows as $r => $row)
                 <tr class="{{ $r % 2 ? 'even' : '' }}">
                     @foreach ($row as $c => $cell)
-                        <td style="text-align: {{ $doc->columns[$c]['align'] ?? 'left' }}" class="{{ ($doc->columns[$c]['align'] ?? 'left') === 'right' ? 'nowrap' : '' }}">{{ $cell }}</td>
+                        <td style="text-align: {{ $doc->columns[$c]['align'] ?? 'left' }}" class="{{ ($doc->columns[$c]['align'] ?? 'left') === 'right' ? 'nowrap' : '' }}">{!! nl2br(e($cell)) !!}</td>
                     @endforeach
                 </tr>
             @empty

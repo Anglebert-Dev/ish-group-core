@@ -6,6 +6,7 @@
 <x-layouts.app :title="$order->number">
     <x-common.page-header :title="$order->number" :description="$order->customer?->displayName()">
         <x-slot:actions>
+            <x-print.buttons type="sales_order" :id="$order->getRouteKey()" />
             <x-common.button href="{{ route('salesorders.orders.index') }}" variant="secondary" size="sm">← {{ __('salesorders::orders.orders') }}</x-common.button>
             @if (! $closed && $can('update sales.order'))
                 <x-common.button href="{{ route('salesorders.orders.edit', $order) }}" size="sm">{{ __('body.edit') }}</x-common.button>

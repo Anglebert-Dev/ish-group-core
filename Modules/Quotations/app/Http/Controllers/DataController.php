@@ -6,6 +6,8 @@ use App\Helpers\AuthHelper;
 use App\Models\Customer\Customer;
 use Modules\Quotations\Enums\QuoteStatus;
 use Modules\Quotations\Models\Quotation;
+use Modules\Quotations\Printing\QuotationDepositPrintable;
+use Modules\Quotations\Printing\QuotationPrintable;
 use Modules\Quotations\Services\QuotationService;
 
 /**
@@ -13,6 +15,17 @@ use Modules\Quotations\Services\QuotationService;
  */
 class DataController
 {
+    /**
+     * Documents this module prints through the core print engine.
+     */
+    public function printables(): array
+    {
+        return [
+            'quotation' => QuotationPrintable::class,
+            'quotation_deposit' => QuotationDepositPrintable::class,
+        ];
+    }
+
     public function user_permissions(): array
     {
         return [

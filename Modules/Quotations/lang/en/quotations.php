@@ -83,4 +83,26 @@ return [
     'audit_deposit_reversed' => 'Deposit :amount reversed: :reason',
 
     'dashboard_follow_up' => 'Quotes to follow up',
+
+    // Printing (core print engine)
+    'print_quotation' => 'Quotation',
+    'print_sample_request' => 'Sample request',
+    'print_date' => 'Date',
+    'print_valid_until' => 'Valid until',
+    'print_for' => 'Prepared for',
+    'print_deposits' => 'Deposits received',
+    'print_balance' => 'Balance',
+    'print_watermark_rejected' => 'REJECTED',
+    'print_watermark_converted' => 'ACCEPTED',
+    'print_watermark_reversed' => 'REVERSED',
+    'print_deposit_receipt' => 'Deposit receipt',
+    'print_receipt_short' => 'Receipt',
+    'print_received_on' => 'Received on',
+    'print_method' => 'Method',
+    'print_reference' => 'Reference',
+    'print_received_from' => 'Received from',
+    'print_description' => 'Description',
+    'print_deposit_for' => 'Deposit for quotation :number',
+    'print_amount_received' => 'Amount received',
+    'print_quote_total' => 'Quotation total',
 ];

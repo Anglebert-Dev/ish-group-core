@@ -8,6 +8,7 @@
 <x-layouts.app :title="$quote->number">
     <x-common.page-header :title="$quote->number" :description="$quote->customer?->displayName()">
         <x-slot:actions>
+            <x-print.buttons type="quotation" :id="$quote->getRouteKey()" />
             <x-common.button href="{{ route('quotations.quotes.index') }}" variant="secondary" size="sm">← {{ __('quotations::quotations.quotes') }}</x-common.button>
             @if ($quote->status === $Q::Open && $can('update quotations.quote'))
                 <x-common.button href="{{ route('quotations.quotes.edit', $quote) }}" size="sm">{{ __('body.edit') }}</x-common.button>
@@ -46,6 +47,7 @@
                         <span>{{ $deposit->paid_on->format('d/m/Y') }} · {{ $methods[$deposit->method] ?? $deposit->method }}@if ($deposit->reference) · {{ $deposit->reference }}@endif</span>
                         <span class="flex items-center gap-2">
                             <b class="{{ $deposit->isReversed() ? 'line-through' : 'text-success' }}">{{ money($deposit->amount) }}</b>
+                            <a href="{{ route('print.show', ['quotation_deposit', $deposit->getRouteKey()]) }}" target="_blank" rel="noopener" class="text-xs font-semibold text-brand hover:text-brand-dark">{{ __('quotations::quotations.print_receipt_short') }}</a>
                             @if ($deposit->isReversed())
                                 <x-common.badge color="muted">{{ __('quotations::quotations.reversed') }}</x-common.badge>
                                 <span class="text-xs text-muted">{{ $deposit->reverse_reason }}</span>

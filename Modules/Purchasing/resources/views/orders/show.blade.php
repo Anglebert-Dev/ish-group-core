@@ -6,6 +6,7 @@
 <x-layouts.app :title="$order->number">
     <x-common.page-header :title="$order->number" :description="$order->supplier?->name">
         <x-slot:actions>
+            <x-print.buttons type="purchase_order" :id="$order->getRouteKey()" />
             <x-common.button href="{{ route('purchasing.orders.index') }}" variant="secondary" size="sm">← {{ __('purchasing::purchasing.orders') }}</x-common.button>
             @if ($order->status === $S::Draft && $can('update purchasing.order'))
                 <x-common.button href="{{ route('purchasing.orders.edit', $order) }}" size="sm">{{ __('body.edit') }}</x-common.button>
@@ -65,6 +66,7 @@
                             <td class="px-5 py-3 font-medium">{{ $receipt->number }}</td>
                             <td class="px-5 py-3 text-muted">{{ $receipt->received_on->format('d/m/Y') }}{{ $receipt->supplier_reference ? ' · '.$receipt->supplier_reference : '' }}</td>
                             <td class="px-5 py-3 text-right">{{ money($receipt->value) }}</td>
+                            <td class="px-5 py-3 text-right"><a href="{{ route('print.show', ['purchase_receipt', $receipt->getRouteKey()]) }}" target="_blank" rel="noopener" class="text-xs font-semibold text-brand hover:text-brand-dark">{{ __('body.print') }}</a></td>
                         </tr>
                     @empty
                         <tr><td class="px-5 py-6 text-center text-muted">{{ __('purchasing::purchasing.receipts_none') }}</td></tr>

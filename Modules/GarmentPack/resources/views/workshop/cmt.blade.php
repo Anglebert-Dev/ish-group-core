@@ -17,7 +17,7 @@
             <tbody class="divide-y divide-line">
                 @forelse ($jobs as $job)
                     <tr>
-                        <td class="px-5 py-3 font-medium">{{ $job->number }}</td>
+                        <td class="px-5 py-3 font-medium">{{ $job->number }}<span class="block"><a href="{{ route('print.show', ['cmt_job', $job->getRouteKey()]) }}" target="_blank" rel="noopener" class="text-xs font-semibold text-brand hover:text-brand-dark">{{ __('body.print') }}</a></span></td>
                         <td class="px-5 py-3">{{ $job->subcontractor }}<span class="block text-xs text-muted">{{ $job->phone }}</span></td>
                         <td class="px-5 py-3">@if ($job->workOrder)<a href="{{ route('production.work-orders.show', $job->workOrder) }}" class="text-brand font-semibold">{{ $job->workOrder->number }}</a>@endif</td>
                         <td class="px-5 py-3">{{ $job->stage_name }}</td>

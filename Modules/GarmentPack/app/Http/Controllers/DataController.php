@@ -3,7 +3,16 @@
 namespace Modules\GarmentPack\Http\Controllers;
 
 use App\Helpers\AuthHelper;
+use App\Models\Customer\Customer;
+use App\Support\Settings\BusinessSettings;
+use Modules\GarmentPack\Models\Bundle;
+use Modules\GarmentPack\Models\CmtJob;
+use Modules\GarmentPack\Models\Measurement;
+use Modules\GarmentPack\Models\PieceWork;
 use Modules\GarmentPack\Models\Style;
+use Modules\GarmentPack\Models\Worker;
+use Modules\GarmentPack\Printing\CmtJobPrintable;
+use Modules\GarmentPack\Printing\StyleCostingPrintable;
 use Modules\GarmentPack\Services\StyleService;
 use Modules\Inventory\Services\StoreService;
 
@@ -12,6 +21,17 @@ use Modules\Inventory\Services\StoreService;
  */
 class DataController
 {
+    /**
+     * Documents this module prints through the core print engine.
+     */
+    public function printables(): array
+    {
+        return [
+            'style_costing' => StyleCostingPrintable::class,
+            'cmt_job' => CmtJobPrintable::class,
+        ];
+    }
+
     public function user_permissions(): array
     {
         return [
@@ -45,12 +65,12 @@ class DataController
                 'icon' => 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4',
             ],
             [
-            'label' => 'garmentpack::garment.styles',
-            'route' => 'garmentpack.styles.index',
-            'active' => 'garmentpack.styles.*',
-            'permission' => 'list garments.style',
-            'order' => 10,
-            'icon' => 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01',
+                'label' => 'garmentpack::garment.styles',
+                'route' => 'garmentpack.styles.index',
+                'active' => 'garmentpack.styles.*',
+                'permission' => 'list garments.style',
+                'order' => 10,
+                'icon' => 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01',
             ],
         ];
     }
@@ -71,17 +91,17 @@ class DataController
             'workOrder' => $workOrder,
             'rows' => app(StyleService::class)->requirements($style, $workOrder),
             'stores' => app(StoreService::class)->all(true)->mapWithKeys(fn ($s) => [$s->uuid => $s->name])->all(),
-            'workers' => \Modules\GarmentPack\Models\Worker::query()->where('is_active', true)->orderBy('name')->pluck('name', 'uuid')->all(),
-            'pieceWork' => \Modules\GarmentPack\Models\PieceWork::query()->where('work_order_id', $workOrder->id)->with('worker')->latest('id')->limit(10)->get(),
-            'cmtJobs' => \Modules\GarmentPack\Models\CmtJob::query()->where('work_order_id', $workOrder->id)->latest('id')->get(),
-            'bundles' => \Modules\GarmentPack\Models\Bundle::query()->where('work_order_id', $workOrder->id)->orderBy('number')->get(),
+            'workers' => Worker::query()->where('is_active', true)->orderBy('name')->pluck('name', 'uuid')->all(),
+            'pieceWork' => PieceWork::query()->where('work_order_id', $workOrder->id)->with('worker')->latest('id')->limit(10)->get(),
+            'cmtJobs' => CmtJob::query()->where('work_order_id', $workOrder->id)->latest('id')->get(),
+            'bundles' => Bundle::query()->where('work_order_id', $workOrder->id)->orderBy('number')->get(),
         ])->render();
     }
 
     /**
      * Tailoring measurements on the customer page.
      */
-    public function customer_panel(\App\Models\Customer\Customer $customer): ?string
+    public function customer_panel(Customer $customer): ?string
     {
         if (! AuthHelper::can('read customers.customer')) {
             return null;
@@ -89,8 +109,8 @@ class DataController
 
         return view('garmentpack::workshop.measurements', [
             'customer' => $customer,
-            'measurements' => \Modules\GarmentPack\Models\Measurement::query()->where('customer_id', $customer->id)->latest('id')->get(),
-            'fields' => (array) app(\App\Support\Settings\BusinessSettings::class)->get('garments.measurement_fields', config('garmentpack.measurement_fields')),
+            'measurements' => Measurement::query()->where('customer_id', $customer->id)->latest('id')->get(),
+            'fields' => (array) app(BusinessSettings::class)->get('garments.measurement_fields', config('garmentpack.measurement_fields')),
         ])->render();
     }
 }

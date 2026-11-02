@@ -6,6 +6,7 @@ use App\Helpers\AuthHelper;
 use App\Models\Customer\Customer;
 use Modules\SalesOrders\Enums\OrderStatus;
 use Modules\SalesOrders\Models\SalesOrder;
+use Modules\SalesOrders\Printing\SalesOrderPrintable;
 use Modules\SalesOrders\Services\OrderService;
 
 /**
@@ -13,6 +14,16 @@ use Modules\SalesOrders\Services\OrderService;
  */
 class DataController
 {
+    /**
+     * Documents this module prints through the core print engine.
+     */
+    public function printables(): array
+    {
+        return [
+            'sales_order' => SalesOrderPrintable::class,
+        ];
+    }
+
     public function user_permissions(): array
     {
         return [

@@ -97,4 +97,24 @@ return [
 
     'dashboard_open' => 'Open work orders',
     'dashboard_today' => 'Pieces finished today',
+
+    // Printing (core print engine)
+    'print_work_order' => 'Work order',
+    'print_start' => 'Start',
+    'print_due' => 'Due',
+    'print_line' => 'Line',
+    'print_status' => 'Status',
+    'print_product' => 'Product',
+    'print_quantity' => 'Quantity',
+    'print_daily_target' => 'Daily target',
+    'print_store' => 'Store',
+    'print_for_order' => 'For order',
+    'print_stage' => 'Stage',
+    'print_done' => 'Done',
+    'print_remaining' => 'Remaining',
+    'print_checked' => 'Checked',
+    'print_finished' => 'Finished',
+    'print_rejected' => 'Rejected',
+    'print_watermark_completed' => 'COMPLETED',
+    'print_watermark_cancelled' => 'CANCELLED',
 ];

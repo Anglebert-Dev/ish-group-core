@@ -6,6 +6,7 @@
 <x-layouts.app :title="$workOrder->number">
     <x-common.page-header :title="$workOrder->number" :description="$workOrder->variant?->displayName()">
         <x-slot:actions>
+            <x-print.buttons type="work_order" :id="$workOrder->getRouteKey()" />
             <x-common.button href="{{ route('production.work-orders.index') }}" variant="secondary" size="sm">← {{ __('production::production.work_orders') }}</x-common.button>
             @if ($open && $can('update production.work_order'))
                 <x-common.button href="{{ route('production.work-orders.edit', $workOrder) }}" size="sm">{{ __('body.edit') }}</x-common.button>

@@ -45,6 +45,7 @@
                             <td class="px-5 py-3 text-muted">{{ $payment->paid_on->format('d/m/Y') }} · {{ $methods[$payment->method] ?? $payment->method }}</td>
                             <td class="px-5 py-3 text-right {{ $payment->isReversed() ? 'line-through' : 'font-semibold' }}">{{ money($payment->amount) }}</td>
                             <td class="px-5 py-3 text-right">
+                                <a href="{{ route('print.show', ['supplier_payment', $payment->getRouteKey()]) }}" target="_blank" rel="noopener" class="text-xs font-semibold text-brand hover:text-brand-dark">{{ __('purchasing::purchasing.print_voucher_short') }}</a>
                                 @if ($payment->isReversed())
                                     <x-common.badge color="muted">{{ __('purchasing::purchasing.reversed') }}</x-common.badge> <span class="text-xs text-muted">{{ $payment->reverse_reason }}</span>
                                 @elseif ($can('delete purchasing.payment'))

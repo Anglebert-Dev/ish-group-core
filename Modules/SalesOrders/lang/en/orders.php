@@ -66,4 +66,12 @@ return [
 
     'dashboard_open' => 'Open orders',
     'dashboard_overdue' => 'Overdue orders',
+
+    // Printing (core print engine)
+    'print_order' => 'Sales order',
+    'print_date' => 'Order date',
+    'print_due' => 'Due',
+    'print_your_reference' => 'Your reference',
+    'print_customer' => 'Customer',
+    'print_watermark_cancelled' => 'CANCELLED',
 ];

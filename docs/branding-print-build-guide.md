@@ -1,6 +1,6 @@
 # Branding & printing: Build Guide
 
-Created: 02/11/2026. Status: **Phases 1–3 done (02/11/2026)**. Update §7 after each phase, so work can pick up where it stopped.
+Created: 02/11/2026. Status: **Done (02/11/2026)**. Update §7 after each phase, so work can pick up where it stopped.
 
 ## 1. Goal
 
@@ -87,6 +87,35 @@ The Invoicing module's own issuer settings (`invoicing.tax_id`, `invoicing.addre
 - **Billing:** subscription invoices aren't scoped to the viewing business (superadmins see all), so they **keep their two routes** (`billing.invoices.pdf`, `superadmin.billing.invoices.pdf`), now built by the engine through `InvoicePdf::document()`. Branded as the **platform business**. Billing's issuer settings, when filled in, print instead of the brand's identity (`Document::issuer()` → `Brand::with()`). Payment instructions show while the invoice is open. `?print=1` gives the print view, with a **Print** button on both invoice pages.
 - **Old links:** `invoicing.invoices.pdf` and `delivery.notes.pdf` now redirect to `print.pdf`. The old templates and `Invoicing\Support\InvoicePdf` are deleted.
 
+**Phase 4 notes:**
+- **Printables:**
+
+  | Module | Type | Document |
+  |---|---|---|
+  | Quotations | `quotation` | Quotation or sample request (watermark ACCEPTED or REJECTED; deposits and balance) |
+  | Quotations | `quotation_deposit` | Deposit receipt |
+  | SalesOrders | `sales_order` | Sales order |
+  | Purchasing | `purchase_order` | Purchase order (DRAFT or CANCELLED watermark) |
+  | Purchasing | `purchase_receipt` | Goods received note, with a "checked by" line |
+  | Purchasing | `supplier_payment` | Payment voucher, with a "received by" line |
+  | Production | `work_order` | Job sheet: stages done and remaining, with a Checked column to tick by hand |
+  | GarmentPack | `style_costing` | Costing sheet (materials with waste, labour, overhead) |
+  | GarmentPack | `cmt_job` | CMT order (sent, returned, still out, owed) |
+- **Buttons:** record pages have PDF and Print buttons. Deposit, receipt, supplier payment and CMT rows each get a link.
+- **Wording** is in each module's lang file (`print_*`). Payment methods use the module's `method_*` labels.
+- **Purchasing models:** gained the relations the documents need (`PurchaseReceipt::purchaseOrder/supplier`, `PurchaseReceiptLine::variant`, `SupplierPayment::supplier`).
+- **Table cells:** line breaks in a cell print as line breaks, so a line's description sits under its product.
+
+**Phase 5 notes:**
+- `tests/Feature/ModulePrintablesTest` seeds the demo factory and prints **every record of every registered type**, in both the print view and PDF. It fails if:
+  - a type has no record in the test
+  - a document isn't branded
+  - any untranslated `module::file.key` text shows up
+- **Checked visually:** every module document rendered to PDF and converted to images. Two fixes came from that check:
+  - the CMT title was shortened so it fits on one line
+  - cell line breaks now print
+- README: the Core section covers Branding and Printing; "Building a module" says how to add a document.
+
 ## 5. Documents
 
 | Module | Documents |
@@ -117,5 +146,5 @@ Savings (personal finance) is left out on purpose.
 | 1 | Branding data + Branding page (identity, visuals, stamp & signature, payment details); copy Invoicing issuer settings | ✅ 02/11/2026 |
 | 2 | Print engine: `Document`, layouts, PDF/HTML/Excel, design settings + live preview, printables registry + routes + buttons; lists through the engine | ✅ 02/11/2026 |
 | 3 | Move the existing PDFs (Invoicing, Billing, Delivery) onto the engine | ✅ 02/11/2026 |
-| 4 | New documents in every module (§5) | ☐ |
-| 5 | Check every document in PDF and print view (rendered to images and looked at), tests, README | ☐ |
+| 4 | New documents in every module (§5) | ✅ 02/11/2026 |
+| 5 | Check every document in PDF and print view (rendered to images and looked at), tests, README | ✅ 02/11/2026 |

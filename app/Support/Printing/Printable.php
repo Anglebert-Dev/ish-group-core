@@ -27,6 +27,17 @@ abstract class Printable
 
     abstract public function document(Model $record): Document;
 
+    /**
+     * A record of $class by its route key (uuid or id), with relations loaded.
+     *
+     * @param  class-string<Model>  $class
+     * @param  list<string>  $with
+     */
+    protected function lookup(string $class, string $key, array $with = []): Model
+    {
+        return $class::query()->where((new $class)->getRouteKeyName(), $key)->with($with)->firstOrFail();
+    }
+
     public function filename(Model $record): string
     {
         return $this->document($record)->number ?? $this->label();

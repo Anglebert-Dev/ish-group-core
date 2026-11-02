@@ -27,6 +27,8 @@ php artisan schedule:work    # daily jobs (billing renewals, suspensions)
 - **Users & roles**: per-business roles built from module permissions.
 - **Customers** (Management → Customers): every business has them; a customer with linked orders or invoices can't be deleted (make them inactive).
 - **Audit log**, **notifications**, **backups**, **Communicator** (announcements to business admins).
+- **Branding** (Management → Branding): business details (legal name, TIN, contacts), colours, font and logos, a private stamp and signature, and bank/mobile money details. The **Documents** tab designs every printout (Classic, Modern or Compact; paper, logo, tagline, footer, per-document terms) with a live preview.
+- **Printing**: one engine for every document and list: **PDF**, **Print** (browser) and branded **Excel**. Each business's documents carry its brand.
 
 ## Modules
 
@@ -65,6 +67,7 @@ On/off is stored in the database (not in a file), so switching modules on a serv
   - `app(DocumentNumber::class)->next('sales_order', 'SO')` — `SO-2026-00001`, per business, never reused.
   - `app(BusinessSettings::class)->get/set('module.key')` — per-business settings.
   - `money($amount)` — amount in the business's currency.
+  - **Printing a document:** subclass `App\Support\Printing\Printable`, return `['type' => Class::class]` from `DataController::printables()`, and put `<x-print.buttons type="…" :id="$record->getRouteKey()" />` on the page. Lists use `ListExportLibrary`. Details: `docs/branding-print-build-guide.md`.
 - Tenant tables get a `business_id`; models use `BelongsToBusiness` and extend `BaseModel`.
 - Migrations run when the module is installed, not with `php artisan migrate`.
 
