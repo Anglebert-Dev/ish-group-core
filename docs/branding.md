@@ -96,10 +96,9 @@ Only what our layout can do everywhere:
 | Density (navigation, tables, forms, spacing): compact, comfortable | **B3, P0**: one density token used by `x-common.table`, inputs and spacing |
 | Content width: standard, wide, full | **B3, P0** |
 | Card style flat, bordered, elevated; corners sharp, slightly rounded, rounded; button shape square, rounded, pill | **B3, P0**: radius and shadow tokens |
-| Breadcrumbs, page title/subtitle, footer, back-to-top | **B3, P1**: switches on `x-common.page-header` and the layout |
+| Page title/subtitle, footer, back-to-top | **B3, P1**: switches on `x-common.page-header` and the layout |
 | Loading indicator, transitions on/off | **B3, P1**: transitions also respect `prefers-reduced-motion` |
 | Default landing page | **B6, P1** |
-| Sidebar on the right | **Leave out**: the layout, drawers and every module page assume left. It belongs with RTL language support later. |
 | Transparent header, "fluid" page layout | **Leave out**: same as full width, or unreadable over content |
 | Floating action button position | **Leave out**: there's no floating action button |
 
@@ -160,13 +159,12 @@ The login page is shared by every business, so it has to **know which business**
 | Welcome message, banner (logo or cover image), announcement or notice | **B6, P1** |
 | Widget visibility, order, columns (1–3), card look (from tokens) | **B6, P1**. Built on `DashboardService::widgets()` and the module hooks: each widget gets a stable key. |
 | Widgets per role | **B6, P1**: a widget still needs its permission, so this can only hide, never show more |
-| Widget resizing | **Leave out**: needs a drag grid; columns and order cover the need |
 
 ### 3.8 Navigation
 
 | Item | Plan |
 |---|---|
-| Rename items and group headings, reorder, hide, icon from an approved set, default-open groups, badges on/off, landing page | **B6, P1**. Saved as overrides by route name and applied **after** `AdminMenu` has filtered by permission. A hidden item's route stays reachable for people who have the permission. |
+| Rename items and group headings, reorder, hide, icon from an approved set, landing page | **B6, P1**. Saved as overrides by route name and applied **after** `AdminMenu` has filtered by permission. A hidden item's route stays reachable for people who have the permission. |
 | Navigation density | from B3 |
 | Move items between groups | **B6, P1**, but only between existing groups |
 
@@ -186,7 +184,6 @@ Charts: there's no chart library today. B2 adds a `--chart-1…6` palette, deriv
 | Password reset, invitations, transactional and document emails | build, P2, B7 | Check that every mail (including Laravel's built-in reset notification) goes through `emails/message`, and move any that don't |
 | Preview each email before publishing | build, P2, B7 | Preview list in the studio |
 | In-app notification colours | via tokens (B1) | |
-| SMS sender name | **Leave out**: no SMS provider in the app |
 
 ### 3.11 Documents & print
 
@@ -250,7 +247,6 @@ Off by default. Needs package feature `branding.custom_css` and permission `publ
 | Date and number format | **B8, P2**: date format choice plus thousands and decimal separators (currency already per business) |
 | Terminology (rename words like "Work order") | **B10, P3**: overrides on chosen lang keys only, never on legal document wording |
 | PWA name and icon (manifest per business) | **B10, P3** |
-| Loading screen, notification sound, custom domains, QR logo | **Leave out**: no loading screen, sounds or QR codes today. Custom domains are an infrastructure project (DNS, SSL, routing); they get their own plan if wanted. |
 
 **Also done (02/11/2026, asked during B1):**
 - **Billable modules:** Super Admin → Modules has a **Billing** column. "In packages" modules are sold through packages; "Free for all" ones are open to every business and left out of the package form. Stored as `<alias>_billable` in the system table, read by `ModuleManager::isBillingExempt()`. `module.json` `billing_exempt` (Billing, Distribution) means always free and can't be changed. Audited, with the terminal twin `core:module billable|free <Name>`.
@@ -293,7 +289,6 @@ Off by default. Needs package feature `branding.custom_css` and permission `publ
   - `rounded-button` is used by `x-common.button` and the login and auth buttons.
 - **Menu:** collapses to icons on large screens (button at the bottom of the menu). Each person's choice is kept in their browser; the business sets the starting state. Styles: solid, minimal (no lines) or floating card.
 - **Fixed on the way:** `responsive.css` pinned the menu to 16rem by id, so it now uses `--sidebar-w`. With a narrow or collapsed menu, the order and invoice product tables fit at 1280px (the issue noted in B2).
-- **Left out:** breadcrumbs, because the app has none.
 
 **B4 notes:**
 - **Live preview** on the Theme and Layout tabs: page (dashboard, a list, a form, buttons/fields/alerts, login, email, printed document), phone, tablet or desktop, light or dark. It updates as you type, before saving.
@@ -313,7 +308,6 @@ Off by default. Needs package feature `branding.custom_css` and permission `publ
   - welcome title (`:name` = the person) and text, a banner (logo or the login picture), figures per row
   - `DashboardService::blocks()`; module widgets are now keyed by module
 - **Menu:** rename, icon, move to another existing section, order, hide; rename and reorder sections. `AdminMenu` applies these **after** the permission filter, so they can't reveal anything, and hidden pages still open for people allowed.
-- **Left out:** default-open groups and menu badges, because the menu has neither.
 - **Landing page** after signing in (password and two-step) and at `/app`: the business's choice when this person may open it, else the dashboard.
 - **Announcement** under the top bar on every page, with a tone and optional from/until dates. Each person can close it (kept in their browser, per text).
 - **Presets:** 8 built-in (Corporate, Minimal, Modern, Dark, Warm, Fashion, Retail, Services) plus up to 12 saved per business (`branding.presets`). Applying one sets all appearance sections (`ThemeSchema::PRESET_SECTIONS`) in the draft and never touches content. Audited. To duplicate one, apply it and save it under a new name.
@@ -326,7 +320,7 @@ Off by default. Needs package feature `branding.custom_css` and permission `publ
   - signature, footer text, contacts in the footer
   - live preview from the unsaved form (`settings.studio.email?email[...]`; half-typed values keep the saved look)
 - **Fixed:** button text in emails is white or dark by contrast (`ThemeTokens::textOn`), so light brands no longer get white-on-yellow.
-- **Left out:** SMS sender name (no SMS provider). Own sender address or domain needs domain verification with the mail provider (P3, later).
+- Own sender address or domain needs domain verification with the mail provider (later).
 
 **B8 notes:**
 - **Documents:**
@@ -352,7 +346,6 @@ Off by default. Needs package feature `branding.custom_css` and permission `publ
 - **Own font** (`branding.fonts`): one per business, a woff2 for screens plus an optional TTF for PDFs, with a licence confirmation. Picked as "custom" on Look → Font (`Fonts::useCustom()` per request).
 - **Own words** (`branding.terminology`): core terms (dashboard, customers, users, roles) and every module's menu label, except settings and never-sold platform modules. Applied by `SetLocale` with `Terminology::apply()`, which loads the whole group before adding lines. Legal printed wording isn't in the list.
 - **Home-screen app:** `/manifest.webmanifest` (name, short name, icon = phone logo → logo → favicon, theme and background colours), plus `theme-color` and Apple web-app tags.
-- **Left out:** custom domains (DNS, SSL, routing: its own project), loading screens, sounds, QR logos.
 - **Run** `php artisan core:module update Billing` on servers with Billing (new `capabilities` column).
 
 **B9 notes (QA):**
@@ -438,7 +431,7 @@ For each phase:
 | B0 | System font: one font choice for the whole system (app, login, emails, error pages, website, PDF), bundled font files, dompdf registration | P0 | ✅ 02/11/2026 |
 | B1 | Foundation: theme document + `ThemeSchema`, versions (draft/publish/restore/reset), tokens + compiler + cache, platform defaults, fallbacks; identity extras (short name, slogan, description, login and mobile logos); **move all views and components onto tokens** + raw-colour guard. Package features moved to B10. | P0 | ✅ 02/11/2026 |
 | B2 | Colours & themes: full palette, picker/HEX/RGB/HSL, palettes, contrast check + suggestions, dark and system mode, user override, chart palette | P0 | ✅ 02/11/2026 |
-| B3 | Layout & typography: sidebar, header, density, content width, cards, corners, buttons, switches (breadcrumbs, titles, footer, back-to-top, transitions); fonts and type scale | P0 | ✅ 02/11/2026 |
+| B3 | Layout & typography: sidebar, header, density, content width, cards, corners, buttons, switches (titles, footer, back-to-top, transitions); fonts and type scale | P0 | ✅ 02/11/2026 |
 | B4 | Studio: live preview with devices, pages, light/dark; history screen | P0 | ✅ 02/11/2026 |
 | B5 | Login & authentication branding, business login link | P1 | ✅ 02/11/2026 |
 | B6 | Dashboard (welcome, banner, widgets, per role), navigation overrides, landing page, announcement banner, presets | P1 | ✅ 02/11/2026 |
