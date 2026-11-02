@@ -138,6 +138,9 @@ Route::prefix('app')->middleware(['auth:staff', 'auth.session', 'exclusive.porta
 
     Route::get('/settings', [SettingController::class, 'index'])->middleware('permission:list settings.setting')->name('settings.index');
     Route::put('/settings', [SettingController::class, 'update'])->middleware('permission:update settings.setting')->name('settings.update');
+    Route::get('/print/{type}/{id}', [\App\Http\Controllers\Web\Print\PrintController::class, 'show'])->where('type', '[a-z_]+')->name('print.show');
+    Route::get('/print/{type}/{id}/pdf', [\App\Http\Controllers\Web\Print\PrintController::class, 'pdf'])->where('type', '[a-z_]+')->name('print.pdf');
+    Route::get('/settings/print-preview', [SettingController::class, 'preview'])->middleware(['permission:list settings.setting', 'throttle:120,1'])->name('settings.print-preview');
     Route::get('/settings/image/{kind}', [SettingController::class, 'image'])->middleware('permission:list settings.setting')->whereIn('kind', ['stamp', 'signature'])->name('settings.image');
 
     Route::prefix('notifications')->name('notifications.')->group(function () {

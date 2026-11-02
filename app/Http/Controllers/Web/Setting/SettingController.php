@@ -5,7 +5,11 @@ namespace App\Http\Controllers\Web\Setting;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Setting\UpdateSettingRequest;
 use App\Services\Branding\BrandingService;
+use App\Services\Printing\PrintService;
 use App\Services\Setting\SettingService;
+use App\Support\Printing\PrintDesign;
+use App\Support\Printing\PrintRegistry;
+use App\Support\Printing\SampleDocument;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -19,7 +23,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class SettingController extends Controller
 {
-    public const TABS = ['details', 'look', 'stamp', 'payments'];
+    public const TABS = ['details', 'look', 'stamp', 'payments', 'documents'];
 
     public function __construct(
         protected SettingService $settings,
@@ -38,6 +42,8 @@ class SettingController extends Controller
             'tab' => $tab,
             'tabs' => self::TABS,
             'fonts' => BrandingService::FONTS,
+            'design' => PrintDesign::for($business),
+            'documentTypes' => ['list' => __('body.print_type_list')] + app(PrintRegistry::class)->labels(),
         ]);
     }
 
@@ -74,11 +80,61 @@ class SettingController extends Controller
                 'methods.*.branch' => ['nullable', 'string', 'max:100'],
                 'methods.*.swift' => ['nullable', 'string', 'max:20'],
             ])['methods'] ?? []),
+            'documents' => $this->branding->saveDesign($business, $this->designInput($request)),
             default => $this->legacy(app(UpdateSettingRequest::class)),
         };
 
         return redirect()->route('settings.index', in_array($section, self::TABS, true) ? ['tab' => $section] : [])
             ->with($result['status'] ? 'success' : 'error', $result['message']);
+    }
+
+    /**
+     * The designer's live preview: the sample invoice with the (unsaved)
+     * choices in the query string. ?format=pdf shows the real PDF.
+     */
+    public function preview(Request $request, PrintService $printer): Response
+    {
+        $business = $this->settings->current();
+        $design = PrintDesign::for($business, null, $this->designInput($request, forPreview: true));
+        $document = SampleDocument::make();
+
+        return $request->query('format') === 'pdf'
+            ? $printer->pdf($document, $business, 'preview', inline: true, design: $design)
+            : response($printer->html($document, $business, null, autoPrint: false, design: $design)->render());
+    }
+
+    /**
+     * Design choices from the form (saved) or the query string (preview).
+     *
+     * @return array<string, mixed>
+     */
+    private function designInput(Request $request, bool $forPreview = false): array
+    {
+        $data = $request->validate([
+            'layout' => ['nullable', Rule::in(PrintDesign::LAYOUTS)],
+            'paper' => ['nullable', Rule::in(array_keys(PrintDesign::PAPERS))],
+            'accent' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'font' => ['nullable', Rule::in(array_keys(BrandingService::FONTS))],
+            'logo_position' => ['nullable', Rule::in(PrintDesign::LOGO_POSITIONS)],
+            'logo_size' => ['nullable', Rule::in(array_keys(PrintDesign::LOGO_SIZES))],
+            'header_note' => ['nullable', 'string', 'max:200'],
+            'footer_text' => ['nullable', 'string', 'max:500'],
+            'types' => ['array'],
+            'types.*.terms' => ['nullable', 'string', 'max:2000'],
+            'types.*.footer' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        foreach (array_keys(PrintDesign::SWITCHES) as $switch) {
+            $data[$switch] = $request->boolean($switch);
+        }
+
+        if ($forPreview) {
+            // The sample shows the invoice terms/footer being typed.
+            $data['types'] = ['sample' => $data['types']['sales_invoice'] ?? []];
+            $data = array_filter($data, fn ($value) => $value !== null);
+        }
+
+        return $data;
     }
 
     /**

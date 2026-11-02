@@ -2,123 +2,63 @@
 
 namespace App\Libraries;
 
+use App\Services\Printing\PrintService;
 use App\Services\Setting\SettingService;
-use Dompdf\Dompdf;
-use Dompdf\Options;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Style\Border;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use App\Support\Printing\Document;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
+/**
+ * List exports (every table's PDF / Excel / Print buttons), through the one
+ * print engine so they carry the business's brand and design
+ * (docs/branding-print-build-guide.md §4). "?print=1" on a PDF link gives
+ * the browser print view instead of a download.
+ */
 class ListExportLibrary
 {
     public static function pdf(ListExport $export): Response
     {
+        $business = app(SettingService::class)->current();
+        $printer = app(PrintService::class);
+        $document = self::document($export);
+
+        if (request()->boolean('print')) {
+            self::audit($export, 'Print');
+
+            return response($printer->html($document, $business, request()->fullUrlWithoutQuery('print'))->render());
+        }
+
         self::audit($export, 'PDF');
 
-        $branding = app(SettingService::class)->current();
-        $logoSrc = self::logoDataUri($branding->logo_path);
-
-        $options = new Options;
-        $options->set('isRemoteEnabled', false);
-        $options->set('isHtml5ParserEnabled', true);
-        $options->setChroot([base_path(), public_path(), storage_path('app/public')]);
-
-        $dompdf = new Dompdf($options);
-        $dompdf->loadHtml(view('components.common.list-export-pdf', [
-            'export' => $export,
-            'company' => $branding->companyName(),
-            'brandColor' => $branding->brandColor(),
-            'logoPath' => $logoSrc,
-            'generatedAt' => GeneralLibrary::formatDateTime(now()),
-        ])->render());
-        $dompdf->setPaper('a4', 'landscape');
-        $dompdf->render();
-
-        return response($dompdf->output(), 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="'.$export->downloadName('pdf').'"',
-        ]);
+        return $printer->pdf($document, $business, $export->downloadName('pdf'));
     }
 
     public static function excel(ListExport $export): StreamedResponse
     {
         self::audit($export, 'Excel');
 
-        $branding = app(SettingService::class)->current();
-        $spreadsheet = new Spreadsheet;
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle(mb_substr($export->title, 0, 31));
+        return app(PrintService::class)->excel(self::document($export), app(SettingService::class)->current(), $export->downloadName('xlsx'));
+    }
 
-        $columnCount = max(1, count($export->headings));
-        $lastColumn = self::columnLetter($columnCount);
+    /**
+     * A list as a document: wide lists print landscape; columns that hold
+     * only numbers or amounts are right-aligned.
+     */
+    public static function document(ListExport $export): Document
+    {
+        $columns = [];
 
-        $sheet->setCellValue('A1', $branding->companyName());
-        $sheet->mergeCells("A1:{$lastColumn}1");
-        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
-
-        $sheet->setCellValue('A2', $export->title);
-        $sheet->mergeCells("A2:{$lastColumn}2");
-        $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(12);
-
-        $sheet->setCellValue('A3', __('body.generated_at').': '.GeneralLibrary::formatDateTime(now()));
-        $sheet->mergeCells("A3:{$lastColumn}3");
-        $sheet->getStyle('A3')->getFont()->setItalic(true)->setSize(9);
-
-        $headerRow = 5;
-        foreach ($export->headings as $index => $heading) {
-            $sheet->setCellValue(self::columnLetter($index + 1).$headerRow, $heading);
+        foreach ($export->headings as $i => $heading) {
+            $values = array_filter(array_column($export->rows, $i), fn ($value) => trim((string) $value) !== '' && trim((string) $value) !== '—');
+            $numeric = $values !== [] && collect($values)->every(fn ($value) => preg_match('/^[A-Z]{0,3}\s?-?[\d,.\s]+%?$/u', trim((string) $value)) === 1);
+            $columns[] = [$heading, $numeric ? 'right' : 'left'];
         }
 
-        $headerRange = "A{$headerRow}:{$lastColumn}{$headerRow}";
-        $sheet->getStyle($headerRange)->applyFromArray([
-            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => [
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => ltrim($branding->brandColor(), '#')],
-            ],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
-        ]);
-
-        $rowNumber = $headerRow + 1;
-        foreach ($export->rows as $row) {
-            foreach ($row as $index => $value) {
-                $sheet->setCellValueExplicit(
-                    self::columnLetter($index + 1).$rowNumber,
-                    (string) $value,
-                    \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING
-                );
-            }
-            $rowNumber++;
-        }
-
-        $dataEnd = max($headerRow, $rowNumber - 1);
-        $sheet->getStyle("A{$headerRow}:{$lastColumn}{$dataEnd}")->applyFromArray([
-            'borders' => [
-                'allBorders' => [
-                    'borderStyle' => Border::BORDER_THIN,
-                    'color' => ['rgb' => 'D0D5DD'],
-                ],
-            ],
-        ]);
-
-        $sheet->freezePane('A6');
-        $sheet->setAutoFilter($headerRange);
-
-        for ($i = 1; $i <= $columnCount; $i++) {
-            $sheet->getColumnDimension(self::columnLetter($i))->setAutoSize(true);
-        }
-
-        return response()->streamDownload(function () use ($spreadsheet) {
-            $writer = new Xlsx($spreadsheet);
-            $writer->save('php://output');
-            $spreadsheet->disconnectWorksheets();
-        }, $export->downloadName('xlsx'), [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        ]);
+        return Document::make('list', $export->title)
+            ->meta(__('body.print_rows'), (string) count($export->rows))
+            ->table($columns, $export->rows)
+            ->landscape(count($export->headings) > 5)
+            ->whenEmpty(__('body.no_records_to_export'));
     }
 
     private static function audit(ListExport $export, string $format): void
@@ -129,43 +69,5 @@ class ListExportLibrary
             null,
             ['list' => $export->title, 'format' => $format, 'rows' => count($export->rows)],
         );
-    }
-
-    private static function logoDataUri(?string $logoPath): ?string
-    {
-        $absolute = null;
-
-        if (filled($logoPath)) {
-            $candidate = storage_path('app/public/'.$logoPath);
-            if (is_file($candidate)) {
-                $absolute = $candidate;
-            }
-        }
-
-        if ($absolute === null) {
-            return null;
-        }
-
-        $mime = @mime_content_type($absolute) ?: 'image/png';
-        $binary = @file_get_contents($absolute);
-
-        if ($binary === false || $binary === '') {
-            return null;
-        }
-
-        return 'data:'.$mime.';base64,'.base64_encode($binary);
-    }
-
-    private static function columnLetter(int $index): string
-    {
-        $letter = '';
-
-        while ($index > 0) {
-            $index--;
-            $letter = chr(65 + ($index % 26)).$letter;
-            $index = intdiv($index, 26);
-        }
-
-        return $letter;
     }
 }

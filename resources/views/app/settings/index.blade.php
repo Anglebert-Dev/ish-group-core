@@ -113,6 +113,113 @@
             </div>
         @endif
 
+        @if ($tab === 'documents')
+            @php
+                $types = old('types', $design->types);
+                $choice = fn (string $name, string $value, string $current) => 'rounded-xl border px-3 py-2 text-sm cursor-pointer select-none '.($current === $value ? 'border-brand bg-brand-light text-brand-dark font-semibold' : 'border-line bg-white hover:border-brand');
+            @endphp
+            <div class="grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] gap-6 items-start" id="print-designer">
+                <div class="space-y-6">
+                    <div class="bg-white border border-line rounded-xl p-4 sm:p-6 space-y-5">
+                        <p class="text-sm text-muted">{{ __('body.design_hint') }}</p>
+
+                        <div>
+                            <p class="text-sm font-semibold text-ink mb-2">{{ __('body.design_layout') }}</p>
+                            <div class="grid grid-cols-3 gap-2">
+                                @foreach (\App\Support\Printing\PrintDesign::LAYOUTS as $layout)
+                                    <label class="{{ $choice('layout', $layout, $design->layout) }}">
+                                        <input type="radio" name="layout" value="{{ $layout }}" class="sr-only" @checked($design->layout === $layout)
+                                               onchange="this.closest('div').querySelectorAll('label').forEach(l => l.classList.remove('border-brand','bg-brand-light','text-brand-dark','font-semibold')); this.parentElement.classList.add('border-brand','bg-brand-light','text-brand-dark','font-semibold')">
+                                        <span class="block font-semibold">{{ __('body.design_layout_'.$layout) }}</span>
+                                        <span class="block text-xs text-muted">{{ __('body.design_layout_'.$layout.'_hint') }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div class="flex flex-col gap-2">
+                                <label for="accent" class="text-sm font-semibold text-ink">{{ __('body.design_accent') }}</label>
+                                <div class="flex items-center gap-3">
+                                    <input type="color" value="{{ strtolower($design->accent) }}" aria-label="{{ __('body.design_accent') }}"
+                                           oninput="document.getElementById('accent').value = this.value.toUpperCase(); document.getElementById('accent').dispatchEvent(new Event('input', {bubbles: true}))"
+                                           class="h-11 w-14 shrink-0 rounded-xl border border-line bg-white p-1 cursor-pointer">
+                                    <input type="text" name="accent" id="accent" value="{{ $design->accent }}" maxlength="7" class="flex-1 h-11 rounded-xl border border-line px-3 text-sm uppercase">
+                                </div>
+                                <p class="text-xs text-muted">{{ __('body.design_accent_hint') }}</p>
+                            </div>
+                            <x-common.select name="font" :label="__('body.brand_font')" :value="$design->font" :options="$fonts" hide-placeholder />
+                            <x-common.select name="paper" :label="__('body.design_paper')" :value="$design->paper" :options="\App\Support\Printing\PrintDesign::PAPERS" hide-placeholder />
+                            <x-common.select name="logo_position" :label="__('body.design_logo_position')" :value="$design->logoPosition" hide-placeholder
+                                :options="collect(\App\Support\Printing\PrintDesign::LOGO_POSITIONS)->mapWithKeys(fn ($p) => [$p => __('body.design_position_'.$p)])->all()" />
+                            <x-common.select name="logo_size" :label="__('body.design_logo_size')" :value="$design->logoSize" hide-placeholder
+                                :options="collect(\App\Support\Printing\PrintDesign::LOGO_SIZES)->keys()->mapWithKeys(fn ($s) => [$s => __('body.design_size_'.$s)])->all()" />
+                        </div>
+
+                        <x-common.input name="header_note" :label="__('body.design_header_note')" :value="$design->headerNote" :hint="__('body.design_header_note_hint')" />
+                        <x-common.textarea name="footer_text" :label="__('body.design_footer')" :value="$design->footerText" :rows="2" :hint="__('body.design_footer_hint')" />
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            @foreach (\App\Support\Printing\PrintDesign::SWITCHES as $switch => $default)
+                                <x-common.checkbox :name="$switch" value="1" :checked="$design->{\Illuminate\Support\Str::camel($switch)}" :label="__('body.design_'.$switch)" />
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-line rounded-xl p-4 sm:p-6 space-y-4">
+                        <div>
+                            <p class="font-semibold text-ink">{{ __('body.design_per_type') }}</p>
+                            <p class="text-sm text-muted">{{ __('body.design_per_type_hint') }}</p>
+                        </div>
+                        @foreach ($documentTypes as $type => $label)
+                            <details class="rounded-xl border border-line p-3" @if (! empty($types[$type]['terms']) || ! empty($types[$type]['footer'])) open @endif>
+                                <summary class="cursor-pointer text-sm font-semibold text-ink">{{ $label }}</summary>
+                                <div class="mt-3 space-y-3">
+                                    <x-common.textarea :name="'types['.$type.'][terms]'" :label="__('body.design_terms')" :value="$types[$type]['terms'] ?? ''" :rows="2" />
+                                    <x-common.input :name="'types['.$type.'][footer]'" :label="__('body.design_type_footer')" :value="$types[$type]['footer'] ?? ''" :hint="__('body.design_type_footer_hint')" compact />
+                                </div>
+                            </details>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="2xl:sticky 2xl:top-4 bg-white border border-line rounded-xl overflow-hidden">
+                    <div class="px-4 py-3 border-b border-line flex items-center justify-between gap-3">
+                        <p class="font-semibold text-ink text-sm">{{ __('body.design_preview') }}</p>
+                        <a id="print-preview-pdf" href="{{ route('settings.print-preview', ['format' => 'pdf']) }}" target="_blank" class="text-sm font-semibold text-brand hover:text-brand-dark">{{ __('body.design_preview_pdf') }}</a>
+                    </div>
+                    <iframe id="print-preview" title="{{ __('body.design_preview') }}" src="{{ route('settings.print-preview') }}" class="w-full bg-gray-200" style="height: 900px; border: 0"></iframe>
+                </div>
+            </div>
+
+            <script>
+                (function () {
+                    var form = document.getElementById('print-designer').closest('form');
+                    var frame = document.getElementById('print-preview');
+                    var pdf = document.getElementById('print-preview-pdf');
+                    var base = @json(route('settings.print-preview'));
+                    var timer;
+                    function query() {
+                        var params = new URLSearchParams();
+                        new FormData(form).forEach(function (value, key) {
+                            if (key !== '_token' && key !== '_method' && key !== 'section') params.append(key, value);
+                        });
+                        return params.toString();
+                    }
+                    function refresh() {
+                        clearTimeout(timer);
+                        timer = setTimeout(function () {
+                            var q = query();
+                            frame.src = base + '?' + q;
+                            pdf.href = base + '?format=pdf&' + q;
+                        }, 400);
+                    }
+                    form.addEventListener('input', refresh);
+                    form.addEventListener('change', refresh);
+                })();
+            </script>
+        @endif
+
         <div class="flex [&>*]:w-full sm:[&>*]:w-auto sm:justify-end">
             <x-common.button type="submit">{{ __('body.save_changes') }}</x-common.button>
         </div>

@@ -141,6 +141,34 @@ class BrandingService extends BaseService
     }
 
     /**
+     * The print design (docs/branding-print-build-guide.md §4): "print.*".
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function saveDesign(Business $business, array $data): array
+    {
+        foreach (['layout', 'paper', 'accent', 'font', 'logo_position', 'logo_size', 'header_note', 'footer_text'] as $key) {
+            $value = is_string($data[$key] ?? null) ? trim($data[$key]) : null;
+            $value === null || $value === ''
+                ? $this->settings->forget('print.'.$key, $business)
+                : $this->settings->set('print.'.$key, $key === 'accent' ? strtoupper($value) : $value, $business);
+        }
+
+        foreach (array_keys(\App\Support\Printing\PrintDesign::SWITCHES) as $key) {
+            $this->settings->set('print.'.$key, (bool) ($data[$key] ?? false), $business);
+        }
+
+        $types = collect((array) ($data['types'] ?? []))
+            ->map(fn ($type) => array_filter(['terms' => $this->text($type['terms'] ?? null), 'footer' => $this->text($type['footer'] ?? null)]))
+            ->filter()
+            ->all();
+
+        $types === [] ? $this->settings->forget('print.types', $business) : $this->settings->set('print.types', $types, $business);
+
+        return $this->success($business, __('body.branding_saved'));
+    }
+
+    /**
      * Path of a private branding image, for the signed-in preview.
      */
     public function privateImage(Business $business, string $kind): ?string

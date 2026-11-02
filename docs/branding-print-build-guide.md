@@ -1,6 +1,6 @@
 # Branding & printing: Build Guide
 
-Created: 02/11/2026. Status: **Phase 1 done (02/11/2026)**. Update §7 after each phase, so work can pick up where it stopped.
+Created: 02/11/2026. Status: **Phases 1–2 done (02/11/2026)**. Update §7 after each phase, so work can pick up where it stopped.
 
 ## 1. Goal
 
@@ -60,6 +60,23 @@ The Invoicing module's own issuer settings (`invoicing.tax_id`, `invoicing.addre
 - **Lists:** `ListExportLibrary` keeps its API, so the 28 existing exports don't change. It builds a list `Document` through the engine, and lists get a Print button too.
 - Printing is audited, as list exports and invoice PDFs are today.
 
+**Phase 2 notes:**
+- **Code:**
+  - `App\Support\Printing\{Document, PrintDesign, Printable, PrintRegistry, SampleDocument}`
+  - `App\Services\Printing\PrintService` (`pdfBytes`/`pdf`/`html`/`excel`)
+  - template `resources/views/print/document.blade.php`: one file, three layouts, PDF and browser
+  - `config/printing.php` for core types
+- **Adding a document type** (what modules do):
+  1. Subclass `Printable` (`label`, `permission`, `find($routeKey)` under the business scope, `document($record)`).
+  2. Return `['type' => Class::class]` from `DataController::printables()`.
+  3. Put `<x-print.buttons type="…" :id="$record->getRouteKey()" />` on the record's page.
+
+  The routes are `print.show` (print view, opens the print dialog) and `print.pdf`. Both check the permission and audit the print.
+- **Page numbers** are stamped by dompdf's canvas (`page_text`), because CSS `counter(pages)` doesn't work in dompdf.
+- **Lists:** `ListExportLibrary` keeps its API, so the 28 exports didn't change. `?print=1` on any list's PDF link gives the print view, and the export buttons now include **Print**. Numeric and amount columns are right-aligned automatically, and lists with more than 5 columns print landscape. The old `list-export-pdf` template is gone.
+- **Designer:** Branding → **Documents** tab. The live preview iframe is `settings.print-preview`, which takes the unsaved choices as a query string, and `?format=pdf` shows the real PDF. Saved as `print.*` (layout, paper, accent, font, logo position and size, tagline, footer, 5 switches, and per-type terms and footer in `print.types`).
+- **Checked visually:** all three layouts rendered to PDF and converted to images (poppler in a throwaway Docker image). The "1 / 0" page counter was fixed after that check.
+
 ## 5. Documents
 
 | Module | Documents |
@@ -88,7 +105,7 @@ Savings (personal finance) is left out on purpose.
 | # | Phase | Status |
 |---|---|---|
 | 1 | Branding data + Branding page (identity, visuals, stamp & signature, payment details); copy Invoicing issuer settings | ✅ 02/11/2026 |
-| 2 | Print engine: `Document`, layouts, PDF/HTML/Excel, design settings + live preview, printables registry + routes + buttons; lists through the engine | ☐ |
+| 2 | Print engine: `Document`, layouts, PDF/HTML/Excel, design settings + live preview, printables registry + routes + buttons; lists through the engine | ✅ 02/11/2026 |
 | 3 | Move the existing PDFs (Invoicing, Billing, Delivery) onto the engine | ☐ |
 | 4 | New documents in every module (§5) | ☐ |
 | 5 | Check every document in PDF and print view (rendered to images and looked at), tests, README | ☐ |
