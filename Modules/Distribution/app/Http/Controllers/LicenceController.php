@@ -61,11 +61,15 @@ class LicenceController extends Controller
     public function support(Request $request, Site $site): RedirectResponse
     {
         $data = $request->validate([
-            'support_until' => ['nullable', 'date'],
+            'support_until' => ['nullable', 'date', 'required_without:no_support'],
+            'no_support' => ['nullable', 'boolean'],
             'reason' => ['required', 'string', 'max:500'],
         ]);
 
-        return $this->back($site, $this->licences->setSupportUntil($site, $data['support_until'] ?? null, $data['reason']));
+        // "No support (until paid)" ticked: the date is cleared whatever was typed.
+        $until = $request->boolean('no_support') ? null : ($data['support_until'] ?? null);
+
+        return $this->back($site, $this->licences->setSupportUntil($site, $until, $data['reason']));
     }
 
     public function remind(Site $site): RedirectResponse

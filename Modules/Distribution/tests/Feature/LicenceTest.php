@@ -170,6 +170,11 @@ class LicenceTest extends TestCase
         $this->put(route('superadmin.distribution.sites.support', $this->site), ['support_until' => '2028-01-31', 'reason' => 'Goodwill: outage in March'])->assertRedirect();
 
         $this->assertSame('2028-01-31', $this->site->fresh()->support_until->toDateString());
+
+        // "No support (until paid)": the date goes, whatever was typed.
+        $this->put(route('superadmin.distribution.sites.support', $this->site), ['support_until' => '2028-01-31', 'no_support' => '1', 'reason' => 'Licence not paid yet'])->assertRedirect();
+        $this->assertNull($this->site->fresh()->support_until);
+        $this->assertFalse($this->site->fresh()->hasSupport());
         $this->assertTrue(ActivityLog::query()->where('action', 'distribution_support_changed')->where('description', 'like', '%Goodwill%')->exists());
         $this->get(route('superadmin.distribution.sites.show', $this->site))->assertOk()->assertSee(__('distribution::distribution.licence_title'));
     }

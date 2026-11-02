@@ -423,7 +423,7 @@ return [
     'method_card' => 'Card',
     'method_other' => 'Other',
     'support_change' => 'Change the end date by hand',
-    'support_change_hint' => 'For a goodwill extension or a correction. Blank = no support. The reason is kept in the audit log.',
+    'support_change_hint' => 'For a goodwill extension or a correction. The reason is kept in the audit log.',
     'support_change_reason' => 'Reason',
     'support_change_save' => 'Save date',
 
@@ -467,4 +467,5 @@ return [
     'signing_create' => 'Create signing key',
     'build_needs_paid_licence' => 'The licence is not paid yet. Create the licence charge below (Licence & support), send it, and mark it paid when the money arrives; then the zip can be built. (Test sites need no licence.)',
     'licence_unpaid_title' => 'Waiting for the licence payment',
+    'support_none' => 'No support (until paid)',
 ];

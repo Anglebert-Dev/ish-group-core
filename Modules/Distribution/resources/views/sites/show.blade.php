@@ -162,6 +162,8 @@
                 <p class="font-semibold text-ink text-sm">{{ __('distribution::distribution.support_change') }}</p>
                 <p class="text-xs text-muted">{{ __('distribution::distribution.support_change_hint') }}</p>
                 <x-common.input name="support_until" type="date" :label="__('distribution::distribution.support_until')" :value="$site->support_until?->toDateString()" />
+                <x-common.checkbox name="no_support" value="1" inline :label="__('distribution::distribution.support_none')"
+                    onchange="var d = this.form.querySelector('[name=support_until]'); d.disabled = this.checked; if (this.checked) d.value = '';" />
                 <x-common.input name="reason" :label="__('distribution::distribution.support_change_reason')" required />
                 <x-common.button type="submit" variant="secondary" size="sm">{{ __('distribution::distribution.support_change_save') }}</x-common.button>
             </form>
