@@ -1,0 +1,1 @@
+<x-common.badge :color="['COMPLETED' => 'success', 'FAILED' => 'muted', 'NEEDS_REVIEW' => 'danger', 'UNKNOWN' => 'warning', 'SUBMITTED' => 'brand', 'SUBMITTING' => 'brand', 'QUEUED' => 'brand'][$cashout->status] ?? 'muted'">{{ __('injongepay::injongepay.cashout_'.$cashout->status) }}</x-common.badge>

@@ -117,9 +117,9 @@ class Reconciliation
         return $credited - $balances - $accrued - $this->moneyOut();
     }
 
-    /** Overridden once cash-outs exist: money that left the platform for a bank account. */
+    /** Money debited for cash-outs that were not given back (sent, being sent or unclear). */
     protected function moneyOut(): int
     {
-        return 0;
+        return (int) \Modules\InjongePay\Models\Cashout::query()->withoutGlobalScopes()->where('status', '!=', \Modules\InjongePay\Models\Cashout::FAILED)->sum('amount');
     }
 }

@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use Modules\InjongePay\Http\Controllers\Business\OverviewController;
 use Modules\InjongePay\Http\Controllers\Business\ApprovalController;
+use Modules\InjongePay\Http\Controllers\Business\CashoutController;
+use Modules\InjongePay\Http\Controllers\Platform\CashoutController as PlatformCashoutController;
 use Modules\InjongePay\Http\Controllers\Business\PaymentController;
 use Modules\InjongePay\Http\Controllers\Business\SecurityController;
 use Modules\InjongePay\Http\Controllers\Business\TransferController;
@@ -30,6 +32,10 @@ Route::prefix('app/injonge-pay')->name('injongepay.')->middleware($staff)->group
 
     Route::get('/transfers', [TransferController::class, 'index'])->middleware('permission:list injongepay.transfer')->name('transfers.index');
     Route::post('/transfers', [TransferController::class, 'store'])->middleware(['permission:create injongepay.transfer', 'not.impersonating', 'throttle:20,1'])->name('transfers.store');
+
+    Route::get('/cashouts', [CashoutController::class, 'index'])->middleware('permission:list injongepay.cashout')->name('cashouts.index');
+    Route::post('/cashouts', [CashoutController::class, 'store'])->middleware(['permission:create injongepay.cashout', 'not.impersonating', 'throttle:10,1'])->name('cashouts.store');
+    Route::get('/cashouts/{cashout}', [CashoutController::class, 'show'])->middleware('permission:read injongepay.cashout')->name('cashouts.show');
 
     Route::get('/approvals', [ApprovalController::class, 'index'])->middleware('permission:approve injongepay.transfer|approve injongepay.cashout|create injongepay.transfer|create injongepay.cashout')->name('approvals.index');
     Route::post('/approvals/{approval}/approve', [ApprovalController::class, 'approve'])->middleware(['not.impersonating', 'throttle:20,1'])->name('approvals.approve');
@@ -71,6 +77,11 @@ Route::prefix('app/injonge-pay/platform')->name('injongepay.platform.')->middlew
     Route::post('/settlement-accounts/{account}/verify', [SettlementAccountController::class, 'verify'])->middleware(['permission:update injongepay_platform.business', 'throttle:10,1'])->name('settlement-accounts.verify');
     Route::post('/settlement-accounts/{account}/approve', [SettlementAccountController::class, 'approve'])->middleware(['permission:approve injongepay_platform.business', 'password.confirm.staff'])->name('settlement-accounts.approve');
     Route::post('/settlement-accounts/{account}/disable', [SettlementAccountController::class, 'disable'])->middleware(['permission:update injongepay_platform.business', 'password.confirm.staff'])->name('settlement-accounts.disable');
+
+    Route::get('/cashouts', [PlatformCashoutController::class, 'index'])->middleware('permission:list injongepay_platform.cashout')->name('cashouts.index');
+    Route::get('/cashouts/{cashout}', [PlatformCashoutController::class, 'show'])->middleware('permission:read injongepay_platform.cashout')->name('cashouts.show');
+    Route::post('/cashouts/{cashout}/check', [PlatformCashoutController::class, 'check'])->middleware(['permission:update injongepay_platform.cashout', 'throttle:20,1'])->name('cashouts.check');
+    Route::post('/cashouts/{cashout}/resolve', [PlatformCashoutController::class, 'resolve'])->middleware(['permission:approve injongepay_platform.cashout', 'password.confirm.staff'])->name('cashouts.resolve');
 
     Route::get('/bank-calls', [BankCallController::class, 'index'])->middleware('permission:list injongepay_platform.bank')->name('bank-calls.index');
     Route::get('/bank-calls/{call}', [BankCallController::class, 'show'])->middleware('permission:read injongepay_platform.bank')->name('bank-calls.show');

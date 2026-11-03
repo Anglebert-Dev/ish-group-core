@@ -263,7 +263,16 @@ Webhooks (`/api/payments/webhook`, `/api/gtbank/disbursement-status`) keep their
    - a second person above a threshold, never the requester
    - cash-out accounts added by the platform, checked against GTBank's name, approved by a second platform person, usable after 24 h
    - wallet-to-wallet transfers locked in id order
-6. Cash-out outbox with two-signal finality, poller, events, stuck/not-found queue for platform staff.
+6. ✅ Cash-outs:
+   - The request reserves the money; a queued job sends it to GTBank once and never resends it.
+   - Status checks back off from 1 to 60 minutes.
+   - **Paid or returned only on two agreeing signals**: two status reads, or a read plus GTBank's webhook, about our reference, amount and account.
+   - Refused by the bridge and then not found twice over 10 minutes means the money goes back automatically.
+   - Anything else unclear for 2 h goes to platform staff ("Being checked with GTBank"), who settle it only with GTBank's confirmation.
+   - Every step is a timeline event.
+   - Only the payments the amount covers are marked cashed out.
+   - Whole RWF only.
+   - `/api/gtbank/disbursement-status` keeps its URL and answers.
 7. Business dashboard, reports and exports.
 8. InjongePayConnect: integrators, connections, the `pos-ebm-v1` profile, the legacy EBM profile.
 9. The **data-migration phase**, planned separately: production Postgres → `ijp_*`, keeping UUIDs, references, merchant codes, partner secret hashes and the webhook secret, with a dry run and count/amount checks.

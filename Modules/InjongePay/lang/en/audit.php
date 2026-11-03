@@ -37,4 +37,7 @@ return [
     'injongepay_account_verified' => 'Cash-out account checked with GTBank',
     'injongepay_account_approved' => 'Cash-out account approved',
     'injongepay_account_disabled' => 'Cash-out account switched off',
+    'injongepay_cashout_queued' => 'Cash-out asked and money reserved',
+    'injongepay_cashout_completed' => 'Cash-out paid',
+    'injongepay_cashout_failed' => 'Cash-out not paid, money returned',
 ];

@@ -20,6 +20,7 @@ class InjongePayServiceProvider extends CoreModuleServiceProvider
         \Modules\InjongePay\Console\SweepFeesCommand::class,
         \Modules\InjongePay\Console\MirrorCommand::class,
         \Modules\InjongePay\Console\CloseDayCommand::class,
+        \Modules\InjongePay\Console\CheckCashoutsCommand::class,
     ];
 
     protected array $providers = [
@@ -33,6 +34,7 @@ class InjongePayServiceProvider extends CoreModuleServiceProvider
         $schedule->command('injongepay:process-inbox')->everyMinute()->withoutOverlapping();
         $schedule->command('injongepay:sweep-fees')->everyTenMinutes()->withoutOverlapping();
         $schedule->command('injongepay:mirror')->everyTenMinutes()->withoutOverlapping();
+        $schedule->command('injongepay:check-cashouts')->everyMinute()->withoutOverlapping();
         $schedule->command('injongepay:close-day')->dailyAt('01:30')->withoutOverlapping();
     }
 
