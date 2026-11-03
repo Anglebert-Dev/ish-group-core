@@ -1,0 +1,8 @@
+{
+    "name": "ish-group/injongepayconnect",
+    "description": "Injonge Pay partner integrations (POS/EBM API) for the ISH core.",
+    "authors": [{"name": "ISH Group", "email": ""}],
+    "extra": {"laravel": {"providers": [], "aliases": {}}},
+    "autoload": {"psr-4": {"Modules\\InjongePayConnect\\": "app/"}},
+    "autoload-dev": {"psr-4": {"Modules\\InjongePayConnect\\Tests\\": "tests/"}}
+}

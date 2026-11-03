@@ -1,0 +1,14 @@
+{
+    "name": "InjongePayConnect",
+    "alias": "injongepayconnect",
+    "description": "Partner integrations for Injonge Pay: POS/EBM systems and other integrators read a business's merchant accounts and payments and link payments to their invoices. Each integrator has its own contract (the Injonge EBM/POS API v1 is kept exactly as before), credentials per business, rate limits and a call log.",
+    "keywords": ["api", "partners", "pos", "ebm"],
+    "version": "1.0.0",
+    "requires": ["InjongePay"],
+    "menu_group": "Injonge Pay",
+    "priority": 1,
+    "providers": [
+        "Modules\\InjongePayConnect\\Providers\\InjongePayConnectServiceProvider"
+    ],
+    "files": []
+}
