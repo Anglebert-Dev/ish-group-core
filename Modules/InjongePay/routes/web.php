@@ -51,5 +51,6 @@ Route::prefix('app/injonge-pay/platform')->name('injongepay.platform.')->middlew
 
     Route::get('/settings', [SettingsController::class, 'index'])->middleware('permission:update injongepay_platform.setting|update injongepay_platform.fee')->name('settings');
     Route::put('/settings/fees', [SettingsController::class, 'updateFees'])->middleware(['permission:update injongepay_platform.fee', 'password.confirm.staff'])->name('settings.fees');
+    Route::put('/settings/webhook-ips', [SettingsController::class, 'updateIps'])->middleware(['permission:update injongepay_platform.setting', 'password.confirm.staff'])->name('settings.ips');
     Route::post('/settings/webhook-secret', [SettingsController::class, 'generateSecret'])->middleware(['permission:update injongepay_platform.setting', 'password.confirm.staff'])->name('settings.secret');
 });

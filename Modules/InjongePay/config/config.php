@@ -21,7 +21,8 @@ return [
         'participant_name' => env('GTBANK_PARTICIPANT_NAME'),
         'ssl_verify' => env('GTBANK_SSL_VERIFY', true),
         'ca_path' => storage_path('key/gtbank-ca.pem'),
-        'timeout' => 15,
+        'timeout' => 20,
+        'transfer_timeout' => 60,
     ],
 
     // Percentages, as strings so they are never floats.

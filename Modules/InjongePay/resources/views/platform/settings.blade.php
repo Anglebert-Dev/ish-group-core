@@ -36,6 +36,13 @@
                 @if (\App\Helpers\AuthHelper::can('update injongepay_platform.setting'))
                     <x-common.action-button :action="route('injongepay.platform.settings.secret')" color="warning">{{ __('injongepay::injongepay.secret_generate') }}</x-common.action-button>
                 @endif
+                @if (\App\Helpers\AuthHelper::can('update injongepay_platform.setting'))
+                    <form action="{{ route('injongepay.platform.settings.ips') }}" method="POST" class="space-y-3 pt-2 border-t border-line">
+                        @csrf @method('PUT')
+                        <x-common.input name="webhook_allowed_ips" :label="__('injongepay::injongepay.webhook_allowed_ips')" :hint="__('injongepay::injongepay.webhook_allowed_ips_hint')" :value="old('webhook_allowed_ips', $allowedIps)" />
+                        <x-common.button type="submit" size="sm">{{ __('body.save') }}</x-common.button>
+                    </form>
+                @endif
                 <p class="text-sm {{ $bankConfigured ? 'text-success' : 'text-warning' }}">{{ $bankConfigured ? __('injongepay::injongepay.bank_configured') : __('injongepay::injongepay.bank_not_configured') }}</p>
             </div>
         </div>

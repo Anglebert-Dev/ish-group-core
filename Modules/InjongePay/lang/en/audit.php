@@ -16,4 +16,5 @@ return [
     'injongepay_payment_allocated' => 'Held payment credited',
     'injongepay_payment_settled_outside' => 'Held payment settled outside',
     'injongepay_fees_swept' => 'Fees credited to platform wallets',
+    'injongepay_webhook_ips_changed' => 'GTBank webhook addresses changed',
 ];

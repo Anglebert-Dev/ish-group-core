@@ -16,7 +16,8 @@ use Throwable;
 
 /**
  * POST /api/payments/webhook: GTBank's transaction notification (v2.5 §10.1).
- * Same URL, fields, secret header and response bodies as before. Differences,
+ * Same URL, fields and response bodies as before; recognised by the secret
+ * header or GTBank's address (see fromGtbank). Differences,
  * following GTBank's own §10.1.5: a redelivered transaction gets 200 with the
  * payment it already created, and money for a code that can't take it is
  * held (200) instead of refused.
@@ -33,9 +34,9 @@ class PaymentWebhookController
             $request->input('transactionId'), $subject, (int) ((microtime(true) - $started) * 1000),
         );
 
-        if (! $this->secretMatches($request)) {
+        if (! $this->fromGtbank($request)) {
             $response = $this->sendUnauthorized();
-            $log(401, $response->getData(true), BankResult::REJECTED, 'Missing or mismatched webhook secret');
+            $log(401, $response->getData(true), BankResult::REJECTED, 'Not from GTBank: wrong secret, or no secret from an address not allowed');
 
             return $response;
         }

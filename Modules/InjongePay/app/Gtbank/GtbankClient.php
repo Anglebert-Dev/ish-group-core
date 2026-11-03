@@ -53,12 +53,31 @@ class GtbankClient
 
     public function disbursementTransfer(array $payload, ?Model $subject = null): BankResult
     {
+        $payload['beneficiaryAccount'] = self::beneficiary((string) ($payload['beneficiaryAccount'] ?? ''));
+
         return $this->send('POST', '/disbursement/transfer', $payload, subject: $subject, reference: $payload['reference'] ?? null);
     }
 
     public function disbursementLookup(string $identifier, ?Model $subject = null): BankResult
     {
+        $identifier = self::beneficiary($identifier);
+
         return $this->send('GET', '/disbursement/lookup', query: ['identifier' => $identifier], subject: $subject, reference: $identifier);
+    }
+
+    /**
+     * DigiPay only reads Rwandan wallet numbers as 07XXXXXXXX: "+250788…" fails
+     * its lookup (seen in production) while "0788…" works. Bank accounts pass as they are.
+     */
+    public static function beneficiary(string $identifier): string
+    {
+        $clean = preg_replace('/[\s\-().]/', '', trim($identifier)) ?? '';
+
+        if (preg_match('/^(?:\+?250|00250)(7\d{8})$/', $clean, $m)) {
+            return '0'.$m[1];
+        }
+
+        return $clean;
     }
 
     public function disbursementStatus(string $reference, ?Model $subject = null): BankResult
@@ -123,7 +142,7 @@ class GtbankClient
             'response' => self::redact($result->data),
             'outcome' => $result->outcome,
             'bank_code' => $result->code,
-            'message' => $result->message,
+            'message' => $result->diagnosis ? $result->diagnosis.' — '.$result->message : $result->message,
             'duration_ms' => $duration,
             'caller' => $subject && method_exists($subject, 'label') ? $subject->label() : null,
         ]);
@@ -132,7 +151,7 @@ class GtbankClient
                 'call' => $call->uuid, 'http' => $result->httpStatus, 'code' => $result->code, 'message' => $result->message,
             ]);
 
-        return new BankResult($result->outcome, $result->data, $result->httpStatus, $result->code, $result->message, $call->id);
+        return $result->withCall($call->id);
     }
 
     private function attempt(string $method, string $path, array $payload, array $query, bool $retryToken): BankResult
@@ -146,10 +165,12 @@ class GtbankClient
         }
 
         $tries = $method === 'GET' ? 2 : 1;
+        // A transfer can take GTBank longer than 15 s and still go through (seen: timeout, then ACSC).
+        $timeout = $path === '/disbursement/transfer' ? (int) config('injongepay.gtbank.transfer_timeout', 60) : (int) config('injongepay.gtbank.timeout', 20);
 
         for ($try = 1; $try <= $tries; $try++) {
             try {
-                $request = $this->http()->withToken($token);
+                $request = $this->http()->timeout($timeout)->withToken($token);
                 $response = $method === 'GET'
                     ? $request->get($this->url($path), $query)
                     : $request->post($this->url($path), $payload);
@@ -158,10 +179,10 @@ class GtbankClient
                     continue;
                 }
 
-                return new BankResult(BankResult::UNKNOWN, message: $e->getMessage());
+                return new BankResult(BankResult::UNKNOWN, message: $e->getMessage(), diagnosis: __('injongepay::injongepay.diag_no_answer', ['seconds' => $timeout]));
             }
 
-            $result = $this->classify($response);
+            $result = $this->classify($response, $method, $path);
 
             if ($retryToken && ($response->status() === 401 || in_array($result->code, BankCodes::TOKEN_CODES, true))) {
                 Cache::forget(self::TOKEN_CACHE_KEY);
@@ -175,28 +196,46 @@ class GtbankClient
         return new BankResult(BankResult::UNKNOWN);
     }
 
-    private function classify(Response $response): BankResult
+    private function classify(Response $response, string $method, string $path): BankResult
     {
         $status = $response->status();
         $body = $response->json();
         $body = is_array($body) ? $body : ['raw' => mb_substr($response->body(), 0, 2000)];
         $message = BankPayloads::error($body);
         $code = isset($body['responseCode']) ? (string) $body['responseCode'] : null;
+        $java = $status >= 400 ? JavaError::parse($body) : null;
+        $diagnosis = $java?->diagnosis();
+        $downstream = $java?->downstreamStatus;
+
+        // The bridge answers 500 for whatever DigiPay said; act on what DigiPay said.
+        if ($java?->saysNotFound()) {
+            return new BankResult(BankResult::NOT_FOUND, $body, $status, $code, $message, diagnosis: $diagnosis, downstreamStatus: $downstream);
+        }
+
+        // An account lookup DigiPay couldn't answer (wrong number format, unknown account): not verified.
+        if ($java?->kind === JavaError::UNREADABLE && $path === '/disbursement/lookup') {
+            return new BankResult(BankResult::REJECTED, $body, $status, 'UNREADABLE', $message, diagnosis: $diagnosis, downstreamStatus: $downstream);
+        }
 
         if ($status >= 500) {
-            return new BankResult(BankResult::UNKNOWN, $body, $status, $code, $message);
+            // Never "refused" for a write: whether DigiPay acted is settled by a status check, not guessed.
+            return new BankResult(BankResult::UNKNOWN, $body, $status, $code, $message, diagnosis: $diagnosis, downstreamStatus: $downstream);
         }
 
         if ($status === 404) {
-            return new BankResult(BankResult::NOT_FOUND, $body, $status, $code, $message);
+            return new BankResult(BankResult::NOT_FOUND, $body, $status, $code, $message, diagnosis: $diagnosis, downstreamStatus: $downstream);
         }
 
         if ($status === 409) {
             return new BankResult(BankResult::REJECTED, $body, $status, $code ?? '13', $message);
         }
 
+        if ($status === 408 || $status === 429) {
+            return new BankResult(BankResult::UNKNOWN, $body, $status, $code, $message, diagnosis: $diagnosis, downstreamStatus: $downstream);
+        }
+
         if ($status >= 400) {
-            return new BankResult(BankResult::REJECTED, $body, $status, $code, $message);
+            return new BankResult(BankResult::REJECTED, $body, $status, $code, $message, diagnosis: $diagnosis, downstreamStatus: $downstream);
         }
 
         if ($code !== null && $code !== '00') {

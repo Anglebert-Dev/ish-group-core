@@ -106,7 +106,21 @@ The current pattern (an emailed OTP on every action) is slow and doesn't actuall
 | 14 | `remarks` ≤ 50, `beneficiaryAccount` ≤ 20, phone `+250XXXXXXXXX`, merchantId starts with 55 and has 8–12 digits | not enforced | validated before any call |
 | 15 | Webhook signature "if supported"; there is no secret header in the doc | our own `X-GTBank-Webhook-Secret` | keep the header (it is already agreed) plus an optional IP allow-list; ask GTBank about signing |
 
-Real response shapes are taken from production `api_call_logs` during the migration phase and become golden test fixtures.
+### What GTBank really answers (production log, 03/11/2026), not what the document says
+
+The document is not reliable on responses and codes, so the client acts on what GTBank actually answers. The real answers are fixtures in `Modules/InjongePay/tests/fixtures/gtbank-production.php`, with tests in `GtbankRealAnswersTest`.
+
+- **PaymentBridge is a Java/Spring service in front of DigiPay** (`com.example.mpayhub`, `api.gtbank.rw/digipay/...`). When DigiPay answers badly, the bridge returns **HTTP 500** and puts DigiPay's real status and body inside its `error` text. `Gtbank/JavaError.php` reads every shape seen:
+  - Spring RestTemplate: `400 on POST request for "…": "{…}"` and `401 … [no body]`
+  - Jackson: `Error while extracting response for type …`
+  - I/O errors: `Read timed out`, `Connection refused`
+  - Spring Boot's default error JSON
+
+  The outcome follows what DigiPay said. Example: a status check that comes back as 500 wrapping DigiPay's 400 "Transaction not found" is read as **not found**.
+- **A timeout is not a failure.** `/disbursement/transfer` timed out at 15 s, and 30 s later its status was **ACSC**. Transfers now wait 60 s, and a write that gets no clear answer is always "unknown" until a status check settles it.
+- **DigiPay refusing GTBank's own login** (`401 … [no body]` on `/pay`) means the transfer was never created; the status check then says not found. The client reports it as unknown, explains it in plain words ("tell GTBank"), and leaves the status check to decide.
+- **Wallet numbers must be sent as `07XXXXXXXX`.** `+250788811607` makes the lookup fail with a Jackson error, while `0788811607` works. Every beneficiary is normalised before it is sent. A lookup GTBank can't read means "account not verified".
+- **GTBank sends no webhook secret header.** That is why production had switched the check off. A webhook is now accepted when it carries the right secret, or carries none and comes from GTBank's address (Injonge Pay settings → GTBank's addresses, e.g. `10.22.198.46`). The money stays pending until GTBank's own transaction list confirms it.
 
 ## Who does what
 

@@ -27,7 +27,15 @@ final class BankResult
         public readonly ?string $code = null,
         public readonly ?string $message = null,
         public readonly ?int $callId = null,
+        // What really happened behind the bridge (JavaError), for people and for the log.
+        public readonly ?string $diagnosis = null,
+        public readonly ?int $downstreamStatus = null,
     ) {
+    }
+
+    public function withCall(int $callId): self
+    {
+        return new self($this->outcome, $this->data, $this->httpStatus, $this->code, $this->message, $callId, $this->diagnosis, $this->downstreamStatus);
     }
 
     public function ok(): bool
@@ -58,6 +66,6 @@ final class BankResult
 
     public function message(): string
     {
-        return $this->message ?: __('injongepay::injongepay.bank_outcome_'.$this->outcome);
+        return $this->diagnosis ?: ($this->message ?: __('injongepay::injongepay.bank_outcome_'.$this->outcome));
     }
 }

@@ -4,6 +4,7 @@ namespace Modules\InjongePay\Http\Controllers\Api;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\IpUtils;
 use Modules\InjongePay\Support\PlatformSettings;
 
 /**
@@ -27,10 +28,23 @@ trait RespondsLikeProduction
         return $this->sendError($message, null, 401);
     }
 
-    protected function secretMatches(Request $request): bool
+    /**
+     * The secret header when GTBank sends one (it must then be right), otherwise
+     * GTBank's own address. Either way the money stays pending until GTBank's
+     * transaction list confirms it, so a forged webhook can never be withdrawn.
+     */
+    protected function fromGtbank(Request $request): bool
     {
-        $expected = PlatformSettings::webhookSecret();
+        $sent = $request->header('X-GTBank-Webhook-Secret');
 
-        return filled($expected) && hash_equals((string) $expected, (string) $request->header('X-GTBank-Webhook-Secret'));
+        if (filled($sent)) {
+            $expected = PlatformSettings::webhookSecret();
+
+            return filled($expected) && hash_equals((string) $expected, (string) $sent);
+        }
+
+        $allowed = PlatformSettings::webhookAllowedIps();
+
+        return $allowed !== [] && IpUtils::checkIp((string) $request->ip(), $allowed);
     }
 }

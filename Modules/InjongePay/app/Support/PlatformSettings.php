@@ -39,6 +39,18 @@ final class PlatformSettings
         System::addProperty('injongepay_webhook_secret', Crypt::encryptString($secret));
     }
 
+    /**
+     * Addresses GTBank sends webhooks from (comma-separated IPs or CIDR ranges).
+     * GTBank does not send the secret header (production had to switch the check
+     * off), so its own address is how its webhooks are recognised.
+     *
+     * @return list<string>
+     */
+    public static function webhookAllowedIps(): array
+    {
+        return array_values(array_filter(array_map('trim', explode(',', (string) System::getProperty('injongepay_webhook_allowed_ips', '')))));
+    }
+
     public static function set(string $key, ?string $value): void
     {
         System::addProperty('injongepay_'.$key, $value);
