@@ -23,7 +23,7 @@
         <x-common.table :headers="[__('body.name'), __('injongepay::injongepay.merchant_code'), __('injongepay::injongepay.bank_status'), __('injongepay::injongepay.available'), __('injongepay::injongepay.pending'), '']">
             @foreach ($wallets as $wallet)
                 <tr>
-                    <td class="px-5 py-3 font-semibold text-ink">{{ $wallet->name }}</td>
+                    <td class="px-5 py-3 font-semibold text-ink"><a class="hover:text-brand" href="{{ route('injongepay.wallets.show', $wallet->uuid) }}">{{ $wallet->name }}</a></td>
                     <td class="px-5 py-3 font-mono">{{ $wallet->merchant_code }}</td>
                     <td class="px-5 py-3">@include('injongepay::partials.bank-status', ['wallet' => $wallet])</td>
                     <td class="px-5 py-3">{{ Money::format($wallet->available_balance) }}</td>

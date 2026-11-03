@@ -17,15 +17,31 @@ use Modules\InjongePay\Support\Money;
 
 class TransferController extends Controller
 {
-    public function index(Request $request, \Modules\InjongePay\Services\Security\Pins $pins): View
+    public function index(Request $request, \Modules\InjongePay\Services\Security\Pins $pins, TransferService $transfers): View
     {
         $ids = Wallet::query()->pluck('id');
+
+        // Step 1 (as before): say whose merchant code it is before anything is asked for.
+        $destination = null;
+        $problem = null;
+        $from = Wallet::query()->whereNull('internal_role')->where('uuid', (string) $request->query('wallet'))->first();
+
+        if ($from && filled($request->query('to'))) {
+            try {
+                $destination = $transfers->destination((string) $request->query('to'), $from);
+            } catch (InjongePayException $e) {
+                $problem = $e->getMessage();
+            }
+        }
 
         return view('injongepay::business.transfers.index', [
             'transfers' => Transfer::query()->withoutGlobalScopes()->with(['fromWallet', 'toWallet'])
                 ->where(fn ($q) => $q->whereIn('from_wallet_id', $ids)->orWhereIn('to_wallet_id', $ids))->latest('id')->paginate(30),
             'wallets' => $this->wallets(),
             'hasPin' => $pins->has($request->user('staff')),
+            'from' => $from,
+            'destination' => $destination?->load('business'),
+            'problem' => $problem,
         ]);
     }
 
@@ -54,9 +70,11 @@ class TransferController extends Controller
 
             $transfer = $transfers->execute($approval);
         } catch (StepUpRequired $e) {
-            return back()->withInput($request->except('pin', 'code'))->with('step_up', ['reasons' => $e->reasons, 'method' => $e->method])->with('error', $e->getMessage());
+            return redirect()->route('injongepay.transfers.index', ['wallet' => $data['wallet'], 'to' => $data['merchant_code'], 'amount' => $data['amount'], 'description' => $data['description'] ?? null])
+                ->with('step_up', ['reasons' => $e->reasons, 'method' => $e->method])->with('error', $e->getMessage());
         } catch (InjongePayException $e) {
-            return back()->withInput($request->except('pin', 'code'))->with('error', $e->getMessage());
+            return redirect()->route('injongepay.transfers.index', ['wallet' => $data['wallet'], 'to' => $data['merchant_code'], 'amount' => $data['amount'], 'description' => $data['description'] ?? null])
+                ->with('error', $e->getMessage());
         }
 
         return redirect()->route('injongepay.transfers.index')->with('success', __('injongepay::injongepay.transfer_done', ['amount' => Money::format($transfer->amount), 'ref' => $transfer->reference]));

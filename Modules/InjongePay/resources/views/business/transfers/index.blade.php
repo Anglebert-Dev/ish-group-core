@@ -20,16 +20,38 @@
             <x-common.pagination :paginator="$transfers" class="mt-4" />
         </div>
         @if (\App\Helpers\AuthHelper::can('create injongepay.transfer'))
-            <form action="{{ route('injongepay.transfers.store') }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-4">
-                @csrf
+            <div class="bg-card border border-line rounded-xl p-5 space-y-4">
                 <h2 class="font-display font-bold text-ink">{{ __('injongepay::injongepay.transfer_new') }}</h2>
-                <x-common.select name="wallet" :label="__('injongepay::injongepay.from')" :options="$wallets" :value="old('wallet')" required />
-                <x-common.input name="merchant_code" :label="__('injongepay::injongepay.to_merchant_code')" :value="old('merchant_code')" required inputmode="numeric" />
-                <x-common.input name="amount" type="number" step="1" min="1" :label="__('injongepay::injongepay.amount')" :value="old('amount')" required />
-                <x-common.input name="description" :label="__('injongepay::injongepay.description')" :value="old('description')" />
-                @include('injongepay::partials.authorize')
-                <x-common.button type="submit">{{ __('injongepay::injongepay.transfer_send') }}</x-common.button>
-            </form>
+                @if (! $destination)
+                    {{-- Step 1: from where, to which code, how much --}}
+                    <form method="GET" action="{{ route('injongepay.transfers.index') }}" class="space-y-4">
+                        <x-common.select name="wallet" :label="__('injongepay::injongepay.from')" :options="$wallets" :value="request('wallet', old('wallet'))" required />
+                        <x-common.input name="to" :label="__('injongepay::injongepay.to_merchant_code')" :value="request('to', old('merchant_code'))" :error="$problem" required inputmode="numeric" />
+                        <x-common.input name="amount" type="number" step="1" min="1" :label="__('injongepay::injongepay.amount')" :value="request('amount', old('amount'))" required />
+                        <x-common.input name="description" :label="__('injongepay::injongepay.description')" :value="request('description', old('description'))" />
+                        <x-common.button type="submit">{{ __('injongepay::injongepay.transfer_check') }}</x-common.button>
+                    </form>
+                @else
+                    {{-- Step 2: see who receives it, then confirm with the PIN --}}
+                    <div class="rounded-xl border border-line bg-surface p-4 text-sm space-y-1">
+                        <p class="text-muted">{{ __('injongepay::injongepay.transfer_to_confirm') }}</p>
+                        <p class="text-lg font-display font-bold text-ink">{{ \Modules\InjongePay\Support\Money::format(\Modules\InjongePay\Support\Money::toCents((string) request('amount'))) }}</p>
+                        <p class="font-semibold text-ink">{{ $destination->name }} · {{ $destination->merchant_code }}</p>
+                        <p>{{ $destination->business?->name }}</p>
+                        <p class="text-muted">{{ __('injongepay::injongepay.from') }}: {{ $from->label() }}</p>
+                        <a href="{{ route('injongepay.transfers.index', request()->only('wallet', 'amount', 'description')) }}" class="text-brand font-semibold">{{ __('injongepay::injongepay.transfer_change') }}</a>
+                    </div>
+                    <form action="{{ route('injongepay.transfers.store') }}" method="POST" class="space-y-4">
+                        @csrf
+                        <input type="hidden" name="wallet" value="{{ $from->uuid }}">
+                        <input type="hidden" name="merchant_code" value="{{ $destination->merchant_code }}">
+                        <input type="hidden" name="amount" value="{{ request('amount') }}">
+                        <input type="hidden" name="description" value="{{ request('description') }}">
+                        @include('injongepay::partials.authorize')
+                        <x-common.button type="submit">{{ __('injongepay::injongepay.transfer_send') }}</x-common.button>
+                    </form>
+                @endif
+            </div>
         @endif
     </div>
 </x-layouts.app>

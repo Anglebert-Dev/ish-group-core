@@ -6,6 +6,7 @@ use Modules\InjongePay\Http\Controllers\Business\ApprovalController;
 use Modules\InjongePay\Http\Controllers\Business\CashoutController;
 use Modules\InjongePay\Http\Controllers\Platform\CashoutController as PlatformCashoutController;
 use Modules\InjongePay\Http\Controllers\Business\PaymentController;
+use Modules\InjongePay\Http\Controllers\Business\ProfileController;
 use Modules\InjongePay\Http\Controllers\Business\ReportController;
 use Modules\InjongePay\Http\Controllers\Platform\FinanceController;
 use Modules\InjongePay\Http\Controllers\Business\SecurityController;
@@ -30,6 +31,9 @@ $staff = ['auth:staff', 'auth.session', 'exclusive.portal:staff', 'business.acti
 
 Route::prefix('app/injonge-pay')->name('injongepay.')->middleware($staff)->group(function () {
     Route::get('/', [OverviewController::class, 'index'])->middleware('permission:list injongepay.overview')->name('overview');
+    Route::get('/wallets/{wallet}', [OverviewController::class, 'wallet'])->middleware('permission:read injongepay.wallet')->name('wallets.show');
+    Route::get('/business', [ProfileController::class, 'edit'])->middleware('permission:read injongepay.profile')->name('profile');
+    Route::put('/business', [ProfileController::class, 'update'])->middleware('permission:update injongepay.profile')->name('profile.update');
     Route::get('/payments', [PaymentController::class, 'index'])->middleware('permission:list injongepay.payment')->name('payments.index');
     Route::get('/payments/{payment}', [PaymentController::class, 'show'])->middleware('permission:read injongepay.payment')->name('payments.show');
 

@@ -180,10 +180,37 @@ class MovingMoneyTest extends InjongePayTestCase
         $this->asOwner()->delete(route('injongepay.settlement-accounts.destroy', $theirs), ['pin' => '48213'])->assertNotFound();
     }
 
+    public function test_a_transfer_shows_who_receives_it_before_the_pin(): void
+    {
+        $this->asOwner();
+
+        $this->get(route('injongepay.transfers.index', ['wallet' => $this->from->uuid, 'to' => $this->to->merchant_code, 'amount' => 10000]))
+            ->assertOk()->assertSee('Till B')->assertSee('Rhenium Group')->assertSee('name="pin"', false);
+        $this->get(route('injongepay.transfers.index', ['wallet' => $this->from->uuid, 'to' => '55599999', 'amount' => 10000]))
+            ->assertOk()->assertSee(__('injongepay::injongepay.err_transfer_destination'))->assertDontSee('name="pin"', false);
+    }
+
+    public function test_the_wallet_page_and_business_details(): void
+    {
+        $this->asOwner();
+
+        $this->get(route('injongepay.wallets.show', $this->from->uuid))->assertOk()->assertSee('Till A')->assertSee(route('injongepay.cashouts.index', ['wallet' => $this->from->uuid]), false);
+
+        $this->get(route('injongepay.profile'))->assertOk()->assertSee('name="contact_phone"', false);
+        $this->put(route('injongepay.profile.update'), ['contact_person' => 'Aline', 'contact_phone' => '+250788123456', 'contact_email' => 'aline@example.com', 'city' => 'Kigali', 'tin' => '999999999', 'fee_percentage' => '0'])
+            ->assertSessionHasNoErrors();
+
+        $profile = \Modules\InjongePay\Models\BusinessProfile::for($this->business);
+        $this->assertSame(['Aline', 'Kigali'], [$profile->contact_person, $profile->city]);
+        // TIN and fee are Inhills' to set.
+        $this->assertNull($profile->tin);
+        $this->assertNull($profile->fee_percentage);
+    }
+
     public function test_screens_render(): void
     {
         $this->asOwner();
-        $this->get(route('injongepay.transfers.index'))->assertOk()->assertSee('name="pin"', false);
+        $this->get(route('injongepay.transfers.index'))->assertOk()->assertSee('name="to"', false)->assertDontSee('name="pin"', false);
         $this->get(route('injongepay.approvals.index'))->assertOk();
         $this->get(route('injongepay.security'))->assertOk();
         $this->flushSession();
