@@ -1,6 +1,6 @@
 # Injonge Pay on ISH Core: Build Guide
 
-Created: 03/11/2026. The plan for rebuilding Injonge Pay (in production at `~/Documents/Inhills/INJONGE-PAY`) as two ISH Core modules: `InjongePay` (the money core) and `InjongePayConnect` (partner integrations). What exists today is described in [injonge-pay-module.md](injonge-pay-module.md). GTBank reference: `~/Documents/Inhills/Docs/GT_PaymentBridge_API_Documentation_v2.5.pdf`.
+Created: 03/11/2026, updated 04/11/2026 to match what is built. The plan for rebuilding Injonge Pay (in production at `~/Documents/Inhills/INJONGE-PAY`) as two ISH Core modules: `InjongePay` (the money core) and `InjongePayConnect` (partner integrations). What exists today is described in [injonge-pay-module.md](injonge-pay-module.md). GTBank reference: `~/Documents/Inhills/Docs/GT_PaymentBridge_API_Documentation_v2.5.pdf`.
 
 Progress is tracked in the phase table at the end (✅ = built and tested).
 
@@ -10,7 +10,9 @@ Injonge Pay is in production in `~/Documents/Inhills/INJONGE-PAY` (branch `refac
 
 Decided by the user:
 - **Businesses** are the customers. The word "institution" is not used anywhere in the new code; a business's **type** (school, hospital, fuel station, … 53 kinds) is a core field on every Business (`config('core.business_types')`).
-- **Inhills (platform staff) sets everything up.** Each business has an admin who does the day-to-day work but **cannot** create or edit wallets, permissions, staff or any other setup.
+- **A business does everything itself except create merchant codes.** It manages its own users and roles, settlement accounts, POS connections, transfers, cash-outs and reports. Inhills creates the merchant codes (they are registered at GTBank) and sets each business's KYC, fee and limits.
+- **Inhills helps a business with "Log in as"** (core impersonation), never from platform pages that reach into a business. Money actions (cash-outs, transfers, PIN, settlement accounts, POS secrets) are blocked while logged in as someone.
+- **Data isolation:** a business never sees or reaches another business's data. Transfers only go between a business's own merchant accounts.
 - External APIs stay **identical**.
 - **Refunds and manual "Record payment" are dropped.**
 - Audit **everything**.
@@ -70,12 +72,7 @@ All customer money physically sits in Inhills' **participant settlement account*
 The current pattern (an emailed OTP on every action) is slow and doesn't actually measure risk. Instead:
 
 - **Transaction PIN.** Each staff user who can move money sets a 5-digit PIN. It is hashed, locks after 3 wrong tries, a reset needs MFA, and every attempt is audited. A normal transfer or cash-out needs the PIN only, as MoMo does.
-- **Trusted beneficiaries.** A settlement account is usable only after:
-  - a GTBank `/disbursement/lookup` whose `names` match the account name
-  - platform approval
-  - a **24 h cooling-off period** after it is added or changed
-
-  After that, cash-outs to it need the PIN only.
+- **Settlement accounts.** The business adds its own (with its PIN). It can be used as soon as GTBank's `/disbursement/lookup` returns the same holder name (word order and case don't matter). There is no platform approval and no waiting time; the first cash-out to a new account asks for the extra code instead.
 - **Risk-based step-up** (TOTP through `StaffMfaService::verify()`, or an emailed code if the user has no MFA) is added only when:
   - the device is new
   - the amount is above the business's step-up threshold
@@ -84,7 +81,7 @@ The current pattern (an emailed OTP on every action) is slow and doesn't actuall
   - the PIN was recently reset
 - **Limits** set by Inhills per business: per-transaction, daily and monthly cash-out limits. **Maker-checker** above an approval threshold: a second business user approves with their own PIN.
 - **Trusted devices**: a signed device cookie, registered after a step-up and listed so it can be revoked.
-- Security changes (PIN, beneficiaries, limits) notify the business admin and Inhills.
+- Every PIN set, wrong PIN, lock, trusted browser, account change and approval is audited.
 
 ## GTBank v2.5 doc vs production code (each one fixed in `GtbankClient` / services)
 
@@ -134,22 +131,23 @@ The document is not reliable on responses and codes, so the client acts on what 
 
 | Actor | How | Can |
 |---|---|---|
-| Superadmin | core `is_superadmin` | everything |
-| **Platform staff** (Inhills) | staff of the operator business, holding the module's **platform permissions** (`{action} injongepay_platform.{x}`) through core roles | onboard businesses and their KYC; create and edit wallets and merchant codes; GTBank registration and sync; settlement accounts; fees; partner credentials; business staff and roles; resolve stuck cash-outs; reconciliation |
-| Business admin and staff | core business roles, `{action} injongepay.{x}` | dashboard, payments, ledger, POS invoice history, reports; **request** transfers and cash-outs (with step-up); view settlement accounts and credentials (read-only) |
+| Superadmin | core `is_superadmin` | everything, and "Log in as" any user to help |
+| **Platform staff** (Inhills) | users of the operator (primary) business holding the **platform permissions** (`{action} injongepay_platform.{x}`, `injongepay_connect_platform.{x}`) through core roles | create, register and close merchant codes; KYC, fee and limits; reconciliation; money to allocate; settle cash-outs GTBank gave no final answer for; GTBank call log; register partner systems (integrators); the platform's own **Fee earnings** and their cash-out |
+| Business admin and staff | core business roles, `{action} injongepay.{x}` / `injongepay_connect.{x}` | everything about their own money: payments, wallet pages, ledger, transfers between their own accounts, settlement accounts, cash-outs, approvals, reports, business contact details, POS connections and linked invoices, their own users and roles |
 
-Core changes this needs, small and generic:
-- **Platform abilities that a business Admin does not get automatically.** Today `Gate::before` in `app/Providers/AppServiceProvider.php::registerGate()` gives the business Admin every ability. Add a registry, filled from a module hook, of abilities that only superadmin or platform staff hold.
-- **Platform setting "businesses manage their own staff and roles" (on/off).** When it is off, staff and role screens are platform-only. This goes in core user and role management.
-- **Idle logout.**
-  - A platform setting `security.idle_timeout_minutes` (Inhills sets 2).
-  - Server side: a middleware in the `auth.session` stack stores `last_activity_at` in the session and logs out with an audit row once the limit passes.
-  - Browser side: a small script in the staff layout shows a countdown warning and logs out when time is up.
-  - Partner API tokens are unaffected.
+Inhills' own business does not show the business menus (it has no merchant codes); it sees only its platform menu plus **My PIN & devices**.
+
+Core changes built for this:
+- **Platform-only permissions** (`app/Support/Access/PlatformAccess.php`): permission modules a module marks `platform_modules` are held only by superadmins and operator staff; a customer business's Admin never gets them, and its role editor never offers them.
+- **"Businesses manage their own staff and roles"** (Platform settings → Security). On by default.
+- **Idle sign-out** (Platform settings → Security, minutes; 0 = off): server-side check in `LogoutIdleStaff`, a countdown banner and pings from `public/js/idle-logout.js`, audited.
+- **Business type** on every Business (`config('core.business_types')`, 53 kinds).
+- **Dashboard by module**: one section per module the business uses (figures, buttons, content), Team & settings at the end, activity log off unless turned on.
+- **`whereUuid()` and uuid route binding** that answer "not found" instead of a Postgres 500 for a value that isn't a uuid.
 
 ## Module 1: `Modules/InjongePay` (money core)
 
-module.json: `menu_group "Injonge Pay"`, sellable, tables prefixed `ijp_`. The skeleton follows `Modules/Savings`: a provider extending `App\Support\Modules\CoreModuleServiceProvider`, a `DataController` with the hooks `user_permissions`, `modifyAdminMenu`, `superadmin_business_panel` and `dashboard_stats`, and `lang/en/{injongepay,audit}.php`.
+module.json: `menu_group "Injonge Pay"`, sellable, tables prefixed `ijp_`. The skeleton follows `Modules/Savings`: a provider extending `App\Support\Modules\CoreModuleServiceProvider`, a `DataController` with the hooks `user_permissions`, `modifyAdminMenu`, `dashboard_stats`, `dashboard_quick_actions` and `dashboard_widget`, and `lang/en/{injongepay,audit}.php`. **When a migration is added, raise the version in module.json**, or `core:module update` won't run it on installed sites.
 
 **Data.** Every table has `uuid` (kept from production), `business_id` (`app/Models/Concerns/BelongsToBusiness.php`) and `legacy_id` (for the import).
 - `ijp_business_profiles`: TIN, contacts, fee override (the KYC GTBank needs). Name and type come from the core Business.
@@ -171,20 +169,20 @@ Money is **bigint cents** with no floats; a `Support/Money.php` modelled on `Mod
    - The idempotency key turns a replay into a no-op.
    - Entries are never edited.
    - Fee credits to the internal wallets are posted per payment as **pending fee entries** and swept in batches by the scheduler, so payments never queue behind one hot row (fix 8). Platform totals stay exact.
-2. **References.** `app/Support/Documents/DocumentNumber.php::next()` (locked counter) is used for PAY, TRF and CSH, and `ijp_counters` for merchant codes (`555xxxxx`). Nothing is random, and so nothing can collide (fix 6).
+2. **References.** `Support/Counter.php`: locked counters in `ijp_counters` for PAY, TRF and CSH (`CSH20261103000001`, letters and digits only, as GTBank requires) and for merchant codes (`555xxxxx`). A number is taken before the money transaction so payments never wait on the counter row. Nothing is random, so nothing can collide (fix 6).
 3. **GtbankClient**, transport only.
    - Token refreshed once on a 401.
    - Retries only on idempotent GETs.
    - Every call goes to `ijp_bank_calls`.
-   - Its result is typed: `Ok`, `NotFound`, `Rejected(code, message)` or **`Unknown`** (timeout or 5xx). Callers branch on that type, never on message text (fix 1).
-   - A `FakeGtbank` driver is used when the base URL is empty, and in tests.
+   - Its result is typed: done, not found, refused or **unknown**. Callers branch on that, never on message text (fix 1). See "What GTBank really answers" above.
+   - **Test mode**: with `GTBANK_BASE_URL` empty nothing is sent; merchant codes are active at once, accounts are accepted with the name typed, payments are available at once and cash-outs complete by themselves. Every Injonge Pay page shows a "Test mode" banner. Tests use `Http::fake` with GTBank's real answers.
 4. **MerchantService**, an explicit state machine.
    - Registration is queued when a wallet is created.
    - A network error leaves the state as it was and records the error, instead of marking FAILED (fix 9).
    - A scheduled sync updates only `bank_status`, never `is_enabled`.
    - Every change goes through a POST and is audited (fix 12).
 5. **Webhook inbox and PaymentIntake.**
-   - The webhook stores the raw event in `ijp_webhook_events` (unique on `transactionId` + status), answers right away, and a queued job processes it.
+   - The webhook stores the raw event in `ijp_webhook_events` (unique on `transactionId` + status) before acting on it, then processes it in the same request (no bank call is involved, so it is fast). If processing fails, the event stays and `injongepay:process-inbox` retries it every minute.
    - The duplicate check and insert happen in one transaction on a unique `bank_reference`. A replay returns the existing payment (fix 7).
    - A credit lands as **pending** until the bank mirror confirms it (Principle 1).
    - If the wallet can't take the payment, it is **parked** in `ijp_unallocated_payments` and the platform is notified (fix 5).
@@ -192,7 +190,7 @@ Money is **bigint cents** with no floats; a `Support/Money.php` modelled on `Mod
    - Scheduled windowed pulls, plus a button, feed `ijp_bank_transactions`.
    - Rows missing on our side are ingested; mismatches open reconciliation items; REVERSED rows post a reversal.
 7. **Authorization** (Principle 2).
-   - Pieces: PIN, trusted beneficiaries with cooling-off, risk rules, limits, maker-checker, trusted devices.
+   - Pieces: PIN, risk-based step-up, limits, maker-checker, trusted browsers; settlement accounts checked against GTBank's holder name.
    - The approval payload is frozen and re-validated at execute time, and the row is locked when it executes.
 8. **CashoutService**, rebuilt as an outbox flow driven by the queue and scheduler, never by the web request (fixes 1–3):
    ```
@@ -205,8 +203,11 @@ Money is **bigint cents** with no floats; a `Support/Money.php` modelled on `Mod
    - A status of "not found" after the grace period goes to **platform staff only**, who verify and reverse it (fix 2).
    - Only the payments the amount covers, oldest first, are marked cashed out.
    - Business users see status only.
-9. **TransferService.** Wallets are locked in id order.
-10. **Reconciliation.** Daily close per merchant and day, plus the global identity and Σ entries = balance per wallet. Open items go to a platform queue with an owner and a resolution note, and every step is audited. Statement upload is for the monthly settlement-account check.
+9. **TransferService.** Only between the business's own merchant accounts; wallets are locked in id order.
+10. **Reconciliation.** Daily close per merchant and day, plus the global identity and Σ entries = balance per wallet. Open items go to a platform queue with a resolution note, and every step is audited.
+11. **Fee earnings.** The platform revenue and bank-cut wallets belong to the operator business. Inhills cashes them out to its own settlement accounts through the same CashoutService, Approvals and PIN rules a business uses. Business screens never list these wallets.
+
+**Business screens:** overview, a page per merchant account (today, this month, cash-outs on the way, latest payments and cash-outs), payments, ledger, transfers (with a preview of the receiving account before the PIN), settlement accounts, cash-outs with their timeline, approvals, reports, business details (contacts and address; TIN, fee and limits are Inhills'), My PIN & devices.
 
 Webhooks (`/api/payments/webhook`, `/api/gtbank/disbursement-status`) keep their URLs, request payloads, the secret header and the success response body. Two changes follow GTBank's own doc (§10.1.5): a duplicate gets **200 instead of 422**, and the answer is fast. The "secret check off" switch is removed.
 
@@ -217,15 +218,13 @@ Webhooks (`/api/payments/webhook`, `/api/gtbank/disbursement-status`) keep their
 
 ## Module 2: `Modules/InjongePayConnect` (partner sub-module, `requires: ["InjongePay"]`, sellable on its own)
 
-- **Integrators** are partner companies registered by Inhills, for example "Injonge EBM/POS".
-  - Each one has a **contract profile**, a versioned adapter class that owns its routes, request validation and response shapes.
-  - Each one has **scopes**, such as `payments.read`, `payments.confirm` and `totals.read`.
-- **Connections** link an integrator to a business. Each one holds its client_id/secret (bcrypt) and tokens (sha256), plus its own rate limit and an IP allow-list.
-- **Profile `pos-ebm-v1`** reproduces today's `/api/partner/v1/*` byte for byte: token, institution, merchant-accounts, payments, totals, confirm, unconfirm, invoices. The legacy `/api/ebm/payments/lookup` is a profile too.
-  - Fixes that keep the contract: CASHED_OUT counts as available in filters; confirm/unconfirm bumps `updated_since`; a reversed payment can't be confirmed; the filter becomes a join instead of `whereIn`; rate limit per connection; a scheduled token prune (fixes 14–18).
-- A new integrator with different needs gets **a new profile class, plus optional outbound webhooks** (push payments instead of polling). The money core is never touched (fix 19).
-- Panels: platform staff manage integrators, connections and credentials (the secret is shown once). Businesses see their connections, a call log, and an invoice history read-only.
-- Every call goes to a module call log, and every credential action is audited.
+- **Integrators** are partner systems (e.g. "Injonge EBM") registered by Inhills. Each speaks one **contract profile** (`config('injongepayconnect.profiles')`), a class that owns its answer shapes. Today there is one, `pos-ebm-v1`.
+- **The business connects its own systems**: Integrations → Connect a system → choose an integrator → the client ID and secret are shown once. It renews the secret, switches the connection off (tokens stop at once) and sets allowed addresses. Linked invoices are on their own tab.
+- **Inhills** keeps the integrator list (switching one off stops it everywhere), sees which businesses use each (names only, never credentials) and reads the API call log.
+- **`pos-ebm-v1`** reproduces `/api/partner/v1/*` answer for answer (token, institution, merchant-accounts, payments, totals, confirm, unconfirm, invoices), checked by `PartnerApiV1Test`; the legacy `/api/ebm/payments/lookup` is kept unchanged.
+  - Fixes that keep the contract: a cashed-out payment stays AVAILABLE/CONFIRMED in the filters; confirm/unconfirm shows in `updated_since`; a reversed payment can't be confirmed; `date_to` as a date covers the whole day; the filter is a join instead of `whereIn`; rate limit per connection; expired tokens pruned daily.
+- A new integrator with different needs gets **a new profile class**. The money core is never touched.
+- Partner document: `Modules/InjongePayConnect/API.md`.
 
 ## Reuse from core
 
@@ -237,7 +236,7 @@ Webhooks (`/api/payments/webhook`, `/api/gtbank/disbursement-status`) keep their
 | Notifications | `app/Services/Notification/NotificationService.php`, `app/Notifications/BrandedNotification.php` |
 | Settings and secrets | `app/Support/Settings/BusinessSettings.php`, `System` + `Crypt::encryptString` (bank credentials and webhook secret) |
 | Step-up | `password.confirm.staff`, `StaffMfaService::verify()` |
-| Gating | `module:InjongePay`, `app/Support/Entitlements/Quota.php` (`injongepay.wallets`) |
+| Gating | `module:InjongePay` |
 | Queue and scheduler | `CoreModuleServiceProvider::configureSchedules`, database queue |
 | API skeleton | `Modules/Distribution/app/Providers/RouteServiceProvider.php`, `AuthenticateSite` (hash lookup), named rate limiters |
 | Tests | `tests/TestCase.php` helpers, a `SavingsTestCase`-style base, `Http::fake` |
@@ -261,8 +260,8 @@ Webhooks (`/api/payments/webhook`, `/api/gtbank/disbursement-status`) keep their
    - trusted browsers
    - per-business limits (per operation, per day, per month)
    - a second person above a threshold, never the requester
-   - cash-out accounts added by the platform, checked against GTBank's name, approved by a second platform person, usable after 24 h
-   - wallet-to-wallet transfers locked in id order
+   - settlement accounts added by the business, usable once GTBank confirms the holder name
+   - transfers between the business's own accounts, locked in id order
 6. ✅ Cash-outs:
    - The request reserves the money; a queued job sends it to GTBank once and never resends it.
    - Status checks back off from 1 to 60 minutes.
@@ -274,7 +273,9 @@ Webhooks (`/api/payments/webhook`, `/api/gtbank/disbursement-status`) keep their
    - Whole RWF only.
    - `/api/gtbank/disbursement-status` keeps its URL and answers.
 7. ✅ Reports for a business (period totals, PDF/Excel of payments, ledger per wallet with balances after each entry) and the platform money overview (every business, fee wallets, books check, Excel).
-8. ✅ InjongePayConnect: integrators with a contract each, credentials per business (secret shown once, rotate or switch off ends tokens), per-connection rate limit and IP allow-list, call log, read-only business view of connections and linked invoices. `/api/partner/v1/*` and `/api/ebm/payments/lookup` answer exactly as production (contract tests in `PartnerApiV1Test`); partner document in `Modules/InjongePayConnect/API.md`.
+8. ✅ InjongePayConnect: integrators with a contract each; the business connects its own systems (secret shown once, renew or switch off ends tokens, allowed addresses, linked invoices); Inhills registers integrators and reads the call log. `/api/partner/v1/*` and `/api/ebm/payments/lookup` answer exactly as production (contract tests in `PartnerApiV1Test`); partner document in `Modules/InjongePayConnect/API.md`.
+After the phases, from trying it: Fee earnings, dashboard by module, business wallet pages and business details, transfer preview, test-mode banner, and moving settlement accounts and POS connections to the business.
+
 9. The **data-migration phase**, planned separately: production Postgres → `ijp_*`, keeping UUIDs, references, merchant codes, partner secret hashes and the webhook secret, with a dry run and count/amount checks.
 
 ## Verification
@@ -297,14 +298,14 @@ Webhooks (`/api/payments/webhook`, `/api/gtbank/disbursement-status`) keep their
   - authorization:
     - PIN only for a trusted beneficiary under the threshold
     - step-up on a new device, a large amount or the first payout
-    - a beneficiary still cooling off is blocked
+    - an account GTBank didn't confirm can't be used
     - limits enforced
     - maker-checker blocks self-approval
     - PIN lockout
-  - only platform staff can reverse a cash-out
+  - only platform staff can settle an unclear cash-out; a business never can
   - business admin refused on wallet, role and staff edits
   - idle logout after 2 minutes
   - tenant isolation
   - an audit row for every action
 - **Contract tests**: golden JSON captured from the production app for every partner, webhook and EBM endpoint, asserted byte for byte against the `pos-ebm-v1` profile.
-- Manual: both panels clicked through with FakeGtbank, using the `run` skill.
+- Manual: both panels clicked through in test mode on the local install.

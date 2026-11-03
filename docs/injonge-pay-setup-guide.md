@@ -42,6 +42,23 @@ Inhills itself is the **primary business** (the one created when the app was ins
 
 ---
 
+## Trying it on your laptop first
+
+Leave `GTBANK_BASE_URL` empty: the app is then in **test mode** and says so on every Injonge Pay page. Nothing goes to GTBank:
+- merchant codes are active at once
+- settlement accounts are accepted with the name you type
+- payments are available at once
+- cash-outs complete by themselves within a minute
+
+Keep `php artisan schedule:work` running; with `QUEUE_VIA_SCHEDULER=true` it also runs the queue. To fake a payment from GTBank, add `127.0.0.1` to *GTBank's addresses* (step B3), then:
+
+```
+curl -X POST http://127.0.0.1:9000/api/payments/webhook -H "Accept: application/json" -H "Content-Type: application/json" \
+  -d '{"transactionId":"TEST-1","merchantId":"55500001","amount":10000,"status":"SUCCESS","initiatingPartyName":"MTN","debtorName":"JOHN DOE","debtorAccountId":"250788111222"}'
+```
+
+Use a new `transactionId` each time. Set the idle sign-out to `0` while testing.
+
 ## Part A: the server (once)
 
 ### A1. GTBank connection in `.env`
@@ -115,8 +132,8 @@ Inhills staff are users of the **Inhills** business. In Inhills, open **Users �
 | Role | Give it |
 |---|---|
 | Onboarding officer | Businesses (KYC and fees), Merchant codes, GTBank registration/sync |
-| Finance officer | Reconciliation, Cash-outs (approve), Fee rates |
-| Support | read only on the above, GTBank call log |
+| Finance officer | Reconciliation, Cash-outs (approve), Fee rates, Fee earnings |
+| Support | read only on the above, GTBank call log, Partners & API (integrators, call log) |
 
 The Inhills Admin (owner) has everything automatically.
 
@@ -163,6 +180,7 @@ On the business's page (**Super admin → Businesses → the business**), tick *
 - **TIN** (9 digits), owner or representative, contact email.
 - **Contact phone as `+250XXXXXXXXX`.** GTBank refuses any other format.
 - **Fee (%)**: blank means the platform rate.
+- The business can also edit its own contacts and address later (Injonge Pay → Business details). TIN, fee and limits stay with Inhills.
 - **Limits and approvals**, in RWF, blank means no limit:
   - *Most per operation / day / month*
   - *Extra check above*: the PIN is not enough above this amount; the authenticator or emailed code is needed too.
@@ -233,10 +251,14 @@ You get a notification (in the app and by email) whenever one of these needs you
 
 ## What the business does (for their training)
 
-1. **Payments received**: new payments appear as *Waiting for GTBank*, then *Available* once GTBank's own list confirms them (within ~10 minutes).
-2. **Cash-outs → New cash-out**:
+1. **Dashboard and Injonge Pay overview**: available and pending money, today's payments, cash-outs on the way. Click a merchant account for its own page.
+2. **Payments received**: new payments appear as *Waiting for GTBank*, then *Available* once GTBank's own list confirms them (within ~10 minutes).
+3. **Settlement accounts**: add the bank account or wallet cash-outs go to (PIN; GTBank must know the holder name).
+4. **Cash-outs → New cash-out** (or **Cash out** on a merchant account):
    - choose the wallet, the approved account and a whole RWF amount
    - enter the PIN, plus the extra code if asked
    - follow the status: *Sent* → *Paid*. If it says *Being checked with GTBank*, the money is safe and Inhills is on it.
-3. **Approvals**: a second person approves large amounts with their own PIN.
-4. **Reports**: totals for any period, PDF/Excel.
+5. **Transfers**: move money between their own merchant accounts. The receiving account is shown before the PIN is asked.
+6. **Approvals**: a second person approves large amounts with their own PIN.
+7. **Reports**: totals for any period, PDF/Excel.
+8. **Integrations**: connect their POS/EBM and see which invoices it linked to which payments.
