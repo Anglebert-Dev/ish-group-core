@@ -1,0 +1,26 @@
+{
+    "name": "ish-group/injongepay",
+    "description": "Injonge Pay: mobile-money collection and payouts through GTBank PaymentBridge for the ISH core.",
+    "authors": [
+        {
+            "name": "ISH Group",
+            "email": ""
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\InjongePay\\": "app/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\InjongePay\\Tests\\": "tests/"
+        }
+    }
+}

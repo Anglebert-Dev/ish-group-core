@@ -9,7 +9,7 @@ Progress is tracked in the phase table at the end (✅ = built and tested).
 Injonge Pay is in production in `~/Documents/Inhills/INJONGE-PAY` (branch `refactor/code-quality`; analysis in `docs/injonge-pay-module.md`). It connects to GTBank PaymentBridge, collects mobile-money payments into merchant codes, splits fees, keeps wallet balances, cashes out to bank accounts and serves a POS/EBM partner API. Its logic is wrong in many places, and merchant management, transactions and cash-outs in particular are unstable. We rebuild it on ISH Core as a normal **sellable** module, using the core pieces we trust. Inhills installs core plus this module and runs it themselves; no link to our server is needed. A **database migration** from production follows as its own phase, so every table is designed for it.
 
 Decided by the user:
-- **Businesses** are the customers (the old "institutions").
+- **Businesses** are the customers. The word "institution" is not used anywhere in the new code; a business's **type** (school, hospital, fuel station, … 53 kinds) is a core field on every Business (`config('core.business_types')`).
 - **Inhills (platform staff) sets everything up.** Each business has an admin who does the day-to-day work but **cannot** create or edit wallets, permissions, staff or any other setup.
 - External APIs stay **identical**.
 - **Refunds and manual "Record payment" are dropped.**
@@ -130,7 +130,7 @@ Core changes this needs, small and generic:
 module.json: `menu_group "Injonge Pay"`, sellable, tables prefixed `ijp_`. The skeleton follows `Modules/Savings`: a provider extending `App\Support\Modules\CoreModuleServiceProvider`, a `DataController` with the hooks `user_permissions`, `modifyAdminMenu`, `superadmin_business_panel` and `dashboard_stats`, and `lang/en/{injongepay,audit}.php`.
 
 **Data.** Every table has `uuid` (kept from production), `business_id` (`app/Models/Concerns/BelongsToBusiness.php`) and `legacy_id` (for the import).
-- `ijp_business_profiles`: TIN, type, contacts, fee override, KYC.
+- `ijp_business_profiles`: TIN, contacts, fee override (the KYC GTBank needs). Name and type come from the core Business.
 - `ijp_wallets`. Two separate fields replace the old `is_active` (fix 10):
   - `bank_status`: `NOT_REGISTERED`, `REGISTERING`, `PENDING`, `ACTIVE`, `INACTIVE`, `CLOSED`, `FAILED`
   - `is_enabled`: the platform's own switch
@@ -223,7 +223,7 @@ Webhooks (`/api/payments/webhook`, `/api/gtbank/disbursement-status`) keep their
 ## Build phases (one commit per phase)
 
 0. ✅ Core: platform-only abilities, the "businesses manage staff" setting, idle logout. Each has tests (`tests/Feature/PlatformAccessTest.php`).
-1. InjongePay skeleton: migrations, Money, Ledger, references, business profiles, permissions and menu, audit labels.
+1. ✅ InjongePay skeleton: migrations, Money, Ledger (pending/available buckets), references, business profiles, permissions and menu, audit labels, platform fees and webhook secret.
 2. GtbankClient, bank-call log, FakeGtbank, MerchantService with platform wallet screens.
 3. Webhook inbox, PaymentIntake (pending → available), unallocated payments, fees, internal-account sweep.
 4. **BankMirror, Matcher, daily close, reconciliation queue.** This is the parity engine, and it comes before any money leaves.
