@@ -12,7 +12,6 @@ use Modules\InjongePay\Http\Controllers\Platform\FinanceController;
 use Modules\InjongePay\Http\Controllers\Business\SecurityController;
 use Modules\InjongePay\Http\Controllers\Business\SettlementAccountController as BusinessSettlementAccountController;
 use Modules\InjongePay\Http\Controllers\Business\TransferController;
-use Modules\InjongePay\Http\Controllers\Platform\SettlementAccountController;
 use Modules\InjongePay\Http\Controllers\Platform\ReconciliationController;
 use Modules\InjongePay\Http\Controllers\Platform\UnallocatedController;
 use Modules\InjongePay\Http\Controllers\Platform\BankCallController;
@@ -88,10 +87,6 @@ Route::prefix('app/injonge-pay/platform')->name('injongepay.platform.')->middlew
     Route::post('/inbox/process', [UnallocatedController::class, 'processInbox'])->middleware(['permission:update injongepay_platform.bank', 'throttle:6,1'])->name('inbox.process');
     Route::post('/fees/sweep', [UnallocatedController::class, 'sweepFees'])->middleware(['permission:update injongepay_platform.fee', 'throttle:6,1'])->name('fees.sweep');
 
-    Route::get('/settlement-accounts', [SettlementAccountController::class, 'index'])->middleware('permission:list injongepay_platform.business')->name('settlement-accounts.index');
-    Route::post('/settlement-accounts', [SettlementAccountController::class, 'store'])->middleware(['permission:create injongepay_platform.business', 'password.confirm.staff'])->name('settlement-accounts.store');
-    Route::post('/settlement-accounts/{account}/verify', [SettlementAccountController::class, 'verify'])->middleware(['permission:update injongepay_platform.business', 'throttle:10,1'])->name('settlement-accounts.verify');
-    Route::post('/settlement-accounts/{account}/disable', [SettlementAccountController::class, 'disable'])->middleware(['permission:update injongepay_platform.business', 'password.confirm.staff'])->name('settlement-accounts.disable');
 
     Route::get('/finance', [FinanceController::class, 'index'])->middleware('permission:list injongepay_platform.reconciliation')->name('finance');
     Route::get('/finance/export', [FinanceController::class, 'export'])->middleware(['permission:list injongepay_platform.reconciliation', 'throttle:10,1'])->name('finance.export');
