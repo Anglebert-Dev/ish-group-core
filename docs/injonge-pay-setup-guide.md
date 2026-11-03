@@ -227,6 +227,7 @@ The business is ready.
 | **Cash-outs (all) → Being checked with GTBank** | Cash-outs GTBank gave no final answer for. Confirm with GTBank, then **Settle**. Never guess. |
 | **Money to allocate** | Payments GTBank credited to a code that couldn't take them. **Credit** them to the right wallet, or record how they were settled. |
 | **GTBank call log** | When something looks wrong: every request and answer, secrets hidden. |
+| **Fee earnings** | Inhills' share of the fees and GTBank's cut. Cash them out to Inhills' own settlement accounts, added on the same page, exactly as a business does: PIN, an account GTBank confirms, the extra code the first time. |
 
 You get a notification (in the app and by email) whenever one of these needs you.
 

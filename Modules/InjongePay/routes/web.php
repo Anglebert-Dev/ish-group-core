@@ -8,6 +8,7 @@ use Modules\InjongePay\Http\Controllers\Platform\CashoutController as PlatformCa
 use Modules\InjongePay\Http\Controllers\Business\PaymentController;
 use Modules\InjongePay\Http\Controllers\Business\ProfileController;
 use Modules\InjongePay\Http\Controllers\Business\ReportController;
+use Modules\InjongePay\Http\Controllers\Platform\EarningsController;
 use Modules\InjongePay\Http\Controllers\Platform\FinanceController;
 use Modules\InjongePay\Http\Controllers\Business\SecurityController;
 use Modules\InjongePay\Http\Controllers\Business\SettlementAccountController as BusinessSettlementAccountController;
@@ -87,6 +88,11 @@ Route::prefix('app/injonge-pay/platform')->name('injongepay.platform.')->middlew
     Route::post('/inbox/process', [UnallocatedController::class, 'processInbox'])->middleware(['permission:update injongepay_platform.bank', 'throttle:6,1'])->name('inbox.process');
     Route::post('/fees/sweep', [UnallocatedController::class, 'sweepFees'])->middleware(['permission:update injongepay_platform.fee', 'throttle:6,1'])->name('fees.sweep');
 
+
+    Route::get('/earnings', [EarningsController::class, 'index'])->middleware('permission:list injongepay_platform.earnings')->name('earnings');
+    Route::post('/earnings/accounts', [EarningsController::class, 'addAccount'])->middleware(['permission:create injongepay_platform.earnings', 'not.impersonating', 'throttle:10,1'])->name('earnings.accounts.store');
+    Route::delete('/earnings/accounts/{account}', [EarningsController::class, 'removeAccount'])->middleware(['permission:delete injongepay_platform.earnings', 'not.impersonating'])->name('earnings.accounts.destroy');
+    Route::post('/earnings/cashout', [EarningsController::class, 'cashout'])->middleware(['permission:create injongepay_platform.earnings', 'not.impersonating', 'throttle:10,1'])->name('earnings.cashout');
 
     Route::get('/finance', [FinanceController::class, 'index'])->middleware('permission:list injongepay_platform.reconciliation')->name('finance');
     Route::get('/finance/export', [FinanceController::class, 'export'])->middleware(['permission:list injongepay_platform.reconciliation', 'throttle:10,1'])->name('finance.export');

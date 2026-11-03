@@ -55,7 +55,7 @@ class CashoutService
     /** Checks before asking: usable account, whole RWF, enough available money. */
     public function validate(Wallet $wallet, SettlementAccount $account, int $amount): void
     {
-        if (! $wallet->is_enabled || $wallet->isInternal()) {
+        if (! $wallet->is_enabled) {
             throw new InjongePayException(__('injongepay::injongepay.err_wallet_off'));
         }
 

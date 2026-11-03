@@ -18,7 +18,7 @@ class DataController
         return [
             'access_modules' => [
                 'injongepay' => ['overview', 'wallet', 'payment', 'ledger', 'transfer', 'cashout', 'settlement_account', 'report', 'profile'],
-                'injongepay_platform' => ['business', 'wallet', 'bank', 'fee', 'reconciliation', 'cashout', 'setting'],
+                'injongepay_platform' => ['business', 'wallet', 'bank', 'fee', 'reconciliation', 'cashout', 'setting', 'earnings'],
             ],
             // Held only by the operator's staff (core PlatformAccess).
             'platform_modules' => ['injongepay_platform'],
@@ -41,6 +41,7 @@ class DataController
                 'fee' => 'Fee rates and history',
                 'reconciliation' => 'Reconciliation with GTBank',
                 'setting' => 'Platform settings (webhook secret)',
+                'earnings' => 'Fee earnings and their cash-out',
             ],
         ];
     }
@@ -58,6 +59,7 @@ class DataController
             ['label' => 'injongepay::injongepay.menu_cashouts', 'route' => 'injongepay.cashouts.index', 'active' => 'injongepay.cashouts.*', 'permission' => 'list injongepay.cashout', 'order' => 40, 'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'],
             ['label' => 'injongepay::injongepay.menu_platform_cashouts', 'route' => 'injongepay.platform.cashouts.index', 'active' => 'injongepay.platform.cashouts.*', 'permission' => 'list injongepay_platform.cashout', 'group' => 'Injonge Pay platform', 'order' => 22, 'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'],
             ['label' => 'injongepay::injongepay.menu_reports', 'route' => 'injongepay.reports', 'active' => 'injongepay.reports*', 'permission' => 'list injongepay.report', 'order' => 60, 'icon' => 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'],
+            ['label' => 'injongepay::injongepay.menu_earnings', 'route' => 'injongepay.platform.earnings', 'active' => 'injongepay.platform.earnings*', 'permission' => 'list injongepay_platform.earnings', 'group' => 'Injonge Pay platform', 'order' => 6, 'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'],
             ['label' => 'injongepay::injongepay.menu_finance', 'route' => 'injongepay.platform.finance', 'active' => 'injongepay.platform.finance*', 'permission' => 'list injongepay_platform.reconciliation', 'group' => 'Injonge Pay platform', 'order' => 5, 'icon' => 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'],
             ['label' => 'injongepay::injongepay.menu_my_settlement_accounts', 'route' => 'injongepay.settlement-accounts.index', 'active' => 'injongepay.settlement-accounts.*', 'permission' => 'list injongepay.settlement_account', 'order' => 45, 'icon' => 'M3 6l9-4 9 4M4 10h16M5 10v8m4-8v8m6-8v8m4-8v8M3 20h18'],
             ['label' => 'injongepay::injongepay.menu_approvals', 'route' => 'injongepay.approvals.index', 'active' => 'injongepay.approvals.*', 'permission' => 'approve injongepay.transfer|approve injongepay.cashout', 'order' => 50, 'icon' => 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z'],
