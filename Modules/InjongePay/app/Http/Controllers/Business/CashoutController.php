@@ -26,7 +26,7 @@ class CashoutController extends Controller
             'wallets' => Wallet::query()->whereNull('internal_role')->where('is_enabled', true)->orderBy('name')->get()
                 ->mapWithKeys(fn (Wallet $w) => [$w->uuid => $w->name.' · '.$w->merchant_code.' · '.Money::format($w->available_balance)])->all(),
             'accounts' => SettlementAccount::query()->where('status', SettlementAccount::APPROVED)->get()
-                ->mapWithKeys(fn (SettlementAccount $a) => [$a->uuid => $a->label().($a->isUsable() ? '' : ' ('.__('injongepay::injongepay.cooling_off').')')])->all(),
+                ->mapWithKeys(fn (SettlementAccount $a) => [$a->uuid => $a->label()])->all(),
         ]);
     }
 

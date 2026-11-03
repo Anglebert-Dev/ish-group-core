@@ -14,7 +14,7 @@ In ISH Core the work is split in three layers. You always go through them in thi
 | **2. The core** | superadmin | **Super admin** menu (Businesses, Modules, Platform settings) | businesses and their owners, which modules a business has, security rules, roles |
 | **3. Injonge Pay** | Inhills staff | the **Injonge Pay platform** group in the sidebar | KYC, fees, merchant codes, bank accounts, reconciliation, cash-outs, partners |
 
-Businesses (the old institutions) only *use* Injonge Pay. They see their own **Injonge Pay** menu: payments, transfers, cash-outs, reports. They cannot create merchant codes, bank accounts, staff or roles; Inhills does that.
+Businesses (the old institutions) run themselves: their own users and roles, settlement accounts, payments, transfers, cash-outs, reports. The one thing only Inhills does is **create merchant codes** (they are registered at GTBank), along with the fee, KYC and limits that go with them.
 
 Inhills itself is the **primary business** (the one created when the app was installed). Its staff are "platform staff", and the platform's own fee wallets belong to it.
 
@@ -25,10 +25,10 @@ Inhills itself is the **primary business** (the one created when the app was ins
 | Settings → Institutions → create | Super admin → Businesses → **Add business** (name, **type**, owner) |
 | Institution TIN, contacts, fee % | Injonge Pay platform → **Businesses (KYC & fees)** |
 | First user of the institution | The **owner** entered when adding the business |
-| Institution users | "Log in as" the owner → **Users** and **Roles** |
+| Institution users | The business's own **Users** and **Roles** |
 | Wallet create + "Retry registration" | Injonge Pay platform → **Merchant codes** → New (sent to GTBank by itself) |
 | "Sync from GTBank" | Same button on the merchant code, and it runs by itself every 15 minutes |
-| Settlement destinations (with OTP) | Injonge Pay platform → **Settlement accounts** (checked with GTBank, approved by a second Inhills person) |
+| Settlement destinations (with OTP) | The business's own **Injonge Pay → Settlement accounts** (PIN; GTBank checks the holder name, then it is usable at once) |
 | Platform settings: fee, bank cut, webhook secret | Injonge Pay platform → **Injonge Pay settings** |
 | Webhook secret on/off switch | Gone. GTBank is recognised by its address (`10.22.198.46`) or by the secret |
 | Sync transactions → Save all | Automatic every 10 minutes; button in **Reconciliation with GTBank** |
@@ -106,7 +106,7 @@ Each job also has a button on its screen.
 **Super admin → Platform settings → Security**:
 
 - **Sign staff out after (minutes idle)**: `2`.
-- **Businesses manage their own staff and roles**: **off**. Businesses can then never add users or change permissions; Inhills does it with "Log in as".
+- **Businesses manage their own staff and roles**: leave **on** (the default). Each business manages its own users and roles.
 
 ### B2. The Inhills team (platform staff)
 
@@ -117,8 +117,6 @@ Inhills staff are users of the **Inhills** business. In Inhills, open **Users �
 | Onboarding officer | Businesses (KYC and fees), Merchant codes, GTBank registration/sync |
 | Finance officer | Reconciliation, Cash-outs (approve), Fee rates |
 | Support | read only on the above, GTBank call log |
-
-Have **at least two people** who can approve bank accounts. The person who adds an account can never approve it.
 
 The Inhills Admin (owner) has everything automatically.
 
@@ -184,41 +182,30 @@ The merchant code's page shows every call made to GTBank and its last problem. A
 
 To stop a code temporarily, use **Switch off**: payments to it are held, not lost. **Close at GTBank** is final and needs a zero balance.
 
-### C5. Settlement accounts
+### C5. Hand over to the business
 
-**Injonge Pay platform → Settlement accounts → Add an account**:
+That's all Inhills does. The business's owner signs in and does the rest:
 
-- the business
-- bank account or mobile wallet
-- the number (wallets as `07…`)
-- the holder's name exactly as at the bank
+- **Users and Roles**: their own staff, for example:
 
-What happens next:
+  | Role | Give it (Injonge Pay) |
+  |---|---|
+  | Cashier | Overview, Payments received (list/read) |
+  | Accountant | the above + Cash-outs (list/create), Transfers (list/create), Reports, Ledger, Settlement accounts |
+  | Manager | the above + Cash-outs and Transfers (**approve**) |
 
-1. GTBank is asked who holds the account. If the names don't match, it stays **Not verified** and says what GTBank has.
-2. **A second Inhills person** presses **Approve**.
-3. It can be used **24 hours later** (waiting time against fraud).
+- **Injonge Pay → Settlement accounts → Add an account**:
+  - bank account or mobile wallet, and the number (wallets as `07…`)
+  - the holder's name exactly as at the bank
+  - their PIN
 
-### C6. The business's staff
+  GTBank is asked who holds the account. If the name matches, it can be used for cash-outs straight away. If not, it says what name GTBank has. The first cash-out to a new account asks for the extra code as well.
 
-Because businesses don't manage their own staff:
-
-1. **Super admin → Businesses → the business → Log in as** the owner.
-2. **Users** and **Roles**, inside that business:
-
-   | Role | Give it (Injonge Pay) |
-   |---|---|
-   | Cashier | Overview, Payments received (list/read) |
-   | Accountant | the above + Cash-outs (list/create), Transfers (list/create), Reports, Ledger |
-   | Manager | the above + Cash-outs and Transfers (**approve**) |
-
-3. Leave "Log in as".
-
-### C7. PINs
+### C6. PINs
 
 Everyone who will move money opens **Injonge Pay → My PIN & devices** and sets a 5-digit PIN. It is asked for every transfer, cash-out and approval. Turning on two-step sign-in (an authenticator app) in their profile is better than emailed codes.
 
-### C8. The POS (if any)
+### C7. The POS (if any)
 
 **Injonge Pay platform → Partners & API → Connect a business**: the integrator and the business. The **client_id and client_secret are shown once**; give them to the POS team. To move a business already connected to the old app, see the data migration (its old credentials will keep working).
 

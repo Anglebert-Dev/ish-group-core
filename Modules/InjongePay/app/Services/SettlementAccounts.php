@@ -3,21 +3,18 @@
 namespace Modules\InjongePay\Services;
 
 use App\Models\Business\Business;
-use App\Models\User;
 use Modules\InjongePay\Exceptions\InjongePayException;
 use Modules\InjongePay\Gtbank\BankPayloads;
 use Modules\InjongePay\Gtbank\GtbankClient;
 use Modules\InjongePay\Models\SettlementAccount;
 
 /**
- * Bank accounts and wallets a business's cash-outs may go to, kept by the
- * platform: GTBank must know the account under the same name, a second
- * platform person approves it, and it can be used 24 hours later.
+ * Bank accounts and wallets a business cashes out to. The business adds its
+ * own; it can be used as soon as GTBank confirms the account under the same
+ * holder name.
  */
 class SettlementAccounts
 {
-    public const COOLING_OFF_HOURS = 24;
-
     public function __construct(protected GtbankClient $bank)
     {
     }
@@ -39,7 +36,8 @@ class SettlementAccounts
     public function verify(SettlementAccount $account): void
     {
         if (! GtbankClient::isConfigured()) {
-            $account->forceFill(['status' => SettlementAccount::VERIFIED, 'verified_names' => $account->holder_name, 'verified_at' => now()])->save();
+            $account->forceFill(['status' => SettlementAccount::APPROVED, 'verified_names' => $account->holder_name, 'verified_at' => now(),
+                'approved_by' => auth()->id(), 'approved_at' => now(), 'usable_from' => now()])->save();
 
             return;
         }
@@ -58,8 +56,11 @@ class SettlementAccounts
         $account->forceFill([
             'verified_names' => $found['names'], 'verified_bank_code' => $found['bank_code'], 'verified_at' => now(),
             'verification_call_id' => $result->callId, 'bank_name' => $account->bank_name ?: $found['bank_name'],
-            'status' => $matches && $account->status !== SettlementAccount::APPROVED ? SettlementAccount::VERIFIED : $account->status,
         ])->save();
+
+        if ($matches && $account->status !== SettlementAccount::APPROVED) {
+            $account->forceFill(['status' => SettlementAccount::APPROVED, 'approved_by' => auth()->id(), 'approved_at' => now(), 'usable_from' => now()])->save();
+        }
 
         audit('injongepay_account_verified', __('injongepay::injongepay.audit_account_verified', ['account' => $account->label(), 'names' => $found['names'] ?? '—']),
             $account, ['matches' => $matches], $account->business_id);
@@ -67,20 +68,6 @@ class SettlementAccounts
         if (! $matches) {
             throw new InjongePayException(__('injongepay::injongepay.err_account_names', ['bank' => $found['names'] ?? '—', 'ours' => $account->holder_name]));
         }
-    }
-
-    public function approve(SettlementAccount $account, User $approver): void
-    {
-        if ($account->status !== SettlementAccount::VERIFIED) {
-            throw new InjongePayException(__('injongepay::injongepay.err_account_not_verified'));
-        }
-
-        if ((int) $account->added_by === $approver->id) {
-            throw new InjongePayException(__('injongepay::injongepay.err_self_approval'));
-        }
-
-        $account->forceFill(['status' => SettlementAccount::APPROVED, 'approved_by' => $approver->id, 'approved_at' => now(), 'usable_from' => now()->addHours(self::COOLING_OFF_HOURS)])->save();
-        audit('injongepay_account_approved', __('injongepay::injongepay.audit_account_approved', ['account' => $account->label()]), $account, ['usable_from' => (string) $account->usable_from], $account->business_id);
     }
 
     public function disable(SettlementAccount $account, string $reason): void

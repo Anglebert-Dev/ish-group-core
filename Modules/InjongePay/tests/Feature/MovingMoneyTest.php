@@ -14,7 +14,6 @@ use Modules\InjongePay\Models\Wallet;
 use Modules\InjongePay\Services\Ledger;
 use Modules\InjongePay\Services\Security\Devices;
 use Modules\InjongePay\Services\Security\Pins;
-use Modules\InjongePay\Services\SettlementAccounts;
 
 class MovingMoneyTest extends InjongePayTestCase
 {
@@ -149,44 +148,36 @@ class MovingMoneyTest extends InjongePayTestCase
         $this->assertSame(1, Transfer::query()->withoutGlobalScopes()->count());
     }
 
-    public function test_cash_out_accounts_need_gtbank_the_same_name_and_a_second_platform_person(): void
+    public function test_a_business_adds_its_own_settlement_account_and_gtbank_must_know_the_name(): void
     {
         $this->fakeBank(['/disbursement/lookup' => Http::sequence()
             ->push(['names' => 'Rose Mary MUSABYIMANA', 'account' => '0788811607', 'msisdn' => '0788811607', 'email' => '', 'bank' => ['code' => '078', 'name' => 'MTN']])
             ->push(['names' => 'SOMEONE ELSE', 'account' => '0788000000', 'bank' => ['code' => '078', 'name' => 'MTN']])]);
-        $accounts = app(SettlementAccounts::class);
-        $this->asOperator();
-
-        $account = $accounts->add($this->business, ['kind' => 'wallet', 'account' => '+250788811607', 'holder_name' => 'MUSABYIMANA Rose Mary']);
-        $this->assertSame('0788811607', $account->account);
-        $this->assertSame(SettlementAccount::VERIFIED, $account->status);
-
-        try {
-            $accounts->add($this->business, ['kind' => 'wallet', 'account' => '0788000000', 'holder_name' => 'Rose Mary']);
-            $this->fail('Name mismatch accepted');
-        } catch (InjongePayException) {
-        }
-
-        try {
-            $accounts->approve($account, $this->operatorAdmin);
-            $this->fail('Approved by the person who added it');
-        } catch (InjongePayException) {
-        }
-
-        $second = $this->makeMember($this->operator, ['approve injongepay_platform.business']);
-        $accounts->approve($account, $second);
-        $this->assertSame(SettlementAccount::APPROVED, $account->fresh()->status);
-        $this->assertFalse($account->fresh()->isUsable());
-        $this->travel(25)->hours();
-        $this->assertTrue($account->fresh()->isUsable());
-    }
-
-    public function test_business_admins_cannot_add_cash_out_accounts(): void
-    {
         $this->asOwner();
 
-        $this->get(route('injongepay.platform.settlement-accounts.index'))->assertForbidden();
-        $this->withConfirmedPassword()->post(route('injongepay.platform.settlement-accounts.store'), ['business' => $this->business->uuid, 'kind' => 'bank', 'account' => '1', 'holder_name' => 'x'])->assertForbidden();
+        $this->get(route('injongepay.settlement-accounts.index'))->assertOk()->assertSee('name="holder_name"', false);
+        $this->post(route('injongepay.settlement-accounts.store'), ['kind' => 'wallet', 'account' => '+250788811607', 'holder_name' => 'MUSABYIMANA Rose Mary', 'pin' => '00000'])->assertSessionHas('error');
+        $this->post(route('injongepay.settlement-accounts.store'), ['kind' => 'wallet', 'account' => '+250788811607', 'holder_name' => 'MUSABYIMANA Rose Mary', 'pin' => '48213'])->assertSessionHas('success');
+
+        $account = SettlementAccount::query()->firstOrFail();
+        $this->assertSame('0788811607', $account->account);
+        $this->assertTrue($account->isUsable());
+
+        // Another name at GTBank: not usable.
+        $this->post(route('injongepay.settlement-accounts.store'), ['kind' => 'wallet', 'account' => '0788000000', 'holder_name' => 'Rose Mary', 'pin' => '48213'])->assertSessionHas('error');
+        $this->assertFalse(SettlementAccount::query()->where('account', '0788000000')->firstOrFail()->isUsable());
+
+        $this->delete(route('injongepay.settlement-accounts.destroy', $account), ['pin' => '48213'])->assertSessionHas('success');
+        $this->assertFalse($account->fresh()->isUsable());
+    }
+
+    public function test_a_business_cannot_see_another_business_accounts(): void
+    {
+        [$other] = $this->makeBusiness(['business_name' => 'Other']);
+        $theirs = new SettlementAccount(['kind' => 'bank', 'account' => '123', 'holder_name' => 'X']);
+        $theirs->forceFill(['business_id' => $other->id, 'status' => SettlementAccount::APPROVED])->save();
+
+        $this->asOwner()->delete(route('injongepay.settlement-accounts.destroy', $theirs), ['pin' => '48213'])->assertNotFound();
     }
 
     public function test_screens_render(): void

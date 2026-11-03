@@ -60,17 +60,6 @@ class SettlementAccountController extends Controller
         return back()->with('success', __('injongepay::injongepay.account_verified_msg'));
     }
 
-    public function approve(Request $request, string $account): RedirectResponse
-    {
-        try {
-            $this->accounts->approve($this->find($account), $request->user('staff'));
-        } catch (InjongePayException $e) {
-            return back()->with('error', $e->getMessage());
-        }
-
-        return back()->with('success', __('injongepay::injongepay.account_approved_msg', ['hours' => SettlementAccounts::COOLING_OFF_HOURS]));
-    }
-
     public function disable(Request $request, string $account): RedirectResponse
     {
         $this->accounts->disable($this->find($account), $request->validate(['reason' => ['required', 'string', 'max:255']])['reason']);

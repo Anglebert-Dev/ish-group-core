@@ -12,15 +12,9 @@
                         <span class="text-sm text-muted ml-auto">{{ $names[$account->business_id] ?? '' }}</span>
                     </div>
                     <p class="text-sm"><span class="text-muted">{{ __('injongepay::injongepay.gtbank_says') }}:</span> {{ $account->verified_names ?? '—' }} {{ $account->verified_at ? '('.GeneralLibrary::formatDateTime($account->verified_at).')' : '' }}</p>
-                    @if ($account->status === 'approved' && $account->usable_from?->isFuture())
-                        <p class="text-sm text-warning">{{ __('injongepay::injongepay.cooling_off_until', ['when' => GeneralLibrary::formatDateTime($account->usable_from)]) }}</p>
-                    @endif
                     <div class="flex flex-wrap gap-2">
-                        @if (in_array($account->status, ['pending', 'verified'], true) && AuthHelper::can('update injongepay_platform.business'))
+                        @if ($account->status === 'pending' && AuthHelper::can('update injongepay_platform.business'))
                             <x-common.action-button :action="route('injongepay.platform.settlement-accounts.verify', $account->uuid)">{{ __('injongepay::injongepay.verify_at_bank') }}</x-common.action-button>
-                        @endif
-                        @if ($account->status === 'verified' && AuthHelper::can('approve injongepay_platform.business'))
-                            <x-common.action-button :action="route('injongepay.platform.settlement-accounts.approve', $account->uuid)" color="success">{{ __('injongepay::injongepay.approve') }}</x-common.action-button>
                         @endif
                     </div>
                     @if ($account->status !== 'disabled' && AuthHelper::can('update injongepay_platform.business'))

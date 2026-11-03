@@ -265,10 +265,10 @@ class CashoutTest extends InjongePayTestCase
         $this->get(route('injongepay.platform.cashouts.index'))->assertForbidden();
     }
 
-    public function test_an_account_still_cooling_off_cannot_be_used(): void
+    public function test_an_account_gtbank_did_not_confirm_cannot_be_used(): void
     {
         $this->fund('20000.00');
-        $this->account->forceFill(['usable_from' => now()->addHours(5)])->save();
+        $this->account->forceFill(['status' => SettlementAccount::PENDING])->save();
 
         $this->expectException(\Modules\InjongePay\Exceptions\InjongePayException::class);
         app(CashoutService::class)->validate($this->till->fresh(), $this->account->fresh(), 100000);

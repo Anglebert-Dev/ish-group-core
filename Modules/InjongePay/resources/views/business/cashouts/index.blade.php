@@ -26,7 +26,8 @@
                 @csrf
                 <h2 class="font-display font-bold text-ink">{{ __('injongepay::injongepay.cashout_new') }}</h2>
                 @if ($accounts === [])
-                    <p class="text-sm text-muted">{{ __('injongepay::injongepay.no_usable_accounts') }}</p>
+                    <p class="text-sm text-muted">{{ __('injongepay::injongepay.no_usable_accounts') }}
+                        @if (\App\Helpers\AuthHelper::can('list injongepay.settlement_account'))<a class="text-brand font-semibold" href="{{ route('injongepay.settlement-accounts.index') }}">{{ __('injongepay::injongepay.settlement_accounts') }}</a>@endif</p>
                 @else
                     <x-common.select name="wallet" :label="__('injongepay::injongepay.from')" :options="$wallets" :value="old('wallet')" required />
                     <x-common.select name="account" :label="__('injongepay::injongepay.to')" :options="$accounts" :value="old('account')" required />
