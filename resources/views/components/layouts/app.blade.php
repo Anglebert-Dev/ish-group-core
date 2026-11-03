@@ -158,6 +158,17 @@
             })();
         </script>
     @endif
+    @php($idleMinutes = auth('staff')->check() ? (int) \App\Models\System\System::getProperty('idle_timeout_minutes', '0') : 0)
+    @if ($idleMinutes > 0)
+        <div id="idle-logout" data-seconds="{{ $idleMinutes * 60 }}" data-ping-url="{{ route('staff.session.ping') }}" hidden></div>
+        <form id="idle-logout-form" action="{{ route('staff.logout') }}" method="POST" class="hidden">@csrf<input type="hidden" name="reason" value="idle"></form>
+        <div id="idle-logout-banner" role="alertdialog" aria-live="assertive" hidden
+             class="fixed inset-x-0 top-0 z-[100] flex flex-wrap items-center justify-center gap-3 bg-card border-b border-line px-4 py-3 text-sm font-semibold text-ink shadow-lg">
+            <span>{!! __('body.idle_warning', ['seconds' => '<span id="idle-logout-seconds">30</span>']) !!}</span>
+            <button type="button" id="idle-logout-stay" class="rounded-lg bg-brand text-on-brand px-3 py-1.5">{{ __('body.idle_stay_signed_in') }}</button>
+        </div>
+        <script src="{{ asset('js/idle-logout.js') }}{{ file_exists(public_path('js/idle-logout.js')) ? '?v='.filemtime(public_path('js/idle-logout.js')) : '' }}"></script>
+    @endif
     @stack('scripts')
 </body>
 </html>

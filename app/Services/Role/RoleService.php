@@ -2,6 +2,8 @@
 
 namespace App\Services\Role;
 
+use App\Models\System\System;
+use App\Support\Access\PlatformAccess;
 use App\Services\ActivityLog\ActivityLogService;
 use App\Enums\ActivityLogAction;
 use App\Libraries\ListExport;
@@ -58,8 +60,9 @@ class RoleService extends BaseService
 
         $config = $this->catalogue->config();
         $groups = [];
+        $hidden = $this->hiddenPermissionModules();
 
-        foreach ($config['access_modules'] ?? [] as $module => $controllers) {
+        foreach (array_diff_key($config['access_modules'] ?? [], array_flip($hidden)) as $module => $controllers) {
             foreach ($controllers as $controller) {
                 foreach ($config['access_actions'] ?? [] as $action) {
                     $groups[$module][$controller][] = "{$action} {$module}.{$controller}";
@@ -95,8 +98,9 @@ class RoleService extends BaseService
             'business_id' => $actingUser->business_id,
         ]);
 
-        $role->syncPermissions($data['permissions'] ?? []);
-        $this->logPermissions($role, [], $data['permissions'] ?? []);
+        $data['permissions'] = $this->allowedPermissions((int) $role->business_id, $data['permissions'] ?? []);
+        $role->syncPermissions($data['permissions']);
+        $this->logPermissions($role, [], $data['permissions']);
 
         return $this->success($role, __('body.role_created'));
     }
@@ -113,8 +117,9 @@ class RoleService extends BaseService
 
         $before = $role->permissions()->pluck('name')->all();
         $role->update(['name' => Role::scopedName($data['name'], (int) $role->business_id)]);
-        $role->syncPermissions($data['permissions'] ?? []);
-        $this->logPermissions($role, $before, $data['permissions'] ?? []);
+        $data['permissions'] = $this->allowedPermissions((int) $role->business_id, $data['permissions'] ?? []);
+        $role->syncPermissions($data['permissions']);
+        $this->logPermissions($role, $before, $data['permissions']);
 
         return $this->success($role, __('body.role_updated'));
     }
@@ -151,5 +156,31 @@ class RoleService extends BaseService
     private function isReservedName(string $name): bool
     {
         return strcasecmp(trim($name), Role::ADMIN) === 0 || str_contains($name, Role::SEPARATOR);
+    }
+
+    /**
+     * Platform-only permission modules, hidden from every business except the operator's.
+     *
+     * @return list<string>
+     */
+    private function hiddenPermissionModules(?int $businessId = null): array
+    {
+        $access = app(PlatformAccess::class);
+        $businessId ??= (int) auth('staff')->user()?->business_id;
+
+        return $businessId === (int) System::getProperty('primary_business_id') ? [] : $access->platformModules();
+    }
+
+    /**
+     * @param  list<string>  $permissions
+     * @return list<string>
+     */
+    private function allowedPermissions(int $businessId, array $permissions): array
+    {
+        $hidden = $this->hiddenPermissionModules($businessId);
+
+        return array_values(array_filter($permissions, function (string $permission) use ($hidden) {
+            return ! preg_match('/^[a-z_]+ ([a-z0-9_]+)\./', $permission, $m) || ! in_array($m[1], $hidden, true);
+        }));
     }
 }

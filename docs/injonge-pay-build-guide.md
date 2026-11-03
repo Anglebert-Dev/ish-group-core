@@ -222,7 +222,7 @@ Webhooks (`/api/payments/webhook`, `/api/gtbank/disbursement-status`) keep their
 
 ## Build phases (one commit per phase)
 
-0. Core: platform-only abilities, the "businesses manage staff" setting, idle logout. Each has tests.
+0. ✅ Core: platform-only abilities, the "businesses manage staff" setting, idle logout. Each has tests (`tests/Feature/PlatformAccessTest.php`).
 1. InjongePay skeleton: migrations, Money, Ledger, references, business profiles, permissions and menu, audit labels.
 2. GtbankClient, bank-call log, FakeGtbank, MerchantService with platform wallet screens.
 3. Webhook inbox, PaymentIntake (pending → available), unallocated payments, fees, internal-account sweep.

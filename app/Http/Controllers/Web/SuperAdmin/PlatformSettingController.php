@@ -26,6 +26,6 @@ class PlatformSettingController extends Controller
     {
         $result = $this->platform->updateSettings($request->validated());
 
-        return redirect()->route('superadmin.settings.index', ['tab' => 'registration'])->with('success', $result['message']);
+        return redirect()->route('superadmin.settings.index', ['tab' => $request->validated('tab') ?? 'registration'])->with('success', $result['message']);
     }
 }

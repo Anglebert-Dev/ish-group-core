@@ -35,7 +35,14 @@ class PlatformService extends BaseService
         'default_business_active_status' => '1',
         // Businesses may add custom CSS (Branding → Advanced); off = ignored everywhere.
         'allow_custom_css' => '1',
+        // Security: customer businesses manage their own staff and roles; off = the platform does it.
+        'business_manages_staff' => '1',
+        // Security: sign staff out after this many idle minutes; 0 = never.
+        'idle_timeout_minutes' => '0',
     ];
+
+    /** Settings stored as a number rather than an on/off switch. */
+    public const NUMERIC_SETTINGS = ['idle_timeout_minutes'];
 
     public function __construct(
         protected BusinessRepository $businesses,
@@ -263,10 +270,21 @@ class PlatformService extends BaseService
 
     public function updateSettings(array $data): array
     {
-        foreach (array_keys(self::SETTINGS) as $key) {
-            System::addProperty($key, ! empty($data[$key]) ? '1' : '0');
+        // Each tab posts only its own fields; an unticked box isn't posted at all.
+        foreach (self::TAB_SETTINGS[$data['tab'] ?? 'registration'] ?? [] as $key) {
+            $value = in_array($key, self::NUMERIC_SETTINGS, true)
+                ? (string) (int) ($data[$key] ?? 0)
+                : (! empty($data[$key]) ? '1' : '0');
+
+            System::addProperty($key, $value);
         }
 
         return $this->success(null, __('body.settings_updated'));
     }
+
+    /** The switches shown on each settings tab (an unticked box isn't posted). */
+    public const TAB_SETTINGS = [
+        'registration' => ['allow_registration', 'default_business_active_status', 'allow_custom_css'],
+        'security' => ['business_manages_staff', 'idle_timeout_minutes'],
+    ];
 }

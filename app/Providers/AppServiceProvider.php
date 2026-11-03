@@ -17,6 +17,7 @@ use App\Support\Installer\Installer;
 use App\Support\Mail\BrandedMail;
 use App\Support\Menu\AdminMenu;
 use App\Support\Settings\BusinessSettings;
+use App\Support\Access\PlatformAccess;
 use App\Support\Tenancy\CurrentBusiness;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -52,6 +53,7 @@ class AppServiceProvider extends ServiceProvider
         // Holds the studio's unsaved preview for one request only.
         $this->app->scoped(ThemeService::class);
         $this->app->scoped(LoginBranding::class);
+        $this->app->scoped(PlatformAccess::class);
 
         // A billing module rebinds Entitlements; Quota counters are global.
         $this->app->bindIf(Entitlements::class, UnlimitedEntitlements::class);
@@ -193,6 +195,13 @@ class AppServiceProvider extends ServiceProvider
 
             if (in_array($ability, self::PLATFORM_ABILITIES, true)) {
                 return $user->isSuperAdmin() ? true : false;
+            }
+
+            // Platform-only permissions, and staff/roles when businesses may not manage them.
+            $decision = app(PlatformAccess::class)->decide($user, $ability);
+
+            if ($decision !== null) {
+                return $decision;
             }
 
             return $user->isBusinessAdmin() ? true : null;

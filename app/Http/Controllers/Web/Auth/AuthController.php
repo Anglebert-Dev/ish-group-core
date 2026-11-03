@@ -9,6 +9,7 @@ use App\Http\Requests\Auth\LoginStaffRequest;
 use App\Http\Requests\Auth\RegisterStaffRequest;
 use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Http\Requests\Auth\VerifyStaffMfaRequest;
+use App\Models\System\System;
 use App\Models\User;
 use App\Services\Auth\AuthService;
 use App\Services\Branding\BrandingService;
@@ -156,6 +157,13 @@ class AuthController extends Controller
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        // Sent by the idle timer (public/js/idle-logout.js).
+        if ($request->input('reason') === 'idle') {
+            return redirect()->route('staff.login')->with('error', __('body.idle_signed_out', [
+                'minutes' => (int) System::getProperty('idle_timeout_minutes', '0'),
+            ]));
+        }
 
         return redirect()->route('staff.login')->with('success', __('body.logged_out'));
     }

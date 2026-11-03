@@ -96,6 +96,9 @@ Route::prefix('app')->middleware(['auth:staff', 'auth.session', 'exclusive.porta
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    // Keeps an active person signed in under the idle timeout (LogoutIdleStaff does the work).
+    Route::post('/session/ping', fn () => response()->noContent())->middleware('throttle:30,1')->name('staff.session.ping');
+
     Route::get('/profile', [ProfileController::class, 'show'])->name('staff.profile');
     Route::post('/appearance', [AppearanceController::class, 'update'])->name('staff.appearance');
     Route::put('/profile', [ProfileController::class, 'update'])->name('staff.profile.update');

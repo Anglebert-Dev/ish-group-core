@@ -3,6 +3,7 @@
 use App\Http\Middleware\CheckPermission;
 use App\Http\Middleware\ConfirmStaffPassword;
 use App\Http\Middleware\EnsureBusinessActive;
+use App\Http\Middleware\LogoutIdleStaff;
 use App\Http\Middleware\EnsureExclusivePortalSession;
 use App\Http\Middleware\EnsureModuleActive;
 use App\Http\Middleware\EnsureSuperAdmin;
@@ -69,6 +70,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('web', NormalizeFormattedAmounts::class);
         $middleware->appendToGroup('web', SetLocale::class);
         $middleware->appendToGroup('web', ThemeStudio::class);
+        $middleware->appendToGroup('web', LogoutIdleStaff::class);
 
         $middleware->alias([
             'business.active' => EnsureBusinessActive::class,
