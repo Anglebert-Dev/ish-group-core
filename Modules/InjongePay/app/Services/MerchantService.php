@@ -30,8 +30,11 @@ class MerchantService
     {
     }
 
-    /** New wallet with the next merchant code; registration at GTBank is queued straight away. */
-    public function create(Business $business, array $data): Wallet
+    /**
+     * New wallet with the next merchant code; registration at GTBank is queued
+     * (after $registerAfter seconds, so a batch reaches GTBank a few at a time).
+     */
+    public function create(Business $business, array $data, int $registerAfter = 0): Wallet
     {
         $wallet = DB::transaction(function () use ($business, $data) {
             $wallet = new Wallet(array_intersect_key($data, array_flip(['name', 'kyc_business_owner', 'kyc_tin', 'kyc_contact_phone', 'kyc_contact_email'])) + [
@@ -44,7 +47,7 @@ class MerchantService
         });
 
         $this->audit('injongepay_wallet_created', $wallet, ['merchant_code' => $wallet->merchant_code]);
-        RegisterMerchant::dispatch($wallet->id)->afterCommit();
+        RegisterMerchant::dispatch($wallet->id)->delay(now()->addSeconds($registerAfter))->afterCommit();
 
         return $wallet;
     }

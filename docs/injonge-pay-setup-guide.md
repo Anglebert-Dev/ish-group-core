@@ -103,9 +103,9 @@ What runs, and when:
 | Every | Job |
 |---|---|
 | minute | process stored GTBank webhooks; check open cash-outs |
-| 10 minutes | read GTBank's transaction list; credit fees to the platform wallets |
-| 15 minutes | sync merchant codes waiting on GTBank |
-| 01:30 | close yesterday for every merchant code; check the books |
+| 10 minutes | read GTBank's transaction list (one call for all merchant codes); credit fees to the platform wallets |
+| 15 minutes | sync merchant codes waiting on GTBank (at most 100 per run, oldest first) |
+| 01:30 | close yesterday for every merchant code (one call to GTBank); check the books |
 | 02:00 | sync every merchant code |
 
 Each job also has a button on its screen.
@@ -197,6 +197,8 @@ What happens next, by itself:
 3. Within 15 minutes (or press **Sync from GTBank**): **Active**. Only an active code receives payments.
 
 The merchant code's page shows every call made to GTBank and its last problem. A network error never marks the code as failed. **Registration failed** means GTBank really refused it, with the reason shown. Fix the KYC and press **Register at GTBank** again.
+
+**Many codes at once** (a business with 50 or 500 tills): **Merchant codes → Import from CSV**. Choose the business and upload a file with a `name` column, plus `owner`, `tin`, `phone` and `email` if they differ from the KYC (**Download template** gives an example; commas or semicolons both work, and up to 1,000 lines per file). Every line is checked first. If one line is wrong (a name used twice, a bad TIN or phone), nothing is created and the page lists the lines to fix. When the file is good, all the codes are created at once and sent to GTBank from the queue, one every 3 seconds, so 500 codes take about 25 minutes to be registered. **Export CSV** on the list (filtered by the business) gives the business its names and merchant codes.
 
 To stop a code temporarily, use **Switch off**: payments to it are held, not lost. **Close at GTBank** is final and needs a zero balance.
 

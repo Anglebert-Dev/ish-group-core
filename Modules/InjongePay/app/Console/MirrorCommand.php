@@ -2,16 +2,18 @@
 
 namespace Modules\InjongePay\Console;
 
-use App\Support\Tenancy\CurrentBusiness;
 use Illuminate\Console\Command;
 use Modules\InjongePay\Gtbank\GtbankClient;
 use Modules\InjongePay\Models\Wallet;
 use Modules\InjongePay\Services\BankMirror;
 
-/** Twin of "Read GTBank's list now" on the reconciliation screen. */
+/**
+ * Twin of "Read GTBank's list now". One call for every merchant code
+ * (today, and yesterday too until 02:00 so late transactions are seen).
+ */
 class MirrorCommand extends Command
 {
-    protected $signature = 'injongepay:mirror {--hours=3 : How far back to read}';
+    protected $signature = 'injongepay:mirror {--days=0 : Also read this many days back}';
 
     protected $description = "Read GTBank's transaction list and make our books agree with it";
 
@@ -21,13 +23,10 @@ class MirrorCommand extends Command
             return self::SUCCESS;
         }
 
-        $from = now()->subHours((int) $this->option('hours'));
+        $back = max((int) $this->option('days'), now()->hour < 2 ? 1 : 0);
+        $summary = $mirror->pullAll(today()->subDays($back), today());
 
-        foreach (self::wallets() as $wallet) {
-            app(CurrentBusiness::class)->set($wallet->business_id);
-            $summary = $mirror->pull($wallet, $from, now());
-            $this->line($wallet->merchant_code.': '.($summary === null ? 'no answer from GTBank' : json_encode($summary)));
-        }
+        $this->line($summary === null ? 'no answer from GTBank' : json_encode($summary));
 
         return self::SUCCESS;
     }

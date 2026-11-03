@@ -60,6 +60,50 @@ class BankMirror
         return $summary;
     }
 
+    /**
+     * Every merchant code at once: one call to GTBank's participant list for the
+     * days given (it takes dates, not times), split here by merchant code. Used
+     * by the 10-minute check and the daily close, so the number of GTBank calls
+     * doesn't grow with the number of merchant codes.
+     *
+     * @return array{seen: int, matched: int, ingested: int, mismatches: int, reversed: int, foreign: int}|null
+     */
+    public function pullAll(CarbonInterface $from, CarbonInterface $to): ?array
+    {
+        $result = $this->bank->participantTransactions($from->toDateString(), $to->toDateString());
+
+        if (! $result->ok() && ! $result->notFound()) {
+            return null;
+        }
+
+        $summary = ['seen' => 0, 'matched' => 0, 'ingested' => 0, 'mismatches' => 0, 'reversed' => 0, 'foreign' => 0];
+        $wallets = Wallet::query()->withoutGlobalScopes()->whereNull('deleted_at')->whereNull('internal_role')->get()->keyBy('merchant_code');
+
+        foreach ($result->ok() ? BankPayloads::rows($result->data) : [] as $raw) {
+            if (! is_array($raw)) {
+                continue;
+            }
+
+            $tx = BankPayloads::transaction($raw);
+
+            try {
+                if ($wallet = $wallets->get((string) $tx['merchant_id'])) {
+                    $summary[$this->apply($wallet, $raw)]++;
+                } elseif ($tx['status'] === 'SUCCESS' && $tx['transaction_id'] && $tx['amount'] !== null) {
+                    // A code we don't have (or a closed one): the money is held, never lost.
+                    $this->intake->receive($raw, Payment::VIA_BANK_PULL);
+                    $summary['foreign']++;
+                }
+                $summary['seen']++;
+            } catch (Throwable $e) {
+                report($e);
+                $summary['mismatches']++;
+            }
+        }
+
+        return $summary;
+    }
+
     private function apply(Wallet $wallet, array $raw): string
     {
         $tx = BankPayloads::transaction($raw);

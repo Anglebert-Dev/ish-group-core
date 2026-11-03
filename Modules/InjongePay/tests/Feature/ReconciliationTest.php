@@ -151,7 +151,7 @@ class ReconciliationTest extends InjongePayTestCase
         $this->fakeBank(['/transactions' => Http::response([])]);
         $this->fakeBank();
         $this->webhookPayment('TX-GHOST', $wallet->merchant_code);
-        $this->fakeBank(['/transactions' => Http::response([])]);
+        $this->fakeBank(['/participant/transactions' => Http::response([])]);
         $this->asOperator();
 
         $this->post(route('injongepay.platform.reconciliation.close-day'), ['day' => '2026-11-02'])->assertRedirect();

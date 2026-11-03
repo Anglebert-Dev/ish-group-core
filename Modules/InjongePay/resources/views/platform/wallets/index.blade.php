@@ -5,7 +5,9 @@
             @if ($waiting > 0 && \App\Helpers\AuthHelper::can('update injongepay_platform.bank'))
                 <x-common.action-button :action="route('injongepay.platform.wallets.sync-waiting')">{{ __('injongepay::injongepay.sync_waiting', ['count' => $waiting]) }}</x-common.action-button>
             @endif
+            <x-common.button href="{{ route('injongepay.platform.wallets.export', request()->only(['business', 'status', 'search'])) }}" variant="secondary" size="sm">{{ __('injongepay::injongepay.export_csv') }}</x-common.button>
             @if (\App\Helpers\AuthHelper::can('create injongepay_platform.wallet'))
+                <x-common.button href="{{ route('injongepay.platform.wallets.import', request()->only('business')) }}" variant="secondary" size="sm">{{ __('injongepay::injongepay.wallet_import') }}</x-common.button>
                 <x-common.button href="{{ route('injongepay.platform.wallets.create') }}" size="sm">{{ __('injongepay::injongepay.wallet_add') }}</x-common.button>
             @endif
         </x-slot:actions>

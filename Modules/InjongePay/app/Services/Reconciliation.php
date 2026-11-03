@@ -25,10 +25,34 @@ class Reconciliation
     {
     }
 
-    public function closeDay(Wallet $wallet, CarbonInterface $day): DailyClose
+    /**
+     * Closes the day for every merchant code with one read of GTBank's list.
+     *
+     * @return array{closed: int, unreachable: bool}
+     */
+    public function closeDayForAll(CarbonInterface $day): array
     {
         $day = Carbon::parse($day->toDateString());
-        $pulled = GtbankClient::isConfigured() ? $this->mirror->pull($wallet, $day->copy()->startOfDay(), $day->copy()->endOfDay()) : [];
+        $pulled = GtbankClient::isConfigured() ? $this->mirror->pullAll($day, $day) : [];
+        $closed = 0;
+
+        foreach (Wallet::query()->withoutGlobalScopes()->whereNull('deleted_at')->whereNull('internal_role')
+            ->whereIn('bank_status', [Wallet::BANK_ACTIVE, Wallet::BANK_INACTIVE, Wallet::BANK_CLOSED])->orderBy('id')->cursor() as $wallet) {
+            $this->closeDay($wallet, $day, $pulled);
+            $closed++;
+        }
+
+        return ['closed' => $closed, 'unreachable' => $pulled === null];
+    }
+
+    /** @param  array|null|false  $pulled  GTBank's list already read for this day (null: GTBank didn't answer); false: read it for this code */
+    public function closeDay(Wallet $wallet, CarbonInterface $day, array|null|false $pulled = false): DailyClose
+    {
+        $day = Carbon::parse($day->toDateString());
+
+        if ($pulled === false) {
+            $pulled = GtbankClient::isConfigured() ? $this->mirror->pull($wallet, $day->copy()->startOfDay(), $day->copy()->endOfDay()) : [];
+        }
 
         $bank = BankTransaction::query()->where('wallet_id', $wallet->id)->where('status', 'SUCCESS')->whereDate('value_date', $day)->get(['transaction_id', 'amount']);
         $ours = Payment::query()->withoutGlobalScopes()->where('wallet_id', $wallet->id)->where('payment_status', '!=', Payment::STATUS_REVERSED)

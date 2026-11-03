@@ -98,7 +98,7 @@ The current pattern (an emailed OTP on every action) is slow and doesn't actuall
 | 9 | Merchant update and close are **asynchronous** (`status: PENDING`) | update treated as applied at once; `/merchants/close` never called (a deleted wallet stays open at the bank) | `update_pending` until a lookup confirms; closing a wallet calls `/merchants/close` |
 | 10 | Register field is `tin` in the table, `taxIdentificationNumber` in the sample. Lookup returns `businessOwnerName` (doc) or `businessOwner` (logs) | sends `taxIdentificationNumber`, reads one shape | tolerant parser with every variant mapped in one place; confirm with GTBank and the production call logs |
 | 11 | Lookup must return the requested merchant | never checks (local log: asked 55500002, got 55500006) | refuse a lookup whose `merchantId` ≠ the one requested |
-| 12 | Merchant transactions supports `startDate`/`endDate` date-times per merchant | pulls the whole participant and filters in PHP | per-merchant windowed pulls for the mirror |
+| 12 | Merchant transactions supports `startDate`/`endDate` date-times per merchant | pulls the whole participant and filters in PHP | one participant pull per window, split by merchant code (scales to hundreds of codes); per-merchant pull kept for a single code |
 | 13 | Errors are `{"error": "…"}` (doc); logs also show `{"message": "…"}` | reads both | keep both |
 | 14 | `remarks` ≤ 50, `beneficiaryAccount` ≤ 20, phone `+250XXXXXXXXX`, merchantId starts with 55 and has 8–12 digits | not enforced | validated before any call |
 | 15 | Webhook signature "if supported"; there is no secret header in the doc | our own `X-GTBank-Webhook-Secret` | keep the header (it is already agreed) plus an optional IP allow-list; ask GTBank about signing |
@@ -315,7 +315,7 @@ After the phases, from trying it: Fee earnings, dashboard by module, business wa
 **Before go-live (blocking)**
 1. **Data migration** from production (phase 9). Needs a `pg_dump` or read-only access to the production database.
 2. **First run against the real GTBank.** These answers have never been seen from GTBank, only from its document:
-   - `/transactions` with `startDate`/`endDate` per merchant: the 10-minute mirror and the daily close depend on it
+   - `/participant/transactions` with `startDate`/`endDate`: the 10-minute mirror and the daily close read it once for all merchant codes (the per-merchant `/transactions` is kept for the button on one code)
    - `/merchants/register`
    - the disbursement-status webhook (production logs only show payment webhooks)
 
@@ -328,6 +328,10 @@ After the phases, from trying it: Fee earnings, dashboard by module, business wa
 - **Statement checks** (Reconciliation → Statement checks): GTBank's CSV statement of the settlement account is compared with the books. Credits are matched with payments and debits with paid cash-outs, by reference first, then by amount and day. The closing balance is compared with what the books say GTBank holds. A difference opens a reconciliation item. Columns are found by their headings. Still ask GTBank for a statement API.
 - *Extra check above (per hour)*: the step-up also triggers when the business's total in the last hour would pass it.
 - Requests waiting for a second person expire after 24 h by themselves (every 10 minutes, and when Approvals is opened); the requester is told.
+
+**Many merchant codes** (built 04/11/2026)
+- Inhills imports merchant codes from a CSV (Merchant codes → Import from CSV). The whole file is checked first and nothing is created if a line is wrong. GTBank registrations are queued 3 seconds apart. Export CSV hands the codes to the business. One audit entry is written for the import, plus one per code.
+- GTBank traffic no longer grows with the number of codes: the mirror and the daily close make one participant call and split it by merchant code (unknown codes are parked as money to allocate). The status sync takes at most 100 codes per run, oldest first, skipping any checked in the last 10 minutes.
 
 **Smaller**
 - The partner rate limit per connection is set by Inhills on the integrator's page.

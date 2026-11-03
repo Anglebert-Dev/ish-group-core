@@ -71,6 +71,10 @@ Route::prefix('app/injonge-pay/platform')->name('injongepay.platform.')->middlew
     Route::get('/wallets', [WalletController::class, 'index'])->middleware('permission:list injongepay_platform.wallet')->name('wallets.index');
     Route::get('/wallets/create', [WalletController::class, 'create'])->middleware('permission:create injongepay_platform.wallet')->name('wallets.create');
     Route::post('/wallets', [WalletController::class, 'store'])->middleware(['permission:create injongepay_platform.wallet', 'password.confirm.staff'])->name('wallets.store');
+    Route::get('/wallets/export', [WalletController::class, 'export'])->middleware('permission:list injongepay_platform.wallet')->name('wallets.export');
+    Route::get('/wallets/import', [WalletController::class, 'import'])->middleware('permission:create injongepay_platform.wallet')->name('wallets.import');
+    Route::get('/wallets/import/template', [WalletController::class, 'importTemplate'])->middleware('permission:create injongepay_platform.wallet')->name('wallets.import.template');
+    Route::post('/wallets/import', [WalletController::class, 'importStore'])->middleware(['permission:create injongepay_platform.wallet', 'password.confirm.staff', 'throttle:6,1'])->name('wallets.import.store');
     Route::post('/wallets/sync-waiting', [WalletController::class, 'syncWaiting'])->middleware(['permission:update injongepay_platform.bank', 'throttle:6,1'])->name('wallets.sync-waiting');
     Route::get('/wallets/{wallet}', [WalletController::class, 'show'])->middleware('permission:read injongepay_platform.wallet')->name('wallets.show');
     Route::put('/wallets/{wallet}', [WalletController::class, 'update'])->middleware(['permission:update injongepay_platform.wallet', 'password.confirm.staff'])->name('wallets.update');

@@ -4,6 +4,8 @@ return [
     'injongepay_fee_changed' => 'Fee rate changed',
     'injongepay_webhook_secret_generated' => 'GTBank webhook secret generated',
     'injongepay_wallet_created' => 'Merchant code created',
+    'injongepay_wallets_imported' => 'Merchant codes imported',
+    'injongepay_wallets_exported' => 'Merchant codes exported',
     'injongepay_wallet_registered' => 'Merchant code registered at GTBank',
     'injongepay_wallet_registration_failed' => 'GTBank refused a merchant code',
     'injongepay_wallet_bank_status' => 'Merchant code status changed at GTBank',

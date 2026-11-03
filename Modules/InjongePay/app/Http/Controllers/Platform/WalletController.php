@@ -17,6 +17,8 @@ use Modules\InjongePay\Models\BankCall;
 use Modules\InjongePay\Models\LedgerEntry;
 use Modules\InjongePay\Models\Wallet;
 use Modules\InjongePay\Services\MerchantService;
+use Modules\InjongePay\Services\WalletImport;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Merchant codes of every business. Only the operator creates or changes them.
@@ -29,10 +31,7 @@ class WalletController extends Controller
 
     public function index(Request $request): View
     {
-        $wallets = Wallet::query()->withoutGlobalScopes()->whereNull('deleted_at')->with('business')
-            ->when($request->query('business'), fn ($q, $uuid) => $q->whereIn('business_id', Business::query()->whereUuid($uuid)->select('id')))
-            ->when($request->query('status'), fn ($q, $status) => $q->where('bank_status', $status))
-            ->when(trim((string) $request->query('search')), fn ($q, $s) => $q->where(fn ($w) => $w->where('name', 'like', "%{$s}%")->orWhere('merchant_code', 'like', "%{$s}%")))
+        $wallets = $this->filtered($request)
             ->orderBy('internal_role')->orderByDesc('id')
             ->paginate(30)->withQueryString();
 
@@ -41,6 +40,76 @@ class WalletController extends Controller
             'businesses' => $this->businesses(),
             'waiting' => SyncMerchantsCommand::due()->count(),
         ]);
+    }
+
+    /** The list as it is filtered, for handing a business its merchant codes. */
+    public function export(Request $request): StreamedResponse
+    {
+        $query = $this->filtered($request)->orderBy('merchant_code');
+        $businessId = $request->query('business') ? Business::query()->whereUuid((string) $request->query('business'))->value('id') : null;
+        audit('injongepay_wallets_exported', __('injongepay::injongepay.audit_wallets_exported'), null, ['filters' => $request->only(['business', 'status', 'search'])], $businessId);
+
+        return response()->streamDownload(function () use ($query) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['merchant_code', 'name', 'business', 'bank_status', 'enabled', 'owner', 'tin', 'phone', 'email']);
+            $query->chunk(500, function ($wallets) use ($out) {
+                foreach ($wallets as $w) {
+                    fputcsv($out, [$w->merchant_code, $w->name, $w->business?->name, $w->bank_status, $w->is_enabled ? 'yes' : 'no', $w->kyc_business_owner, $w->kyc_tin, $w->kyc_contact_phone, $w->kyc_contact_email]);
+                }
+            });
+            fclose($out);
+        }, 'merchant-codes-'.now()->format('Ymd-His').'.csv', ['Content-Type' => 'text/csv']);
+    }
+
+    public function import(Request $request): View
+    {
+        return view('injongepay::platform.wallets.import', [
+            'businesses' => $this->businesses(),
+            'business' => $request->query('business'),
+            'max' => WalletImport::MAX_ROWS,
+        ]);
+    }
+
+    public function importTemplate(): StreamedResponse
+    {
+        return response()->streamDownload(function () {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['name', 'owner', 'tin', 'phone', 'email']);
+            fputcsv($out, ['Kigali Branch – Till 1', 'Jane Doe', '123456789', '+250788123456', 'till1@example.com']);
+            fclose($out);
+        }, 'merchant-codes-template.csv', ['Content-Type' => 'text/csv']);
+    }
+
+    public function importStore(Request $request, WalletImport $import): RedirectResponse
+    {
+        $data = $request->validate([
+            'business' => ['required', Rule::exists('businesses', 'uuid')],
+            'file' => ['required', 'file', 'mimes:csv,txt', 'max:2048'],
+        ]);
+        $business = Business::query()->whereUuid($data['business'])->firstOrFail();
+
+        try {
+            $read = $import->read($request->file('file')->getRealPath(), $business);
+        } catch (InjongePayException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+
+        if ($read['errors']) {
+            return back()->withInput()->with('error', trans_choice('injongepay::injongepay.import_has_errors', count($read['errors'])))->with('import_errors', $read['errors']);
+        }
+
+        $wallets = $import->create($business, $read['rows']);
+
+        return redirect()->route('injongepay.platform.wallets.index', ['business' => $business->uuid])
+            ->with('success', __('injongepay::injongepay.wallets_imported', ['count' => $wallets->count(), 'from' => $wallets->first()->merchant_code, 'to' => $wallets->last()->merchant_code, 'minutes' => max(1, (int) ceil($wallets->count() * WalletImport::SPACING / 60))]));
+    }
+
+    private function filtered(Request $request)
+    {
+        return Wallet::query()->withoutGlobalScopes()->whereNull('deleted_at')->with('business')
+            ->when($request->query('business'), fn ($q, $uuid) => $q->whereIn('business_id', Business::query()->whereUuid($uuid)->select('id')))
+            ->when($request->query('status'), fn ($q, $status) => $q->where('bank_status', $status))
+            ->when(trim((string) $request->query('search')), fn ($q, $s) => $q->where(fn ($w) => $w->where('name', 'like', "%{$s}%")->orWhere('merchant_code', 'like', "%{$s}%")));
     }
 
     public function create(Request $request): View

@@ -40,12 +40,17 @@ class SyncMerchantsCommand extends Command
         return self::SUCCESS;
     }
 
+    /** Per run at most this many lookups, oldest checked first, so many new codes never flood GTBank. */
+    public const PER_RUN = 100;
+
     public static function due(bool $all = false)
     {
         return Wallet::query()->withoutGlobalScopes()->whereNull('deleted_at')->whereNull('internal_role')
             ->when(! $all, fn ($q) => $q->where(fn ($w) => $w->whereIn('bank_status', [Wallet::BANK_REGISTERING, Wallet::BANK_PENDING])
-                ->orWhereNotNull('bank_update_pending_at')))
+                ->orWhereNotNull('bank_update_pending_at'))
+                ->where(fn ($w) => $w->whereNull('bank_synced_at')->orWhere('bank_synced_at', '<', now()->subMinutes(10))))
             ->when($all, fn ($q) => $q->whereNotIn('bank_status', [Wallet::BANK_NOT_REGISTERED, Wallet::BANK_CLOSED]))
-            ->orderBy('id');
+            ->orderByRaw('bank_synced_at IS NOT NULL')->orderBy('bank_synced_at')->orderBy('id')
+            ->when(! $all, fn ($q) => $q->limit(self::PER_RUN));
     }
 }

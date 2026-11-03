@@ -32,33 +32,22 @@ class ReconciliationController extends Controller
 
     public function pull(Request $request, BankMirror $mirror): RedirectResponse
     {
-        $hours = (int) ($request->validate(['hours' => ['nullable', 'integer', 'min:1', 'max:744']])['hours'] ?? 24);
-        $summary = ['seen' => 0, 'ingested' => 0, 'mismatches' => 0, 'reversed' => 0, 'unreachable' => 0];
+        $days = (int) ($request->validate(['days' => ['nullable', 'integer', 'min:0', 'max:31']])['days'] ?? 1);
+        $result = $mirror->pullAll(today()->subDays($days), today());
+        $summary = ($result ?? ['seen' => 0, 'ingested' => 0, 'mismatches' => 0, 'reversed' => 0]) + ['unreachable' => $result === null ? 1 : 0];
 
-        foreach (MirrorCommand::wallets() as $wallet) {
-            $result = $mirror->pull($wallet, now()->subHours($hours), now());
-            if ($result === null) {
-                $summary['unreachable']++;
+        audit('injongepay_bank_pull', __('injongepay::injongepay.audit_bank_pull', ['hours' => ($days + 1) * 24]), null, $summary);
 
-                continue;
-            }
-            foreach (['seen', 'ingested', 'mismatches', 'reversed'] as $key) {
-                $summary[$key] += $result[$key];
-            }
-        }
-
-        audit('injongepay_bank_pull', __('injongepay::injongepay.audit_bank_pull', ['hours' => $hours]), null, $summary);
-
-        return back()->with('success', __('injongepay::injongepay.pulled', $summary));
+        return $result === null
+            ? back()->with('error', __('injongepay::injongepay.pulled_unreachable'))
+            : back()->with('success', __('injongepay::injongepay.pulled', $summary));
     }
 
     public function closeDay(Request $request, Reconciliation $reconciliation): RedirectResponse
     {
         $day = Carbon::parse($request->validate(['day' => ['required', 'date', 'before_or_equal:today']])['day']);
 
-        foreach (MirrorCommand::wallets() as $wallet) {
-            $reconciliation->closeDay($wallet, $day);
-        }
+        $reconciliation->closeDayForAll($day);
         $books = $reconciliation->checkBooks();
 
         return redirect()->route('injongepay.platform.reconciliation.index', ['day' => $day->toDateString()])

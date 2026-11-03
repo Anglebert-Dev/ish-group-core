@@ -2,7 +2,6 @@
 
 namespace Modules\InjongePay\Console;
 
-use App\Support\Tenancy\CurrentBusiness;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Modules\InjongePay\Services\Reconciliation;
@@ -17,13 +16,9 @@ class CloseDayCommand extends Command
     public function handle(Reconciliation $reconciliation): int
     {
         $day = Carbon::parse($this->argument('day') ?? now()->subDay()->toDateString());
+        $result = $reconciliation->closeDayForAll($day);
 
-        foreach (MirrorCommand::wallets() as $wallet) {
-            app(CurrentBusiness::class)->set($wallet->business_id);
-            $close = $reconciliation->closeDay($wallet, $day);
-            $this->line("{$wallet->merchant_code} {$day->toDateString()}: {$close->state}");
-        }
-
+        $this->line("{$day->toDateString()}: {$result['closed']} merchant code(s) closed".($result['unreachable'] ? ', GTBank did not answer' : ''));
         $this->line(json_encode($reconciliation->checkBooks()));
 
         return self::SUCCESS;
