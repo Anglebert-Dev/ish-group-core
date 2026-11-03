@@ -16,6 +16,9 @@ class BusinessProfiles
 {
     public const FIELDS = ['short_name', 'tin', 'country', 'city', 'address', 'contact_person', 'contact_phone', 'contact_email', 'fee_percentage', 'support_staff_id'];
 
+    // Entered in RWF, stored in cents; blank = no limit.
+    public const LIMITS = ['limit_per_transaction', 'limit_daily', 'limit_monthly', 'step_up_above', 'second_approval_above'];
+
     public function save(Business $business, array $data): BusinessProfile
     {
         return DB::transaction(function () use ($business, $data) {
@@ -24,6 +27,11 @@ class BusinessProfiles
 
             $profile->fill(array_intersect_key($data, array_flip(self::FIELDS)));
             $profile->fee_percentage = isset($data['fee_percentage']) && $data['fee_percentage'] !== '' ? bcadd((string) $data['fee_percentage'], '0', 2) : null;
+            foreach (self::LIMITS as $limit) {
+                if (array_key_exists($limit, $data)) {
+                    $profile->{$limit} = $data[$limit] === null || $data[$limit] === '' ? null : \Modules\InjongePay\Support\Money::toCents((string) $data[$limit]);
+                }
+            }
             $profile->business_id = $business->id;
             $profile->code ??= 'INJP'.now()->format('Ymd').str_pad((string) Counter::next('business_code'), 4, '0', STR_PAD_LEFT);
             $profile->save();

@@ -255,7 +255,14 @@ Webhooks (`/api/payments/webhook`, `/api/gtbank/disbursement-status`) keep their
    - the books check: entries = balances, and the platform identity
    - payments GTBank hasn't confirmed after 24 h are flagged
    - a queue of differences that stay open until explained
-5. Authorization (PIN, trusted beneficiaries, risk step-up, limits, maker-checker, devices), settlement accounts, transfers.
+5. ✅ Authorization, settlement accounts and transfers:
+   - 5-digit PIN, locked after 3 wrong tries
+   - step-up (authenticator, or an emailed code) only for: a new browser, a large amount, the first payout to an account, many operations in an hour, or a recently set PIN
+   - trusted browsers
+   - per-business limits (per operation, per day, per month)
+   - a second person above a threshold, never the requester
+   - cash-out accounts added by the platform, checked against GTBank's name, approved by a second platform person, usable after 24 h
+   - wallet-to-wallet transfers locked in id order
 6. Cash-out outbox with two-signal finality, poller, events, stuck/not-found queue for platform staff.
 7. Business dashboard, reports and exports.
 8. InjongePayConnect: integrators, connections, the `pos-ebm-v1` profile, the legacy EBM profile.

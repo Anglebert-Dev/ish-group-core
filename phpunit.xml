@@ -23,6 +23,7 @@
     <php>
         <ini name="memory_limit" value="512M"/>
         <env name="APP_ENV" value="testing"/>
+        <env name="APP_URL" value="http://localhost"/>
         <env name="APP_INSTALLED" value="true"/>
         <env name="TRUSTED_PROXIES" value="" force="true"/>
         <server name="TRUSTED_PROXIES" value="" force="true"/>

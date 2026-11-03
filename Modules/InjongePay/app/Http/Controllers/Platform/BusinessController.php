@@ -68,6 +68,11 @@ class BusinessController extends Controller
             'contact_email' => ['required', 'email', 'max:255'],
             'fee_percentage' => ['nullable', 'numeric', 'min:0', 'max:100', 'decimal:0,2'],
             'support_staff_id' => ['nullable', Rule::exists('users', 'id')->where('business_id', (int) System::getProperty('primary_business_id'))],
+            'limit_per_transaction' => ['nullable', 'numeric', 'min:0', 'decimal:0,2'],
+            'limit_daily' => ['nullable', 'numeric', 'min:0', 'decimal:0,2'],
+            'limit_monthly' => ['nullable', 'numeric', 'min:0', 'decimal:0,2'],
+            'step_up_above' => ['nullable', 'numeric', 'min:0', 'decimal:0,2'],
+            'second_approval_above' => ['nullable', 'numeric', 'min:0', 'decimal:0,2'],
         ], [
             'contact_phone.regex' => __('injongepay::injongepay.err_phone_format'),
         ]);

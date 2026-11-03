@@ -2,7 +2,11 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\InjongePay\Http\Controllers\Business\OverviewController;
+use Modules\InjongePay\Http\Controllers\Business\ApprovalController;
 use Modules\InjongePay\Http\Controllers\Business\PaymentController;
+use Modules\InjongePay\Http\Controllers\Business\SecurityController;
+use Modules\InjongePay\Http\Controllers\Business\TransferController;
+use Modules\InjongePay\Http\Controllers\Platform\SettlementAccountController;
 use Modules\InjongePay\Http\Controllers\Platform\ReconciliationController;
 use Modules\InjongePay\Http\Controllers\Platform\UnallocatedController;
 use Modules\InjongePay\Http\Controllers\Platform\BankCallController;
@@ -23,6 +27,17 @@ Route::prefix('app/injonge-pay')->name('injongepay.')->middleware($staff)->group
     Route::get('/', [OverviewController::class, 'index'])->middleware('permission:list injongepay.overview')->name('overview');
     Route::get('/payments', [PaymentController::class, 'index'])->middleware('permission:list injongepay.payment')->name('payments.index');
     Route::get('/payments/{payment}', [PaymentController::class, 'show'])->middleware('permission:read injongepay.payment')->name('payments.show');
+
+    Route::get('/transfers', [TransferController::class, 'index'])->middleware('permission:list injongepay.transfer')->name('transfers.index');
+    Route::post('/transfers', [TransferController::class, 'store'])->middleware(['permission:create injongepay.transfer', 'not.impersonating', 'throttle:20,1'])->name('transfers.store');
+
+    Route::get('/approvals', [ApprovalController::class, 'index'])->middleware('permission:approve injongepay.transfer|approve injongepay.cashout|create injongepay.transfer|create injongepay.cashout')->name('approvals.index');
+    Route::post('/approvals/{approval}/approve', [ApprovalController::class, 'approve'])->middleware(['not.impersonating', 'throttle:20,1'])->name('approvals.approve');
+    Route::post('/approvals/{approval}/reject', [ApprovalController::class, 'reject'])->middleware('throttle:20,1')->name('approvals.reject');
+
+    Route::get('/security', [SecurityController::class, 'show'])->middleware('permission:create injongepay.transfer|create injongepay.cashout|approve injongepay.transfer|approve injongepay.cashout')->name('security');
+    Route::post('/security/pin', [SecurityController::class, 'setPin'])->middleware(['password.confirm.staff', 'not.impersonating', 'throttle:6,1'])->name('security.pin');
+    Route::delete('/security/devices/{device}', [SecurityController::class, 'revoke'])->name('security.devices.revoke');
 });
 
 Route::prefix('app/injonge-pay/platform')->name('injongepay.platform.')->middleware($staff)->group(function () {
@@ -50,6 +65,12 @@ Route::prefix('app/injonge-pay/platform')->name('injongepay.platform.')->middlew
     Route::post('/unallocated/{row}/settle-outside', [UnallocatedController::class, 'settleOutside'])->middleware(['permission:approve injongepay_platform.reconciliation', 'password.confirm.staff'])->name('unallocated.settle-outside');
     Route::post('/inbox/process', [UnallocatedController::class, 'processInbox'])->middleware(['permission:update injongepay_platform.bank', 'throttle:6,1'])->name('inbox.process');
     Route::post('/fees/sweep', [UnallocatedController::class, 'sweepFees'])->middleware(['permission:update injongepay_platform.fee', 'throttle:6,1'])->name('fees.sweep');
+
+    Route::get('/settlement-accounts', [SettlementAccountController::class, 'index'])->middleware('permission:list injongepay_platform.business')->name('settlement-accounts.index');
+    Route::post('/settlement-accounts', [SettlementAccountController::class, 'store'])->middleware(['permission:create injongepay_platform.business', 'password.confirm.staff'])->name('settlement-accounts.store');
+    Route::post('/settlement-accounts/{account}/verify', [SettlementAccountController::class, 'verify'])->middleware(['permission:update injongepay_platform.business', 'throttle:10,1'])->name('settlement-accounts.verify');
+    Route::post('/settlement-accounts/{account}/approve', [SettlementAccountController::class, 'approve'])->middleware(['permission:approve injongepay_platform.business', 'password.confirm.staff'])->name('settlement-accounts.approve');
+    Route::post('/settlement-accounts/{account}/disable', [SettlementAccountController::class, 'disable'])->middleware(['permission:update injongepay_platform.business', 'password.confirm.staff'])->name('settlement-accounts.disable');
 
     Route::get('/bank-calls', [BankCallController::class, 'index'])->middleware('permission:list injongepay_platform.bank')->name('bank-calls.index');
     Route::get('/bank-calls/{call}', [BankCallController::class, 'show'])->middleware('permission:read injongepay_platform.bank')->name('bank-calls.show');

@@ -21,7 +21,8 @@ class BusinessProfile extends BaseModel
 
     protected function casts(): array
     {
-        return ['is_internal' => 'boolean', 'fee_percentage' => 'decimal:2'];
+        return ['is_internal' => 'boolean', 'fee_percentage' => 'decimal:2', 'limit_per_transaction' => 'integer', 'limit_daily' => 'integer',
+            'limit_monthly' => 'integer', 'step_up_above' => 'integer', 'second_approval_above' => 'integer'];
     }
 
     public function supportStaff(): BelongsTo

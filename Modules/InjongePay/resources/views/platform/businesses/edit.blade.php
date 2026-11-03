@@ -27,6 +27,16 @@
                 <x-common.select name="support_staff_id" :label="__('injongepay::injongepay.support_staff')" :options="['' => '—'] + $staff" :value="old('support_staff_id', $profile->support_staff_id)" hide-placeholder />
             </fieldset>
             <p class="text-xs text-muted">{{ __('injongepay::injongepay.contact_phone_hint') }}</p>
+            <div class="pt-4 border-t border-line">
+                <h2 class="font-display font-bold text-ink">{{ __('injongepay::injongepay.limits') }}</h2>
+                <p class="text-sm text-muted mt-1">{{ __('injongepay::injongepay.limits_description') }}</p>
+            </div>
+            <fieldset @disabled(! $canEdit) class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @foreach (\Modules\InjongePay\Services\BusinessProfiles::LIMITS as $limit)
+                    <x-common.input :name="$limit" type="number" step="1" min="0" :label="__('injongepay::injongepay.'.$limit)" :hint="__('injongepay::injongepay.limit_blank')"
+                        :value="old($limit, $profile->{$limit} !== null ? \Modules\InjongePay\Support\Money::toDecimal($profile->{$limit}) : null)" />
+                @endforeach
+            </fieldset>
             @if ($canEdit)
                 <x-common.button type="submit">{{ __('body.save') }}</x-common.button>
             @endif
