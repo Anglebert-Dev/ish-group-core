@@ -1,0 +1,1 @@
+<x-common.badge :color="['ok' => 'success', 'not_found' => 'muted', 'rejected' => 'danger', 'unknown' => 'warning'][$outcome] ?? 'muted'">{{ __('injongepay::injongepay.bank_outcome_'.$outcome) }}</x-common.badge>

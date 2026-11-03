@@ -14,9 +14,30 @@ class InjongePayServiceProvider extends CoreModuleServiceProvider
 
     protected string $nameLower = 'injongepay';
 
-    protected array $commands = [];
+    protected array $commands = [
+        \Modules\InjongePay\Console\SyncMerchantsCommand::class,
+    ];
 
     protected array $providers = [
         RouteServiceProvider::class,
     ];
+
+    protected function configureSchedules(\Illuminate\Console\Scheduling\Schedule $schedule): void
+    {
+        $schedule->command('injongepay:sync-merchants')->everyFifteenMinutes()->withoutOverlapping();
+        $schedule->command('injongepay:sync-merchants --all')->dailyAt('02:00')->withoutOverlapping();
+    }
+
+    public function register(): void
+    {
+        parent::register();
+
+        // Every GTBank call also goes to storage/logs/gtbank-YYYY-MM-DD.log, kept 90 days.
+        config(['logging.channels.gtbank' => config('logging.channels.gtbank') ?? [
+            'driver' => 'daily',
+            'path' => storage_path('logs/gtbank.log'),
+            'level' => 'info',
+            'days' => 90,
+        ]]);
+    }
 }

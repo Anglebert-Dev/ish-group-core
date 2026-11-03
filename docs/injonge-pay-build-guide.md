@@ -224,7 +224,7 @@ Webhooks (`/api/payments/webhook`, `/api/gtbank/disbursement-status`) keep their
 
 0. ✅ Core: platform-only abilities, the "businesses manage staff" setting, idle logout. Each has tests (`tests/Feature/PlatformAccessTest.php`).
 1. ✅ InjongePay skeleton: migrations, Money, Ledger (pending/available buckets), references, business profiles, permissions and menu, audit labels, platform fees and webhook secret.
-2. GtbankClient, bank-call log, FakeGtbank, MerchantService with platform wallet screens.
+2. ✅ GtbankClient (typed outcomes, v2.5 error-code map, token refresh, reads retried, posts never resent), bank-call log with screens, MerchantService state machine, scheduled sync, platform wallet screens. Without GTBANK_BASE_URL the module runs in test mode (wallets active at once, nothing sent).
 3. Webhook inbox, PaymentIntake (pending → available), unallocated payments, fees, internal-account sweep.
 4. **BankMirror, Matcher, daily close, reconciliation queue.** This is the parity engine, and it comes before any money leaves.
 5. Authorization (PIN, trusted beneficiaries, risk step-up, limits, maker-checker, devices), settlement accounts, transfers.

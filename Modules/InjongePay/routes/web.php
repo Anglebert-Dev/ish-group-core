@@ -2,7 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\InjongePay\Http\Controllers\Business\OverviewController;
+use Modules\InjongePay\Http\Controllers\Platform\BankCallController;
 use Modules\InjongePay\Http\Controllers\Platform\BusinessController;
+use Modules\InjongePay\Http\Controllers\Platform\WalletController;
 use Modules\InjongePay\Http\Controllers\Platform\SettingsController;
 
 /*
@@ -22,6 +24,20 @@ Route::prefix('app/injonge-pay/platform')->name('injongepay.platform.')->middlew
     Route::get('/businesses', [BusinessController::class, 'index'])->middleware('permission:list injongepay_platform.business')->name('businesses.index');
     Route::get('/businesses/{business}', [BusinessController::class, 'edit'])->middleware('permission:read injongepay_platform.business')->name('businesses.edit');
     Route::put('/businesses/{business}', [BusinessController::class, 'update'])->middleware(['permission:update injongepay_platform.business', 'password.confirm.staff'])->name('businesses.update');
+
+    Route::get('/wallets', [WalletController::class, 'index'])->middleware('permission:list injongepay_platform.wallet')->name('wallets.index');
+    Route::get('/wallets/create', [WalletController::class, 'create'])->middleware('permission:create injongepay_platform.wallet')->name('wallets.create');
+    Route::post('/wallets', [WalletController::class, 'store'])->middleware(['permission:create injongepay_platform.wallet', 'password.confirm.staff'])->name('wallets.store');
+    Route::post('/wallets/sync-waiting', [WalletController::class, 'syncWaiting'])->middleware(['permission:update injongepay_platform.bank', 'throttle:6,1'])->name('wallets.sync-waiting');
+    Route::get('/wallets/{wallet}', [WalletController::class, 'show'])->middleware('permission:read injongepay_platform.wallet')->name('wallets.show');
+    Route::put('/wallets/{wallet}', [WalletController::class, 'update'])->middleware(['permission:update injongepay_platform.wallet', 'password.confirm.staff'])->name('wallets.update');
+    Route::post('/wallets/{wallet}/register', [WalletController::class, 'register'])->middleware(['permission:update injongepay_platform.bank', 'throttle:10,1'])->name('wallets.register');
+    Route::post('/wallets/{wallet}/sync', [WalletController::class, 'sync'])->middleware(['permission:update injongepay_platform.bank', 'throttle:20,1'])->name('wallets.sync');
+    Route::put('/wallets/{wallet}/toggle', [WalletController::class, 'toggle'])->middleware(['permission:update injongepay_platform.wallet', 'password.confirm.staff'])->name('wallets.toggle');
+    Route::post('/wallets/{wallet}/close', [WalletController::class, 'close'])->middleware(['permission:delete injongepay_platform.wallet', 'password.confirm.staff'])->name('wallets.close');
+
+    Route::get('/bank-calls', [BankCallController::class, 'index'])->middleware('permission:list injongepay_platform.bank')->name('bank-calls.index');
+    Route::get('/bank-calls/{call}', [BankCallController::class, 'show'])->middleware('permission:read injongepay_platform.bank')->name('bank-calls.show');
 
     Route::get('/settings', [SettingsController::class, 'index'])->middleware('permission:update injongepay_platform.setting|update injongepay_platform.fee')->name('settings');
     Route::put('/settings/fees', [SettingsController::class, 'updateFees'])->middleware(['permission:update injongepay_platform.fee', 'password.confirm.staff'])->name('settings.fees');

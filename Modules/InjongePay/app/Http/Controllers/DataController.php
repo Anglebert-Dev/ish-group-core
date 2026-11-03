@@ -51,6 +51,8 @@ class DataController
         return [
             ['label' => 'injongepay::injongepay.menu_overview', 'route' => 'injongepay.overview', 'active' => 'injongepay.overview', 'permission' => 'list injongepay.overview', 'order' => 10, 'icon' => $icon],
             ['label' => 'injongepay::injongepay.menu_businesses', 'route' => 'injongepay.platform.businesses.index', 'active' => 'injongepay.platform.businesses.*', 'permission' => 'list injongepay_platform.business', 'group' => 'Injonge Pay platform', 'order' => 10, 'icon' => $building],
+            ['label' => 'injongepay::injongepay.menu_wallets', 'route' => 'injongepay.platform.wallets.index', 'active' => 'injongepay.platform.wallets.*', 'permission' => 'list injongepay_platform.wallet', 'group' => 'Injonge Pay platform', 'order' => 20, 'icon' => $icon],
+            ['label' => 'injongepay::injongepay.menu_bank_calls', 'route' => 'injongepay.platform.bank-calls.index', 'active' => 'injongepay.platform.bank-calls.*', 'permission' => 'list injongepay_platform.bank', 'group' => 'Injonge Pay platform', 'order' => 80, 'icon' => 'M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'],
             ['label' => 'injongepay::injongepay.menu_platform_settings', 'route' => 'injongepay.platform.settings', 'active' => 'injongepay.platform.settings*', 'permission' => 'update injongepay_platform.setting|update injongepay_platform.fee', 'group' => 'Injonge Pay platform', 'order' => 90, 'icon' => $gear],
         ];
     }

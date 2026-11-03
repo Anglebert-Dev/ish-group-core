@@ -35,6 +35,24 @@ abstract class InjongePayTestCase extends TestCase
         [$this->business, $this->owner] = $this->makeBusiness(['business_name' => 'Rhenium Group', 'business_type' => 'fuel_station']);
     }
 
+    protected const BANK = 'https://gt.test/api/integrator';
+
+    /** Points the client at a fake GTBank; $routes: "METHOD path" or "path" => response(s). */
+    protected function fakeBank(array $routes = []): void
+    {
+        config([
+            'injongepay.gtbank.base_url' => self::BANK,
+            'injongepay.gtbank.client_id' => 'participant',
+            'injongepay.gtbank.client_secret' => 'secret-value',
+            'injongepay.gtbank.participant_name' => 'INHILLS',
+        ]);
+
+        \Illuminate\Support\Facades\Http::fake(array_merge(
+            [self::BANK.'/auth/token' => \Illuminate\Support\Facades\Http::response(['token_type' => 'Bearer', 'access_token' => 'tok-1', 'expires_in' => 86400])],
+            collect($routes)->mapWithKeys(fn ($response, $path) => [self::BANK.$path.'*' => $response])->all(),
+        ));
+    }
+
     protected function asOperator(): static
     {
         $this->actingAs($this->operatorAdmin->fresh(), 'staff');
