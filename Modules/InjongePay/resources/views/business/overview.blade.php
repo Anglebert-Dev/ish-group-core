@@ -20,7 +20,7 @@
     @if ($wallets->isEmpty())
         <x-common.empty-state :title="__('injongepay::injongepay.no_wallets')" />
     @else
-        <x-common.table :headers="[__('body.name'), __('injongepay::injongepay.merchant_code'), __('injongepay::injongepay.bank_status'), __('injongepay::injongepay.available'), __('injongepay::injongepay.pending')]">
+        <x-common.table :headers="[__('body.name'), __('injongepay::injongepay.merchant_code'), __('injongepay::injongepay.bank_status'), __('injongepay::injongepay.available'), __('injongepay::injongepay.pending'), '']">
             @foreach ($wallets as $wallet)
                 <tr>
                     <td class="px-5 py-3 font-semibold text-ink">{{ $wallet->name }}</td>
@@ -28,6 +28,7 @@
                     <td class="px-5 py-3">@include('injongepay::partials.bank-status', ['wallet' => $wallet])</td>
                     <td class="px-5 py-3">{{ Money::format($wallet->available_balance) }}</td>
                     <td class="px-5 py-3 text-muted">{{ Money::format($wallet->pending_balance) }}</td>
+                    <td class="px-5 py-3 text-right">@if (\App\Helpers\AuthHelper::can('list injongepay.ledger'))<a class="text-brand font-semibold" href="{{ route('injongepay.ledger', $wallet->uuid) }}">{{ __('injongepay::injongepay.ledger') }}</a>@endif</td>
                 </tr>
             @endforeach
         </x-common.table>

@@ -273,7 +273,7 @@ Webhooks (`/api/payments/webhook`, `/api/gtbank/disbursement-status`) keep their
    - Only the payments the amount covers are marked cashed out.
    - Whole RWF only.
    - `/api/gtbank/disbursement-status` keeps its URL and answers.
-7. Business dashboard, reports and exports.
+7. ✅ Reports for a business (period totals, PDF/Excel of payments, ledger per wallet with balances after each entry) and the platform money overview (every business, fee wallets, books check, Excel).
 8. InjongePayConnect: integrators, connections, the `pos-ebm-v1` profile, the legacy EBM profile.
 9. The **data-migration phase**, planned separately: production Postgres → `ijp_*`, keeping UUIDs, references, merchant codes, partner secret hashes and the webhook secret, with a dry run and count/amount checks.
 

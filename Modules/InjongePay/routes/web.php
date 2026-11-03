@@ -6,6 +6,8 @@ use Modules\InjongePay\Http\Controllers\Business\ApprovalController;
 use Modules\InjongePay\Http\Controllers\Business\CashoutController;
 use Modules\InjongePay\Http\Controllers\Platform\CashoutController as PlatformCashoutController;
 use Modules\InjongePay\Http\Controllers\Business\PaymentController;
+use Modules\InjongePay\Http\Controllers\Business\ReportController;
+use Modules\InjongePay\Http\Controllers\Platform\FinanceController;
 use Modules\InjongePay\Http\Controllers\Business\SecurityController;
 use Modules\InjongePay\Http\Controllers\Business\TransferController;
 use Modules\InjongePay\Http\Controllers\Platform\SettlementAccountController;
@@ -29,6 +31,10 @@ Route::prefix('app/injonge-pay')->name('injongepay.')->middleware($staff)->group
     Route::get('/', [OverviewController::class, 'index'])->middleware('permission:list injongepay.overview')->name('overview');
     Route::get('/payments', [PaymentController::class, 'index'])->middleware('permission:list injongepay.payment')->name('payments.index');
     Route::get('/payments/{payment}', [PaymentController::class, 'show'])->middleware('permission:read injongepay.payment')->name('payments.show');
+
+    Route::get('/reports', [ReportController::class, 'index'])->middleware('permission:list injongepay.report')->name('reports');
+    Route::get('/reports/export/{format}', [ReportController::class, 'export'])->middleware(['permission:list injongepay.report', 'throttle:10,1'])->whereIn('format', ['pdf', 'excel'])->name('reports.export');
+    Route::get('/wallets/{wallet}/ledger', [ReportController::class, 'ledger'])->middleware('permission:list injongepay.ledger')->name('ledger');
 
     Route::get('/transfers', [TransferController::class, 'index'])->middleware('permission:list injongepay.transfer')->name('transfers.index');
     Route::post('/transfers', [TransferController::class, 'store'])->middleware(['permission:create injongepay.transfer', 'not.impersonating', 'throttle:20,1'])->name('transfers.store');
@@ -77,6 +83,9 @@ Route::prefix('app/injonge-pay/platform')->name('injongepay.platform.')->middlew
     Route::post('/settlement-accounts/{account}/verify', [SettlementAccountController::class, 'verify'])->middleware(['permission:update injongepay_platform.business', 'throttle:10,1'])->name('settlement-accounts.verify');
     Route::post('/settlement-accounts/{account}/approve', [SettlementAccountController::class, 'approve'])->middleware(['permission:approve injongepay_platform.business', 'password.confirm.staff'])->name('settlement-accounts.approve');
     Route::post('/settlement-accounts/{account}/disable', [SettlementAccountController::class, 'disable'])->middleware(['permission:update injongepay_platform.business', 'password.confirm.staff'])->name('settlement-accounts.disable');
+
+    Route::get('/finance', [FinanceController::class, 'index'])->middleware('permission:list injongepay_platform.reconciliation')->name('finance');
+    Route::get('/finance/export', [FinanceController::class, 'export'])->middleware(['permission:list injongepay_platform.reconciliation', 'throttle:10,1'])->name('finance.export');
 
     Route::get('/cashouts', [PlatformCashoutController::class, 'index'])->middleware('permission:list injongepay_platform.cashout')->name('cashouts.index');
     Route::get('/cashouts/{cashout}', [PlatformCashoutController::class, 'show'])->middleware('permission:read injongepay_platform.cashout')->name('cashouts.show');

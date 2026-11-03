@@ -498,6 +498,25 @@ return [
     'err_account_not_usable' => 'This bank account is not approved yet, or still in its 24-hour waiting time.',
     'err_whole_rwf' => 'Cash-outs are in whole RWF.',
 
+    // Reports
+    'menu_reports' => 'Reports',
+    'menu_finance' => 'Money overview',
+    'reports' => 'Reports',
+    'reports_description' => 'What came in and went out over a period, and what you hold now. Export the payments as PDF or Excel.',
+    'finance' => 'Money overview',
+    'finance_description' => 'Every business, the platform\'s own fee wallets, and whether the books add up with GTBank.',
+    'books' => 'Books',
+    'cashouts_paid' => 'Cashed out',
+    'tile_payments_received' => 'Payments received',
+    'tile_fees' => 'Fees',
+    'tile_net' => 'Net received',
+    'tile_reversed_by_bank' => 'Reversed by GTBank',
+    'tile_cashouts_paid' => 'Cashed out',
+    'tile_cashouts_open' => 'Cash-outs not final',
+    'tile_transfers_in_out' => 'Transfers in / out',
+    'tile_balance_now' => 'Available + pending now',
+    'audit_exported' => 'Injonge Pay report exported (:from – :to)',
+
     // Internal wallets
     'internal_wallet_bank_cut' => 'Bank cut account',
     'internal_wallet_platform_revenue' => 'Platform revenue account',

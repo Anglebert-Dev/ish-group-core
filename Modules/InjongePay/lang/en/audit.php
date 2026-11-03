@@ -40,4 +40,5 @@ return [
     'injongepay_cashout_queued' => 'Cash-out asked and money reserved',
     'injongepay_cashout_completed' => 'Cash-out paid',
     'injongepay_cashout_failed' => 'Cash-out not paid, money returned',
+    'injongepay_report_exported' => 'Injonge Pay report exported',
 ];
