@@ -3,6 +3,8 @@
 namespace Modules\InjongePay\Http\Controllers;
 
 use App\Helpers\AuthHelper;
+use Modules\InjongePay\Models\Cashout;
+use Modules\InjongePay\Models\Payment;
 use Modules\InjongePay\Models\Wallet;
 use Modules\InjongePay\Support\Money;
 
@@ -77,22 +79,97 @@ class DataController
         return $items;
     }
 
+    /** Inhills sees what needs it; a business sees its money. */
     public function dashboard_stats(): array
+    {
+        return $this->isOperator() ? $this->platformStats() : $this->businessStats();
+    }
+
+    public function dashboard_quick_actions(): array
+    {
+        if ($this->isOperator()) {
+            return [
+                ['label' => __('injongepay::injongepay.menu_reconciliation'), 'route' => 'injongepay.platform.reconciliation.index', 'permission' => 'list injongepay_platform.reconciliation', 'icon' => 'M9 12l2 2 4-4'],
+                ['label' => __('injongepay::injongepay.wallet_add'), 'route' => 'injongepay.platform.wallets.create', 'permission' => 'create injongepay_platform.wallet', 'icon' => 'M12 6v6m0 0v6m0-6h6m-6 0H6'],
+                ['label' => __('injongepay::injongepay.menu_finance'), 'route' => 'injongepay.platform.finance', 'permission' => 'list injongepay_platform.reconciliation', 'icon' => 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6'],
+            ];
+        }
+
+        return [
+            ['label' => __('injongepay::injongepay.cashout_send'), 'route' => 'injongepay.cashouts.index', 'permission' => 'create injongepay.cashout', 'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 1v8m0 0v1'],
+            ['label' => __('injongepay::injongepay.transfer_new'), 'route' => 'injongepay.transfers.index', 'permission' => 'create injongepay.transfer', 'icon' => 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4'],
+            ['label' => __('injongepay::injongepay.menu_payments'), 'route' => 'injongepay.payments.index', 'permission' => 'list injongepay.payment', 'icon' => 'M4 6h16M4 12h16M4 18h16'],
+        ];
+    }
+
+    public function dashboard_widget(): ?string
+    {
+        if ($this->isOperator()) {
+            return AuthHelper::can('list injongepay_platform.reconciliation') ? view('injongepay::dashboard.platform', $this->platformAttention())->render() : null;
+        }
+
+        if (! AuthHelper::can('list injongepay.payment') && ! AuthHelper::can('list injongepay.cashout')) {
+            return null;
+        }
+
+        return view('injongepay::dashboard.business', [
+            'payments' => AuthHelper::can('list injongepay.payment') ? Payment::query()->with('wallet')->latest('id')->limit(6)->get() : collect(),
+            'cashouts' => AuthHelper::can('list injongepay.cashout') ? Cashout::query()->latest('id')->limit(6)->get() : collect(),
+        ])->render();
+    }
+
+    private function businessStats(): array
     {
         if (! AuthHelper::can('list injongepay.overview')) {
             return [];
         }
 
-        $wallets = Wallet::query()->whereNull('internal_role')->get(['pending_balance', 'available_balance']);
+        $wallets = Wallet::query()->whereNull('internal_role')->get(['available_balance', 'pending_balance']);
+        $today = Payment::query()->whereDate('created_at', today())->selectRaw('COUNT(*) AS c, COALESCE(SUM(gross_amount), 0) AS g')->first();
+        $outgoing = (int) Cashout::query()->whereIn('status', Cashout::OPEN)->sum('amount');
 
-        if ($wallets->isEmpty()) {
+        return [
+            ['label' => __('injongepay::injongepay.available'), 'value' => Money::format((int) $wallets->sum('available_balance')), 'href' => route('injongepay.overview'), 'hint' => __('injongepay::injongepay.dash_available_hint')],
+            ['label' => __('injongepay::injongepay.pending'), 'value' => Money::format((int) $wallets->sum('pending_balance')), 'hint' => __('injongepay::injongepay.dash_pending_hint')],
+            ['label' => __('injongepay::injongepay.today_payments'), 'value' => $today->c.' · '.Money::format((int) $today->g), 'href' => route('injongepay.payments.index', ['from' => today()->toDateString()]), 'permission' => 'list injongepay.payment'],
+            ['label' => __('injongepay::injongepay.cashouts_on_the_way'), 'value' => Money::format($outgoing), 'href' => route('injongepay.cashouts.index'), 'permission' => 'list injongepay.cashout'],
+        ];
+    }
+
+    private function platformStats(): array
+    {
+        if (! AuthHelper::can('list injongepay_platform.reconciliation')) {
             return [];
         }
 
-        return [[
-            'label' => __('injongepay::injongepay.dashboard_balance'),
-            'value' => Money::format((int) $wallets->sum(fn (Wallet $w) => $w->balance())),
-            'href' => route('injongepay.overview'),
-        ]];
+        $difference = app(\Modules\InjongePay\Services\Reconciliation::class)->platformDifference();
+        $a = $this->platformAttention();
+
+        return [
+            ['label' => __('injongepay::injongepay.books'), 'value' => $difference === 0 ? __('injongepay::injongepay.dash_books_ok') : Money::format($difference), 'href' => route('injongepay.platform.finance'), 'hint' => $difference === 0 ? __('injongepay::injongepay.platform_balanced') : __('injongepay::injongepay.platform_unbalanced', ['amount' => Money::format($difference)])],
+            ['label' => __('injongepay::injongepay.dash_payments_today'), 'value' => $a['todayCount'].' · '.Money::format($a['todayGross']), 'href' => route('injongepay.platform.finance')],
+            ['label' => __('injongepay::injongepay.dash_fees_today'), 'value' => Money::format($a['todayFees'])],
+            ['label' => __('injongepay::injongepay.dash_needs_you'), 'value' => (string) ($a['items'] + $a['review'] + $a['unallocated']), 'href' => route('injongepay.platform.reconciliation.index')],
+        ];
+    }
+
+    /** @return array{items: int, review: int, unallocated: int, unallocatedTotal: int, waitingCodes: int, todayCount: int, todayGross: int, todayFees: int} */
+    private function platformAttention(): array
+    {
+        $today = Payment::query()->withoutGlobalScopes()->whereDate('created_at', today())->selectRaw('COUNT(*) AS c, COALESCE(SUM(gross_amount), 0) AS g, COALESCE(SUM(fee_amount), 0) AS f')->first();
+
+        return [
+            'items' => \Modules\InjongePay\Models\ReconciliationItem::query()->where('status', 'open')->count(),
+            'review' => Cashout::query()->withoutGlobalScopes()->where('status', Cashout::NEEDS_REVIEW)->count(),
+            'unallocated' => \Modules\InjongePay\Models\UnallocatedPayment::query()->where('status', 'open')->count(),
+            'unallocatedTotal' => (int) \Modules\InjongePay\Models\UnallocatedPayment::query()->where('status', 'open')->sum('amount'),
+            'waitingCodes' => Wallet::query()->withoutGlobalScopes()->whereNull('deleted_at')->whereIn('bank_status', [Wallet::BANK_REGISTERING, Wallet::BANK_PENDING, Wallet::BANK_FAILED])->count(),
+            'todayCount' => (int) $today->c, 'todayGross' => (int) $today->g, 'todayFees' => (int) $today->f,
+        ];
+    }
+
+    private function isOperator(): bool
+    {
+        return app(\App\Support\Access\PlatformAccess::class)->isOperator(auth('staff')->user());
     }
 }

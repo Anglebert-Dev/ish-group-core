@@ -89,7 +89,7 @@ class SubscriptionLifecycleTest extends BillingTestCase
         $this->get(route('dashboard'))->assertOk()
             ->assertSee(route('frontend.admin.website.edit'), false)
             ->assertDontSee(route('inventory.items.index'), false)
-            ->assertViewHas('stats', fn ($stats) => $stats->firstWhere('label', __('body.active_modules'))['value'] === 2); // Frontend + Billing, not Inventory
+            ->assertViewHas('sections', fn ($sections) => ! isset($sections['module:Inventory'])); // no section for a module outside the package
 
         $this->get(route('billing.index'))->assertOk()
             ->assertSee('Frontend')

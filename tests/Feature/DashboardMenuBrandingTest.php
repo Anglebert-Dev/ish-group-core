@@ -19,9 +19,9 @@ class DashboardMenuBrandingTest extends TestCase
         $themes = app(ThemeService::class);
         $themes->saveDraft($owner->business, ['dashboard' => [
             'welcome_title' => 'Good morning, :name',
-            'order' => ['recent_activity', 'stats'],
-            'hidden' => ['quick_actions'],
-            'roles_hidden' => ['stats' => [$member->roles->first()->id]],
+            'order' => ['recent_activity', 'team'],
+            'hidden' => [],
+            'roles_hidden' => ['team' => [$member->roles->first()->id]],
         ]]);
         $themes->publish($owner->business);
 
@@ -29,11 +29,25 @@ class DashboardMenuBrandingTest extends TestCase
         $this->get(route('dashboard'))->assertOk()
             ->assertSee('Good morning, '.$owner->name)
             ->assertSee(__('body.active_staff'))
-            ->assertDontSee(__('body.quick_action_add_staff'));
+            ->assertSee(__('body.quick_action_add_staff'));
 
         $this->flushSession();
         $this->actingAs($member, 'staff');
         $this->get(route('dashboard'))->assertOk()->assertDontSee(__('body.active_staff'));
+
+        // Hidden for everyone.
+        $themes->saveDraft($owner->business, ['dashboard' => ['hidden' => ['team']]]);
+        $themes->publish($owner->business);
+        $this->flushSession();
+        $this->actingAs($owner, 'staff');
+        $this->get(route('dashboard'))->assertOk()->assertDontSee(__('body.quick_action_add_staff'));
+    }
+
+    public function test_the_activity_log_is_off_unless_the_business_turns_it_on(): void
+    {
+        $this->actingAsStaff();
+
+        $this->get(route('dashboard'))->assertOk()->assertDontSee(__('body.recent_activity'));
     }
 
     public function test_the_menu_can_be_renamed_and_tidied_but_never_reveals_or_locks(): void

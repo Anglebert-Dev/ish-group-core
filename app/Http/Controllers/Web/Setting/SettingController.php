@@ -300,8 +300,8 @@ class SettingController extends Controller
     {
         $dashboard = app(DashboardService::class);
 
-        return collect($dashboard->blockKeys(array_keys($dashboard->widgets())))
-            ->mapWithKeys(fn (string $key) => [$key => str_starts_with($key, 'module:') ? __('body.dash_block_module', ['module' => substr($key, 7)]) : __('body.dash_block_'.$key)])
+        return collect($dashboard->blockKeys(array_keys($dashboard->sections())))
+            ->mapWithKeys(fn (string $key) => [$key => str_starts_with($key, 'module:') ? __('body.dash_block_module', ['module' => __(app(\App\Services\Module\ModuleManager::class)->menuGroup(substr($key, 7)))]) : __('body.dash_block_'.$key)])
             ->all();
     }
 

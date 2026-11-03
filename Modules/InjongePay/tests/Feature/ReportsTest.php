@@ -52,4 +52,22 @@ class ReportsTest extends InjongePayTestCase
         $this->get(route('injongepay.platform.finance'))->assertOk()->assertSee('Rhenium Group')->assertSee(__('injongepay::injongepay.platform_balanced'));
         $this->get(route('injongepay.platform.finance.export'))->assertOk();
     }
+
+    public function test_the_dashboard_has_an_injonge_pay_section_for_the_business_and_for_inhills(): void
+    {
+        $wallet = $this->wallet();
+        $this->pay(1, $wallet->merchant_code, '10000.00');
+
+        $this->asOwner()->get(route('dashboard'))->assertOk()
+            ->assertSee('Injonge Pay')->assertSee('RWF 9,800')->assertSee('PAYER 1')
+            ->assertSee(route('injongepay.cashouts.index'), false)
+            ->assertDontSee(__('injongepay::injongepay.dash_needs_you'))
+            ->assertDontSee(__('body.recent_activity'));
+
+        $this->flushSession();
+        $this->asOperator()->get(route('dashboard'))->assertOk()
+            ->assertSee(__('injongepay::injongepay.dash_needs_you'))
+            ->assertSee(__('injongepay::injongepay.dash_all_clear'))
+            ->assertDontSee('PAYER 1');
+    }
 }

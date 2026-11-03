@@ -14,12 +14,15 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
 
 /**
- * Generic dashboard: a few core numbers plus whatever active modules add.
+ * The dashboard is one section per module the business uses: its figures,
+ * its buttons and its own content, under the module's name. A small
+ * "Team & settings" section and the activity log (off unless the business
+ * turns it on) come from the core.
  *
  * Module hooks:
  *   dashboard_stats()          list of ['label', 'value', 'href'?, 'hint'?, 'permission'?]
  *   dashboard_quick_actions()  list of ['label', 'route', 'permission'?, 'color'?, 'description'?, 'icon'?]
- *   dashboard_widget()         a view name or rendered HTML, shown below
+ *   dashboard_widget()         a view name or rendered HTML
  */
 class DashboardService
 {
@@ -29,20 +32,20 @@ class DashboardService
         protected ModuleManager $modules,
     ) {}
 
-    /** Dashboard blocks in their built-in order; module widgets go before recent activity. */
-    public const CORE_BLOCKS = ['welcome', 'stats', 'quick_actions', 'recent_activity'];
+    /** Off unless a business turns it on in Branding → Dashboard. */
+    public const HIDDEN_BY_DEFAULT = ['recent_activity'];
 
     public function payload(User $user): array
     {
-        $widgets = $this->widgets();
+        $sections = $this->sections();
         $settings = $user->business ? (app(BrandingService::class)->theme($user->business)['dashboard'] ?? []) : [];
 
         return [
+            'sections' => $sections,
             'stats' => $this->stats($user),
             'quickActions' => $this->quickActions(),
             'recentActivity' => $this->recentActivity(),
-            'widgets' => $widgets,
-            'blocks' => $this->blocks($user, array_keys($widgets), $settings),
+            'blocks' => $this->blocks($user, array_keys($sections), $settings),
             'dashboard' => $settings,
         ];
     }
@@ -50,12 +53,12 @@ class DashboardService
     /**
      * Every block key this business's dashboard can have (Branding → Dashboard).
      *
-     * @param  list<string>  $widgetKeys
+     * @param  list<string>  $sectionKeys
      * @return list<string>
      */
-    public function blockKeys(array $widgetKeys): array
+    public function blockKeys(array $sectionKeys): array
     {
-        return ['welcome', 'stats', 'quick_actions', ...$widgetKeys, 'recent_activity'];
+        return ['welcome', ...$sectionKeys, 'team', 'recent_activity'];
     }
 
     /**
@@ -63,20 +66,50 @@ class DashboardService
      * everyone, or for some roles) only takes away: permissions still decide
      * what each block contains.
      *
-     * @param  list<string>  $widgetKeys
+     * @param  list<string>  $sectionKeys
      * @param  array<string, mixed>  $settings  the theme's "dashboard" section
      * @return list<string>
      */
-    public function blocks(User $user, array $widgetKeys, array $settings): array
+    public function blocks(User $user, array $sectionKeys, array $settings): array
     {
-        $all = $this->blockKeys($widgetKeys);
+        $all = $this->blockKeys($sectionKeys);
         $ordered = array_values(array_unique([...array_intersect($settings['order'] ?? [], $all), ...$all]));
         $roles = $user->roles->pluck('id')->all();
+        $hidden = $settings['hidden'] ?? self::HIDDEN_BY_DEFAULT;
 
-        return array_values(array_filter($ordered, fn (string $block) => ! in_array($block, $settings['hidden'] ?? [], true)
+        return array_values(array_filter($ordered, fn (string $block) => ! in_array($block, $hidden, true)
             && array_intersect($roles, $settings['roles_hidden'][$block] ?? []) === []));
     }
 
+    /**
+     * One section per module that has something to show this person.
+     *
+     * @return array<string, array{title: string, stats: Collection, actions: Collection, widget: string}> keyed "module:<Name>"
+     */
+    public function sections(): array
+    {
+        $stats = $this->modules->hook('dashboard_stats');
+        $actions = $this->modules->hook('dashboard_quick_actions');
+        $widgets = $this->modules->hook('dashboard_widget');
+        $sections = [];
+
+        foreach (array_unique([...array_keys($stats), ...array_keys($actions), ...array_keys($widgets)]) as $module) {
+            $section = [
+                'title' => __($this->modules->menuGroup($module)),
+                'stats' => $this->allowedStats(collect(is_array($stats[$module] ?? null) ? $stats[$module] : [])),
+                'actions' => $this->allowedActions(collect(is_array($actions[$module] ?? null) ? $actions[$module] : [])),
+                'widget' => $this->render($widgets[$module] ?? null),
+            ];
+
+            if ($section['stats']->isNotEmpty() || $section['actions']->isNotEmpty() || trim($section['widget']) !== '') {
+                $sections['module:'.$module] = $section;
+            }
+        }
+
+        return $sections;
+    }
+
+    /** Team & settings: the core's own figures. */
     public function stats(User $user): Collection
     {
         $core = [];
@@ -97,19 +130,7 @@ class DashboardService
             ];
         }
 
-        $core[] = [
-            'label' => __('body.active_modules'),
-            // Modules this business can use (its package), not everything installed.
-            'value' => $user->business
-                ? collect($this->modules->activeModules())->filter(fn (string $name) => $user->business->canUseModule($name))->count()
-                : count($this->modules->activeModules()),
-        ];
-
-        return collect($core)
-            ->merge($this->modules->collectHook('dashboard_stats'))
-            ->filter(fn ($stat) => is_array($stat) && isset($stat['label']))
-            ->filter(fn (array $stat) => empty($stat['permission']) || AuthHelper::can($stat['permission']))
-            ->values();
+        return collect($core);
     }
 
     public function quickActions(): Collection
@@ -141,12 +162,29 @@ class DashboardService
             ],
         ];
 
-        return collect($core)
-            ->merge($this->modules->collectHook('dashboard_quick_actions'))
-            ->filter(fn ($action) => is_array($action) && isset($action['label'], $action['route']) && Route::has($action['route']))
+        return $this->allowedActions(collect($core));
+    }
+
+    private function allowedStats(Collection $stats): Collection
+    {
+        return $stats->filter(fn ($stat) => is_array($stat) && isset($stat['label']))
+            ->filter(fn (array $stat) => empty($stat['permission']) || AuthHelper::can($stat['permission']))
+            ->values();
+    }
+
+    private function allowedActions(Collection $actions): Collection
+    {
+        return $actions->filter(fn ($action) => is_array($action) && isset($action['label'], $action['route']) && Route::has($action['route']))
             ->filter(fn (array $action) => empty($action['permission']) || AuthHelper::can($action['permission']))
             ->map(fn (array $action) => $action + ['color' => 'blue', 'description' => $action['label'], 'icon' => 'M12 6v6m0 0v6m0-6h6m-6 0H6'])
             ->values();
+    }
+
+    private function render(mixed $result): string
+    {
+        return collect(is_array($result) ? $result : [$result])->flatten()->filter()
+            ->map(fn ($widget) => is_string($widget) && view()->exists($widget) ? view($widget)->render() : (string) $widget)
+            ->implode('');
     }
 
     public function recentActivity(int $limit = 8): Collection
@@ -156,29 +194,5 @@ class DashboardService
         }
 
         return ActivityLog::query()->with('user')->latest()->limit($limit)->get();
-    }
-
-    /**
-     * Module widgets, keyed "module:<Name>" so the business can order or hide each.
-     *
-     * @return array<string, string> key => rendered HTML
-     */
-    public function widgets(): array
-    {
-        $widgets = [];
-
-        foreach ($this->modules->hook('dashboard_widget') as $module => $result) {
-            $html = collect(is_array($result) ? $result : [$result])
-                ->flatten()
-                ->filter()
-                ->map(fn ($widget) => is_string($widget) && view()->exists($widget) ? view($widget)->render() : (string) $widget)
-                ->implode('');
-
-            if (trim($html) !== '') {
-                $widgets['module:'.$module] = $html;
-            }
-        }
-
-        return $widgets;
     }
 }
