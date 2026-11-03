@@ -31,7 +31,7 @@ class DataController
                 'ledger' => 'Ledger',
                 'transfer' => 'Transfers between wallets',
                 'cashout' => 'Cash-outs to the bank',
-                'settlement_account' => 'Bank accounts for cash-outs',
+                'settlement_account' => 'Settlement accounts',
                 'report' => 'Reports',
                 'business' => 'Businesses: KYC and fees',
                 'bank' => 'GTBank: registration, sync and call log',

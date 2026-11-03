@@ -294,7 +294,7 @@ return [
     'menu_transfers' => 'Transfers',
     'menu_approvals' => 'Approvals',
     'menu_security' => 'My PIN & devices',
-    'menu_settlement_accounts' => 'Bank accounts for cash-outs',
+    'menu_settlement_accounts' => 'Settlement accounts',
     'transfers' => 'Transfers',
     'transfers_description' => 'Move money from one of your merchant accounts to any merchant code on Injonge Pay.',
     'transfer_new' => 'New transfer',
@@ -378,8 +378,8 @@ return [
     'err_transfer_destination' => 'No merchant account on Injonge Pay can receive money on that code.',
     'err_transfer_same' => 'Choose a different merchant code.',
 
-    // Bank accounts for cash-outs (platform)
-    'settlement_accounts' => 'Bank accounts for cash-outs',
+    // Settlement accounts (platform)
+    'settlement_accounts' => 'Settlement accounts',
     'settlement_accounts_description' => 'Where businesses can cash out to. GTBank must know the account under the same name, another platform user approves it, and it can be used 24 hours later.',
     'account_add' => 'Add an account',
     'account_add_verify' => 'Add and check with GTBank',

@@ -28,7 +28,7 @@ Inhills itself is the **primary business** (the one created when the app was ins
 | Institution users | "Log in as" the owner → **Users** and **Roles** |
 | Wallet create + "Retry registration" | Injonge Pay platform → **Merchant codes** → New (sent to GTBank by itself) |
 | "Sync from GTBank" | Same button on the merchant code, and it runs by itself every 15 minutes |
-| Settlement destinations (with OTP) | Injonge Pay platform → **Bank accounts for cash-outs** (checked with GTBank, approved by a second Inhills person) |
+| Settlement destinations (with OTP) | Injonge Pay platform → **Settlement accounts** (checked with GTBank, approved by a second Inhills person) |
 | Platform settings: fee, bank cut, webhook secret | Injonge Pay platform → **Injonge Pay settings** |
 | Webhook secret on/off switch | Gone. GTBank is recognised by its address (`10.22.198.46`) or by the secret |
 | Sync transactions → Save all | Automatic every 10 minutes; button in **Reconciliation with GTBank** |
@@ -184,9 +184,9 @@ The merchant code's page shows every call made to GTBank and its last problem. A
 
 To stop a code temporarily, use **Switch off**: payments to it are held, not lost. **Close at GTBank** is final and needs a zero balance.
 
-### C5. Bank accounts for cash-outs
+### C5. Settlement accounts
 
-**Injonge Pay platform → Bank accounts for cash-outs → Add an account**:
+**Injonge Pay platform → Settlement accounts → Add an account**:
 
 - the business
 - bank account or mobile wallet
