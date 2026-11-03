@@ -1,0 +1,903 @@
+===============================================================================
+ ULTIMATEPOS - MODULES, ROLES, PERMISSIONS, USER MANAGEMENT & SUPERADMIN
+ Architecture reference for re-implementing the same system elsewhere
+===============================================================================
+
+Stack: Laravel + nwidart/laravel-modules + spatie/laravel-permission
+       + lavary/laravel-menu (sidebar) + Laravel Passport (API)
+
+KEY FINDING
+  "Superadmin" is NOT a role and NOT a database flag. It is a comma-separated
+  list of usernames in .env (ADMINISTRATOR_USERNAMES), checked in exactly two
+  places: a Gate::before hook and a route middleware. The Superadmin *module*
+  only adds SaaS features (packages, subscriptions, tenant management) on top
+  of that identity.
+
+CONTENTS
+  1. Module system (three different meanings of "module")
+  2. Roles & permissions (spatie, made multi-tenant)
+  3. User management
+  4. Superadmin (identity, bootstrap, module features, subscriptions)
+  5. Blueprint for re-implementing
+  6. Pitfalls / security issues not to copy
+  7. File index
+
+
+===============================================================================
+ 1. MODULE SYSTEM
+===============================================================================
+
+The word "module" means three separate things in this codebase. Keep them
+separate when porting.
+
+-------------------------------------------------------------------------------
+ 1a. CODE MODULES (nwidart/laravel-modules)
+-------------------------------------------------------------------------------
+
+Folder layout for each module, Modules/<Name>/:
+
+  module.json                         name, alias, providers
+  Config/config.php                   'name', 'module_version' (e.g. '6.0')
+  Providers/<Name>ServiceProvider.php loads views, lang, config, migrations,
+                                      view composers, scheduled commands
+  Providers/RouteServiceProvider.php  loads Routes/web.php and Routes/api.php
+  Routes/web.php
+  Database/Migrations/
+  Entities/                           Eloquent models
+  Resources/views, Resources/lang     namespaced as "<alias>::"
+  Http/Controllers/InstallController.php   install / update / uninstall
+  Http/Controllers/DataController.php      hook implementations (see 1b)
+
+Two independent flags decide whether a module is live:
+
+  A) Code-level enabled/disabled
+     Stored in modules_statuses.json (nwidart).
+     Toggled by Install\ModulesController@update:
+        $module->enable();  /  $module->disable();
+
+  B) Installed or not (DB-level)
+     ModuleUtil::isModuleInstalled($name) returns true only if:
+        Module::has($name)
+        AND the `system` table has a row  key = '<lowercase_name>_version'
+     A module whose folder exists but has no version row is treated as NOT
+     installed and is ignored by every hook.
+
+The `system` table (app/System.php) is a plain key/value store:
+  columns: key, value
+  System::getProperty($key)
+  System::getProperties([$keys], $pluck)
+  System::addProperty($key, $value)     (updateOrCreate)
+  System::setProperty($key, $value)     (update only)
+  System::removeProperty($key)
+  It also holds platform settings: db_version, app_currency_id, email,
+  enable_business_based_username, default_business_active_status,
+  superadmin settings, additional_js / additional_css, etc.
+
+Install / update / uninstall lifecycle (per module InstallController):
+
+  index()  (install)
+     - requires can('superadmin')
+     - if no '<module>_version' row:
+          Artisan::call('module:migrate', ['module' => 'X', '--force' => true]);
+          System::addProperty('x_version', config('x.module_version'));
+     - redirect back to /manage-modules
+
+  update()
+     - if Comparator::greaterThan(config version, DB version):
+          module:migrate, then System::setProperty('x_version', new version)
+     - else 404
+
+  uninstall()
+     - System::removeProperty('x_version')
+     - NOTE: tables and data are left in place
+
+Module manager page: /manage-modules  (Install\ModulesController)
+  - protected by can('manage_modules')  -> superadmin-only (see section 2)
+  - lists Module::toCollection(), shows installed state and version info
+    (ModuleUtil::getModuleVersionInfo: installed vs available version)
+  - Install/Update/Uninstall links are resolved by naming convention:
+       action('\Modules\<Name>\Http\Controllers\InstallController@index')
+       ...@update, ...@uninstall
+  - POST upload-module: upload a zip, extracted into Modules/
+  - GET regenerate: module:publish + passport:install --force
+
+Module route groups use the same middleware as core, e.g. Manufacturing:
+  Route::middleware('web','authh','SetSessionData','auth','language',
+                    'timezone','AdminSidebarMenu')
+       ->prefix('manufacturing')->group(...)
+
+-------------------------------------------------------------------------------
+ 1b. THE HOOK BUS: DataController  (the most important pattern to copy)
+-------------------------------------------------------------------------------
+
+ModuleUtil::getModuleData($function_name, $arguments = null):
+
+  foreach (installed modules as $module) {
+      $class = "Modules\\{$module}\\Http\\Controllers\\DataController";
+      if (class_exists($class) && method_exists($class, $function_name)) {
+          $data[$module] = (new $class)->$function_name($arguments);
+      }
+  }
+  return $data;   // [ 'ModuleName' => result, ... ]
+
+Core calls hooks at its extension points. Main hooks:
+
+  HOOK NAME                    CALLED FROM                     PURPOSE
+  ---------------------------  ------------------------------  ----------------------------
+  modifyAdminMenu              end of AdminSidebarMenu         module adds sidebar items
+  user_permissions             RoleController create/edit      checkboxes on role form
+  superadmin_package           Superadmin PackagesController   checkbox on package form
+                                                               (sell the feature)
+  after_business_created       registration + superadmin       seed data, notifications
+                               business create
+  afterModelSaved              createUser and others           persist module fields
+  after_sale_saved             sales
+  after_product_saved          products
+  after_contact_saved          contacts
+  after_payment_status_updated payments
+  product_form_part            product form view               UI injection
+  contact_form_part            contact form view               UI injection
+  get_pos_screen_view          POS screen                      UI injection
+  moduleViewPartials           various views                   UI injection
+  get_contact_view_tabs        contact view                    extra tabs
+  dashboard_widget             dashboard                       widgets
+  get_additional_script        layouts view composer           extra js/css/html
+  parse_notification           notification list               render module notifications
+  notification_list            notifications
+  calendarEvents, eventTypes   calendar
+  profitLossReportData,
+  grossProfit, getTaxReport... reports                         aggregation
+  addTaxonomies,
+  addDocumentAndNotes          taxonomies / notes
+
+Example DataController (Manufacturing):
+
+  public function superadmin_package() {
+      return [[
+          'name'    => 'manufacturing_module',
+          'label'   => __('manufacturing::lang.manufacturing_module'),
+          'default' => false,
+      ]];
+  }
+
+  public function user_permissions() {
+      return [
+          ['value' => 'manufacturing.access_recipe',
+           'label' => __('manufacturing::lang.access_recipe'), 'default' => false],
+          ['value' => 'manufacturing.add_recipe', ...],
+          ['value' => 'manufacturing.edit_recipe', ...],
+          ['value' => 'manufacturing.access_production', ...],
+      ];
+  }
+
+  public function modifyAdminMenu() {
+      $business_id = session('user.business_id');
+      $enabled = (new ModuleUtil)->hasThePermissionInSubscription(
+                     $business_id, 'manufacturing_module', 'superadmin_package');
+      if ($enabled && (auth()->user()->can('manufacturing.access_recipe')
+                    || auth()->user()->can('manufacturing.access_production'))) {
+          Menu::modify('admin-sidebar-menu', function ($menu) {
+              $menu->url(action([RecipeController::class, 'index']),
+                         __('manufacturing::lang.manufacturing'),
+                         ['icon' => '...', 'active' => request()->segment(1) == 'manufacturing'])
+                   ->order(21);
+          });
+      }
+  }
+
+user_permissions entry options:
+  value, label, default (pre-checked on new role)
+  is_radio + radio_input_name  -> rendered as radio group, posted as
+                                  radio_option[<radio_input_name>]
+  end_group                    -> visual separator
+Rendered by resources/views/role/partials/module_permissions.blade.php.
+
+Package keys currently defined by modules (superadmin_package):
+  accounting_module, injonge_connect_module, connector_module, crm_module,
+  manufacturing_module, hms_module, project_module (and others)
+
+-------------------------------------------------------------------------------
+ 1c. PER-BUSINESS FEATURE TOGGLES  (business.enabled_modules)
+-------------------------------------------------------------------------------
+
+  - JSON array column on `business` (cast to array in App\Business).
+  - Catalog of toggles: ModuleUtil::availableModules():
+       purchases, add_sale, pos_sale, stock_transfers, stock_adjustment,
+       expenses, account, tables, modifiers, service_staff, booking, kitchen,
+       subscription, types_of_service, ...
+  - Default on registration:
+       ['purchases','add_sale','pos_sale','stock_transfers',
+        'stock_adjustment','expenses']
+  - Edited by the business admin in Business Settings -> Modules tab
+    (BusinessController@postBusinessSettings, enabled_modules input),
+    then session()->put('business', $business) refreshes the session copy.
+  - Read via session('business.enabled_modules') or
+    Util::isModuleEnabled($module) / Util::allModulesEnabled().
+  - A View::composer('*') shares $enabled_modules to every view.
+  - Used in sidebar and forms, e.g.
+       in_array('purchases', $enabled_modules) && can('purchase.view')
+
+-------------------------------------------------------------------------------
+ HOW ACCESS IS DECIDED (all layers must pass)
+-------------------------------------------------------------------------------
+
+  1. Code module installed + active              (paid/optional modules only)
+  2. Business's subscription package includes it (hasThePermissionInSubscription)
+  3. Business feature toggle on                  (core features: enabled_modules)
+  4. User's role/permissions allow it            (can('x.y'))
+
+
+===============================================================================
+ 2. ROLES & PERMISSIONS  (spatie/laravel-permission, multi-tenant)
+===============================================================================
+
+-------------------------------------------------------------------------------
+ Schema (modified spatie migration
+ database/migrations/2017_07_26_083429_create_permission_tables.php)
+-------------------------------------------------------------------------------
+
+  permissions            id, name, guard_name, timestamps
+                         -> GLOBAL, shared by all businesses
+
+  roles                  id, name, guard_name,
+                         business_id (FK business, cascade delete),
+                         is_default (bool),
+                         is_service_staff (bool, added later),
+                         timestamps
+
+  model_has_permissions  permission_id, model_id, model_type
+                         (direct user permissions - used for locations)
+
+  model_has_roles        role_id, model_id, model_type
+
+  role_has_permissions   permission_id, role_id
+
+  Single guard: 'web'. App\User sets  protected $guard_name = 'web';
+  so Passport API calls use the same permissions.
+  Spatie cache: 24h, key 'spatie.permission.cache'.
+
+-------------------------------------------------------------------------------
+ Tenant isolation trick
+-------------------------------------------------------------------------------
+
+  Role names carry the business id as a suffix:
+      Admin#12, Cashier#12, Manager#12
+  This keeps spatie's unique role-name rule working across tenants.
+  - UI strips it:  str_replace('#'.$business_id, '', $role->name)
+  - User::getRoleNameAttribute() returns the part before '#'
+  - All role queries also filter  where('business_id', $business_id)
+  - Store: Role::create(['name' => $name.'#'.$business_id,
+                         'business_id' => $business_id, ...])
+
+-------------------------------------------------------------------------------
+ Default roles per business  (BusinessUtil::newBusinessDefaultResources)
+-------------------------------------------------------------------------------
+
+  Admin#{id}    is_default = 1, NO permissions attached, assigned to owner.
+  Cashier#{id}  permissions: sell.view, sell.create, sell.update,
+                sell.delete, access_all_locations, view_cash_register,
+                close_cash_register.
+                Editable; editing it sets is_default = 0.
+
+  Default roles (except Cashier) cannot be edited or deleted
+  (RoleController update/destroy check is_default).
+
+-------------------------------------------------------------------------------
+ Gate::before  (app/Providers/AuthServiceProvider.php)  - the core of it all
+-------------------------------------------------------------------------------
+
+  Gate::before(function ($user, $ability) {
+      if (in_array($ability, ['backup', 'superadmin', 'manage_modules'])) {
+          $list = config('constants.administrator_usernames');
+          if (in_array(strtolower($user->username),
+                       explode(',', strtolower($list)))) {
+              return true;                         // platform-level power
+          }
+      } else {
+          if ($user->hasRole('Admin#'.$user->business_id)) {
+              return true;                         // tenant god-mode
+          }
+      }
+      // otherwise fall through to normal spatie permission check
+  });
+
+  Consequences:
+  - Platform abilities (superadmin, manage_modules, backup) are granted ONLY
+    by the username list. A business Admin can never get them.
+  - Every other ability is automatically TRUE for the tenant's Admin role,
+    including permissions added later by modules. No seeding needed for
+    admins when a module is added.
+
+-------------------------------------------------------------------------------
+ Permission naming and creation
+-------------------------------------------------------------------------------
+
+  Format: entity.action
+    user.view|create|update|delete
+    supplier.*, customer.*, customer.view_own, supplier.view_own
+    product.*, product.opening_stock
+    purchase.*, purchase.payments, purchase.update_status, view_own_purchase
+    sell.*, sell.payments, direct_sell.access|view|update|delete,
+    view_own_sell_only, view_commission_agent_sell
+    so.view_own|view_all|create|update|delete      (sales orders)
+    draft.view_all|view_own, quotation.view_all|view_own
+    purchase_order.*, purchase_requisition.*
+    roles.view|create|update|delete
+    business_settings.access, barcode_settings.access, invoice_settings.access
+    *_report.view, dashboard.data, expense.*, account.access, discount.access
+    view_export_buttons, access_tables, access_types_of_service, ...
+    selling_price_group.{id}
+    location.{location_id}, access_all_locations
+    Module permissions are prefixed: manufacturing.access_recipe,
+    superadmin.access_package_subscriptions, crm.*, ...
+
+  How they get into the DB:
+  - Base set: database/seeders/PermissionsTableSeeder.php
+  - Later features: a migration per feature doing Permission::create([...])
+  - Lazy creation: RoleController::__createPermissionIfNotExists($permissions)
+    creates any posted permission name that doesn't exist yet. This is how
+    module permissions and selling_price_group.{id} appear.
+  - location.{id} is created whenever a business location is created.
+
+-------------------------------------------------------------------------------
+ Role CRUD  (app/Http/Controllers/RoleController.php)
+-------------------------------------------------------------------------------
+
+  index    DataTable of roles for current business, suffix stripped
+  create   view role.create with:
+             $module_permissions = getModuleData('user_permissions')
+             selling price groups, common_settings
+  store    - reject duplicate name (with #business_id suffix)
+           - Role::create([... 'is_service_staff' => ...])
+           - merge radio_option[] values into permissions[]
+           - __createPermissionIfNotExists($permissions)
+           - $role->syncPermissions($permissions)
+  edit / update: same, blocked for is_default roles except Cashier
+  destroy  blocked for is_default roles except Cashier
+
+  Role form: core permissions are hard-coded checkboxes in
+  resources/views/role/create.blade.php grouped by entity with "select all";
+  module permissions appended by role/partials/module_permissions.blade.php.
+
+-------------------------------------------------------------------------------
+ Location-level permissions
+-------------------------------------------------------------------------------
+
+  - Attached DIRECTLY to users (model_has_permissions), not roles:
+       location.{id}  or  access_all_locations
+  - Stripped from roles by revokeLocationPermissionsFromRole() and the
+    migration 2019_09_02_160054_remove_location_permissions_from_roles.php
+  - User::permitted_locations($business_id)
+       returns 'all' if can('access_all_locations'),
+       else array of location ids where user has 'location.{id}'
+  - User::can_access_this_location($location_id)
+  - User::scopeOnlyPermittedLocations  (filter user lists)
+  - Util::giveLocationPermissions($user, $request) grants/revokes based on
+    access_all_locations + location_permissions[] inputs.
+
+-------------------------------------------------------------------------------
+ How checks are done in code
+-------------------------------------------------------------------------------
+
+  - Controllers check at the top of each method (no route middleware):
+        if (! auth()->user()->can('x.y')) { abort(403, 'Unauthorized action.'); }
+  - Sidebar built per request by AdminSidebarMenu middleware
+    (Menu::create('admin-sidebar-menu', ...)) with can() checks, then
+    getModuleData('modifyAdminMenu') lets modules append.
+    Rendered with Menu::render('admin-sidebar-menu', 'adminltecustom').
+  - Blade uses @can / auth()->user()->can(...).
+  - Util::is_admin($user, $business_id) = hasRole('Admin#'.$business_id)
+
+
+===============================================================================
+ 3. USER MANAGEMENT
+===============================================================================
+
+-------------------------------------------------------------------------------
+ users table (relevant columns)
+-------------------------------------------------------------------------------
+
+  business_id            tenant
+  user_type              'user' (staff) | 'user_customer' (CRM contact login)
+  username               LOGIN FIELD (not email); nullable
+  password               nullable (staff without login)
+  allow_login            bool
+  status                 'active' | 'inactive'
+  selected_contacts      bool + pivot user_contact_access (contact restriction)
+  max_sales_discount_percent, cmmsn_percent, is_cmmsn_agnt
+  is_enable_service_staff_pin, service_staff_pin
+  crm_contact_id
+  language
+  HR/profile fields (dob, gender, addresses, bank_details JSON, ...)
+  soft deletes
+  Traits: HasRoles, HasApiTokens, Notifiable, SoftDeletes
+
+-------------------------------------------------------------------------------
+ Creating a user  (Util::createUser, called by ManageUserController@store)
+-------------------------------------------------------------------------------
+
+  1. If user_type == 'user': check isSubscribed() and
+     isQuotaAvailable('users') -> return expired / quota response if not.
+  2. If allow_login is off: unset username/password, allow_login = 0
+     (staff record only, e.g. for commissions/HR).
+  3. If username empty: auto-generate from a per-business reference counter.
+  4. If system setting enable_business_based_username is on, append
+     '-' . str_pad($business_id, 2, 0, STR_PAD_LEFT)  -> globally unique.
+  5. Hash password, status from is_active input (default 'inactive').
+  6. User::create(...)
+  7. Role::findOrFail($request->role); revoke location perms from that role;
+     $user->assignRole($role->name)        (exactly ONE role per user)
+  8. giveLocationPermissions($user, $request)
+  9. If selected_contacts: $user->contactAccess()->sync($ids)
+ 10. getModuleData('afterModelSaved', ['event' => 'user_saved', ...])
+ 11. activity log; event UserCreatedOrModified($user, 'added')
+
+-------------------------------------------------------------------------------
+ ManageUserController rules
+-------------------------------------------------------------------------------
+
+  - Permissions: user.view / user.create / user.update / user.delete
+  - getRolesArray(): non-admins do not see or assign the Admin# role.
+  - Cannot demote/delete the last Admin of a business
+    (getAdmins() = User::role('Admin#'.$business_id)->get(), count <= 1).
+  - signInAsUser($id)  (route /sign-in-as-user/{id}): impersonation,
+    see section 4 and pitfalls.
+
+-------------------------------------------------------------------------------
+ Login  (app/Http/Controllers/Auth/LoginController.php)
+-------------------------------------------------------------------------------
+
+  username() returns 'username'.
+  authenticated(): logs activity, then logs out + error if:
+     - business->is_active == 0              ('business_inactive')
+     - user->status != 'active'               ('user_inactive')
+     - ! user->allow_login                    ('login_not_allowed')
+     - user_type == 'user_customer' and business lacks 'crm_module'
+       in its subscription
+  redirectTo():
+     - no dashboard.data but has sell.create  -> /pos/create
+     - user_customer                          -> contact/contact-dashboard
+     - else                                   -> /home
+  logout(): activity log, session flush, Auth::logout()
+
+-------------------------------------------------------------------------------
+ Authenticated middleware stack  (routes/web.php)
+-------------------------------------------------------------------------------
+
+  setData (IsInstalled)  redirect to /install if no .env
+  auth
+  SetSessionData         on first request caches in session:
+                           user      {id, names, email, business_id, language}
+                           business  (whole Business model)
+                           currency  {id, code, symbol, separators}
+                           financial_year
+                         Most code reads session('user.business_id').
+  language               App::setLocale(session('user.language'))
+  timezone               business time zone
+  AdminSidebarMenu       builds the menu (skipped for ajax)
+  CheckUserLogin         403 unless user_type == 'user' AND allow_login == 1
+                         (except /home)
+
+  Middleware aliases (app/Http/Kernel.php):
+    'superadmin'      => App\Http\Middleware\Superadmin
+    'SetSessionData'  => App\Http\Middleware\SetSessionData
+    'setData','authh' => App\Http\Middleware\IsInstalled
+    'AdminSidebarMenu', 'CheckUserLogin', 'language', 'timezone'
+
+
+===============================================================================
+ 4. SUPERADMIN
+===============================================================================
+
+-------------------------------------------------------------------------------
+ 4.1 Identity
+-------------------------------------------------------------------------------
+
+  .env:              ADMINISTRATOR_USERNAMES=admin,otheradmin
+  config/constants:  'administrator_usernames' => env('ADMINISTRATOR_USERNAMES')
+  Comparison is case-insensitive.
+
+  Used in:
+  a) Gate::before (section 2): can('superadmin'), can('manage_modules'),
+     can('backup')
+  b) App\Http\Middleware\Superadmin:
+       if user && strtolower(username) in explode(',', strtolower(list))
+           -> next
+       else abort(403)
+     Applied to every /superadmin/* route.
+
+  The superadmin is still a normal tenant user: belongs to a business
+  (normally the first one registered), is that business's Admin#, and logs
+  in through the same login form. Extra powers come only from the list.
+
+-------------------------------------------------------------------------------
+ 4.2 Bootstrapping - why you must log in as admin first
+-------------------------------------------------------------------------------
+
+  1. IsInstalled middleware: no .env -> every request goes to /install.
+  2. Install\InstallController:
+       - collects APP_NAME, DB_*, MAIL_* ; tests DB connection
+       - writes .env (or shows its text to paste)
+       - migrate:fresh + db:seed
+         (BarcodesTableSeeder, PermissionsTableSeeder, CurrenciesTableSeeder)
+       - success page: "Start by registering your business"
+  3. First person registers at /business/register
+     (BusinessController@postRegister, needs ALLOW_REGISTRATION=true):
+       - DB transaction
+       - User::create_user(owner)
+       - createNewBusiness(details + owner_id + default enabled_modules)
+       - user->business_id = business->id
+       - newBusinessDefaultResources():
+           Admin#id role (assigned), Cashier#id role, Walk-In Customer,
+           default invoice scheme, default invoice layout, units,
+           notification templates
+       - addLocation(); Permission::create(['name' => 'location.'.$loc->id])
+       - commit
+       - getModuleData('after_business_created', ['business' => $business])
+       - if Superadmin installed and package_id posted: login and redirect
+         to register-pay for that package
+  4. Put that username into ADMINISTRATOR_USERNAMES -> now superadmin.
+  5. As superadmin open /manage-modules and Install "Superadmin"
+     (runs its migrations, writes superadmin_version).
+  6. From now on isSuperadminInstalled() == true and:
+       - isSubscribed() / isQuotaAvailable() enforce for every business,
+         so normal tenants need an approved subscription
+       - the superadmin always passes hasThePermissionInSubscription()
+       - BEFORE the module is installed all those helpers return TRUE,
+         so the app behaves as a single-business POS.
+
+-------------------------------------------------------------------------------
+ 4.3 Superadmin module routes (Modules/Superadmin/Routes/web.php)
+-------------------------------------------------------------------------------
+
+  Public:
+    GET  /pricing                    PricingController@index
+    GET  /page/{slug}                PageController@showPage (CMS pages)
+
+  Platform admin
+  middleware: web, auth, language, AdminSidebarMenu, superadmin
+  prefix /superadmin:
+    GET  /install, /install/update, /install/uninstall
+    GET  /                           SuperadminController@index (dashboard)
+    GET  /stats                      SuperadminController@stats
+    GET  /{business_id}/toggle-active/{is_active}
+                                     BusinessController@toggleActive
+    GET  /users/{business_id}        BusinessController@usersList
+    POST /update-password            BusinessController@updatePassword
+    RES  /business                   BusinessController (list/create/show/delete)
+    GET  /business/{id}/destroy
+    RES  /packages                   PackagesController
+    RES  /coupons                    CouponController
+    GET|PUT /settings                SuperadminSettingsController
+    GET  /edit-subscription/{id}     SuperadminSubscriptionsController
+    POST /update-subscription
+    RES  /superadmin-subscription    approve/decline/edit subscriptions
+    GET  /communicator, POST /communicator/send, GET /communicator/get-history
+    RES  /frontend-pages             PageController
+
+  Tenant side
+  middleware: web, SetSessionData, auth, language, timezone, AdminSidebarMenu:
+    RES  /subscription               current plan + list packages
+    GET  /subscription/{package_id}/pay
+    ANY  /subscription/{package_id?}/confirm
+    GET  /subscription/{package_id}/register-pay
+    GET  /all-subscriptions
+    GET  /subscription/{id}/force-active
+    gateway callbacks: PayPal, Paystack, Flutterwave, PesaPal, MyFatoorah
+    (Stripe, Razorpay, offline handled in pay/confirm)
+
+-------------------------------------------------------------------------------
+ 4.4 Managing businesses (Superadmin BusinessController)
+-------------------------------------------------------------------------------
+
+  Every method starts with: if (! can('superadmin')) abort(403);
+
+  store():   same steps as self-registration, plus
+               business_details['created_by'] = superadmin user id
+             and optionally adds a subscription immediately:
+               _add_subscription(null, price, business_id, package_id,
+                                 paid_via, txn_id, superadmin_id,
+                                 $is_superadmin = true)   -> approved at once
+  destroy(): cannot delete the business you are logged into; deletes
+             variation_location_details, transactions, then business
+             (rest cascades).
+  toggleActive(): Business::where('id',..)->update(['is_active' => x])
+             (blocked users only at their NEXT login - see pitfalls)
+  usersList(): users of a business, with "Login as <username>" button
+             -> /sign-in-as-user/{id}?save_current=true
+  updatePassword(): Hash::make new password, PasswordUpdateNotification
+             email if mail configured.
+
+  Impersonation (ManageUserController@signInAsUser):
+    allowed if can('superadmin') OR session has previous_user_id
+    session()->flush();
+    if save_current: session(['previous_user_id' => id,
+                              'previous_username' => username])
+    Auth::loginUsingId($id); redirect home
+  Header (layouts/partials/header.blade.php) shows
+    "Back to {previous_username}" -> /sign-in-as-user/{previous_user_id}
+
+-------------------------------------------------------------------------------
+ 4.5 Packages
+-------------------------------------------------------------------------------
+
+  packages table:
+    name, description
+    location_count, user_count, product_count, invoice_count  (0 = unlimited)
+    interval ('days'|'months'|'years'), interval_count
+    trial_days, price
+    custom_permissions  JSON map from all modules' superadmin_package hooks,
+                        e.g. {"manufacturing_module":"1","crm_module":"1"}
+    is_active, is_private, is_one_time, sort_order, mark_package_as_popular
+    enable_custom_link, custom_link, custom_link_text
+    businesses          JSON list - restrict a private package to tenants
+    bookings, kitchen, order_screen, tables (older boolean options)
+    created_by, soft deletes
+
+  Package form: $permissions = getModuleData('superadmin_package')
+    -> one checkbox per module feature -> saved into custom_permissions.
+
+  On package update with "update_subscriptions" ticked: rewrites
+  package_details of all subscriptions of that package whose end_date >= now.
+
+-------------------------------------------------------------------------------
+ 4.6 Subscriptions
+-------------------------------------------------------------------------------
+
+  subscriptions table:
+    business_id (FK cascade), package_id
+    start_date, trial_end_date, end_date      (null while waiting)
+    package_price, original_price, coupon_code
+    package_details  JSON SNAPSHOT of limits + custom_permissions
+    created_id, paid_via, payment_transaction_id
+    status enum('approved','waiting','declined') default 'waiting'
+    soft deletes
+
+  BaseController::_add_subscription(...):
+    - if price != 0 and gateway in ['offline','pesapal'] and not superadmin:
+          status = 'waiting', no dates (superadmin approves later)
+      else:
+          dates from _get_package_dates(): start = day after the latest
+          approved end_date (or today), end = start + interval, trial end
+          status = 'approved'
+    - package_details = {location_count, user_count, product_count,
+                         invoice_count, name} + every custom_permissions key
+    - notifies superadmin email if enable_new_subscription_notification
+
+  Subscription::active_subscription($business_id):
+    approved AND start_date <= today AND end_date >= today, first()
+  Also: upcoming_subscriptions(), waiting_approval(), end_date().
+
+-------------------------------------------------------------------------------
+ 4.7 Enforcement helpers (app/Utils/ModuleUtil.php)
+-------------------------------------------------------------------------------
+
+  All return TRUE when the Superadmin module is not installed.
+  They are called MANUALLY in controllers - there is no middleware.
+
+  isSubscribed($business_id)
+     active_subscription exists
+
+  isQuotaAvailable($type, $business_id, $total_rows = 0)
+     types: 'locations' | 'users' | 'products' | 'invoices'
+     limit from package_details[<type>_count]; 0 = unlimited
+     locations: total business locations
+     users:     users with allow_login = 1
+     products:  created within the subscription period (+ $total_rows, for
+                imports)
+     invoices:  final sells created within the subscription period
+
+  hasThePermissionInSubscription($business_id, $permission, $callback = null)
+     superadmin -> true
+     else package_details[$permission] from the active subscription
+     ($callback e.g. 'superadmin_package' verifies the key is still
+      declared by an installed module)
+
+  expiredResponse($redirect_url)          toast / modal / JSON
+  quotaExpiredResponse($type, $bid, $url) toast / modal / JSON
+
+  Typical usage:
+    if (! $this->moduleUtil->isSubscribed($business_id)) {
+        return $this->moduleUtil->expiredResponse(action([HomeController::class,'index']));
+    } elseif (! $this->moduleUtil->isQuotaAvailable('invoices', $business_id)) {
+        return $this->moduleUtil->quotaExpiredResponse('invoices', $business_id, ...);
+    }
+
+  Module controller pattern:
+    if (! (auth()->user()->can('superadmin')
+           || $this->moduleUtil->hasThePermissionInSubscription($bid, 'manufacturing_module'))
+        || ! auth()->user()->can('manufacturing.access_recipe')) {
+        abort(403);
+    }
+
+  Enforced in: SellPosController, SellController, PurchaseController,
+  ContactController, ExpenseController, BusinessLocationController,
+  StockTransferController, StockAdjustmentController, SellReturnController,
+  CombinedPurchaseReturnController, ProductController,
+  ImportProductsController, ManageUserController, PurchaseOrderController,
+  Util::createUser.
+
+-------------------------------------------------------------------------------
+ 4.8 Superadmin module's own wiring
+-------------------------------------------------------------------------------
+
+  DataController:
+    modifyAdminMenu   adds "Superadmin" sidebar item (order 1) if
+                      can('superadmin'); adds "Subscription" under Settings if
+                      can('superadmin.access_package_subscriptions') &&
+                      can('business_settings.access')
+    user_permissions  'superadmin.access_package_subscriptions'
+    after_business_created
+                      emails superadmin (enable_new_business_registration_
+                      notification) + welcome email to owner
+                      (enable_welcome_email, subject/body with
+                      {business_name} {owner_name})
+    parse_notification  subscription expiry alerts, communicator messages
+
+  ServiceProvider:
+    view composer: active subscription -> layouts.partials.active_subscription
+    view composer: frontend pages -> home header
+    view composer: system currency
+    schedules pos:sendSubscriptionExpiryAlert daily (only APP_ENV=live)
+
+  System settings it uses (system table): app_currency_id, email,
+  invoice_business_*, enable_business_based_username,
+  default_business_active_status, superadmin_enable_register_tc,
+  superadmin_register_tc, enable_welcome_email, welcome_email_subject,
+  welcome_email_body, enable_new_business_registration_notification,
+  enable_new_subscription_notification, payment gateway keys, ...
+
+
+===============================================================================
+ 5. BLUEPRINT FOR RE-IMPLEMENTING
+===============================================================================
+
+  1. Tenancy
+     - business table; users.business_id
+     - cache current business in session; scope every query by business_id
+
+  2. spatie/laravel-permission
+     - add roles.business_id (+ is_default, is_service_staff)
+     - role names "<Name>#<business_id>"
+     - permissions global; single guard 'web'
+
+  3. Gate::before with two branches
+     - platform abilities (superadmin, manage_modules, backup) -> superadmin
+       check only
+     - everything else -> true for Admin#<business_id>
+
+  4. Superadmin identity
+     - recommended improvement: an `is_superadmin` column or a platform role
+       with no business_id instead of the .env username list
+     - keep the bootstrap rule: first registered user (or a seeded admin)
+       becomes superadmin; login is required before anything else
+
+  5. Module registry
+     - nwidart for loading code
+     - installed state + version in a key/value `system` table
+     - Install/Update/Uninstall controller per module, linked from a
+       superadmin-only /manage-modules page
+
+  6. DataController hook bus
+     - getModuleData($hook, $args) over INSTALLED modules
+     - minimum hooks: modifyAdminMenu, user_permissions, superadmin_package,
+       after_business_created
+
+  7. Packages + subscriptions
+     - snapshot package limits + feature flags into the subscription
+     - active_subscription($business_id)
+     - isSubscribed / isQuotaAvailable / hasThePermissionInSubscription,
+       all returning true when the SaaS module is not installed
+     - better: wrap them as route middleware (subscribed, quota:invoices,
+       feature:crm_module)
+
+  8. Per-business feature toggles: enabled_modules JSON, separate from paid
+     modules
+
+  9. Location permissions as direct user permissions:
+     location.{id} / access_all_locations
+
+ 10. One shared newBusinessDefaultResources() routine used by both
+     self-registration and superadmin "create business"
+
+ 11. Superadmin panel: businesses (create, activate/deactivate, delete,
+     users, reset password, login-as), packages, subscriptions approval,
+     coupons, communicator, platform settings, CMS pages
+
+
+===============================================================================
+ 6. PITFALLS / SECURITY ISSUES - DO NOT COPY
+===============================================================================
+
+  1. IMPERSONATION HOLE
+     signInAsUser() allows the call if session has previous_user_id. While
+     impersonating, a user can hit /sign-in-as-user/{any_id} and become ANY
+     user of ANY business. Fix: when not superadmin, only allow
+     $id == session('previous_user_id').
+
+  2. Deactivation is login-time only
+     business.is_active and user.status are checked only in
+     LoginController::authenticated. Existing sessions keep working after a
+     superadmin deactivates a business. Check in middleware instead.
+
+  3. Stale session data
+     SetSessionData caches the whole business in the session once. Changes
+     made elsewhere (e.g. by the superadmin) are not seen until re-login.
+
+  4. Subscription checks are manual
+     Sprinkled across controllers, easy to miss an endpoint. Use middleware.
+
+  5. Admin# bypasses everything
+     Gate::before grants all abilities to tenant Admin, including module
+     permissions - the role form checkboxes have no effect for Admins.
+
+  6. Uninstall leaves data
+     Uninstall only removes the version row; tables and data remain.
+
+  7. Superadmin depends on .env
+     Changing usernames requires editing .env and clearing config cache;
+     a renamed user silently loses superadmin.
+
+
+===============================================================================
+ 7. FILE INDEX
+===============================================================================
+
+  Modules core
+    config/modules.php, modules_statuses.json
+    app/Utils/ModuleUtil.php
+    app/Http/Controllers/Install/ModulesController.php
+    app/System.php
+    routes/web.php (manage-modules routes, ~line 580)
+
+  Auth / roles / permissions
+    app/Providers/AuthServiceProvider.php     Gate::before
+    config/permission.php
+    database/migrations/2017_07_26_083429_create_permission_tables.php
+    database/seeders/PermissionsTableSeeder.php
+    app/Http/Controllers/RoleController.php
+    resources/views/role/create.blade.php, role/edit.blade.php
+    resources/views/role/partials/module_permissions.blade.php
+
+  Users
+    app/User.php
+    app/Http/Controllers/ManageUserController.php
+    app/Utils/Util.php   (createUser, giveLocationPermissions, is_admin,
+                          getUsernameExtension, isModuleEnabled)
+    app/Http/Controllers/Auth/LoginController.php
+
+  Middleware
+    app/Http/Kernel.php
+    app/Http/Middleware/Superadmin.php
+    app/Http/Middleware/SetSessionData.php
+    app/Http/Middleware/CheckUserLogin.php
+    app/Http/Middleware/IsInstalled.php
+    app/Http/Middleware/AdminSidebarMenu.php
+
+  Business bootstrap
+    app/Http/Controllers/Install/InstallController.php
+    app/Http/Controllers/BusinessController.php   (getRegister, postRegister)
+    app/Utils/BusinessUtil.php    (createNewBusiness,
+                                   newBusinessDefaultResources, addLocation)
+    config/constants.php          (administrator_usernames, allow_registration)
+
+  Superadmin module
+    Modules/Superadmin/module.json, Config/config.php
+    Modules/Superadmin/Providers/SuperadminServiceProvider.php
+    Modules/Superadmin/Routes/web.php
+    Modules/Superadmin/Entities/{Package,Subscription,SuperadminCoupon,
+                                 SuperadminFrontendPage,
+                                 SuperadminCommunicatorLog}.php
+    Modules/Superadmin/Http/Controllers/
+        InstallController, DataController, BaseController,
+        BusinessController, PackagesController, SuperadminController,
+        SuperadminSubscriptionsController, SubscriptionController,
+        SuperadminSettingsController, CommunicatorController,
+        CouponController, PageController, PricingController
+    Modules/Superadmin/Database/Migrations/
+
+  Example regular module
+    Modules/Manufacturing/Http/Controllers/DataController.php
+    Modules/Manufacturing/Routes/web.php
+
+===============================================================================
