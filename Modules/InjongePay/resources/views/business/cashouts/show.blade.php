@@ -14,7 +14,7 @@
             <x-common.info-card :rows="[
                 [__('injongepay::injongepay.wallet'), $cashout->wallet?->label()],
                 [__('injongepay::injongepay.to'), $cashout->account_holder.' · '.$cashout->bank_name.' '.$cashout->account],
-                [__('injongepay::injongepay.received'), GeneralLibrary::formatDateTime($cashout->created_at)],
+                [__('injongepay::injongepay.asked'), GeneralLibrary::formatDateTime($cashout->created_at)],
                 [__('injongepay::injongepay.bank_receipt'), $cashout->cbs_reference ?? '—'],
                 [__('injongepay::injongepay.paid_at'), $cashout->completed_at ? GeneralLibrary::formatDateTime($cashout->completed_at) : '—'],
             ]" />

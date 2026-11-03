@@ -12,8 +12,9 @@ use Modules\InjongePay\Support\Counter;
 use Modules\InjongePay\Support\Money;
 
 /**
- * Wallet to wallet by merchant code. Money stays in the platform's GTBank
- * account, so only the two ledger entries change; both happen or neither.
+ * Between a business's own merchant accounts only (a business never sees or
+ * reaches another business's). Money stays in the platform's GTBank account,
+ * so only the two ledger entries change; both happen or neither.
  */
 class TransferService
 {
@@ -23,7 +24,7 @@ class TransferService
 
     public function destination(string $merchantCode, Wallet $from): Wallet
     {
-        $to = Wallet::query()->withoutGlobalScopes()->whereNull('deleted_at')->where('merchant_code', trim($merchantCode))->first();
+        $to = Wallet::query()->withoutGlobalScopes()->whereNull('deleted_at')->where('business_id', $from->business_id)->where('merchant_code', trim($merchantCode))->first();
 
         if (! $to || $to->isInternal() || ! $to->is_enabled) {
             throw new InjongePayException(__('injongepay::injongepay.err_transfer_destination'));
@@ -49,7 +50,7 @@ class TransferService
                 $from = Wallet::query()->withoutGlobalScopes()->findOrFail($claimed->wallet_id);
                 $to = Wallet::query()->withoutGlobalScopes()->findOrFail($claimed->payload['to_wallet_id']);
 
-                if (! $from->is_enabled || ! $to->is_enabled) {
+                if (! $from->is_enabled || ! $to->is_enabled || $to->business_id !== $from->business_id) {
                     throw new InjongePayException(__('injongepay::injongepay.err_transfer_destination'));
                 }
 

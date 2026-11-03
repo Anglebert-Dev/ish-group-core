@@ -186,8 +186,25 @@ class MovingMoneyTest extends InjongePayTestCase
 
         $this->get(route('injongepay.transfers.index', ['wallet' => $this->from->uuid, 'to' => $this->to->merchant_code, 'amount' => 10000]))
             ->assertOk()->assertSee('Till B')->assertSee('Rhenium Group')->assertSee('name="pin"', false);
-        $this->get(route('injongepay.transfers.index', ['wallet' => $this->from->uuid, 'to' => '55599999', 'amount' => 10000]))
+        $this->get(route('injongepay.transfers.index'))->assertSee('Till B · '.$this->to->merchant_code);
+        $this->get(route('injongepay.transfers.index', ['wallet' => $this->from->uuid, 'to_wallet' => $this->to->merchant_code, 'amount' => 10000]))->assertSee('Till B')->assertSee('name="pin"', false);
+        $this->get(route('injongepay.transfers.index', ['wallet' => $this->from->uuid, 'to_wallet' => '55599999', 'amount' => 10000]))
             ->assertOk()->assertSee(__('injongepay::injongepay.err_transfer_destination'))->assertDontSee('name="pin"', false);
+    }
+
+    public function test_another_business_wallet_is_never_shown_or_reachable(): void
+    {
+        [$other] = $this->makeBusiness(['business_name' => 'Other Business']);
+        $theirs = $this->wallet($other, ['name' => 'Their till']);
+        $this->asOwner();
+
+        $this->get(route('injongepay.transfers.index'))->assertDontSee('Their till');
+        $this->get(route('injongepay.transfers.index', ['wallet' => $this->from->uuid, 'to_wallet' => $theirs->merchant_code, 'amount' => 100]))
+            ->assertDontSee('Their till')->assertDontSee('Other Business')->assertDontSee('name="pin"', false);
+        $this->post(route('injongepay.transfers.store'), ['wallet' => $this->from->uuid, 'merchant_code' => $theirs->merchant_code, 'amount' => '100', 'pin' => '48213'])->assertSessionHas('error');
+
+        $this->assertSame(0, Transfer::query()->withoutGlobalScopes()->count());
+        $this->assertSame(0, $theirs->fresh()->balance());
     }
 
     public function test_the_wallet_page_and_business_details(): void
@@ -210,7 +227,7 @@ class MovingMoneyTest extends InjongePayTestCase
     public function test_screens_render(): void
     {
         $this->asOwner();
-        $this->get(route('injongepay.transfers.index'))->assertOk()->assertSee('name="to"', false)->assertDontSee('name="pin"', false);
+        $this->get(route('injongepay.transfers.index'))->assertOk()->assertSee('name="to_wallet"', false)->assertDontSee('name="pin"', false);
         $this->get(route('injongepay.approvals.index'))->assertOk();
         $this->get(route('injongepay.security'))->assertOk();
         $this->flushSession();

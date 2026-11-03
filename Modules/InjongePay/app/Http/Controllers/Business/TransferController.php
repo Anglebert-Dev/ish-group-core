@@ -27,9 +27,11 @@ class TransferController extends Controller
         $problem = null;
         $from = Str::isUuid((string) $request->query('wallet')) ? Wallet::query()->whereNull('internal_role')->whereUuid($request->query('wallet'))->first() : null;
 
-        if ($from && filled($request->query('to'))) {
+        $to = (string) ($request->query('to_wallet') ?? $request->query('to'));
+
+        if ($from && $to !== '') {
             try {
-                $destination = $transfers->destination((string) $request->query('to'), $from);
+                $destination = $transfers->destination($to, $from);
             } catch (InjongePayException $e) {
                 $problem = $e->getMessage();
             }
@@ -39,6 +41,8 @@ class TransferController extends Controller
             'transfers' => Transfer::query()->withoutGlobalScopes()->with(['fromWallet', 'toWallet'])
                 ->where(fn ($q) => $q->whereIn('from_wallet_id', $ids)->orWhereIn('to_wallet_id', $ids))->latest('id')->paginate(30),
             'wallets' => $this->wallets(),
+            'ownCodes' => Wallet::query()->whereNull('internal_role')->where('is_enabled', true)->orderBy('name')->get()
+                ->mapWithKeys(fn (Wallet $w) => [$w->merchant_code => $w->name.' · '.$w->merchant_code])->all(),
             'hasPin' => $pins->has($request->user('staff')),
             'from' => $from,
             'destination' => $destination?->load('business'),

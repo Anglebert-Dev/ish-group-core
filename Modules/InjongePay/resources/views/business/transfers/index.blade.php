@@ -24,9 +24,12 @@
                 <h2 class="font-display font-bold text-ink">{{ __('injongepay::injongepay.transfer_new') }}</h2>
                 @if (! $destination)
                     {{-- Step 1: from where, to which code, how much --}}
+                    @if ($problem)
+                        <div class="rounded-xl border border-danger/40 bg-danger/5 p-3 text-sm text-danger">{{ $problem }}</div>
+                    @endif
                     <form method="GET" action="{{ route('injongepay.transfers.index') }}" class="space-y-4">
                         <x-common.select name="wallet" :label="__('injongepay::injongepay.from')" :options="$wallets" :value="request('wallet', old('wallet'))" required />
-                        <x-common.input name="to" :label="__('injongepay::injongepay.to_merchant_code')" :value="request('to', old('merchant_code'))" :error="$problem" required inputmode="numeric" />
+                        <x-common.select name="to_wallet" :label="__('injongepay::injongepay.to_account')" :options="$ownCodes" :value="request('to_wallet', request('to'))" required />
                         <x-common.input name="amount" type="number" step="1" min="1" :label="__('injongepay::injongepay.amount')" :value="request('amount', old('amount'))" required />
                         <x-common.input name="description" :label="__('injongepay::injongepay.description')" :value="request('description', old('description'))" />
                         <x-common.button type="submit">{{ __('injongepay::injongepay.transfer_check') }}</x-common.button>
