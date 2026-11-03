@@ -38,6 +38,7 @@ class BusinessSetupService extends BaseService
         [$business, $owner] = DB::transaction(function () use ($businessData, $ownerData) {
             $business = Business::query()->create([
                 'name' => $businessData['name'],
+                'type' => $businessData['type'] ?? 'other',
                 'is_active' => $businessData['is_active'] ?? true,
                 'brand_color' => $businessData['brand_color'] ?? Business::DEFAULT_BRAND_COLOR,
                 'timezone' => $businessData['timezone'] ?? config('app.timezone'),

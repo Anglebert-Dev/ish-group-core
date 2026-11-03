@@ -9,6 +9,7 @@
         <div class="bg-card border border-line rounded-xl p-4 sm:p-6 space-y-5">
             <h2 class="font-display font-bold text-ink">{{ __('body.business') }}</h2>
             <x-common.input name="business_name" :label="__('body.business_name')" :value="old('business_name')" required autofocus />
+            <x-common.select name="type" :label="__('body.business_type')" :options="\App\Models\Business\Business::types()" :value="old('type', 'other')" required hide-placeholder searchable />
             <input type="hidden" name="is_active" value="0">
             <x-common.checkbox name="is_active" :label="__('body.business_active_now')" :checked="old('is_active', true)" />
         </div>

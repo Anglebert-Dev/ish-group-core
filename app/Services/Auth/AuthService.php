@@ -55,6 +55,7 @@ class AuthService extends BaseService
         $result = $this->businesses->createWithOwner(
             [
                 'name' => $data['business_name'],
+                'type' => $data['business_type'] ?? 'other',
                 'is_active' => $first || (bool) System::getProperty('default_business_active_status', true),
             ],
             [

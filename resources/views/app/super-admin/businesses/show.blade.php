@@ -130,6 +130,13 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <form action="{{ route('superadmin.businesses.type', $business) }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-4">
+                @csrf @method('PUT')
+                <h2 class="font-display font-bold text-ink">{{ __('body.business_type') }}</h2>
+                <x-common.select name="type" :label="__('body.business_type')" :options="\App\Models\Business\Business::types()" :value="$business->type ?: 'other'" required hide-placeholder searchable />
+                <x-common.button type="submit" size="sm">{{ __('body.save') }}</x-common.button>
+            </form>
+
             {{-- Modules: per-business switches only when no billing module decides --}}
             @if ($modulesFromPackage)
                 <div class="bg-card border border-line rounded-xl p-5 space-y-2">

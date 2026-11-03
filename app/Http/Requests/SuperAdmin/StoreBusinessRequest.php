@@ -3,6 +3,7 @@
 namespace App\Http\Requests\SuperAdmin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class StoreBusinessRequest extends FormRequest
@@ -16,6 +17,7 @@ class StoreBusinessRequest extends FormRequest
     {
         return [
             'business_name' => ['required', 'string', 'max:255'],
+            'type' => ['nullable', 'string', Rule::in(config('core.business_types'))],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::defaults()],

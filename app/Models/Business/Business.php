@@ -23,6 +23,7 @@ class Business extends BaseModel
     protected $fillable = [
         'name',
         'email',
+        'type',
         'owner_id',
         'is_active',
         'enabled_modules',
@@ -137,5 +138,20 @@ class Business extends BaseModel
         return $this->favicon_path
             ? '/storage/'.$this->favicon_path
             : '/favicon.svg';
+    }
+
+    /**
+     * @return array<string, string> key => label, in config order
+     */
+    public static function types(): array
+    {
+        return collect(config('core.business_types', ['other']))
+            ->mapWithKeys(fn (string $type) => [$type => __('body.business_type_'.$type)])
+            ->all();
+    }
+
+    public function typeLabel(): string
+    {
+        return self::types()[$this->type ?: 'other'] ?? (string) $this->type;
     }
 }

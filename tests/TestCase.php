@@ -55,6 +55,7 @@ abstract class TestCase extends BaseTestCase
         $result = app(BusinessSetupService::class)->createWithOwner(
             [
                 'name' => $overrides['business_name'] ?? 'Business '.$seq,
+                'type' => $overrides['business_type'] ?? 'other',
                 'is_active' => $overrides['is_active'] ?? true,
             ],
             [

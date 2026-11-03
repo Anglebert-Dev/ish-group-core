@@ -14,6 +14,7 @@ use App\Services\Module\ModuleManager;
 use App\Services\SuperAdmin\PlatformService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
@@ -57,7 +58,7 @@ class BusinessController extends Controller
         $data = $request->validated();
 
         $result = $this->setup->createWithOwner(
-            ['name' => $data['business_name'], 'is_active' => $request->boolean('is_active', true)],
+            ['name' => $data['business_name'], 'type' => $data['type'] ?? 'other', 'is_active' => $request->boolean('is_active', true)],
             ['name' => $data['name'], 'email' => $data['email'], 'password' => $data['password']],
         );
 
@@ -80,6 +81,15 @@ class BusinessController extends Controller
                 ->reject(fn ($m) => $this->modules->isBillingExempt($m['name']))->values(),
             'modulesFromPackage' => app(\App\Contracts\Entitlements::class)->controlsModules(),
         ]);
+    }
+
+    public function updateType(Request $request, Business $business): RedirectResponse
+    {
+        $data = $request->validate(['type' => ['required', 'string', Rule::in(config('core.business_types'))]]);
+
+        $business->update(['type' => $data['type']]);
+
+        return back()->with('success', __('body.business_type_updated'));
     }
 
     public function toggleActive(Request $request, Business $business): RedirectResponse

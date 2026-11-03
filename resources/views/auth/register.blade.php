@@ -13,6 +13,7 @@
             <p class="text-sm text-muted">{{ __('body.auth_first_registration_note') }}</p>
         @endif
         <x-common.input name="business_name" :label="__('body.business_name')" :value="old('business_name')" :placeholder="__('body.placeholder_business_name')" required autofocus autocomplete="organization" />
+        <x-common.select name="business_type" :label="__('body.business_type')" :options="\App\Models\Business\Business::types()" :value="old('business_type', 'other')" hide-placeholder searchable />
         <x-common.input name="name" :label="__('body.full_name')" :value="old('name')" :placeholder="__('body.placeholder_full_name')" required autocomplete="name" />
         <x-common.input type="email" name="email" :label="__('body.email_address')" :value="old('email')" :placeholder="__('body.placeholder_email')" required autocomplete="username" />
         <x-common.input type="password" name="password" :label="__('body.password')" :placeholder="__('body.placeholder_password_create')" required autocomplete="new-password" strength />
