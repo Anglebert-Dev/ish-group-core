@@ -13,6 +13,7 @@
             @endif
         </x-slot:actions>
     </x-common.page-header>
+    @include('injongepay::partials.test-mode')
 
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         @foreach ([

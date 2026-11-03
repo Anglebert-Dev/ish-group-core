@@ -7,6 +7,7 @@
             @endif
         </x-slot:actions>
     </x-common.page-header>
+    @include('injongepay::partials.test-mode')
 
     <nav class="flex gap-2 mb-4">
         @foreach (['open', 'allocated', 'settled_outside'] as $tab)

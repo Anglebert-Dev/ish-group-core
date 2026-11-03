@@ -76,6 +76,7 @@ class DataController
         // Inhills (the operator) has no merchant codes of its own: only its platform menu.
         if (app(\App\Support\Access\PlatformAccess::class)->isOperator(auth('staff')->user())) {
             $items = array_values(array_filter($items, fn (array $item) => isset($item['group'])));
+            $items[] = ['label' => 'injongepay::injongepay.menu_security', 'route' => 'injongepay.security', 'active' => 'injongepay.security*', 'permission' => 'list injongepay_platform.earnings', 'group' => 'Injonge Pay platform', 'order' => 95, 'icon' => 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z'];
         }
 
         return $items;

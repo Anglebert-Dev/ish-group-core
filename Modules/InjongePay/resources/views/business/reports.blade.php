@@ -5,6 +5,7 @@
             <x-common.action-button :href="route('injongepay.reports.export', ['format' => 'excel', 'from' => $from->toDateString(), 'to' => $to->toDateString()])">Excel</x-common.action-button>
         </x-slot:actions>
     </x-common.page-header>
+    @include('injongepay::partials.test-mode')
     @include('injongepay::partials.period')
     @include('injongepay::partials.tiles')
 </x-layouts.app>

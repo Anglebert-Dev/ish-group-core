@@ -1,5 +1,6 @@
 <x-layouts.app :title="__('injongepay::injongepay.business_profile')">
     <x-common.page-header :title="__('injongepay::injongepay.business_profile')" :description="__('injongepay::injongepay.business_profile_description')" />
+    @include('injongepay::partials.test-mode')
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         <form action="{{ route('injongepay.profile.update') }}" method="POST" class="xl:col-span-2 bg-card border border-line rounded-xl p-5 sm:p-6 space-y-4">

@@ -1,6 +1,7 @@
 @php use Modules\InjongePay\Support\Money; @endphp
 <x-layouts.app :title="__('injongepay::injongepay.businesses')">
     <x-common.page-header :title="__('injongepay::injongepay.businesses')" :description="__('injongepay::injongepay.businesses_description')" />
+    @include('injongepay::partials.test-mode')
 
     <form method="GET" class="mb-4 flex gap-2 max-w-md">
         <x-common.input name="search" :label="__('body.search')" :value="$search" :placeholder="__('injongepay::injongepay.search_business')" compact />

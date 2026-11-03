@@ -13,6 +13,7 @@
             <x-common.button href="{{ route('injongepay.platform.wallets.index') }}" variant="secondary" size="sm">{{ __('body.back') }}</x-common.button>
         </x-slot:actions>
     </x-common.page-header>
+    @include('injongepay::partials.test-mode')
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         <div class="xl:col-span-2 space-y-6">

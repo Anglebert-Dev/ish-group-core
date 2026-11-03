@@ -1,5 +1,6 @@
 <x-layouts.app :title="__('injongepay::injongepay.platform_settings')">
     <x-common.page-header :title="__('injongepay::injongepay.platform_settings')" :description="__('injongepay::injongepay.platform_settings_description')" />
+    @include('injongepay::partials.test-mode')
 
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
         <div class="space-y-6">

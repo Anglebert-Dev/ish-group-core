@@ -10,6 +10,7 @@
             @endif
         </x-slot:actions>
     </x-common.page-header>
+    @include('injongepay::partials.test-mode')
 
     <x-common.filter-panel :action="route('injongepay.platform.wallets.index')" :open="request()->hasAny(['business', 'status', 'search'])">
         <x-common.select name="business" :label="__('body.business')" :options="['' => '—'] + $businesses" :value="request('business')" hide-placeholder searchable compact />

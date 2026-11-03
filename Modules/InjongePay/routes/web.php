@@ -57,7 +57,7 @@ Route::prefix('app/injonge-pay')->name('injongepay.')->middleware($staff)->group
     Route::post('/approvals/{approval}/approve', [ApprovalController::class, 'approve'])->middleware(['not.impersonating', 'throttle:20,1'])->name('approvals.approve');
     Route::post('/approvals/{approval}/reject', [ApprovalController::class, 'reject'])->middleware('throttle:20,1')->name('approvals.reject');
 
-    Route::get('/security', [SecurityController::class, 'show'])->middleware('permission:create injongepay.transfer|create injongepay.cashout|approve injongepay.transfer|approve injongepay.cashout')->name('security');
+    Route::get('/security', [SecurityController::class, 'show'])->middleware('permission:create injongepay.transfer|create injongepay.cashout|approve injongepay.transfer|approve injongepay.cashout|list injongepay_platform.earnings')->name('security');
     Route::post('/security/pin', [SecurityController::class, 'setPin'])->middleware(['password.confirm.staff', 'not.impersonating', 'throttle:6,1'])->name('security.pin');
     Route::delete('/security/devices/{device}', [SecurityController::class, 'revoke'])->name('security.devices.revoke');
 });

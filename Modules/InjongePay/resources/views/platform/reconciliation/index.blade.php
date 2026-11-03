@@ -7,6 +7,7 @@
             @endif
         </x-slot:actions>
     </x-common.page-header>
+    @include('injongepay::partials.test-mode')
 
     <div class="rounded-xl border p-4 mb-6 {{ $difference === 0 ? 'border-success/40 bg-success/5' : 'border-danger/40 bg-danger/5' }}">
         <p class="font-semibold {{ $difference === 0 ? 'text-success' : 'text-danger' }}">

@@ -1,6 +1,7 @@
 @php use Modules\InjongePay\Support\Money; use App\Libraries\GeneralLibrary; @endphp
 <x-layouts.app :title="__('injongepay::injongepay.platform_cashouts')">
     <x-common.page-header :title="__('injongepay::injongepay.platform_cashouts')" :description="__('injongepay::injongepay.platform_cashouts_description')" />
+    @include('injongepay::partials.test-mode')
 
     <nav class="flex flex-wrap gap-2 mb-4">
         @foreach (['' => __('injongepay::injongepay.all'), 'NEEDS_REVIEW' => __('injongepay::injongepay.cashout_NEEDS_REVIEW').($review ? " ({$review})" : ''), 'open' => __('injongepay::injongepay.open_cashouts'), 'COMPLETED' => __('injongepay::injongepay.cashout_COMPLETED'), 'FAILED' => __('injongepay::injongepay.cashout_FAILED')] as $key => $label)

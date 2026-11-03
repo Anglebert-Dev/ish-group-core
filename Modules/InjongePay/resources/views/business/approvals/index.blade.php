@@ -1,6 +1,7 @@
 @php use Modules\InjongePay\Support\Money; use App\Libraries\GeneralLibrary; use App\Helpers\AuthHelper; @endphp
 <x-layouts.app :title="__('injongepay::injongepay.approvals')">
     <x-common.page-header :title="__('injongepay::injongepay.approvals')" :description="__('injongepay::injongepay.approvals_description')" />
+    @include('injongepay::partials.test-mode')
 
     <div class="space-y-4">
         @forelse ($approvals as $approval)

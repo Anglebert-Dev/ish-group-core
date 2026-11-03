@@ -1,6 +1,7 @@
 @php use Modules\InjongePay\Support\Money; use App\Libraries\GeneralLibrary; @endphp
 <x-layouts.app :title="__('injongepay::injongepay.transfers')">
     <x-common.page-header :title="__('injongepay::injongepay.transfers')" :description="__('injongepay::injongepay.transfers_description')" />
+    @include('injongepay::partials.test-mode')
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         <div class="xl:col-span-2">

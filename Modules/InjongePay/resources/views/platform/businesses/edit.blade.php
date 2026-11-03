@@ -4,6 +4,7 @@
             <x-common.button href="{{ route('injongepay.platform.businesses.index') }}" variant="secondary" size="sm">{{ __('body.back') }}</x-common.button>
         </x-slot:actions>
     </x-common.page-header>
+    @include('injongepay::partials.test-mode')
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         <form action="{{ route('injongepay.platform.businesses.update', $business) }}" method="POST" class="xl:col-span-2 bg-card border border-line rounded-xl p-5 sm:p-6 space-y-5">

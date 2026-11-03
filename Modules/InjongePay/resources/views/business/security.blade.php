@@ -1,5 +1,6 @@
 <x-layouts.app :title="__('injongepay::injongepay.security')">
     <x-common.page-header :title="__('injongepay::injongepay.security')" :description="__('injongepay::injongepay.security_description')" />
+    @include('injongepay::partials.test-mode')
 
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
         <form action="{{ route('injongepay.security.pin') }}" method="POST" class="bg-card border border-line rounded-xl p-5 space-y-4">

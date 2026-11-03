@@ -5,6 +5,7 @@
             <x-common.button href="{{ route('injongepay.payments.index') }}" variant="secondary" size="sm">{{ __('body.back') }}</x-common.button>
         </x-slot:actions>
     </x-common.page-header>
+    @include('injongepay::partials.test-mode')
 
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
         <x-common.info-card :rows="[

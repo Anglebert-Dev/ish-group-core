@@ -1,6 +1,7 @@
 @php use Modules\InjongePay\Support\Money; @endphp
 <x-layouts.app :title="__('injongepay::injongepay.overview')">
     <x-common.page-header :title="__('injongepay::injongepay.overview')" :description="__('injongepay::injongepay.overview_description')" />
+    @include('injongepay::partials.test-mode')
 
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
         @foreach ([

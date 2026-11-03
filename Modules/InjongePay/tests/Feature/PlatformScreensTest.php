@@ -87,4 +87,18 @@ class PlatformScreensTest extends InjongePayTestCase
         $this->get('/app/injonge-pay/payments/not-a-uuid')->assertNotFound();
         $this->get('/app/injonge-pay/cashouts/123')->assertNotFound();
     }
+
+    public function test_test_mode_is_said_on_every_page_and_inhills_reaches_its_pin(): void
+    {
+        $this->asOwner()->get(route('injongepay.overview'))->assertOk()->assertSee(__('injongepay::injongepay.test_mode_title'));
+
+        $this->flushSession();
+        $this->asOperator();
+        $this->get(route('injongepay.platform.earnings'))->assertOk()->assertSee(__('injongepay::injongepay.set_pin_first'))->assertSee(route('injongepay.security'), false);
+        $this->get(route('injongepay.security'))->assertOk();
+        $this->get(route('dashboard'))->assertSee(route('injongepay.security'), false);
+
+        $this->fakeBank();
+        $this->get(route('injongepay.platform.earnings'))->assertDontSee(__('injongepay::injongepay.test_mode_title'));
+    }
 }

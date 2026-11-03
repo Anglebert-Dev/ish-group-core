@@ -5,6 +5,7 @@
             <x-common.action-button :href="route('injongepay.platform.finance.export', ['from' => $from->toDateString(), 'to' => $to->toDateString()])">Excel</x-common.action-button>
         </x-slot:actions>
     </x-common.page-header>
+    @include('injongepay::partials.test-mode')
     @include('injongepay::partials.period')
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

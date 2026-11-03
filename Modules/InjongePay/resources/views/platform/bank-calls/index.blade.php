@@ -1,5 +1,6 @@
 <x-layouts.app :title="__('injongepay::injongepay.bank_calls')">
     <x-common.page-header :title="__('injongepay::injongepay.bank_calls')" :description="__('injongepay::injongepay.bank_calls_description')" />
+    @include('injongepay::partials.test-mode')
 
     <x-common.filter-panel :action="route('injongepay.platform.bank-calls.index')" :open="request()->hasAny(['endpoint', 'outcome', 'direction', 'reference'])">
         <x-common.select name="endpoint" :label="__('injongepay::injongepay.endpoint')" :options="['' => '—'] + $endpoints" :value="request('endpoint')" hide-placeholder compact />

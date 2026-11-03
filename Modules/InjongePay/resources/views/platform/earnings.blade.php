@@ -1,7 +1,13 @@
 @php use Modules\InjongePay\Support\Money; use App\Helpers\AuthHelper; use App\Libraries\GeneralLibrary; @endphp
 <x-layouts.app :title="__('injongepay::injongepay.earnings')">
     <x-common.page-header :title="__('injongepay::injongepay.earnings')" :description="__('injongepay::injongepay.earnings_description')" />
+    @include('injongepay::partials.test-mode')
 
+    @unless ($hasPin)
+        <div class="rounded-xl border border-warning/40 bg-warning/5 p-4 mb-6 text-sm">
+            {{ __('injongepay::injongepay.set_pin_first') }} <a href="{{ route('injongepay.security') }}" class="text-brand font-semibold">{{ __('injongepay::injongepay.pin_set') }}</a>
+        </div>
+    @endunless
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         @foreach ($wallets as $wallet)
             <div class="bg-card border border-line rounded-xl p-5">

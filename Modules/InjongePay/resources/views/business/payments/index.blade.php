@@ -1,6 +1,7 @@
 @php use Modules\InjongePay\Support\Money; use App\Libraries\GeneralLibrary; @endphp
 <x-layouts.app :title="__('injongepay::injongepay.payments')">
     <x-common.page-header :title="__('injongepay::injongepay.payments')" :description="__('injongepay::injongepay.payments_description')" />
+    @include('injongepay::partials.test-mode')
 
     <x-common.filter-panel :action="route('injongepay.payments.index')" :open="request()->hasAny(['wallet', 'from', 'to', 'search'])">
         <x-common.select name="wallet" :label="__('injongepay::injongepay.wallet')" :options="['' => '—'] + $wallets" :value="request('wallet')" hide-placeholder compact />

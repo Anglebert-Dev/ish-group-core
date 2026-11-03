@@ -1,6 +1,7 @@
 @php use Modules\InjongePay\Support\Money; use App\Libraries\GeneralLibrary; @endphp
 <x-layouts.app :title="__('injongepay::injongepay.ledger').' · '.$wallet->label()">
     <x-common.page-header :title="__('injongepay::injongepay.ledger')" :description="$wallet->label()" />
+    @include('injongepay::partials.test-mode')
     <x-common.table :headers="[__('injongepay::injongepay.when'), __('injongepay::injongepay.reference'), __('injongepay::injongepay.description'), __('injongepay::injongepay.amount'), __('injongepay::injongepay.available'), __('injongepay::injongepay.pending')]">
         @forelse ($entries as $entry)
             <tr>

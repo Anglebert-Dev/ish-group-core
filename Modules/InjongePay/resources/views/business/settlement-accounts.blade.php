@@ -1,6 +1,7 @@
 @php use App\Helpers\AuthHelper; @endphp
 <x-layouts.app :title="__('injongepay::injongepay.settlement_accounts')">
     <x-common.page-header :title="__('injongepay::injongepay.settlement_accounts')" :description="__('injongepay::injongepay.settlement_accounts_description')" />
+    @include('injongepay::partials.test-mode')
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         <div class="xl:col-span-2 space-y-4">

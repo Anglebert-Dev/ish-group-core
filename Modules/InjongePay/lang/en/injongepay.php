@@ -485,6 +485,8 @@ return [
     'cashout_refused_never_created' => 'GTBank refused it (:reason) and confirms it has no such transfer.',
     'cashout_no_final_answer' => 'No final answer from GTBank in time.',
     'test_mode' => 'Test mode: no bank connected, nothing was sent.',
+    'test_mode_title' => 'Test mode.',
+    'test_mode_banner' => 'GTBank is not connected (GTBANK_BASE_URL is empty), so nothing goes to the bank: merchant codes are active at once, accounts are accepted with the name you type, and cash-outs complete by themselves. No real money moves.',
     'ledger_cashout' => 'Cash-out to :account',
     'ledger_cashout_back' => 'Cash-out :ref returned',
     'audit_cashout_queued' => ':amount cash-out :ref to :account',
