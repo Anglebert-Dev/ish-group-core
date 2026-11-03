@@ -3,7 +3,7 @@
     "alias": "injongepay",
     "description": "Mobile-money collection through GTBank PaymentBridge: merchant codes (wallets) per business, payments split into the business's share and the platform fee, a ledger that always matches the bank, transfers, cash-outs to verified bank accounts, and daily reconciliation against GTBank.",
     "keywords": ["payments", "gtbank", "mobile money", "wallets"],
-    "version": "1.0.0",
+    "version": "1.1.0",
     "menu_group": "Injonge Pay",
     "priority": 0,
     "providers": [

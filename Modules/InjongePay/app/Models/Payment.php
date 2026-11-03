@@ -51,7 +51,7 @@ class Payment extends Model
         return [
             'gross_amount' => 'integer', 'fee_amount' => 'integer', 'bank_cut_amount' => 'integer',
             'platform_revenue_amount' => 'integer', 'net_amount' => 'integer',
-            'fee_rate' => 'decimal:2', 'value_date' => 'date', 'cleared_at' => 'datetime',
+            'fee_rate' => 'decimal:4', 'value_date' => 'date', 'cleared_at' => 'datetime',
         ];
     }
 

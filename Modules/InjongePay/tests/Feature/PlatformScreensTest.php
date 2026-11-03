@@ -33,7 +33,7 @@ class PlatformScreensTest extends InjongePayTestCase
         ])->assertRedirect(route('injongepay.platform.businesses.edit', $this->business))->assertSessionHasNoErrors();
 
         $profile = BusinessProfile::query()->withoutGlobalScopes()->where('business_id', $this->business->id)->firstOrFail();
-        $this->assertSame('1.50', (string) $profile->fee_percentage);
+        $this->assertSame('1.5000', (string) $profile->fee_percentage);
         $this->assertNull($profile->missingKyc());
         $this->assertMatchesRegularExpression('/^INJP\d{12}$/', $profile->code);
         $this->assertSame(1, FeeRateChange::query()->where('business_id', $this->business->id)->count());
@@ -53,9 +53,11 @@ class PlatformScreensTest extends InjongePayTestCase
 
         $this->get(route('injongepay.platform.settings'))->assertOk()->assertSee(url('/api/payments/webhook'));
 
-        $this->withConfirmedPassword()->put(route('injongepay.platform.settings.fees'), ['fee_percentage' => '2.5', 'bank_cut_percentage' => '10'])->assertSessionHasNoErrors();
-        $this->assertSame('2.50', PlatformSettings::feePercentage());
-        $this->assertSame('10.00', PlatformSettings::bankCutPercentage());
+        $this->withConfirmedPassword()->put(route('injongepay.platform.settings.fees'), ['fee_percentage' => '0.25', 'bank_cut_percentage' => '0.025'])->assertSessionHasNoErrors();
+        $this->assertSame('0.2500', PlatformSettings::feePercentage());
+        $this->assertSame('0.0250', PlatformSettings::bankCutPercentage());
+        $this->get(route('injongepay.platform.settings'))->assertSee('value="0.025"', false)->assertSee('step="0.0001"', false);
+        $this->withConfirmedPassword()->put(route('injongepay.platform.settings.fees'), ['fee_percentage' => '0.25', 'bank_cut_percentage' => '0.00001'])->assertSessionHasErrors('bank_cut_percentage');
         $this->assertSame(2, FeeRateChange::query()->whereNull('business_id')->count());
 
         $response = $this->withConfirmedPassword()->post(route('injongepay.platform.settings.secret'));

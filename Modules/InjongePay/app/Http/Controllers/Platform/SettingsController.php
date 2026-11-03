@@ -16,8 +16,8 @@ class SettingsController extends Controller
     public function index(): View
     {
         return view('injongepay::platform.settings', [
-            'fee' => PlatformSettings::feePercentage(),
-            'bankCut' => PlatformSettings::bankCutPercentage(),
+            'fee' => \Modules\InjongePay\Support\Rate::display(PlatformSettings::feePercentage()),
+            'bankCut' => \Modules\InjongePay\Support\Rate::display(PlatformSettings::bankCutPercentage()),
             'hasSecret' => PlatformSettings::webhookSecret() !== null,
             'allowedIps' => implode(', ', PlatformSettings::webhookAllowedIps()),
             'newSecret' => session('injongepay_new_secret'),
@@ -33,8 +33,8 @@ class SettingsController extends Controller
     public function updateFees(Request $request, FeeSettings $fees): RedirectResponse
     {
         $data = $request->validate([
-            'fee_percentage' => ['required', 'numeric', 'min:0', 'max:100', 'decimal:0,2'],
-            'bank_cut_percentage' => ['required', 'numeric', 'min:0', 'max:100', 'decimal:0,2'],
+            'fee_percentage' => ['required', 'numeric', 'min:0', 'max:100', 'decimal:0,4'],
+            'bank_cut_percentage' => ['required', 'numeric', 'min:0', 'max:100', 'decimal:0,4'],
         ]);
 
         $fees->update((string) $data['fee_percentage'], (string) $data['bank_cut_percentage']);

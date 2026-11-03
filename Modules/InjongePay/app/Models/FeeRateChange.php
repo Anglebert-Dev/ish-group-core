@@ -20,6 +20,6 @@ class FeeRateChange extends Model
 
     protected function casts(): array
     {
-        return ['old_value' => 'decimal:2', 'new_value' => 'decimal:2', 'created_at' => 'datetime'];
+        return ['old_value' => 'decimal:4', 'new_value' => 'decimal:4', 'created_at' => 'datetime'];
     }
 }

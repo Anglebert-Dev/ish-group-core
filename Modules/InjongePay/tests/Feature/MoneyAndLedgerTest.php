@@ -34,17 +34,29 @@ class MoneyAndLedgerTest extends InjongePayTestCase
         $fees = app(Fees::class);
 
         // 10,000 RWF at 2%, bank cut 0%: platform +200, business +9,800.
-        $this->assertSame(['rate' => '2.00', 'fee' => 20000, 'bank_cut' => 0, 'platform' => 20000, 'net' => 980000], $fees->split($wallet, 1000000));
+        $this->assertSame(['rate' => '2.0000', 'fee' => 20000, 'bank_cut' => 0, 'platform' => 20000, 'net' => 980000], $fees->split($wallet, 1000000));
 
         PlatformSettings::set('bank_cut_percentage', '25');
         $this->profile(overrides: ['fee_percentage' => '1.50']);
         $split = $fees->split($wallet, 1000000);
-        $this->assertSame(['rate' => '1.50', 'fee' => 15000, 'bank_cut' => 3750, 'platform' => 11250, 'net' => 985000], $split);
+        $this->assertSame(['rate' => '1.5000', 'fee' => 15000, 'bank_cut' => 3750, 'platform' => 11250, 'net' => 985000], $split);
         $this->assertSame($split['fee'], $split['bank_cut'] + $split['platform']);
 
         BusinessProfile::query()->withoutGlobalScopes()->update(['fee_percentage' => '100']);
         $this->expectException(InjongePayException::class);
         $fees->split($wallet, 1000000);
+    }
+
+    public function test_rates_can_have_four_decimals(): void
+    {
+        PlatformSettings::set('fee_percentage', '0.25');
+        PlatformSettings::set('bank_cut_percentage', '0.025');
+
+        // 100,000 RWF at 0.25% = 250 RWF fee; 0.025% of that = 0.06 RWF to the bank.
+        $split = app(Fees::class)->split($this->wallet(), 10000000);
+
+        $this->assertSame(['rate' => '0.2500', 'fee' => 25000, 'bank_cut' => 6, 'platform' => 24994, 'net' => 9975000], $split);
+        $this->assertSame('0.025', \Modules\InjongePay\Support\Rate::display(PlatformSettings::bankCutPercentage()));
     }
 
     public function test_ledger_moves_pending_to_available_and_never_overdraws(): void

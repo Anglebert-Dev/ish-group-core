@@ -47,7 +47,7 @@ class BusinessController extends Controller
         return view('injongepay::platform.businesses.edit', [
             'business' => $business,
             'profile' => BusinessProfile::for($business),
-            'platformRate' => $fees->rateFor(0),
+            'platformRate' => \Modules\InjongePay\Support\Rate::display($fees->rateFor(0)),
             'staff' => User::query()->where('business_id', (int) System::getProperty('primary_business_id'))->orderBy('name')->pluck('name', 'id')->all(),
             'feeHistory' => FeeRateChange::query()->where('business_id', $business->id)->latest('id')->limit(20)->get(),
         ]);
@@ -66,7 +66,7 @@ class BusinessController extends Controller
             'contact_person' => ['required', 'string', 'max:255'],
             'contact_phone' => ['required', 'regex:/^\+250\d{9}$/'],
             'contact_email' => ['required', 'email', 'max:255'],
-            'fee_percentage' => ['nullable', 'numeric', 'min:0', 'max:100', 'decimal:0,2'],
+            'fee_percentage' => ['nullable', 'numeric', 'min:0', 'max:100', 'decimal:0,4'],
             'support_staff_id' => ['nullable', Rule::exists('users', 'id')->where('business_id', (int) System::getProperty('primary_business_id'))],
             'limit_per_transaction' => ['nullable', 'numeric', 'min:0', 'decimal:0,2'],
             'limit_daily' => ['nullable', 'numeric', 'min:0', 'decimal:0,2'],

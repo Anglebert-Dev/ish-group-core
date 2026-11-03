@@ -19,7 +19,7 @@
         ]" />
         <x-common.info-card :rows="[
             [__('injongepay::injongepay.gross'), Money::format($payment->gross_amount)],
-            [__('injongepay::injongepay.fee').' ('.$payment->fee_rate.'%)', Money::format($payment->fee_amount)],
+            [__('injongepay::injongepay.fee').' ('.\Modules\InjongePay\Support\Rate::display($payment->fee_rate).'%)', Money::format($payment->fee_amount)],
             [__('injongepay::injongepay.net'), Money::format($payment->net_amount)],
         ]" />
         <div class="xl:col-span-2 bg-card border border-line rounded-xl overflow-hidden">

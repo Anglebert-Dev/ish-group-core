@@ -7,6 +7,7 @@ use Modules\InjongePay\Models\BusinessProfile;
 use Modules\InjongePay\Models\Wallet;
 use Modules\InjongePay\Support\Money;
 use Modules\InjongePay\Support\PlatformSettings;
+use Modules\InjongePay\Support\Rate;
 
 /**
  * How a payment splits: the business keeps the net, the fee is shared between
@@ -36,6 +37,6 @@ class Fees
     {
         $own = BusinessProfile::query()->withoutGlobalScope('business')->where('business_id', $businessId)->value('fee_percentage');
 
-        return $own !== null ? bcadd((string) $own, '0', 2) : PlatformSettings::feePercentage();
+        return $own !== null ? Rate::normalise((string) $own) : PlatformSettings::feePercentage();
     }
 }

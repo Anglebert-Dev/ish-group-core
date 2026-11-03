@@ -8,8 +8,8 @@
                 <h2 class="font-display font-bold text-ink">{{ __('injongepay::injongepay.fees') }}</h2>
                 @php $canFees = \App\Helpers\AuthHelper::can('update injongepay_platform.fee'); @endphp
                 <fieldset @disabled(! $canFees) class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <x-common.input name="fee_percentage" type="number" step="0.01" min="0" max="100" :label="__('injongepay::injongepay.fee_percentage')" :value="old('fee_percentage', $fee)" required />
-                    <x-common.input name="bank_cut_percentage" type="number" step="0.01" min="0" max="100" :label="__('injongepay::injongepay.bank_cut_percentage')" :hint="__('injongepay::injongepay.bank_cut_hint')" :value="old('bank_cut_percentage', $bankCut)" required />
+                    <x-common.input name="fee_percentage" type="number" step="0.0001" min="0" max="100" :label="__('injongepay::injongepay.fee_percentage')" :value="old('fee_percentage', $fee)" required />
+                    <x-common.input name="bank_cut_percentage" type="number" step="0.0001" min="0" max="100" :label="__('injongepay::injongepay.bank_cut_percentage')" :hint="__('injongepay::injongepay.bank_cut_hint')" :value="old('bank_cut_percentage', $bankCut)" required />
                 </fieldset>
                 @if ($canFees)
                     <x-common.button type="submit" size="sm">{{ __('body.save') }}</x-common.button>
@@ -51,7 +51,7 @@
             <h2 class="font-display font-bold text-ink">{{ __('injongepay::injongepay.fee_history') }}</h2>
             @forelse ($history as $change)
                 <div class="text-sm border-b border-line pb-2">
-                    <p class="text-ink font-semibold">{{ __('injongepay::injongepay.scope_'.$change->scope) }}: {{ $change->old_value ?? '—' }}% → {{ $change->new_value ?? '—' }}%</p>
+                    <p class="text-ink font-semibold">{{ __('injongepay::injongepay.scope_'.$change->scope) }}: {{ \Modules\InjongePay\Support\Rate::display($change->old_value) }}% → {{ \Modules\InjongePay\Support\Rate::display($change->new_value) }}%</p>
                     <p class="text-muted text-xs">{{ \App\Libraries\GeneralLibrary::formatDateTime($change->created_at) }} · {{ $change->changed_by_name ?? '—' }}</p>
                 </div>
             @empty

@@ -26,7 +26,7 @@ class BusinessProfiles
             $oldFee = $profile->exists ? $profile->fee_percentage : null;
 
             $profile->fill(array_intersect_key($data, array_flip(self::FIELDS)));
-            $profile->fee_percentage = isset($data['fee_percentage']) && $data['fee_percentage'] !== '' ? bcadd((string) $data['fee_percentage'], '0', 2) : null;
+            $profile->fee_percentage = isset($data['fee_percentage']) && $data['fee_percentage'] !== '' ? \Modules\InjongePay\Support\Rate::normalise((string) $data['fee_percentage']) : null;
             foreach (self::LIMITS as $limit) {
                 if (array_key_exists($limit, $data)) {
                     $profile->{$limit} = $data[$limit] === null || $data[$limit] === '' ? null : \Modules\InjongePay\Support\Money::toCents((string) $data[$limit]);
@@ -47,7 +47,7 @@ class BusinessProfiles
                 ]);
 
                 audit('injongepay_fee_changed', __('injongepay::injongepay.audit_business_fee', [
-                    'business' => $business->name, 'old' => $oldFee ?? '—', 'new' => $profile->fee_percentage ?? '—',
+                    'business' => $business->name, 'old' => \Modules\InjongePay\Support\Rate::display($oldFee), 'new' => \Modules\InjongePay\Support\Rate::display($profile->fee_percentage),
                 ]), $profile, ['old' => $oldFee, 'new' => $profile->fee_percentage], $business->id);
             }
 
@@ -57,10 +57,6 @@ class BusinessProfiles
 
     private function rateChanged(mixed $old, mixed $new): bool
     {
-        if ($old === null || $new === null) {
-            return $old !== $new;
-        }
-
-        return bccomp((string) $old, (string) $new, 2) !== 0;
+        return ! \Modules\InjongePay\Support\Rate::same($old === null ? null : (string) $old, $new === null ? null : (string) $new);
     }
 }

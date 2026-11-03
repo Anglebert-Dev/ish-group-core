@@ -4,6 +4,7 @@ namespace Modules\InjongePay\Services;
 
 use Modules\InjongePay\Models\FeeRateChange;
 use Modules\InjongePay\Support\PlatformSettings;
+use Modules\InjongePay\Support\Rate;
 
 /**
  * The platform-wide fee and bank cut. Only future payments use a new rate;
@@ -15,9 +16,9 @@ class FeeSettings
     {
         foreach ([[FeeRateChange::GLOBAL_FEE, 'fee_percentage', PlatformSettings::feePercentage(), $fee],
             [FeeRateChange::GLOBAL_BANK_CUT, 'bank_cut_percentage', PlatformSettings::bankCutPercentage(), $bankCut]] as [$scope, $key, $old, $new]) {
-            $new = bcadd($new, '0', 2);
+            $new = Rate::normalise($new);
 
-            if (bccomp($old, $new, 2) === 0) {
+            if (Rate::same($old, $new)) {
                 continue;
             }
 
@@ -26,7 +27,7 @@ class FeeSettings
                 'scope' => $scope, 'old_value' => $old, 'new_value' => $new,
                 'changed_by' => auth()->id(), 'changed_by_name' => auth()->user()?->name,
             ]);
-            audit('injongepay_fee_changed', __('injongepay::injongepay.audit_global_fee', ['what' => __('injongepay::injongepay.'.$key), 'old' => $old, 'new' => $new]),
+            audit('injongepay_fee_changed', __('injongepay::injongepay.audit_global_fee', ['what' => __('injongepay::injongepay.'.$key), 'old' => Rate::display($old), 'new' => Rate::display($new)]),
                 null, ['scope' => $scope, 'old' => $old, 'new' => $new]);
         }
     }

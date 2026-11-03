@@ -60,6 +60,6 @@ final class PlatformSettings
     {
         $stored = System::getProperty('injongepay_'.$key);
 
-        return $stored !== null && $stored !== '' ? bcadd((string) $stored, '0', 2) : bcadd($default, '0', 2);
+        return Rate::normalise($stored !== null && $stored !== '' ? (string) $stored : $default);
     }
 }

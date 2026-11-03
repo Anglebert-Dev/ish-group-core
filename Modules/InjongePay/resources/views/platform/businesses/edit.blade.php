@@ -19,8 +19,8 @@
                 <x-common.input name="contact_person" :label="__('injongepay::injongepay.kyc_contact_person')" :value="old('contact_person', $profile->contact_person)" required />
                 <x-common.input name="contact_email" type="email" :label="__('injongepay::injongepay.kyc_contact_email')" :value="old('contact_email', $profile->contact_email)" required />
                 <x-common.phone-input name="contact_phone" :label="__('injongepay::injongepay.kyc_contact_phone')" :value="old('contact_phone', $profile->contact_phone)" required />
-                <x-common.input name="fee_percentage" type="number" step="0.01" min="0" max="100" :label="__('injongepay::injongepay.fee_percentage')"
-                    :hint="__('injongepay::injongepay.fee_percentage_hint', ['rate' => $platformRate])" :value="old('fee_percentage', $profile->fee_percentage)" />
+                <x-common.input name="fee_percentage" type="number" step="0.0001" min="0" max="100" :label="__('injongepay::injongepay.fee_percentage')"
+                    :hint="__('injongepay::injongepay.fee_percentage_hint', ['rate' => $platformRate])" :value="old('fee_percentage', $profile->fee_percentage !== null ? \Modules\InjongePay\Support\Rate::display($profile->fee_percentage) : null)" />
                 <x-common.input name="country" :label="__('injongepay::injongepay.country')" :value="old('country', $profile->country ?? 'RW')" required maxlength="2" />
                 <x-common.input name="city" :label="__('injongepay::injongepay.city')" :value="old('city', $profile->city)" />
                 <x-common.input name="address" :label="__('injongepay::injongepay.address')" :value="old('address', $profile->address)" />
@@ -46,7 +46,7 @@
             <h2 class="font-display font-bold text-ink">{{ __('injongepay::injongepay.fee_history') }}</h2>
             @forelse ($feeHistory as $change)
                 <div class="text-sm border-b border-line pb-2">
-                    <p class="text-ink font-semibold">{{ $change->old_value ?? '—' }}% → {{ $change->new_value ?? '—' }}%</p>
+                    <p class="text-ink font-semibold">{{ \Modules\InjongePay\Support\Rate::display($change->old_value) }}% → {{ \Modules\InjongePay\Support\Rate::display($change->new_value) }}%</p>
                     <p class="text-muted text-xs">{{ \App\Libraries\GeneralLibrary::formatDateTime($change->created_at) }} · {{ $change->changed_by_name ?? '—' }}</p>
                 </div>
             @empty

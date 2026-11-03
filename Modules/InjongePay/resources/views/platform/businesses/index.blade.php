@@ -23,7 +23,7 @@
                         <x-common.badge color="success">{{ __('injongepay::injongepay.kyc_complete') }}</x-common.badge>
                     @endif
                 </td>
-                <td class="px-5 py-3">{{ $profile?->fee_percentage !== null && $profile ? $profile->fee_percentage.'%' : '—' }}</td>
+                <td class="px-5 py-3">{{ $profile?->fee_percentage !== null ? \Modules\InjongePay\Support\Rate::display($profile->fee_percentage).'%' : '—' }}</td>
                 <td class="px-5 py-3">{{ $w->count ?? 0 }}</td>
                 <td class="px-5 py-3">{{ Money::format((int) ($w->balance ?? 0)) }}</td>
                 <td class="px-5 py-3 text-right">
