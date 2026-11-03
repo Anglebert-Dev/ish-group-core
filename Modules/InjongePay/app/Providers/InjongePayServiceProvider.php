@@ -16,6 +16,8 @@ class InjongePayServiceProvider extends CoreModuleServiceProvider
 
     protected array $commands = [
         \Modules\InjongePay\Console\SyncMerchantsCommand::class,
+        \Modules\InjongePay\Console\ProcessInboxCommand::class,
+        \Modules\InjongePay\Console\SweepFeesCommand::class,
     ];
 
     protected array $providers = [
@@ -26,6 +28,8 @@ class InjongePayServiceProvider extends CoreModuleServiceProvider
     {
         $schedule->command('injongepay:sync-merchants')->everyFifteenMinutes()->withoutOverlapping();
         $schedule->command('injongepay:sync-merchants --all')->dailyAt('02:00')->withoutOverlapping();
+        $schedule->command('injongepay:process-inbox')->everyMinute()->withoutOverlapping();
+        $schedule->command('injongepay:sweep-fees')->everyTenMinutes()->withoutOverlapping();
     }
 
     public function register(): void

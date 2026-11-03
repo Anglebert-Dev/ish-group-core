@@ -15,6 +15,9 @@
                     <x-common.button type="submit" size="sm">{{ __('body.save') }}</x-common.button>
                 @endif
             </form>
+            @if ($canFees)
+                <x-common.action-button :action="route('injongepay.platform.fees.sweep')">{{ __('injongepay::injongepay.sweep_fees') }}</x-common.action-button>
+            @endif
 
             <div class="bg-card border border-line rounded-xl p-5 sm:p-6 space-y-4">
                 <div>

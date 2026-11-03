@@ -28,6 +28,8 @@ class Payment extends Model
 
     public const VIA_MIGRATION = 'MIGRATION';
 
+    public const VIA_ALLOCATED = 'ALLOCATED';
+
     protected $table = 'ijp_payments';
 
     protected $guarded = ['id'];
@@ -56,6 +58,17 @@ class Payment extends Model
     public function wallet(): BelongsTo
     {
         return $this->belongsTo(Wallet::class);
+    }
+
+    public function statusLabel(): string
+    {
+        $key = match (true) {
+            $this->payment_status !== self::STATUS_AVAILABLE => 'payment_'.$this->payment_status,
+            $this->cleared_at === null => 'payment_pending',
+            default => 'payment_AVAILABLE',
+        };
+
+        return __('injongepay::injongepay.'.$key);
     }
 
     public function isCleared(): bool

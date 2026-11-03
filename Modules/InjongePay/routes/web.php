@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\InjongePay\Http\Controllers\Business\OverviewController;
+use Modules\InjongePay\Http\Controllers\Business\PaymentController;
+use Modules\InjongePay\Http\Controllers\Platform\UnallocatedController;
 use Modules\InjongePay\Http\Controllers\Platform\BankCallController;
 use Modules\InjongePay\Http\Controllers\Platform\BusinessController;
 use Modules\InjongePay\Http\Controllers\Platform\WalletController;
@@ -18,6 +20,8 @@ $staff = ['auth:staff', 'auth.session', 'exclusive.portal:staff', 'business.acti
 
 Route::prefix('app/injonge-pay')->name('injongepay.')->middleware($staff)->group(function () {
     Route::get('/', [OverviewController::class, 'index'])->middleware('permission:list injongepay.overview')->name('overview');
+    Route::get('/payments', [PaymentController::class, 'index'])->middleware('permission:list injongepay.payment')->name('payments.index');
+    Route::get('/payments/{payment}', [PaymentController::class, 'show'])->middleware('permission:read injongepay.payment')->name('payments.show');
 });
 
 Route::prefix('app/injonge-pay/platform')->name('injongepay.platform.')->middleware($staff)->group(function () {
@@ -35,6 +39,12 @@ Route::prefix('app/injonge-pay/platform')->name('injongepay.platform.')->middlew
     Route::post('/wallets/{wallet}/sync', [WalletController::class, 'sync'])->middleware(['permission:update injongepay_platform.bank', 'throttle:20,1'])->name('wallets.sync');
     Route::put('/wallets/{wallet}/toggle', [WalletController::class, 'toggle'])->middleware(['permission:update injongepay_platform.wallet', 'password.confirm.staff'])->name('wallets.toggle');
     Route::post('/wallets/{wallet}/close', [WalletController::class, 'close'])->middleware(['permission:delete injongepay_platform.wallet', 'password.confirm.staff'])->name('wallets.close');
+
+    Route::get('/unallocated', [UnallocatedController::class, 'index'])->middleware('permission:list injongepay_platform.reconciliation')->name('unallocated.index');
+    Route::post('/unallocated/{row}/allocate', [UnallocatedController::class, 'allocate'])->middleware(['permission:approve injongepay_platform.reconciliation', 'password.confirm.staff'])->name('unallocated.allocate');
+    Route::post('/unallocated/{row}/settle-outside', [UnallocatedController::class, 'settleOutside'])->middleware(['permission:approve injongepay_platform.reconciliation', 'password.confirm.staff'])->name('unallocated.settle-outside');
+    Route::post('/inbox/process', [UnallocatedController::class, 'processInbox'])->middleware(['permission:update injongepay_platform.bank', 'throttle:6,1'])->name('inbox.process');
+    Route::post('/fees/sweep', [UnallocatedController::class, 'sweepFees'])->middleware(['permission:update injongepay_platform.fee', 'throttle:6,1'])->name('fees.sweep');
 
     Route::get('/bank-calls', [BankCallController::class, 'index'])->middleware('permission:list injongepay_platform.bank')->name('bank-calls.index');
     Route::get('/bank-calls/{call}', [BankCallController::class, 'show'])->middleware('permission:read injongepay_platform.bank')->name('bank-calls.show');

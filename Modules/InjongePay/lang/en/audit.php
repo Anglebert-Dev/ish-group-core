@@ -11,4 +11,9 @@ return [
     'injongepay_wallet_closed' => 'Merchant code closed',
     'injongepay_wallet_enabled' => 'Merchant code switched on',
     'injongepay_wallet_disabled' => 'Merchant code switched off',
+    'injongepay_payment_received' => 'Payment received',
+    'injongepay_payment_parked' => 'Payment held for allocation',
+    'injongepay_payment_allocated' => 'Held payment credited',
+    'injongepay_payment_settled_outside' => 'Held payment settled outside',
+    'injongepay_fees_swept' => 'Fees credited to platform wallets',
 ];
