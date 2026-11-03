@@ -308,6 +308,7 @@ return [
     'operation_cashout' => 'Cash-out',
     'your_pin' => 'Your PIN',
     'manage_pin' => 'Set or change your PIN',
+    'set_pin_first' => 'You need a transaction PIN before you can move money.',
     'step_up_code' => 'Code',
     'step_up_needed_totp' => 'Enter the 6-digit code from your authenticator app as well.',
     'step_up_needed_email' => 'We emailed you a 6-digit code; enter it as well.',

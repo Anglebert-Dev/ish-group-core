@@ -265,6 +265,20 @@ class CashoutTest extends InjongePayTestCase
         $this->get(route('injongepay.platform.cashouts.index'))->assertForbidden();
     }
 
+    public function test_the_form_starts_from_the_wallet_with_its_whole_balance_and_asks_for_a_pin_first(): void
+    {
+        $this->fund('20000.00');
+        $this->asOwner();
+
+        $this->get(route('injongepay.overview'))->assertSee(route('injongepay.cashouts.index', ['wallet' => $this->till->uuid]), false);
+        $this->get(route('injongepay.cashouts.index', ['wallet' => $this->till->uuid]))->assertOk()
+            ->assertSee('value="19600"', false)
+            ->assertSee(__('injongepay::injongepay.set_pin_first'));
+
+        app(\Modules\InjongePay\Services\Security\Pins::class)->set($this->owner, '48213');
+        $this->get(route('injongepay.cashouts.index'))->assertDontSee(__('injongepay::injongepay.set_pin_first'));
+    }
+
     public function test_an_account_gtbank_did_not_confirm_cannot_be_used(): void
     {
         $this->fund('20000.00');

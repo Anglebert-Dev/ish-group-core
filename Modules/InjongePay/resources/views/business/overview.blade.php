@@ -28,7 +28,10 @@
                     <td class="px-5 py-3">@include('injongepay::partials.bank-status', ['wallet' => $wallet])</td>
                     <td class="px-5 py-3">{{ Money::format($wallet->available_balance) }}</td>
                     <td class="px-5 py-3 text-muted">{{ Money::format($wallet->pending_balance) }}</td>
-                    <td class="px-5 py-3 text-right">@if (\App\Helpers\AuthHelper::can('list injongepay.ledger'))<a class="text-brand font-semibold" href="{{ route('injongepay.ledger', $wallet->uuid) }}">{{ __('injongepay::injongepay.ledger') }}</a>@endif</td>
+                    <td class="px-5 py-3 text-right whitespace-nowrap space-x-3">
+                        @if (\App\Helpers\AuthHelper::can('create injongepay.cashout') && $wallet->is_enabled && $wallet->available_balance >= 100)<a class="text-brand font-semibold" href="{{ route('injongepay.cashouts.index', ['wallet' => $wallet->uuid]) }}">{{ __('injongepay::injongepay.cashout_send') }}</a>@endif
+                        @if (\App\Helpers\AuthHelper::can('list injongepay.ledger'))<a class="text-brand font-semibold" href="{{ route('injongepay.ledger', $wallet->uuid) }}">{{ __('injongepay::injongepay.ledger') }}</a>@endif
+                    </td>
                 </tr>
             @endforeach
         </x-common.table>

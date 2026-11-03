@@ -17,7 +17,7 @@ use Modules\InjongePay\Support\Money;
 
 class TransferController extends Controller
 {
-    public function index(): View
+    public function index(Request $request, \Modules\InjongePay\Services\Security\Pins $pins): View
     {
         $ids = Wallet::query()->pluck('id');
 
@@ -25,6 +25,7 @@ class TransferController extends Controller
             'transfers' => Transfer::query()->withoutGlobalScopes()->with(['fromWallet', 'toWallet'])
                 ->where(fn ($q) => $q->whereIn('from_wallet_id', $ids)->orWhereIn('to_wallet_id', $ids))->latest('id')->paginate(30),
             'wallets' => $this->wallets(),
+            'hasPin' => $pins->has($request->user('staff')),
         ]);
     }
 

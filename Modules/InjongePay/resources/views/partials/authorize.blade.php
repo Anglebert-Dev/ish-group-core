@@ -1,5 +1,10 @@
 {{-- PIN always; the extra code only when the last attempt asked for it. --}}
 @php $stepUp = session('step_up'); @endphp
+@if (isset($hasPin) && ! $hasPin)
+    <div class="rounded-xl border border-warning/40 bg-warning/5 p-3 text-sm">
+        {{ __('injongepay::injongepay.set_pin_first') }} <a href="{{ route('injongepay.security') }}" class="text-brand font-semibold">{{ __('injongepay::injongepay.pin_set') }}</a>
+    </div>
+@endif
 <x-common.input name="pin" type="password" inputmode="numeric" maxlength="5" autocomplete="off" :label="__('injongepay::injongepay.your_pin')" required />
 @if ($stepUp)
     <div class="rounded-xl border border-warning/40 bg-warning/5 p-3 space-y-2">

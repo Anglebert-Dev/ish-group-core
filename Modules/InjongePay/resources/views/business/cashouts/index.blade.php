@@ -29,13 +29,21 @@
                     <p class="text-sm text-muted">{{ __('injongepay::injongepay.no_usable_accounts') }}
                         @if (\App\Helpers\AuthHelper::can('list injongepay.settlement_account'))<a class="text-brand font-semibold" href="{{ route('injongepay.settlement-accounts.index') }}">{{ __('injongepay::injongepay.settlement_accounts') }}</a>@endif</p>
                 @else
-                    <x-common.select name="wallet" :label="__('injongepay::injongepay.from')" :options="$wallets" :value="old('wallet')" required />
+                    <x-common.select name="wallet" :label="__('injongepay::injongepay.from')" :options="$wallets" :value="old('wallet', $selected)" required />
                     <x-common.select name="account" :label="__('injongepay::injongepay.to')" :options="$accounts" :value="old('account')" required />
-                    <x-common.input name="amount" type="number" step="1" min="1" :label="__('injongepay::injongepay.amount')" :hint="__('injongepay::injongepay.whole_rwf_hint')" :value="old('amount')" required />
+                    <x-common.input name="amount" type="number" step="1" min="1" :label="__('injongepay::injongepay.amount')" :hint="__('injongepay::injongepay.whole_rwf_hint')" :value="old('amount', $selected ? $available[$selected] : null)" required />
                     @include('injongepay::partials.authorize')
                     <x-common.button type="submit">{{ __('injongepay::injongepay.cashout_send') }}</x-common.button>
                 @endif
             </form>
+            <script>
+                (function () {
+                    var available = @json($available);
+                    var wallet = document.getElementById('field-wallet');
+                    var amount = document.getElementById('field-amount');
+                    if (wallet && amount) wallet.addEventListener('change', function () { if (available[wallet.value] !== undefined) amount.value = available[wallet.value]; });
+                })();
+            </script>
         @endif
     </div>
 </x-layouts.app>

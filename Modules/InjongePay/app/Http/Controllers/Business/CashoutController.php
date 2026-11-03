@@ -14,17 +14,24 @@ use Modules\InjongePay\Models\SettlementAccount;
 use Modules\InjongePay\Models\Wallet;
 use Modules\InjongePay\Services\Approvals;
 use Modules\InjongePay\Services\CashoutService;
+use Modules\InjongePay\Services\Security\Pins;
 use Modules\InjongePay\Support\Money;
 
 /** A business asks for cash-outs and follows them; it never reverses or retries one. */
 class CashoutController extends Controller
 {
-    public function index(): View
+    public function index(Request $request, Pins $pins): View
     {
+        $wallets = Wallet::query()->whereNull('internal_role')->where('is_enabled', true)->orderBy('name')->get();
+        // As before: the wallet chosen (or the only one), and its whole available balance.
+        $selected = $wallets->firstWhere('uuid', $request->query('wallet')) ?? ($wallets->count() === 1 ? $wallets->first() : null);
+
         return view('injongepay::business.cashouts.index', [
             'cashouts' => Cashout::query()->with('wallet')->latest('id')->paginate(30),
-            'wallets' => Wallet::query()->whereNull('internal_role')->where('is_enabled', true)->orderBy('name')->get()
-                ->mapWithKeys(fn (Wallet $w) => [$w->uuid => $w->name.' · '.$w->merchant_code.' · '.Money::format($w->available_balance)])->all(),
+            'wallets' => $wallets->mapWithKeys(fn (Wallet $w) => [$w->uuid => $w->name.' · '.$w->merchant_code.' · '.Money::format($w->available_balance)])->all(),
+            'available' => $wallets->mapWithKeys(fn (Wallet $w) => [$w->uuid => intdiv($w->available_balance, 100)])->all(),
+            'selected' => $selected?->uuid,
+            'hasPin' => $pins->has($request->user('staff')),
             'accounts' => SettlementAccount::query()->where('status', SettlementAccount::APPROVED)->get()
                 ->mapWithKeys(fn (SettlementAccount $a) => [$a->uuid => $a->label()])->all(),
         ]);
