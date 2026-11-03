@@ -309,3 +309,27 @@ After the phases, from trying it: Fee earnings, dashboard by module, business wa
   - an audit row for every action
 - **Contract tests**: golden JSON captured from the production app for every partner, webhook and EBM endpoint, asserted byte for byte against the `pos-ebm-v1` profile.
 - Manual: both panels clicked through in test mode on the local install.
+
+## What's remaining (04/11/2026)
+
+**Before go-live (blocking)**
+1. **Data migration** from production (phase 9). Needs a `pg_dump` or read-only access to the production database.
+2. **First run against the real GTBank.** These answers have never been seen from GTBank, only from its document:
+   - `/transactions` with `startDate`/`endDate` per merchant: the 10-minute mirror and the daily close depend on it
+   - `/merchants/register`
+   - the disbursement-status webhook (production logs only show payment webhooks)
+
+   Run on the server with the real keys: register one merchant code, read one day's list, make one small cash-out. Then add the answers to `tests/fixtures/gtbank-production.php`.
+3. **Server setup**: cron `schedule:run`, a `queue:work` under Supervisor, `APP_ENV=production`, an https `APP_URL`, the `GTBANK_*` keys, the GTBank CA file. GTBank must call the two webhook URLs on the new domain.
+
+**Promised in this guide but not built**
+4. **Security changes are only audited**: a new PIN, a new settlement account and a changed limit notify no one. They should notify the business admin.
+5. **PIN reset with MFA**: today changing a PIN needs the password only (plus the step-up afterwards for 24 h).
+6. **Monthly statement check**: GTBank has no balance or statement API; uploading its settlement-account statement to compare totals is not built. Ask GTBank for a statement endpoint first.
+7. **Velocity rule** counts operations per hour only, not amounts.
+8. **Approval requests waiting for a second person** expire only when someone tries to approve them after 24 h; they aren't marked expired by themselves.
+
+**Smaller**
+9. **Partner rate limit per connection** has no screen any more; every connection uses the default (120/min).
+10. **Translations**: Injonge Pay's screens are English only. The core supports French and Kinyarwanda.
+11. **A click-through of every screen** in the browser, both as a business and as Inhills.
