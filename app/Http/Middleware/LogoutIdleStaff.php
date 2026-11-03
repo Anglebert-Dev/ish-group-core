@@ -10,14 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
-/**
- * Signs staff out after Platform settings → Security → "idle minutes".
- *
- * The browser (public/js/idle-logout.js) pings while the person is moving the
- * mouse or typing, and signs them out itself when the time is up; this is the
- * server-side guarantee for a closed laptop or a tab left open. Requests sent
- * with X-Idle-Passive (background polling) don't count as activity.
- */
+
 class LogoutIdleStaff
 {
     public const SESSION_KEY = 'auth.staff_last_activity_at';
