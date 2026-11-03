@@ -17,4 +17,9 @@ return [
     'injongepay_payment_settled_outside' => 'Held payment settled outside',
     'injongepay_fees_swept' => 'Fees credited to platform wallets',
     'injongepay_webhook_ips_changed' => 'GTBank webhook addresses changed',
+    'injongepay_reconciliation_item' => 'Difference with GTBank',
+    'injongepay_reconciliation_resolved' => 'Difference explained',
+    'injongepay_payment_reversed' => 'Payment reversed by GTBank',
+    'injongepay_day_closed' => 'Day closed with GTBank',
+    'injongepay_bank_pull' => 'GTBank transaction list read',
 ];

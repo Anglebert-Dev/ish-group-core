@@ -248,7 +248,13 @@ Webhooks (`/api/payments/webhook`, `/api/gtbank/disbursement-status`) keep their
 1. ✅ InjongePay skeleton: migrations, Money, Ledger (pending/available buckets), references, business profiles, permissions and menu, audit labels, platform fees and webhook secret.
 2. ✅ GtbankClient (typed outcomes, v2.5 error-code map, token refresh, reads retried, posts never resent), bank-call log with screens, MerchantService state machine, scheduled sync, platform wallet screens. Without GTBANK_BASE_URL the module runs in test mode (wallets active at once, nothing sent).
 3. ✅ Webhook inbox (stored before processing, retried every minute), PaymentIntake (net to pending; available once GTBank's list confirms it), money held when a code can't take it (platform credits it or records how it was settled), fee accruals swept to the platform wallets every 10 minutes. `/api/payments/webhook` answers as before except: a redelivery gets 200 with the existing payment, held money gets 200 "Payment received and held for review."
-4. **BankMirror, Matcher, daily close, reconciliation queue.** This is the parity engine, and it comes before any money leaves.
+4. ✅ **BankMirror, Matcher, daily close, reconciliation queue.** This is the parity engine, and it comes before any money leaves. Built so far:
+   - GTBank's list read every 10 minutes: confirms our payments, takes in missed ones, ignores rows about other codes, never confirms a different amount
+   - REVERSED handled: the money and fees come back off, and an item opens if the money was already cashed out (nothing goes negative)
+   - each day closed at 01:30 per merchant code, comparing count and total
+   - the books check: entries = balances, and the platform identity
+   - payments GTBank hasn't confirmed after 24 h are flagged
+   - a queue of differences that stay open until explained
 5. Authorization (PIN, trusted beneficiaries, risk step-up, limits, maker-checker, devices), settlement accounts, transfers.
 6. Cash-out outbox with two-signal finality, poller, events, stuck/not-found queue for platform staff.
 7. Business dashboard, reports and exports.
