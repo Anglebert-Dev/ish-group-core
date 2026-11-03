@@ -29,6 +29,18 @@ final class BankCodes
 
     public const TOKEN_CODES = ['08', '09'];
 
+    /** 0, "0", " 00 ", 1 → "00", "01": GTBank sends codes as numbers or strings. */
+    public static function normalise(mixed $code): ?string
+    {
+        if ($code === null || $code === '' || ! is_scalar($code)) {
+            return null;
+        }
+
+        $code = trim((string) $code);
+
+        return ctype_digit($code) ? str_pad(ltrim($code, '0') ?: '0', 2, '0', STR_PAD_LEFT) : strtoupper($code);
+    }
+
     public static function outcome(?string $code): string
     {
         return self::MAP[$code ?? ''] ?? BankResult::REJECTED;

@@ -180,6 +180,11 @@ class GtbankClient
                 }
 
                 return new BankResult(BankResult::UNKNOWN, message: $e->getMessage(), diagnosis: __('injongepay::injongepay.diag_no_answer', ['seconds' => $timeout]));
+            } catch (Throwable $e) {
+                // TLS, DNS, a reset mid-answer: we can't know whether GTBank got it.
+                report($e);
+
+                return new BankResult(BankResult::UNKNOWN, message: $e->getMessage(), diagnosis: __('injongepay::injongepay.diag_no_answer', ['seconds' => $timeout]));
             }
 
             $result = $this->classify($response, $method, $path);
@@ -196,46 +201,47 @@ class GtbankClient
         return new BankResult(BankResult::UNKNOWN);
     }
 
+    
     private function classify(Response $response, string $method, string $path): BankResult
     {
         $status = $response->status();
-        $body = $response->json();
-        $body = is_array($body) ? $body : ['raw' => mb_substr($response->body(), 0, 2000)];
+        [$body, $readable] = self::decode($response->body());
         $message = BankPayloads::error($body);
-        $code = isset($body['responseCode']) ? (string) $body['responseCode'] : null;
-        $java = $status >= 400 ? JavaError::parse($body) : null;
-        $diagnosis = $java?->diagnosis();
-        $downstream = $java?->downstreamStatus;
+        $code = BankCodes::normalise($body['responseCode'] ?? $body['code'] ?? null);
+        $java = isset($body['error']) || isset($body['timestamp']) || $status >= 400 ? JavaError::parse($body) : null;
+        $result = fn (string $outcome, ?string $c = null) => new BankResult($outcome, $body, $status, $c ?? $code, $message, diagnosis: $java?->diagnosis() ?? ($readable ? null : __('injongepay::injongepay.diag_unreadable_body')), downstreamStatus: $java?->downstreamStatus);
+        $write = $method !== 'GET';
 
-        // The bridge answers 500 for whatever DigiPay said; act on what DigiPay said.
+        // Redirects (never followed), "continue", or nothing we can read: no answer.
+        if ($status < 200 || ($status >= 300 && $status < 400) || ! $readable) {
+            return $result(BankResult::UNKNOWN);
+        }
+
+        // What DigiPay said, even when the bridge wraps it in a 500 or a 200.
         if ($java?->saysNotFound()) {
-            return new BankResult(BankResult::NOT_FOUND, $body, $status, $code, $message, diagnosis: $diagnosis, downstreamStatus: $downstream);
+            return $result(BankResult::NOT_FOUND);
         }
 
-        // An account lookup DigiPay couldn't answer (wrong number format, unknown account): not verified.
         if ($java?->kind === JavaError::UNREADABLE && $path === '/disbursement/lookup') {
-            return new BankResult(BankResult::REJECTED, $body, $status, 'UNREADABLE', $message, diagnosis: $diagnosis, downstreamStatus: $downstream);
+            return $result(BankResult::REJECTED, 'UNREADABLE');
         }
 
-        if ($status >= 500) {
-            // Never "refused" for a write: whether DigiPay acted is settled by a status check, not guessed.
-            return new BankResult(BankResult::UNKNOWN, $body, $status, $code, $message, diagnosis: $diagnosis, downstreamStatus: $downstream);
-        }
-
-        if ($status === 404) {
-            return new BankResult(BankResult::NOT_FOUND, $body, $status, $code, $message, diagnosis: $diagnosis, downstreamStatus: $downstream);
+        if ($status >= 500 || in_array($status, [408, 425, 429], true)) {
+            return $result(BankResult::UNKNOWN);
         }
 
         if ($status === 409) {
-            return new BankResult(BankResult::REJECTED, $body, $status, $code ?? '13', $message);
+            // Already there: often a write that timed out earlier but reached GTBank.
+            return $result(BankResult::REJECTED, $code ?? '13');
         }
 
-        if ($status === 408 || $status === 429) {
-            return new BankResult(BankResult::UNKNOWN, $body, $status, $code, $message, diagnosis: $diagnosis, downstreamStatus: $downstream);
+        if ($status === 404) {
+            return $result(BankResult::NOT_FOUND);
         }
 
         if ($status >= 400) {
-            return new BankResult(BankResult::REJECTED, $body, $status, $code, $message, diagnosis: $diagnosis, downstreamStatus: $downstream);
+            // The bridge itself refused (validation, auth); a wrapped DigiPay answer stays unknown for a write.
+            return $result($write && $java?->kind === JavaError::DOWNSTREAM_HTTP ? BankResult::UNKNOWN : BankResult::REJECTED);
         }
 
         if ($code !== null && $code !== '00') {
@@ -246,15 +252,59 @@ class GtbankClient
                 $outcome = BankResult::OK;
             }
 
-            return new BankResult($outcome, $body, $status, $code, $message);
+            return $result($outcome);
         }
 
-        // Lookups and status checks answer 200 {"error": "… not found …"} for an unknown identifier.
-        if (isset($body['error']) && ! isset($body['status']) && ! isset($body['names'])) {
-            return new BankResult(stripos((string) $body['error'], 'not found') !== false ? BankResult::NOT_FOUND : BankResult::REJECTED, $body, $status, $code, $message);
+        // 2xx carrying an error ({"error": "…"} and no answer fields).
+        if (isset($body['error']) && ! self::hasAnswer($body)) {
+            if (stripos((string) $body['error'], 'not found') !== false) {
+                return $result(BankResult::NOT_FOUND);
+            }
+
+            return $result($write ? BankResult::UNKNOWN : BankResult::REJECTED);
         }
 
-        return new BankResult(BankResult::OK, $body, $status, $code ?? '00', $message);
+        // A write answered 2xx with an empty body: GTBank may or may not have taken it.
+        if ($write && $body === []) {
+            return $result(BankResult::UNKNOWN);
+        }
+
+        return $result(BankResult::OK, $code ?? '00');
+    }
+
+    /**
+     * JSON, possibly with a BOM, wrapped in quotes, or not JSON at all (an HTML
+     * proxy page, a truncated body).
+     *
+     * @return array{0: array, 1: bool} body, and whether it was readable
+     */
+    public static function decode(string $raw): array
+    {
+        $raw = trim(preg_replace('/^\xEF\xBB\xBF/', '', $raw) ?? $raw);
+
+        if ($raw === '') {
+            return [[], true];
+        }
+
+        $decoded = json_decode($raw, true);
+
+        if (is_string($decoded)) {
+            $decoded = json_decode($decoded, true);
+        }
+
+        if (is_array($decoded)) {
+            return [$decoded, true];
+        }
+
+        $title = preg_match('/<title>(.*?)<\/title>/is', $raw, $m) ? trim(strip_tags($m[1])) : null;
+
+        return [array_filter(['raw' => mb_substr($raw, 0, 2000), 'html_title' => $title]), false];
+    }
+
+    private static function hasAnswer(array $body): bool
+    {
+        return isset($body['names']) || isset($body['identifier']) || isset($body['request_id']) || isset($body['merchantId'])
+            || (isset($body['status']) && ! isset($body['timestamp']) && in_array(strtoupper((string) $body['status']), ['ACSC', 'PENDING', 'CANC', 'RJCT', 'SUCCESS', 'ACTIVE'], true));
     }
 
     private function token(): string
@@ -295,7 +345,7 @@ class GtbankClient
 
     private function http(bool $json = true): PendingRequest
     {
-        $request = Http::timeout((int) config('injongepay.gtbank.timeout', 15))
+        $request = Http::withoutRedirecting()->timeout((int) config('injongepay.gtbank.timeout', 20))
             ->withOptions(['verify' => $this->verify()])
             ->withHeaders(array_filter(['X-Participant-Name' => config('injongepay.gtbank.participant_name')]));
 

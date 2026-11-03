@@ -120,6 +120,14 @@ The document is not reliable on responses and codes, so the client acts on what 
 - **A timeout is not a failure.** `/disbursement/transfer` timed out at 15 s, and 30 s later its status was **ACSC**. Transfers now wait 60 s, and a write that gets no clear answer is always "unknown" until a status check settles it.
 - **DigiPay refusing GTBank's own login** (`401 … [no body]` on `/pay`) means the transfer was never created; the status check then says not found. The client reports it as unknown, explains it in plain words ("tell GTBank"), and leaves the status check to decide.
 - **Wallet numbers must be sent as `07XXXXXXXX`.** `+250788811607` makes the lookup fail with a Jackson error, while `0788811607` works. Every beneficiary is normalised before it is sent. A lookup GTBank can't read means "account not verified".
+- **No single answer ever decides about money.** These cases were examples, not the full list. `GtbankClient::classify` returns "done", "refused" or "not found" only for a clear, readable answer. Everything else is **unknown**:
+  - an empty or truncated body, an HTML proxy page, a redirect
+  - 408/425/429/5xx, a wrapped DigiPay error on a write
+  - an `{"error"}` in a 200 on a write
+  - TLS, DNS and reset errors
+  - codes 12 and 96
+
+  Codes arrive as numbers or strings (`0`, `"00"`). `Gtbank/BankAnswers.php` then decides a disbursement only from an explicit status for **our** reference, **our** amount and **our** account. DigiPay's `"status":"FAILED"` describes the *query*, so it never counts as a transfer failure. A "not found" is never proof on its own, because a write that timed out can appear minutes later. `GtbankConfusingAnswersTest` covers 44 answers.
 - **GTBank sends no webhook secret header.** That is why production had switched the check off. A webhook is now accepted when it carries the right secret, or carries none and comes from GTBank's address (Injonge Pay settings → GTBank's addresses, e.g. `10.22.198.46`). The money stays pending until GTBank's own transaction list confirms it.
 
 ## Who does what
