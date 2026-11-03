@@ -20,15 +20,26 @@
         <div class="xl:col-span-2">
             <h2 class="font-display font-bold text-ink mb-1">{{ __('injongepayconnect::connect.businesses_using') }}</h2>
             <p class="text-sm text-muted mb-3">{{ __('injongepayconnect::connect.businesses_using_hint') }}</p>
-            <x-common.table :headers="[__('body.business'), __('body.status'), __('injongepayconnect::connect.last_used')]">
+            <x-common.table :headers="[__('body.business'), __('body.status'), __('injongepayconnect::connect.last_used'), __('injongepayconnect::connect.rate_limit')]">
                 @forelse ($connections as $connection)
                     <tr class="hover:bg-surface">
                         <td class="px-5 py-3 font-semibold text-ink">{{ $connection->business?->name }}</td>
                         <td class="px-5 py-3">@include('injongepayconnect::platform._status', ['on' => $connection->is_enabled])</td>
                         <td class="px-5 py-3 text-muted">{{ $connection->last_used_at ? GeneralLibrary::formatDateTime($connection->last_used_at) : '—' }}</td>
+                        <td class="px-5 py-3">
+                            @if (AuthHelper::can('update injongepay_connect_platform.integrator'))
+                                <form action="{{ route('injongepayconnect.platform.integrators.rate-limit', [$integrator, $connection->uuid]) }}" method="POST" class="flex gap-2 items-center">
+                                    @csrf @method('PUT')
+                                    <input type="number" name="rate_limit" min="10" max="10000" value="{{ $connection->rate_limit }}" placeholder="{{ config('injongepayconnect.rate_limit') }}" class="w-24 rounded-lg border border-line bg-card px-2 py-1 text-sm">
+                                    <x-common.button type="submit" size="sm" variant="secondary">{{ __('body.save') }}</x-common.button>
+                                </form>
+                            @else
+                                {{ $connection->rate_limit ?? config('injongepayconnect.rate_limit') }}
+                            @endif
+                        </td>
                     </tr>
                 @empty
-                    <tr><td colspan="3" class="px-5 py-10 text-center text-muted">{{ __('injongepayconnect::connect.no_connections') }}</td></tr>
+                    <tr><td colspan="4" class="px-5 py-10 text-center text-muted">{{ __('injongepayconnect::connect.no_connections') }}</td></tr>
                 @endforelse
             </x-common.table>
             <x-common.pagination :paginator="$connections" class="mt-4" />

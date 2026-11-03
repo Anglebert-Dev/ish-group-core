@@ -72,6 +72,7 @@ class BusinessController extends Controller
             'limit_daily' => ['nullable', 'numeric', 'min:0', 'decimal:0,2'],
             'limit_monthly' => ['nullable', 'numeric', 'min:0', 'decimal:0,2'],
             'step_up_above' => ['nullable', 'numeric', 'min:0', 'decimal:0,2'],
+            'step_up_hourly_above' => ['nullable', 'numeric', 'min:0', 'decimal:0,2'],
             'second_approval_above' => ['nullable', 'numeric', 'min:0', 'decimal:0,2'],
         ], [
             'contact_phone.regex' => __('injongepay::injongepay.err_phone_format'),

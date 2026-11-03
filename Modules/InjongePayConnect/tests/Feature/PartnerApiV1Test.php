@@ -224,6 +224,8 @@ class PartnerApiV1Test extends InjongePayTestCase
         $this->get(route('injongepayconnect.platform.integrators.index'))->assertOk()->assertSee('Injonge EBM');
         $this->get(route('injongepayconnect.platform.integrators.show', $integrator))->assertOk()->assertSee('Rhenium Group')->assertDontSee($this->connection->client_id);
         $this->get(route('injongepayconnect.platform.integrators.create'))->assertOk();
+        $this->put(route('injongepayconnect.platform.integrators.rate-limit', [$integrator, $this->connection->uuid]), ['rate_limit' => 300])->assertSessionHas('success');
+        $this->assertSame(300, $this->connection->fresh()->rate_limit);
 
         $this->token();
         $call = \Modules\InjongePayConnect\Models\ApiCall::query()->firstOrFail();

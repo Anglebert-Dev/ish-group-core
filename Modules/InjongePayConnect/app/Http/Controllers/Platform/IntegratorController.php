@@ -54,6 +54,16 @@ class IntegratorController extends Controller
         return back()->with('success', __('injongepayconnect::connect.integrator_saved'));
     }
 
+    /** How many requests a minute one business's connection may make (traffic, not business data). */
+    public function rateLimit(Request $request, Integrator $integrator, string $connection): RedirectResponse
+    {
+        $data = $request->validate(['rate_limit' => ['nullable', 'integer', 'min:10', 'max:10000']]);
+        $row = Connection::query()->withoutGlobalScopes()->where('integrator_id', $integrator->id)->whereUuid($connection)->firstOrFail();
+        $row->forceFill(['rate_limit' => $data['rate_limit'] ?? null])->save();
+
+        return back()->with('success', __('injongepayconnect::connect.limits_saved'));
+    }
+
     /** Switching an integrator off stops all its connections at once. */
     public function toggle(Integrator $integrator): RedirectResponse
     {

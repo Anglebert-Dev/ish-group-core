@@ -14,8 +14,10 @@ use Modules\InjongePay\Services\Executors;
 
 class ApprovalController extends Controller
 {
-    public function index(): View
+    public function index(Approvals $approvals): View
     {
+        $approvals->expireOverdue();
+
         return view('injongepay::business.approvals.index', [
             'approvals' => Approval::query()->with(['wallet', 'requester'])->latest('id')->paginate(30),
         ]);

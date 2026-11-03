@@ -50,8 +50,16 @@ class Authorization
             $reasons[] = 'first_payout';
         }
 
-        if (Approval::query()->withoutGlobalScopes()->where('requested_by', $user->id)->where('created_at', '>', now()->subHour())->count() >= self::VELOCITY_PER_HOUR) {
+        $lastHour = Approval::query()->withoutGlobalScopes()->where('business_id', $wallet->business_id)->where('created_at', '>', now()->subHour())
+            ->whereIn('status', [Approval::AWAITING, Approval::APPROVED, Approval::EXECUTED]);
+
+        if ((clone $lastHour)->where('requested_by', $user->id)->count() >= self::VELOCITY_PER_HOUR) {
             $reasons[] = 'velocity';
+        }
+
+        // Many small amounts adding up to a large one.
+        if ($profile?->step_up_hourly_above !== null && (int) $lastHour->sum('amount') + $amount > $profile->step_up_hourly_above) {
+            $reasons[] = 'velocity_amount';
         }
 
         if ($this->pins->isFresh($user)) {

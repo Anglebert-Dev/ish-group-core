@@ -17,13 +17,14 @@ class BusinessProfiles
     public const FIELDS = ['short_name', 'tin', 'country', 'city', 'address', 'contact_person', 'contact_phone', 'contact_email', 'fee_percentage', 'support_staff_id'];
 
     // Entered in RWF, stored in cents; blank = no limit.
-    public const LIMITS = ['limit_per_transaction', 'limit_daily', 'limit_monthly', 'step_up_above', 'second_approval_above'];
+    public const LIMITS = ['limit_per_transaction', 'limit_daily', 'limit_monthly', 'step_up_above', 'step_up_hourly_above', 'second_approval_above'];
 
     public function save(Business $business, array $data): BusinessProfile
     {
         return DB::transaction(function () use ($business, $data) {
             $profile = BusinessProfile::for($business);
             $oldFee = $profile->exists ? $profile->fee_percentage : null;
+            $oldLimits = $profile->only(self::LIMITS);
 
             $profile->fill(array_intersect_key($data, array_flip(self::FIELDS)));
             $profile->fee_percentage = isset($data['fee_percentage']) && $data['fee_percentage'] !== '' ? \Modules\InjongePay\Support\Rate::normalise((string) $data['fee_percentage']) : null;
@@ -35,6 +36,11 @@ class BusinessProfiles
             $profile->business_id = $business->id;
             $profile->code ??= 'INJP'.now()->format('Ymd').str_pad((string) Counter::next('business_code'), 4, '0', STR_PAD_LEFT);
             $profile->save();
+
+            if (array_diff_assoc(array_map('strval', $profile->only(self::LIMITS)), array_map('strval', $oldLimits)) !== []) {
+                \Modules\InjongePay\Support\BusinessAlert::send($business->id, __('injongepay::injongepay.alert_limits'),
+                    __('injongepay::injongepay.alert_limits_body'), route('injongepay.profile', [], false));
+            }
 
             if ($this->rateChanged($oldFee, $profile->fee_percentage)) {
                 FeeRateChange::query()->create([

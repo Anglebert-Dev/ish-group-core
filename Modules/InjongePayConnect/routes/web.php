@@ -30,6 +30,7 @@ Route::prefix('app/injonge-pay/platform/partners')->name('injongepayconnect.plat
     Route::post('/integrators', [IntegratorController::class, 'store'])->middleware(['permission:create injongepay_connect_platform.integrator', 'password.confirm.staff'])->name('integrators.store');
     Route::get('/integrators/{integrator}', [IntegratorController::class, 'show'])->middleware('permission:read injongepay_connect_platform.integrator')->name('integrators.show');
     Route::put('/integrators/{integrator}', [IntegratorController::class, 'update'])->middleware('permission:update injongepay_connect_platform.integrator')->name('integrators.update');
+    Route::put('/integrators/{integrator}/connections/{connection}/rate-limit', [IntegratorController::class, 'rateLimit'])->middleware('permission:update injongepay_connect_platform.integrator')->name('integrators.rate-limit');
     Route::post('/integrators/{integrator}/toggle', [IntegratorController::class, 'toggle'])->middleware(['permission:update injongepay_connect_platform.integrator', 'password.confirm.staff'])->name('integrators.toggle');
 
     Route::get('/calls', [CallController::class, 'index'])->middleware('permission:list injongepay_connect_platform.call')->name('calls.index');

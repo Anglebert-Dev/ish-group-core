@@ -18,10 +18,15 @@
                 <x-common.button type="submit">{{ __('body.save') }}</x-common.button>
             @endif
         </form>
+        <div class="space-y-6">
         <x-common.info-card :title="__('injongepay::injongepay.set_by_inhills')" :rows="[
             [__('injongepay::injongepay.tin'), $profile->tin ?? '—'],
             [__('injongepay::injongepay.fee'), $fee.'%'],
             [__('injongepay::injongepay.code'), $profile->code ?? '—'],
         ]" />
+        <x-common.info-card :title="__('injongepay::injongepay.limits')" :rows="collect(\Modules\InjongePay\Services\BusinessProfiles::LIMITS)->map(fn ($l) => [
+            __('injongepay::injongepay.'.$l), $profile->{$l} !== null ? \Modules\InjongePay\Support\Money::format($profile->{$l}) : __('injongepay::injongepay.no_limit'),
+        ])->all()" />
+        </div>
     </div>
 </x-layouts.app>

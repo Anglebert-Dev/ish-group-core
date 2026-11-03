@@ -39,6 +39,8 @@ class Pins
         ]);
 
         audit($had ? 'injongepay_pin_changed' : 'injongepay_pin_set', __('injongepay::audit.'.($had ? 'injongepay_pin_changed' : 'injongepay_pin_set')).': '.$user->name, $user, [], $user->business_id);
+        \Modules\InjongePay\Support\BusinessAlert::send((int) $user->business_id, __('injongepay::injongepay.alert_pin_'.($had ? 'changed' : 'set')),
+            __('injongepay::injongepay.alert_pin_body', ['name' => $user->name]), route('injongepay.security', [], false), $user);
     }
 
     /** @throws InjongePayException when wrong or locked */
@@ -63,6 +65,11 @@ class Pins
         $attempts = $row->failed_attempts + 1;
         $locked = $attempts >= self::MAX_ATTEMPTS;
         $row->forceFill(['failed_attempts' => $locked ? 0 : $attempts, 'locked_until' => $locked ? now()->addMinutes(self::LOCK_MINUTES) : null])->save();
+
+        if ($locked) {
+            \Modules\InjongePay\Support\BusinessAlert::send((int) $user->business_id, __('injongepay::injongepay.alert_pin_locked'),
+                __('injongepay::injongepay.alert_pin_locked_body', ['name' => $user->name, 'minutes' => self::LOCK_MINUTES]), route('injongepay.security', [], false), $user);
+        }
 
         audit($locked ? 'injongepay_pin_locked' : 'injongepay_pin_wrong', __('injongepay::audit.'.($locked ? 'injongepay_pin_locked' : 'injongepay_pin_wrong')).': '.$user->name, $user, ['attempt' => $attempts], $user->business_id);
 

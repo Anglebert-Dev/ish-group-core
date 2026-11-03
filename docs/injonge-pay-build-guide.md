@@ -322,14 +322,16 @@ After the phases, from trying it: Fee earnings, dashboard by module, business wa
    Run on the server with the real keys: register one merchant code, read one day's list, make one small cash-out. Then add the answers to `tests/fixtures/gtbank-production.php`.
 3. **Server setup**: cron `schedule:run`, a `queue:work` under Supervisor, `APP_ENV=production`, an https `APP_URL`, the `GTBANK_*` keys, the GTBank CA file. GTBank must call the two webhook URLs on the new domain.
 
-**Promised in this guide but not built**
-4. **Security changes are only audited**: a new PIN, a new settlement account and a changed limit notify no one. They should notify the business admin.
-5. **PIN reset with MFA**: today changing a PIN needs the password only (plus the step-up afterwards for 24 h).
-6. **Monthly statement check**: GTBank has no balance or statement API; uploading its settlement-account statement to compare totals is not built. Ask GTBank for a statement endpoint first.
-7. **Velocity rule** counts operations per hour only, not amounts.
-8. **Approval requests waiting for a second person** expire only when someone tries to approve them after 24 h; they aren't marked expired by themselves.
+**Built on 04/11/2026** (were promised but missing)
+- A new or changed PIN, a locked PIN, a new or removed settlement account and changed limits notify the business's Admins (in the app and by email) and the person concerned.
+- Changing a PIN needs the authenticator code, or a code by email; a first PIN needs the password.
+- **Statement checks** (Reconciliation → Statement checks): GTBank's CSV statement of the settlement account is compared with the books. Credits are matched with payments and debits with paid cash-outs, by reference first, then by amount and day. The closing balance is compared with what the books say GTBank holds. A difference opens a reconciliation item. Columns are found by their headings. Still ask GTBank for a statement API.
+- *Extra check above (per hour)*: the step-up also triggers when the business's total in the last hour would pass it.
+- Requests waiting for a second person expire after 24 h by themselves (every 10 minutes, and when Approvals is opened); the requester is told.
 
 **Smaller**
-9. **Partner rate limit per connection** has no screen any more; every connection uses the default (120/min).
-10. **Translations**: Injonge Pay's screens are English only. The core supports French and Kinyarwanda.
-11. **A click-through of every screen** in the browser, both as a business and as Inhills.
+- The partner rate limit per connection is set by Inhills on the integrator's page.
+- Every page is opened by `EveryScreenTest` with data on it, as the business and as Inhills (and refused to the business on Inhills' pages); it passes on SQLite and on Postgres.
+
+**Open**
+- **Translations**: the whole app (core and every module) is English only. A language is offered once `resources/lang/<code>` exists in the core, so French or Kinyarwanda means translating the core and every module together, not Injonge Pay alone.

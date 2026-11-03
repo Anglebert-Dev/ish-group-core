@@ -14,6 +14,7 @@ use Modules\InjongePay\Http\Controllers\Business\SecurityController;
 use Modules\InjongePay\Http\Controllers\Business\SettlementAccountController as BusinessSettlementAccountController;
 use Modules\InjongePay\Http\Controllers\Business\TransferController;
 use Modules\InjongePay\Http\Controllers\Platform\ReconciliationController;
+use Modules\InjongePay\Http\Controllers\Platform\StatementController;
 use Modules\InjongePay\Http\Controllers\Platform\UnallocatedController;
 use Modules\InjongePay\Http\Controllers\Platform\BankCallController;
 use Modules\InjongePay\Http\Controllers\Platform\BusinessController;
@@ -82,6 +83,9 @@ Route::prefix('app/injonge-pay/platform')->name('injongepay.platform.')->middlew
     Route::post('/reconciliation/pull', [ReconciliationController::class, 'pull'])->middleware(['permission:update injongepay_platform.bank', 'throttle:6,1'])->name('reconciliation.pull');
     Route::post('/reconciliation/close-day', [ReconciliationController::class, 'closeDay'])->middleware(['permission:update injongepay_platform.reconciliation', 'throttle:6,1'])->name('reconciliation.close-day');
     Route::post('/reconciliation/{item}/resolve', [ReconciliationController::class, 'resolve'])->middleware(['permission:approve injongepay_platform.reconciliation', 'password.confirm.staff'])->name('reconciliation.resolve');
+    Route::get('/statements', [StatementController::class, 'index'])->middleware('permission:list injongepay_platform.reconciliation')->name('statements.index');
+    Route::post('/statements', [StatementController::class, 'store'])->middleware(['permission:update injongepay_platform.reconciliation', 'throttle:10,1'])->name('statements.store');
+    Route::get('/statements/{check}', [StatementController::class, 'show'])->middleware('permission:list injongepay_platform.reconciliation')->name('statements.show');
     Route::get('/unallocated', [UnallocatedController::class, 'index'])->middleware('permission:list injongepay_platform.reconciliation')->name('unallocated.index');
     Route::post('/unallocated/{row}/allocate', [UnallocatedController::class, 'allocate'])->middleware(['permission:approve injongepay_platform.reconciliation', 'password.confirm.staff'])->name('unallocated.allocate');
     Route::post('/unallocated/{row}/settle-outside', [UnallocatedController::class, 'settleOutside'])->middleware(['permission:approve injongepay_platform.reconciliation', 'password.confirm.staff'])->name('unallocated.settle-outside');

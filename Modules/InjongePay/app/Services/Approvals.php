@@ -140,6 +140,43 @@ class Approvals
         });
     }
 
+    /** @return int how many expired */
+    public function expireOverdue(): int
+    {
+        $count = 0;
+
+        foreach (Approval::query()->withoutGlobalScopes()->where('status', Approval::AWAITING)->where('expires_at', '<', now())->get() as $approval) {
+            $expired = DB::transaction(function () use ($approval) {
+                $locked = Approval::query()->withoutGlobalScopes()->whereKey($approval->id)->lockForUpdate()->first();
+
+                if ($locked->status !== Approval::AWAITING) {
+                    return false;
+                }
+
+                $locked->forceFill(['status' => Approval::EXPIRED])->save();
+
+                return true;
+            });
+
+            if (! $expired) {
+                continue;
+            }
+
+            $count++;
+            audit('injongepay_approval_expired', __('injongepay::injongepay.audit_expired', ['amount' => Money::format($approval->amount)]), $approval, [], $approval->business_id);
+
+            try {
+                app(NotificationService::class)->notify($approval->requested_by, __('injongepay::injongepay.notify_approval_expired'),
+                    __('injongepay::injongepay.notify_approval_expired_body', ['operation' => __('injongepay::injongepay.operation_'.$approval->operation), 'amount' => Money::format($approval->amount)]),
+                    'warning', route('injongepay.approvals.index', [], false), $approval);
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
+        return $count;
+    }
+
     public function fail(Approval $approval, string $reason): void
     {
         $approval->forceFill(['status' => Approval::FAILED, 'failure_reason' => $reason])->save();

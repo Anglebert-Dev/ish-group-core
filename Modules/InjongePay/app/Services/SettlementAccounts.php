@@ -38,6 +38,7 @@ class SettlementAccounts
         if (! GtbankClient::isConfigured()) {
             $account->forceFill(['status' => SettlementAccount::APPROVED, 'verified_names' => $account->holder_name, 'verified_at' => now(),
                 'approved_by' => auth()->id(), 'approved_at' => now(), 'usable_from' => now()])->save();
+            $this->tell($account, 'added');
 
             return;
         }
@@ -60,6 +61,7 @@ class SettlementAccounts
 
         if ($matches && $account->status !== SettlementAccount::APPROVED) {
             $account->forceFill(['status' => SettlementAccount::APPROVED, 'approved_by' => auth()->id(), 'approved_at' => now(), 'usable_from' => now()])->save();
+            $this->tell($account, 'added');
         }
 
         audit('injongepay_account_verified', __('injongepay::injongepay.audit_account_verified', ['account' => $account->label(), 'names' => $found['names'] ?? '—']),
@@ -74,6 +76,15 @@ class SettlementAccounts
     {
         $account->forceFill(['status' => SettlementAccount::DISABLED])->save();
         audit('injongepay_account_disabled', __('injongepay::injongepay.audit_account_disabled', ['account' => $account->label()]), $account, ['reason' => $reason], $account->business_id);
+        $this->tell($account, 'removed');
+    }
+
+    /** Where money can go just changed: the business's Admins must know. */
+    private function tell(SettlementAccount $account, string $what): void
+    {
+        \Modules\InjongePay\Support\BusinessAlert::send((int) $account->business_id, __('injongepay::injongepay.alert_account_'.$what),
+            __('injongepay::injongepay.alert_account_body', ['account' => $account->label(), 'name' => auth()->user()?->name ?? '—']),
+            route('injongepay.settlement-accounts.index', [], false), auth()->user());
     }
 
     /** "MUSABYIMANA Rose Mary" = "Rose Mary MUSABYIMANA"; every word of the shorter name in the longer. */

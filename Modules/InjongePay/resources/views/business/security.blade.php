@@ -9,6 +9,13 @@
             <p class="text-sm text-muted">{{ __('injongepay::injongepay.pin_hint') }}</p>
             <x-common.input name="pin" type="password" inputmode="numeric" maxlength="5" autocomplete="new-password" :label="__('injongepay::injongepay.new_pin')" required />
             <x-common.input name="pin_confirmation" type="password" inputmode="numeric" maxlength="5" autocomplete="new-password" :label="__('injongepay::injongepay.new_pin_again')" required />
+            @if ($hasPin)
+                @if (session('pin_step_up'))
+                    <x-common.input name="code" inputmode="numeric" maxlength="8" autocomplete="one-time-code" :label="__('injongepay::injongepay.step_up_code')" :hint="__('injongepay::injongepay.step_up_needed_'.session('pin_step_up'))" required autofocus />
+                @else
+                    <p class="text-xs text-muted">{{ __('injongepay::injongepay.pin_change_needs_code_'.$method) }}</p>
+                @endif
+            @endif
             <x-common.button type="submit" size="sm">{{ __('body.save') }}</x-common.button>
         </form>
 

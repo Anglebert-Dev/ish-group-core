@@ -33,6 +33,7 @@ return [
     'injongepay_approval_approved' => 'Approved by a second person',
     'injongepay_approval_rejected' => 'Rejected by a second person',
     'injongepay_approval_failed' => 'Approved operation could not run',
+    'injongepay_approval_expired' => 'Request expired without a second approval',
     'injongepay_transfer_executed' => 'Transfer done',
     'injongepay_account_verified' => 'Cash-out account checked with GTBank',
     'injongepay_account_approved' => 'Cash-out account approved',
@@ -41,4 +42,5 @@ return [
     'injongepay_cashout_completed' => 'Cash-out paid',
     'injongepay_cashout_failed' => 'Cash-out not paid, money returned',
     'injongepay_report_exported' => 'Injonge Pay report exported',
+    'injongepay_statement_checked' => 'GTBank statement compared with the books',
 ];

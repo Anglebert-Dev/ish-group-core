@@ -2,6 +2,7 @@
 <x-layouts.app :title="__('injongepay::injongepay.reconciliation')">
     <x-common.page-header :title="__('injongepay::injongepay.reconciliation')" :description="__('injongepay::injongepay.reconciliation_description')">
         <x-slot:actions>
+            <x-common.action-button :href="route('injongepay.platform.statements.index')">{{ __('injongepay::injongepay.statements') }}</x-common.action-button>
             @if (AuthHelper::can('update injongepay_platform.bank'))
                 <x-common.action-button :action="route('injongepay.platform.reconciliation.pull')">{{ __('injongepay::injongepay.pull_now') }}</x-common.action-button>
             @endif

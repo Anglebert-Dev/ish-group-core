@@ -26,14 +26,26 @@ class SecurityController extends Controller
         ]);
     }
 
-    public function setPin(Request $request, Pins $pins): RedirectResponse
+   
+    public function setPin(Request $request, Pins $pins, StepUp $stepUp): RedirectResponse
     {
-        $data = $request->validate(['pin' => ['required', 'string', 'confirmed']]);
+        $data = $request->validate(['pin' => ['required', 'string', 'confirmed'], 'code' => ['nullable', 'string', 'max:10']]);
+        $user = $request->user('staff');
 
         try {
-            $pins->set($request->user('staff'), $data['pin']);
+            if ($pins->has($user)) {
+                if (blank($data['code'] ?? null)) {
+                    $stepUp->send($user, 'pin_change');
+
+                    return back()->with('pin_step_up', $stepUp->method($user))->with('error', __('injongepay::injongepay.step_up_needed_'.$stepUp->method($user)));
+                }
+
+                $stepUp->check($user, 'pin_change', $data['code']);
+            }
+
+            $pins->set($user, $data['pin']);
         } catch (InjongePayException $e) {
-            return back()->with('error', $e->getMessage());
+            return back()->with('pin_step_up', $pins->has($user) ? $stepUp->method($user) : null)->with('error', $e->getMessage());
         }
 
         return back()->with('success', __('injongepay::injongepay.pin_saved'));

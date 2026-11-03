@@ -22,7 +22,7 @@ class BusinessProfile extends BaseModel
     protected function casts(): array
     {
         return ['is_internal' => 'boolean', 'fee_percentage' => 'decimal:4', 'limit_per_transaction' => 'integer', 'limit_daily' => 'integer',
-            'limit_monthly' => 'integer', 'step_up_above' => 'integer', 'second_approval_above' => 'integer'];
+            'limit_monthly' => 'integer', 'step_up_above' => 'integer', 'step_up_hourly_above' => 'integer', 'second_approval_above' => 'integer'];
     }
 
     public function supportStaff(): BelongsTo
