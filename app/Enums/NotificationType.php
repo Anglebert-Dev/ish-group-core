@@ -13,11 +13,11 @@ enum NotificationType: string
     public function label(): string
     {
         return match ($this) {
-            self::System => 'System',
-            self::Info => 'Info',
-            self::Success => 'Success',
-            self::Warning => 'Warning',
-            self::Security => 'Security',
+            self::System => __('body.notification_type_system'),
+            self::Info => __('body.notification_type_info'),
+            self::Success => __('body.notification_type_success'),
+            self::Warning => __('body.notification_type_warning'),
+            self::Security => __('body.notification_type_security'),
         };
     }
 }

@@ -10,8 +10,8 @@ enum ActivityLogStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Active => 'Active',
-            self::Inactive => 'Inactive',
+            self::Active => __('body.log_status_active'),
+            self::Inactive => __('body.log_status_inactive'),
         };
     }
 }

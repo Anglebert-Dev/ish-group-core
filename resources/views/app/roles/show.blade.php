@@ -36,7 +36,7 @@
                 @endphp
                 @if ($modulePermissions->isNotEmpty())
                     <div class="mb-5 last:mb-0">
-                        <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">{{ $moduleLabels[$module] ?? Str::headline($module) }}</p>
+                        <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">{{ __($moduleLabels[$module] ?? Str::headline($module)) }}</p>
                         <div class="space-y-3">
                             @foreach ($controllers as $controller => $permissions)
                                 @php
@@ -44,11 +44,11 @@
                                 @endphp
                                 @continue($granted->isEmpty())
                                 <div class="p-4 bg-surface rounded-lg">
-                                    <p class="text-sm font-medium text-ink mb-2">{{ $controllerLabels[$controller] ?? Str::headline($controller) }}</p>
+                                    <p class="text-sm font-medium text-ink mb-2">{{ __($controllerLabels[$controller] ?? Str::headline($controller)) }}</p>
                                     <div class="flex flex-wrap gap-2">
                                         @foreach ($granted as $permission)
                                             @php $action = Str::before($permission, ' '); @endphp
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-brand-light text-brand-dark">{{ Str::headline($action) }}</span>
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-brand-light text-brand-dark">{{ __(Str::headline($action)) }}</span>
                                         @endforeach
                                     </div>
                                 </div>
@@ -64,7 +64,7 @@
                     <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">{{ __('body.other_permissions') }}</p>
                     <div class="flex flex-wrap gap-2">
                         @foreach ($extraGranted as $permission)
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-brand-light text-brand-dark">{{ Str::headline($permission) }}</span>
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-brand-light text-brand-dark">{{ __(Str::headline($permission)) }}</span>
                         @endforeach
                     </div>
                 </div>

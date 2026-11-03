@@ -18,7 +18,7 @@
                     <th class="px-5 py-3 font-semibold">{{ __('body.email_address') }}</th>
                     <th class="px-5 py-3 font-semibold">{{ __('body.role') }}</th>
                     <th class="px-5 py-3 font-semibold">{{ __('body.status') }}</th>
-                    <th class="px-5 py-3 font-semibold text-right">Actions</th>
+                    <th class="px-5 py-3 font-semibold text-right">{{ __('body.actions') }}</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-line">
@@ -66,7 +66,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="5" class="px-5 py-10 text-center text-muted">No staff yet.</td></tr>
+                    <tr><td colspan="5" class="px-5 py-10 text-center text-muted">{{ __('body.users_none') }}</td></tr>
                 @endforelse
             </tbody>
         </table>

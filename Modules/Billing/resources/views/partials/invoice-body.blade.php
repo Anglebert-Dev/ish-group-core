@@ -16,7 +16,7 @@
             <dt class="text-muted">{{ __('billing::billing.billed_to') }}</dt>
             <dd class="text-ink">
                 {{ $invoice->billed_to['name'] ?? $invoice->business?->name }}
-                @if (! empty($invoice->billed_to['tax_id']))<br><span class="text-muted">TIN {{ $invoice->billed_to['tax_id'] }}</span>@endif
+                @if (! empty($invoice->billed_to['tax_id']))<br><span class="text-muted">{{ __('billing::billing.tax_id') }}: {{ $invoice->billed_to['tax_id'] }}</span>@endif
             </dd>
         </dl>
     </div>

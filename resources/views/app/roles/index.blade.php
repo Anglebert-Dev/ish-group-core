@@ -16,7 +16,7 @@
                 <tr class="text-left text-xs text-muted uppercase tracking-wide border-b border-line">
                     <th class="px-5 py-3 font-semibold">{{ __('body.role_name') }}</th>
                     <th class="px-5 py-3 font-semibold">{{ __('body.permissions') }}</th>
-                    <th class="px-5 py-3 font-semibold text-right">Actions</th>
+                    <th class="px-5 py-3 font-semibold text-right">{{ __('body.actions') }}</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-line">

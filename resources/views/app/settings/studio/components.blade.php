@@ -33,7 +33,7 @@
 
         <div class="bg-card border border-line rounded-xl p-5 space-y-4">
             <p class="font-display font-bold text-ink text-lg">{{ __('body.studio_fields') }}</p>
-            <x-common.input name="studio_name" :label="__('body.name')" placeholder="Kigali Sun" />
+            <x-common.input name="studio_name" :label="__('body.name')" :placeholder="__('body.example_business_name')" />
             <x-common.select name="studio_select" :label="__('body.status')" :options="['a' => __('body.active'), 'b' => __('body.disabled')]" />
             <x-common.checkbox name="studio_check" :label="__('body.studio_checkbox')" checked />
         </div>

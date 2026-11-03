@@ -23,7 +23,7 @@
                     <th class="px-5 py-3 font-semibold">{{ __('body.notification') }}</th>
                     <th class="px-5 py-3 font-semibold">{{ __('body.type') }}</th>
                     <th class="px-5 py-3 font-semibold">{{ __('body.when') }}</th>
-                    <th class="px-5 py-3 font-semibold text-right">Actions</th>
+                    <th class="px-5 py-3 font-semibold text-right">{{ __('body.actions') }}</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-line">

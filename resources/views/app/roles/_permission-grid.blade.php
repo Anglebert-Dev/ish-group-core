@@ -9,7 +9,7 @@
     @foreach ($catalogue['modules'] as $module => $controllers)
         <div class="border border-line rounded-lg overflow-hidden">
             <div class="bg-surface px-4 py-2.5 border-b border-line flex items-center justify-between">
-                <p class="font-semibold text-ink text-sm">{{ $moduleLabels[$module] ?? Str::headline($module) }}</p>
+                <p class="font-semibold text-ink text-sm">{{ __($moduleLabels[$module] ?? Str::headline($module)) }}</p>
                 <label class="flex items-center gap-2 text-xs text-muted cursor-pointer">
                     <input type="checkbox" class="module-select-all rounded border-line text-brand" data-module="{{ $module }}">
                     {{ __('body.select_all') }}
@@ -21,14 +21,14 @@
                         <tr class="text-left text-xs text-muted border-b border-line">
                             <th class="px-4 py-2 font-medium whitespace-nowrap">{{ __('body.permission_group') }}</th>
                             @foreach ($actions as $action)
-                                <th class="px-2 py-2 font-medium text-center whitespace-nowrap">{{ Str::headline($action) }}</th>
+                                <th class="px-2 py-2 font-medium text-center whitespace-nowrap">{{ __(Str::headline($action)) }}</th>
                             @endforeach
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-line">
                         @foreach ($controllers as $controller => $permissions)
                             <tr>
-                                <td class="px-4 py-2 text-body whitespace-nowrap">{{ $controllerLabels[$controller] ?? Str::headline($controller) }}</td>
+                                <td class="px-4 py-2 text-body whitespace-nowrap">{{ __($controllerLabels[$controller] ?? Str::headline($controller)) }}</td>
                                 @foreach ($actions as $action)
                                     @php $permName = "{$action} {$module}.{$controller}"; @endphp
                                     <td class="px-2 py-2 text-center">
@@ -53,7 +53,7 @@
                     <x-common.checkbox
                         name="permissions[]"
                         :value="$perm"
-                        :label="Str::headline($perm)"
+                        :label="__(Str::headline($perm))"
                         :checked="in_array($perm, $assigned, true)"
                     />
                 @endforeach

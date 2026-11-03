@@ -17,7 +17,7 @@
 
     <div class="sidebar-head h-[var(--header-h)] flex items-center justify-between gap-2 px-5 border-b border-sidebar-ink/10 shrink-0">
         <x-common.logo compact :dark="$sidebarDark" :href="route('dashboard')" />
-        <button type="button" onclick="toggleSidebar(false)" class="lg:hidden p-2 -mr-2 text-sidebar-ink/60 hover:text-sidebar-ink" aria-label="Close menu">
+        <button type="button" onclick="toggleSidebar(false)" class="lg:hidden p-2 -mr-2 text-sidebar-ink/60 hover:text-sidebar-ink" aria-label="{{ __('body.close_menu') }}">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
     </div>

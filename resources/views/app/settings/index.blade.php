@@ -647,7 +647,7 @@
                         </div>
                     @endforeach
                     <x-common.input name="signatory_name" :label="__('body.brand_signatory_name')" :value="old('signatory_name', $brand->signatoryName)" />
-                    <x-common.input name="signatory_title" :label="__('body.brand_signatory_title')" :value="old('signatory_title', $brand->signatoryTitle)" placeholder="Managing Director" />
+                    <x-common.input name="signatory_title" :label="__('body.brand_signatory_title')" :value="old('signatory_title', $brand->signatoryTitle)" :placeholder="__('body.example_signatory_title')" />
                 </div>
             </div>
         @endif

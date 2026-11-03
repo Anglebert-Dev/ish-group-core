@@ -11,10 +11,11 @@
 @endphp
 
 <div {{ $attributes->merge(['class' => 'flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-line px-4 sm:px-5 py-3.5']) }}>
-    <p class="text-sm text-muted">Showing <span class="font-medium text-ink">{{ $paginator->firstItem() ?? 0 }}</span> to
-        <span class="font-medium text-ink">{{ $paginator->lastItem() ?? 0 }}</span> of
-        <span class="font-medium text-ink">{{ $paginator->total() }}</span> results
-    </p>
+    <p class="text-sm text-muted">{!! __('body.pagination_showing', [
+        'first' => '<span class="font-medium text-ink">'.e($paginator->firstItem() ?? 0).'</span>',
+        'last' => '<span class="font-medium text-ink">'.e($paginator->lastItem() ?? 0).'</span>',
+        'total' => '<span class="font-medium text-ink">'.e($paginator->total()).'</span>',
+    ]) !!}</p>
 
     @if ($last > 1)
         <div class="flex items-center gap-1.5 self-end sm:self-auto">

@@ -14,7 +14,7 @@
 <header class="h-[var(--header-h)] bg-header text-header-ink border-b border-header-ink/10 flex items-center justify-between gap-3 px-4 sm:px-5 lg:px-8 sticky top-0 z-20">
 
     <div class="flex items-center gap-3 min-w-0">
-        <button type="button" onclick="toggleSidebar(true)" class="lg:hidden text-header-ink p-2 -ml-2 rounded-lg hover:bg-header-ink/5" aria-label="Open menu">
+        <button type="button" onclick="toggleSidebar(true)" class="lg:hidden text-header-ink p-2 -ml-2 rounded-lg hover:bg-header-ink/5" aria-label="{{ __('body.open_menu') }}">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
         </button>
         @php

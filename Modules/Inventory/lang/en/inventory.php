@@ -155,4 +155,8 @@ return [
     // Dashboard
     'dashboard_items' => 'Items in stock',
     'dashboard_low' => 'Low stock items',
+    'option1_example' => 'Size',
+    'option2_example' => 'Colour',
+    'option1_values_example' => 'S, M, L, XL',
+    'option2_values_example' => 'White, Blue',
 ];

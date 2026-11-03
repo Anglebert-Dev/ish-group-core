@@ -46,15 +46,15 @@
                 <p class="text-sm text-muted mt-1">{{ __('inventory::inventory.options_hint') }}</p>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-2xl">
-                <x-common.input name="option1_name" :label="__('inventory::inventory.option1_name')" :value="$option1" placeholder="Size" data-option-name="1" />
-                <x-common.input name="option2_name" :label="__('inventory::inventory.option2_name')" :value="$option2" placeholder="Colour" data-option-name="2" />
+                <x-common.input name="option1_name" :label="__('inventory::inventory.option1_name')" :value="$option1" :placeholder="__('inventory::inventory.option1_example')" data-option-name="1" />
+                <x-common.input name="option2_name" :label="__('inventory::inventory.option2_name')" :value="$option2" :placeholder="__('inventory::inventory.option2_example')" data-option-name="2" />
             </div>
 
             <div data-generator class="{{ filled($option1) || filled($option2) ? '' : 'hidden' }} rounded-xl border border-dashed border-line p-4 space-y-3">
                 <p class="text-sm font-semibold text-ink">{{ __('inventory::inventory.variant_generate') }}</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl">
-                    <input type="text" data-values="1" class="{{ $cell }}" placeholder="S, M, L, XL">
-                    <input type="text" data-values="2" class="{{ $cell }}" placeholder="White, Blue">
+                    <input type="text" data-values="1" class="{{ $cell }}" placeholder="{{ __('inventory::inventory.option1_values_example') }}">
+                    <input type="text" data-values="2" class="{{ $cell }}" placeholder="{{ __('inventory::inventory.option2_values_example') }}">
                 </div>
                 <p class="text-xs text-muted">{{ __('inventory::inventory.variant_generate_hint') }}</p>
                 <button type="button" data-generate class="text-sm font-semibold text-brand hover:text-brand-dark">{{ __('inventory::inventory.variant_generate') }}</button>

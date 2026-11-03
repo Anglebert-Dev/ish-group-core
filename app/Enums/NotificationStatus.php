@@ -10,8 +10,8 @@ enum NotificationStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Unread => 'Unread',
-            self::Read => 'Read',
+            self::Unread => __('body.notification_status_unread'),
+            self::Read => __('body.notification_status_read'),
         };
     }
 }
