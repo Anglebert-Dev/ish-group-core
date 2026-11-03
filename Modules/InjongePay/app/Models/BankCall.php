@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class BankCall extends Model
 {
+    use \Modules\InjongePay\Support\UuidRouteKey;
     public const UPDATED_AT = null;
 
     protected $table = 'ijp_bank_calls';
@@ -19,11 +20,6 @@ class BankCall extends Model
         static::creating(function (self $call) {
             $call->uuid ??= UuidLibrary::generate();
         });
-    }
-
-    public function getRouteKeyName(): string
-    {
-        return 'uuid';
     }
 
     protected function casts(): array

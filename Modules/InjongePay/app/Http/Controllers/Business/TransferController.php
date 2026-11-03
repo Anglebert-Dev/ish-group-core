@@ -5,6 +5,7 @@ namespace Modules\InjongePay\Http\Controllers\Business;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Modules\InjongePay\Exceptions\InjongePayException;
 use Modules\InjongePay\Exceptions\StepUpRequired;
@@ -24,7 +25,7 @@ class TransferController extends Controller
         // Step 1 (as before): say whose merchant code it is before anything is asked for.
         $destination = null;
         $problem = null;
-        $from = Wallet::query()->whereNull('internal_role')->where('uuid', (string) $request->query('wallet'))->first();
+        $from = Str::isUuid((string) $request->query('wallet')) ? Wallet::query()->whereNull('internal_role')->whereUuid($request->query('wallet'))->first() : null;
 
         if ($from && filled($request->query('to'))) {
             try {
@@ -57,7 +58,7 @@ class TransferController extends Controller
         ]);
 
         try {
-            $from = Wallet::query()->whereNull('internal_role')->where('uuid', $data['wallet'])->firstOrFail();
+            $from = Wallet::query()->whereNull('internal_role')->whereUuid($data['wallet'])->firstOrFail();
             $to = $transfers->destination($data['merchant_code'], $from);
             $amount = Money::toCents((string) $data['amount']);
 

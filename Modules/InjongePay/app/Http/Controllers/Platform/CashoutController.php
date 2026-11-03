@@ -60,6 +60,6 @@ class CashoutController extends Controller
 
     private function find(string $uuid): Cashout
     {
-        return Cashout::query()->withoutGlobalScopes()->where('uuid', $uuid)->firstOrFail();
+        return Cashout::query()->withoutGlobalScopes()->whereUuid($uuid)->firstOrFail();
     }
 }

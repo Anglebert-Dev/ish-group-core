@@ -43,7 +43,7 @@ class UnallocatedController extends Controller
         ]);
 
         try {
-            $payment = $intake->allocate($row, Wallet::query()->withoutGlobalScopes()->where('uuid', $data['wallet'])->firstOrFail(), $data['note']);
+            $payment = $intake->allocate($row, Wallet::query()->withoutGlobalScopes()->whereUuid($data['wallet'])->firstOrFail(), $data['note']);
         } catch (InjongePayException $e) {
             return back()->with('error', $e->getMessage());
         }

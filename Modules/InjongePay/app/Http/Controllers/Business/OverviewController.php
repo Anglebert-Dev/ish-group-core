@@ -27,7 +27,7 @@ class OverviewController extends Controller
     /** One merchant account, as the old wallet page: its day, its month, what is on the way out. */
     public function wallet(string $wallet): View
     {
-        $wallet = Wallet::query()->whereNull('internal_role')->where('uuid', $wallet)->firstOrFail();
+        $wallet = Wallet::query()->whereNull('internal_role')->whereUuid($wallet)->firstOrFail();
         $totals = fn ($since) => Payment::query()->where('wallet_id', $wallet->id)->where('created_at', '>=', $since)
             ->selectRaw('COUNT(*) AS count, COALESCE(SUM(gross_amount), 0) AS gross')->first();
 

@@ -35,7 +35,7 @@ class ReportController extends Controller
 
     public function ledger(Request $request, string $wallet): View
     {
-        $wallet = Wallet::query()->whereNull('internal_role')->where('uuid', $wallet)->firstOrFail();
+        $wallet = Wallet::query()->whereNull('internal_role')->whereUuid($wallet)->firstOrFail();
 
         return view('injongepay::business.ledger', [
             'wallet' => $wallet,

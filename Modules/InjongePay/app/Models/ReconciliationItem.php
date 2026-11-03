@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ReconciliationItem extends Model
 {
-    use LogsActivity;
+    use LogsActivity, \Modules\InjongePay\Support\UuidRouteKey;
 
     public const OPEN = 'open';
 
@@ -23,11 +23,6 @@ class ReconciliationItem extends Model
     protected static function booted(): void
     {
         static::creating(fn (self $row) => $row->uuid ??= UuidLibrary::generate());
-    }
-
-    public function getRouteKeyName(): string
-    {
-        return 'uuid';
     }
 
     protected function casts(): array

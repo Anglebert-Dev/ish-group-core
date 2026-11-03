@@ -20,6 +20,8 @@ use App\Support\Settings\BusinessSettings;
 use App\Support\Access\PlatformAccess;
 use App\Support\Tenancy\CurrentBusiness;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\Request;
@@ -66,6 +68,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         date_default_timezone_set((string) config('app.timezone'));
+
+        // uuid columns are a real uuid type on Postgres: a value that isn't one matches nothing (instead of a 500).
+        Builder::macro('whereUuid', function (mixed $value, string $column = 'uuid') {
+            return Str::isUuid((string) $value) ? $this->where($column, $value) : $this->whereRaw('1 = 0');
+        });
 
         $this->registerGate();
 

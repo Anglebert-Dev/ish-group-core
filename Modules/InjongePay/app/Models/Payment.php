@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class Payment extends Model
 {
-    use BelongsToBusiness, LogsActivity;
+    use BelongsToBusiness, LogsActivity, \Modules\InjongePay\Support\UuidRouteKey;
 
     public const STATUS_AVAILABLE = 'AVAILABLE';
 
@@ -39,11 +39,6 @@ class Payment extends Model
         static::creating(function (self $payment) {
             $payment->uuid ??= UuidLibrary::generate();
         });
-    }
-
-    public function getRouteKeyName(): string
-    {
-        return 'uuid';
     }
 
     protected function casts(): array

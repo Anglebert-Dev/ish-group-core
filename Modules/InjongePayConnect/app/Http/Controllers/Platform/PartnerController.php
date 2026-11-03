@@ -43,7 +43,7 @@ class PartnerController extends Controller
     public function storeConnection(Request $request, Credentials $credentials): RedirectResponse
     {
         $data = $request->validate(['integrator' => ['required', Rule::exists('ijpc_integrators', 'uuid')], 'business' => ['required', Rule::exists('businesses', 'uuid')]]);
-        [$connection, $secret] = $credentials->create(Integrator::query()->where('uuid', $data['integrator'])->firstOrFail(), Business::query()->where('uuid', $data['business'])->firstOrFail());
+        [$connection, $secret] = $credentials->create(Integrator::query()->whereUuid($data['integrator'])->firstOrFail(), Business::query()->whereUuid($data['business'])->firstOrFail());
 
         return back()->with('injongepayconnect_secret', ['client_id' => $connection->client_id, 'secret' => $secret])->with('success', __('injongepayconnect::connect.connection_created'));
     }
@@ -73,6 +73,6 @@ class PartnerController extends Controller
 
     private function find(string $uuid): Connection
     {
-        return Connection::query()->withoutGlobalScopes()->whereNull('deleted_at')->where('uuid', $uuid)->firstOrFail();
+        return Connection::query()->withoutGlobalScopes()->whereNull('deleted_at')->whereUuid($uuid)->firstOrFail();
     }
 }

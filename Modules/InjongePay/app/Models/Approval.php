@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Approval extends Model
 {
-    use BelongsToBusiness, LogsActivity;
+    use BelongsToBusiness, LogsActivity, \Modules\InjongePay\Support\UuidRouteKey;
 
     public const AWAITING = 'awaiting_approval';
 
@@ -32,11 +32,6 @@ class Approval extends Model
     protected static function booted(): void
     {
         static::creating(fn (self $a) => $a->uuid ??= UuidLibrary::generate());
-    }
-
-    public function getRouteKeyName(): string
-    {
-        return 'uuid';
     }
 
     protected function casts(): array

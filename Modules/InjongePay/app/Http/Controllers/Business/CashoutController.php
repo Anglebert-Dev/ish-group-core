@@ -48,8 +48,8 @@ class CashoutController extends Controller
         ], ['amount.integer' => __('injongepay::injongepay.err_whole_rwf')]);
 
         try {
-            $wallet = Wallet::query()->whereNull('internal_role')->where('uuid', $data['wallet'])->firstOrFail();
-            $account = SettlementAccount::query()->where('uuid', $data['account'])->firstOrFail();
+            $wallet = Wallet::query()->whereNull('internal_role')->whereUuid($data['wallet'])->firstOrFail();
+            $account = SettlementAccount::query()->whereUuid($data['account'])->firstOrFail();
             $amount = Money::toCents((string) $data['amount']);
             $cashouts->validate($wallet, $account, $amount);
 

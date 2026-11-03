@@ -23,7 +23,7 @@ class SettlementAccountController extends Controller
     {
         return view('injongepay::platform.settlement-accounts.index', [
             'accounts' => SettlementAccount::query()->withoutGlobalScopes()->whereNull('deleted_at')
-                ->when($request->query('business'), fn ($q, $uuid) => $q->whereIn('business_id', Business::query()->where('uuid', $uuid)->select('id')))
+                ->when($request->query('business'), fn ($q, $uuid) => $q->whereIn('business_id', Business::query()->whereUuid($uuid)->select('id')))
                 ->latest('id')->paginate(30)->withQueryString(),
             'businesses' => Business::query()->whereKeyNot((int) System::getProperty('primary_business_id'))->orderBy('name')->pluck('name', 'uuid')->all(),
             'names' => Business::query()->pluck('name', 'id')->all(),
@@ -41,7 +41,7 @@ class SettlementAccountController extends Controller
         ]);
 
         try {
-            $this->accounts->add(Business::query()->where('uuid', $data['business'])->firstOrFail(), $data);
+            $this->accounts->add(Business::query()->whereUuid($data['business'])->firstOrFail(), $data);
         } catch (InjongePayException $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -69,6 +69,6 @@ class SettlementAccountController extends Controller
 
     private function find(string $uuid): SettlementAccount
     {
-        return SettlementAccount::query()->withoutGlobalScopes()->whereNull('deleted_at')->where('uuid', $uuid)->firstOrFail();
+        return SettlementAccount::query()->withoutGlobalScopes()->whereNull('deleted_at')->whereUuid($uuid)->firstOrFail();
     }
 }

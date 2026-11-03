@@ -76,4 +76,15 @@ class PlatformScreensTest extends InjongePayTestCase
 
         $this->asOwner()->get(route('injongepay.overview'))->assertOk()->assertSee('Rhenium till')->assertDontSee('Other till');
     }
+
+    public function test_addresses_with_something_that_is_not_a_uuid_are_not_found(): void
+    {
+        $this->asOwner();
+
+        $this->get(route('injongepay.transfers.index', ['wallet' => '']))->assertOk();
+        $this->get(route('injongepay.transfers.index', ['wallet' => 'abc', 'to' => '555']))->assertOk();
+        $this->get('/app/injonge-pay/wallets/not-a-uuid')->assertNotFound();
+        $this->get('/app/injonge-pay/payments/not-a-uuid')->assertNotFound();
+        $this->get('/app/injonge-pay/cashouts/123')->assertNotFound();
+    }
 }

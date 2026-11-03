@@ -41,6 +41,14 @@ trait HasUuidAudit
         return 'uuid';
     }
 
+    /** A URL with something that isn't a uuid is simply not found (Postgres would refuse the query). */
+    public function resolveRouteBindingQuery($query, $value, $field = null)
+    {
+        $field ??= $this->getRouteKeyName();
+
+        return $field === 'uuid' && ! \Illuminate\Support\Str::isUuid((string) $value) ? $query->whereRaw('1 = 0') : parent::resolveRouteBindingQuery($query, $value, $field);
+    }
+
     /**
      * Stamp delete_by in the same query that performs the soft delete,
      * so it lands alongside deleted_at instead of requiring a second write.

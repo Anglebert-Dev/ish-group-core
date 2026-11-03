@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UnallocatedPayment extends Model
 {
-    use LogsActivity;
+    use LogsActivity, \Modules\InjongePay\Support\UuidRouteKey;
 
     public const OPEN = 'open';
 
@@ -27,11 +27,6 @@ class UnallocatedPayment extends Model
         static::creating(function (self $row) {
             $row->uuid ??= UuidLibrary::generate();
         });
-    }
-
-    public function getRouteKeyName(): string
-    {
-        return 'uuid';
     }
 
     protected function casts(): array

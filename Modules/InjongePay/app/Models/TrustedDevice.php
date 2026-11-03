@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class TrustedDevice extends Model
 {
+    use \Modules\InjongePay\Support\UuidRouteKey;
     protected $table = 'ijp_trusted_devices';
 
     protected $guarded = ['id'];
@@ -16,11 +17,6 @@ class TrustedDevice extends Model
     protected static function booted(): void
     {
         static::creating(fn (self $d) => $d->uuid ??= UuidLibrary::generate());
-    }
-
-    public function getRouteKeyName(): string
-    {
-        return 'uuid';
     }
 
     protected function casts(): array

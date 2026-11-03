@@ -15,7 +15,7 @@ use LogicException;
  */
 class LedgerEntry extends Model
 {
-    use BelongsToBusiness;
+    use BelongsToBusiness, \Modules\InjongePay\Support\UuidRouteKey;
 
     public const UPDATED_AT = null;
 
@@ -38,11 +38,6 @@ class LedgerEntry extends Model
         });
         static::updating(fn () => throw new LogicException('Ledger entries are never changed.'));
         static::deleting(fn () => throw new LogicException('Ledger entries are never deleted.'));
-    }
-
-    public function getRouteKeyName(): string
-    {
-        return 'uuid';
     }
 
     protected function casts(): array

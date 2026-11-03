@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Cashout extends Model
 {
-    use BelongsToBusiness;
+    use BelongsToBusiness, \Modules\InjongePay\Support\UuidRouteKey;
 
     public const QUEUED = 'QUEUED';
 
@@ -35,11 +35,6 @@ class Cashout extends Model
     protected static function booted(): void
     {
         static::creating(fn (self $c) => $c->uuid ??= UuidLibrary::generate());
-    }
-
-    public function getRouteKeyName(): string
-    {
-        return 'uuid';
     }
 
     protected function casts(): array

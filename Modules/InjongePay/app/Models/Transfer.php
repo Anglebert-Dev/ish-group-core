@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Transfer extends Model
 {
-    use BelongsToBusiness;
+    use BelongsToBusiness, \Modules\InjongePay\Support\UuidRouteKey;
 
     protected $table = 'ijp_transfers';
 
@@ -18,11 +18,6 @@ class Transfer extends Model
     protected static function booted(): void
     {
         static::creating(fn (self $t) => $t->uuid ??= UuidLibrary::generate());
-    }
-
-    public function getRouteKeyName(): string
-    {
-        return 'uuid';
     }
 
     protected function casts(): array

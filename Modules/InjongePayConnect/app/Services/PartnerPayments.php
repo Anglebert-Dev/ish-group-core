@@ -32,12 +32,12 @@ class PartnerPayments
 
     public function wallet(Connection $connection, string $uuid): ?Wallet
     {
-        return Wallet::query()->withoutGlobalScopes()->whereNull('deleted_at')->whereNull('internal_role')->where('business_id', $connection->business_id)->where('uuid', $uuid)->first();
+        return Wallet::query()->withoutGlobalScopes()->whereNull('deleted_at')->whereNull('internal_role')->where('business_id', $connection->business_id)->whereUuid($uuid)->first();
     }
 
     public function payment(Connection $connection, string $uuid): ?Payment
     {
-        return Payment::query()->withoutGlobalScopes()->where('business_id', $connection->business_id)->where('uuid', $uuid)->first();
+        return Payment::query()->withoutGlobalScopes()->where('business_id', $connection->business_id)->whereUuid($uuid)->first();
     }
 
     public function list(Wallet $wallet, array $filters): LengthAwarePaginator

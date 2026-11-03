@@ -14,7 +14,7 @@ class PaymentController extends Controller
     public function index(Request $request): View
     {
         $payments = Payment::query()->with('wallet')
-            ->when($request->query('wallet'), fn ($q, $uuid) => $q->whereIn('wallet_id', Wallet::query()->where('uuid', $uuid)->select('id')))
+            ->when($request->query('wallet'), fn ($q, $uuid) => $q->whereIn('wallet_id', Wallet::query()->whereUuid($uuid)->select('id')))
             ->when($request->query('from'), fn ($q, $d) => $q->whereDate('created_at', '>=', $d))
             ->when($request->query('to'), fn ($q, $d) => $q->whereDate('created_at', '<=', $d))
             ->when(trim((string) $request->query('search')), fn ($q, $s) => $q->where(fn ($w) => $w->where('buyer_phone', 'like', "%{$s}%")

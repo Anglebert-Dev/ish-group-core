@@ -30,7 +30,7 @@ class WalletController extends Controller
     public function index(Request $request): View
     {
         $wallets = Wallet::query()->withoutGlobalScopes()->whereNull('deleted_at')->with('business')
-            ->when($request->query('business'), fn ($q, $uuid) => $q->whereIn('business_id', Business::query()->where('uuid', $uuid)->select('id')))
+            ->when($request->query('business'), fn ($q, $uuid) => $q->whereIn('business_id', Business::query()->whereUuid($uuid)->select('id')))
             ->when($request->query('status'), fn ($q, $status) => $q->where('bank_status', $status))
             ->when(trim((string) $request->query('search')), fn ($q, $s) => $q->where(fn ($w) => $w->where('name', 'like', "%{$s}%")->orWhere('merchant_code', 'like', "%{$s}%")))
             ->orderBy('internal_role')->orderByDesc('id')
@@ -57,7 +57,7 @@ class WalletController extends Controller
             'business' => ['required', Rule::exists('businesses', 'uuid')],
         ] + $this->detailRules());
 
-        $business = Business::query()->where('uuid', $data['business'])->firstOrFail();
+        $business = Business::query()->whereUuid($data['business'])->firstOrFail();
         $wallet = $this->merchants->create($business, $data);
 
         return redirect()->route('injongepay.platform.wallets.show', $wallet->uuid)->with('success', __('injongepay::injongepay.wallet_created', ['code' => $wallet->merchant_code]));
@@ -143,7 +143,7 @@ class WalletController extends Controller
 
     private function find(string $uuid): Wallet
     {
-        return Wallet::query()->withoutGlobalScopes()->whereNull('deleted_at')->where('uuid', $uuid)->firstOrFail();
+        return Wallet::query()->withoutGlobalScopes()->whereNull('deleted_at')->whereUuid($uuid)->firstOrFail();
     }
 
     /** @return array<string, string> uuid => name */
