@@ -14,38 +14,51 @@ use Modules\InjongePayConnect\Models\Connection;
 use Modules\InjongePayConnect\Models\Integrator;
 use Modules\InjongePayConnect\Services\Credentials;
 
-class PartnerController extends Controller
+class ConnectionController extends Controller
 {
     public function index(Request $request): View
     {
-        return view('injongepayconnect::platform.index', [
-            'integrators' => Integrator::query()->orderBy('name')->get(),
-            'connections' => Connection::query()->withoutGlobalScopes()->whereNull('deleted_at')->with(['integrator', 'business'])->latest('id')->get(),
-            'businesses' => Business::query()->whereKeyNot((int) System::getProperty('primary_business_id'))->orderBy('name')->pluck('name', 'uuid')->all(),
-            'profiles' => array_combine(array_keys(config('injongepayconnect.profiles')), array_keys(config('injongepayconnect.profiles'))),
-            'calls' => ApiCall::query()->latest('id')->limit(50)->get(),
-            'secret' => session('injongepayconnect_secret'),
+        $search = trim((string) $request->query('q'));
+
+        $connections = Connection::query()->withoutGlobalScopes()->whereNull('deleted_at')->with(['integrator', 'business'])
+            ->when($request->query('integrator'), fn ($q, $uuid) => $q->whereIn('integrator_id', Integrator::query()->whereUuid($uuid)->select('id')))
+            ->when($request->query('status'), fn ($q, $s) => $q->where('is_enabled', $s === 'on'))
+            ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w->where('client_id', 'like', "%{$search}%")
+                ->orWhereIn('business_id', Business::query()->where('name', 'like', "%{$search}%")->select('id'))))
+            ->latest('id')->paginate(25)->withQueryString();
+
+        return view('injongepayconnect::platform.connections.index', [
+            'connections' => $connections,
+            'integrators' => Integrator::query()->orderBy('name')->pluck('name', 'uuid')->all(),
         ]);
     }
 
-    public function storeIntegrator(Request $request): RedirectResponse
+    public function create(Request $request): View
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:120'],
-            'profile' => ['required', Rule::in(array_keys(config('injongepayconnect.profiles')))],
-            'contact_email' => ['nullable', 'email'],
+        return view('injongepayconnect::platform.connections.create', [
+            'integrators' => Integrator::query()->where('is_enabled', true)->orderBy('name')->pluck('name', 'uuid')->all(),
+            'businesses' => Business::query()->whereKeyNot((int) System::getProperty('primary_business_id'))->orderBy('name')->pluck('name', 'uuid')->all(),
         ]);
-        Integrator::query()->create($data + ['is_enabled' => true]);
-
-        return back()->with('success', __('injongepayconnect::connect.integrator_saved'));
     }
 
-    public function storeConnection(Request $request, Credentials $credentials): RedirectResponse
+    public function store(Request $request, Credentials $credentials): RedirectResponse
     {
         $data = $request->validate(['integrator' => ['required', Rule::exists('ijpc_integrators', 'uuid')], 'business' => ['required', Rule::exists('businesses', 'uuid')]]);
         [$connection, $secret] = $credentials->create(Integrator::query()->whereUuid($data['integrator'])->firstOrFail(), Business::query()->whereUuid($data['business'])->firstOrFail());
 
-        return back()->with('injongepayconnect_secret', ['client_id' => $connection->client_id, 'secret' => $secret])->with('success', __('injongepayconnect::connect.connection_created'));
+        return redirect()->route('injongepayconnect.platform.connections.show', $connection->uuid)
+            ->with('injongepayconnect_secret', ['client_id' => $connection->client_id, 'secret' => $secret])->with('success', __('injongepayconnect::connect.connection_created'));
+    }
+
+    public function show(string $connection): View
+    {
+        $connection = $this->find($connection);
+
+        return view('injongepayconnect::platform.connections.show', [
+            'connection' => $connection->load(['integrator', 'business']),
+            'calls' => ApiCall::query()->where('connection_id', $connection->id)->latest('id')->paginate(25),
+            'secret' => session('injongepayconnect_secret'),
+        ]);
     }
 
     public function rotate(string $connection, Credentials $credentials): RedirectResponse

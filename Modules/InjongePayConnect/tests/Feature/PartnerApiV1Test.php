@@ -194,11 +194,30 @@ class PartnerApiV1Test extends InjongePayTestCase
 
     public function test_screens_for_platform_and_business(): void
     {
-        $this->asOperator()->get(route('injongepayconnect.platform.index'))->assertOk()->assertSee($this->connection->client_id);
+        $this->asOperator();
+        $integrator = Integrator::query()->firstOrFail();
+
+        $this->get(route('injongepayconnect.platform.connections.index'))->assertOk()->assertSee('Rhenium Group')->assertSee($this->connection->client_id);
+        $this->get(route('injongepayconnect.platform.connections.index', ['q' => 'nobody']))->assertOk()->assertDontSee($this->connection->client_id);
+        $this->get(route('injongepayconnect.platform.connections.show', $this->connection->uuid))->assertOk()->assertSee($this->connection->client_id);
+        $this->get(route('injongepayconnect.platform.connections.create'))->assertOk();
+        $this->get(route('injongepayconnect.platform.integrators.index'))->assertOk()->assertSee('Injonge EBM');
+        $this->get(route('injongepayconnect.platform.integrators.show', $integrator))->assertOk()->assertSee('Rhenium Group');
+        $this->get(route('injongepayconnect.platform.integrators.create'))->assertOk();
+
+        $this->token();
+        $call = \Modules\InjongePayConnect\Models\ApiCall::query()->firstOrFail();
+        $this->get(route('injongepayconnect.platform.calls.index'))->assertOk()->assertSee('oauth/token');
+        $this->get(route('injongepayconnect.platform.calls.show', $call))->assertOk()->assertSee('[REDACTED]');
+
+        // Creating credentials lands on the connection page with the secret shown once.
+        [$other] = $this->makeBusiness(['business_name' => 'Kigali Fuel']);
+        $this->withConfirmedPassword()->post(route('injongepayconnect.platform.connections.store'), ['integrator' => $integrator->uuid, 'business' => $other->uuid])
+            ->assertRedirect()->assertSessionHas('injongepayconnect_secret');
         $this->withConfirmedPassword()->post(route('injongepayconnect.platform.connections.rotate', $this->connection->uuid))->assertSessionHas('injongepayconnect_secret');
 
         $this->flushSession();
         $this->asOwner()->get(route('injongepayconnect.connections'))->assertOk()->assertSee('Injonge EBM');
-        $this->get(route('injongepayconnect.platform.index'))->assertForbidden();
+        $this->get(route('injongepayconnect.platform.connections.index'))->assertForbidden();
     }
 }

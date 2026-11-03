@@ -31,7 +31,7 @@ class DataController
 
         return [
             ['label' => 'injongepayconnect::connect.menu_business', 'route' => 'injongepayconnect.connections', 'active' => 'injongepayconnect.connections*', 'permission' => 'list injongepay_connect.connection|list injongepay_connect.invoice', 'order' => 70, 'icon' => $plug],
-            ['label' => 'injongepayconnect::connect.menu_platform', 'route' => 'injongepayconnect.platform.index', 'active' => 'injongepayconnect.platform.*', 'permission' => 'list injongepay_connect_platform.connection', 'group' => 'Injonge Pay platform', 'order' => 70, 'icon' => $plug],
+            ['label' => 'injongepayconnect::connect.menu_platform', 'route' => 'injongepayconnect.platform.connections.index', 'active' => 'injongepayconnect.platform.*', 'permission' => 'list injongepay_connect_platform.connection', 'group' => 'Injonge Pay platform', 'order' => 70, 'icon' => $plug],
         ];
     }
 }
