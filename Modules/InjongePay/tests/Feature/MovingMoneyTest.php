@@ -231,6 +231,6 @@ class MovingMoneyTest extends InjongePayTestCase
         $this->get(route('injongepay.approvals.index'))->assertOk();
         $this->get(route('injongepay.security'))->assertOk();
         $this->flushSession();
-        $this->get(route('injongepay.platform.businesses.edit', $this->business))->assertOk()->assertSee('name="limit_daily"', false);
+        $this->asOperator()->get(route('injongepay.platform.businesses.edit', $this->business))->assertOk()->assertSee('name="limit_daily"', false);
     }
 }
