@@ -1,7 +1,6 @@
 @php use App\Helpers\AuthHelper; @endphp
 <nav class="flex flex-wrap gap-2 mb-4">
     @foreach ([
-        ['connections', 'list injongepay_connect_platform.connection'],
         ['integrators', 'list injongepay_connect_platform.integrator'],
         ['calls', 'list injongepay_connect_platform.call'],
     ] as [$tab, $permission])

@@ -36,7 +36,7 @@ Inhills itself is the **primary business** (the one created when the app was ins
 | Refunds | Gone |
 | OTP email on every transfer/cash-out | **PIN** every time; an extra code only when something is unusual |
 | Cash-out "Retry" / "Reverse" | Never needed by the business. Unclear cash-outs go to Inhills in **Cash-outs (all)** |
-| API credentials on the institution | Injonge Pay platform → **Partners & API** |
+| API credentials on the institution | The business's own **Integrations → Connect a system** (Inhills only registers the partner systems) |
 | Financial monitor | Injonge Pay platform → **Money overview** |
 | API call logs | **GTBank call log** (bank) and the call list in **Partners & API** (POS) |
 
@@ -134,7 +134,7 @@ The Inhills Admin (owner) has everything automatically.
 
 ### B4. Partners (only if a POS/EBM connects)
 
-**Injonge Pay platform → Partners & API → Add integrator**: name `Injonge EBM`, contract `pos-ebm-v1`. You do this once per partner company, not per business.
+**Injonge Pay platform → Partners & API → Integrators → Add integrator**: name `Injonge EBM`, contract `pos-ebm-v1`. You do this once per partner system. Businesses then connect to it themselves.
 
 ---
 
@@ -184,6 +184,9 @@ To stop a code temporarily, use **Switch off**: payments to it are held, not los
 
 ### C5. Hand over to the business
 
+To help a business with anything in its own panel, use **Super admin → Businesses → the business → Log in as**. Inhills never manages a business's settlement accounts, staff or connections from the platform pages.
+
+
 That's all Inhills does. The business's owner signs in and does the rest:
 
 - **Users and Roles**: their own staff, for example:
@@ -207,7 +210,9 @@ Everyone who will move money opens **Injonge Pay → My PIN & devices** and sets
 
 ### C7. The POS (if any)
 
-**Injonge Pay platform → Partners & API → Connect a business**: the integrator and the business. The **client_id and client_secret are shown once**; give them to the POS team. To move a business already connected to the old app, see the data migration (its old credentials will keep working).
+The business does this itself: **Injonge Pay → Integrations → Connect a system**, then choose its POS. The **client ID and secret are shown once**; it gives them to its POS team. Renewing the secret and switching it off are on the same page.
+
+To move a business already connected to the old app, see the data migration (its old credentials will keep working).
 
 The business is ready.
 

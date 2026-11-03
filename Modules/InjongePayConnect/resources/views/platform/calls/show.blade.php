@@ -1,7 +1,7 @@
 <x-layouts.app :title="$call->method.' /'.$call->path">
     <x-common.page-header :title="$call->method.' /'.$call->path" :description="\App\Libraries\GeneralLibrary::formatDateTime($call->created_at, 'd M Y H:i:s')">
         <x-slot:actions>
-            <x-common.button href="{{ $connection ? route('injongepayconnect.platform.connections.show', $connection->uuid) : route('injongepayconnect.platform.calls.index') }}" variant="secondary" size="sm">{{ __('body.back') }}</x-common.button>
+            <x-common.button href="{{ route('injongepayconnect.platform.calls.index') }}" variant="secondary" size="sm">{{ __('body.back') }}</x-common.button>
         </x-slot:actions>
     </x-common.page-header>
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">

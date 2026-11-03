@@ -49,7 +49,7 @@ class DataController
         $gear = 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z';
         $building = 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4';
 
-        return [
+        $items = [
             ['label' => 'injongepay::injongepay.menu_overview', 'route' => 'injongepay.overview', 'active' => 'injongepay.overview', 'permission' => 'list injongepay.overview', 'order' => 10, 'icon' => $icon],
             ['label' => 'injongepay::injongepay.menu_payments', 'route' => 'injongepay.payments.index', 'active' => 'injongepay.payments.*', 'permission' => 'list injongepay.payment', 'order' => 20, 'icon' => 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z'],
             ['label' => 'injongepay::injongepay.menu_transfers', 'route' => 'injongepay.transfers.index', 'active' => 'injongepay.transfers.*', 'permission' => 'list injongepay.transfer', 'order' => 30, 'icon' => 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4'],
@@ -68,6 +68,13 @@ class DataController
             ['label' => 'injongepay::injongepay.menu_bank_calls', 'route' => 'injongepay.platform.bank-calls.index', 'active' => 'injongepay.platform.bank-calls.*', 'permission' => 'list injongepay_platform.bank', 'group' => 'Injonge Pay platform', 'order' => 80, 'icon' => 'M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'],
             ['label' => 'injongepay::injongepay.menu_platform_settings', 'route' => 'injongepay.platform.settings', 'active' => 'injongepay.platform.settings*', 'permission' => 'update injongepay_platform.setting|update injongepay_platform.fee', 'group' => 'Injonge Pay platform', 'order' => 90, 'icon' => $gear],
         ];
+
+        // Inhills (the operator) has no merchant codes of its own: only its platform menu.
+        if (app(\App\Support\Access\PlatformAccess::class)->isOperator(auth('staff')->user())) {
+            $items = array_values(array_filter($items, fn (array $item) => isset($item['group'])));
+        }
+
+        return $items;
     }
 
     public function dashboard_stats(): array

@@ -192,17 +192,37 @@ class PartnerApiV1Test extends InjongePayTestCase
         $this->getJson('/api/ebm/payments/lookup?bank_reference=nope', ['X-EBM-Api-Key' => 'ebm-key'])->assertStatus(404)->assertJsonPath('message', 'No payment found for the given reference.');
     }
 
-    public function test_screens_for_platform_and_business(): void
+    public function test_the_business_connects_and_manages_its_own_systems(): void
+    {
+        $this->asOwner();
+
+        $this->get(route('injongepayconnect.connections.index'))->assertOk()->assertSee('Injonge EBM')->assertSee($this->connection->client_id);
+        $this->get(route('injongepayconnect.connections.create'))->assertOk()->assertSee('Injonge EBM');
+        $this->get(route('injongepayconnect.connections.show', $this->connection))->assertOk()->assertSee($this->connection->client_id);
+
+        $integrator = Integrator::query()->firstOrFail();
+        $this->withConfirmedPassword()->post(route('injongepayconnect.connections.store'), ['integrator' => $integrator->uuid])->assertRedirect()->assertSessionHas('injongepayconnect_secret');
+        $this->assertSame(2, Connection::query()->withoutGlobalScopes()->where('business_id', $this->business->id)->count());
+
+        $this->withConfirmedPassword()->post(route('injongepayconnect.connections.rotate', $this->connection))->assertSessionHas('injongepayconnect_secret');
+        $this->withConfirmedPassword()->post(route('injongepayconnect.connections.toggle', $this->connection))->assertSessionHas('success');
+        $this->assertFalse($this->connection->fresh()->is_enabled);
+        $this->get(route('injongepayconnect.invoices'))->assertOk();
+
+        // Another business's connection is not found.
+        [$other] = $this->makeBusiness(['business_name' => 'Other']);
+        [$theirs] = app(Credentials::class)->create($integrator, $other);
+        $this->get(route('injongepayconnect.connections.show', $theirs))->assertNotFound();
+        $this->get(route('injongepayconnect.platform.integrators.index'))->assertForbidden();
+    }
+
+    public function test_inhills_registers_integrators_and_reads_the_call_log_only(): void
     {
         $this->asOperator();
         $integrator = Integrator::query()->firstOrFail();
 
-        $this->get(route('injongepayconnect.platform.connections.index'))->assertOk()->assertSee('Rhenium Group')->assertSee($this->connection->client_id);
-        $this->get(route('injongepayconnect.platform.connections.index', ['q' => 'nobody']))->assertOk()->assertDontSee($this->connection->client_id);
-        $this->get(route('injongepayconnect.platform.connections.show', $this->connection->uuid))->assertOk()->assertSee($this->connection->client_id);
-        $this->get(route('injongepayconnect.platform.connections.create'))->assertOk();
         $this->get(route('injongepayconnect.platform.integrators.index'))->assertOk()->assertSee('Injonge EBM');
-        $this->get(route('injongepayconnect.platform.integrators.show', $integrator))->assertOk()->assertSee('Rhenium Group');
+        $this->get(route('injongepayconnect.platform.integrators.show', $integrator))->assertOk()->assertSee('Rhenium Group')->assertDontSee($this->connection->client_id);
         $this->get(route('injongepayconnect.platform.integrators.create'))->assertOk();
 
         $this->token();
@@ -210,14 +230,8 @@ class PartnerApiV1Test extends InjongePayTestCase
         $this->get(route('injongepayconnect.platform.calls.index'))->assertOk()->assertSee('oauth/token');
         $this->get(route('injongepayconnect.platform.calls.show', $call))->assertOk()->assertSee('[REDACTED]');
 
-        // Creating credentials lands on the connection page with the secret shown once.
-        [$other] = $this->makeBusiness(['business_name' => 'Kigali Fuel']);
-        $this->withConfirmedPassword()->post(route('injongepayconnect.platform.connections.store'), ['integrator' => $integrator->uuid, 'business' => $other->uuid])
-            ->assertRedirect()->assertSessionHas('injongepayconnect_secret');
-        $this->withConfirmedPassword()->post(route('injongepayconnect.platform.connections.rotate', $this->connection->uuid))->assertSessionHas('injongepayconnect_secret');
-
-        $this->flushSession();
-        $this->asOwner()->get(route('injongepayconnect.connections'))->assertOk()->assertSee('Injonge EBM');
-        $this->get(route('injongepayconnect.platform.connections.index'))->assertForbidden();
+        // No business menus for Inhills itself, and no way into a business's connections.
+        $this->get(route('injongepay.platform.finance'))->assertOk()->assertDontSee(route('injongepay.cashouts.index'), false)->assertDontSee(route('injongepayconnect.connections.index'), false);
+        $this->get(route('injongepayconnect.connections.show', $this->connection))->assertNotFound();
     }
 }
