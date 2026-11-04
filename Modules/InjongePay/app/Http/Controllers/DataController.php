@@ -74,7 +74,7 @@ class DataController
             ['label' => 'injongepay::injongepay.menu_platform_settings', 'route' => 'injongepay.platform.settings', 'active' => 'injongepay.platform.settings*', 'permission' => 'update injongepay_platform.setting|update injongepay_platform.fee', 'group' => 'Injonge Pay platform', 'order' => 90, 'icon' => $gear],
         ];
 
-        // Inhills (the operator) has no merchant codes of its own: only its platform menu.
+        // Injonge Pay (the operator) has no merchant codes of its own: only its platform menu.
         if (app(\App\Support\Access\PlatformAccess::class)->isOperator(auth('staff')->user())) {
             $items = array_values(array_filter($items, fn (array $item) => isset($item['group'])));
             $items[] = ['label' => 'injongepay::injongepay.menu_security', 'route' => 'injongepay.security', 'active' => 'injongepay.security*', 'permission' => 'list injongepay_platform.earnings', 'group' => 'Injonge Pay platform', 'order' => 95, 'icon' => 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z'];
@@ -83,7 +83,7 @@ class DataController
         return $items;
     }
 
-    /** Inhills sees what needs it; a business sees its money. */
+    /** Injonge Pay sees what needs it; a business sees its money. */
     public function dashboard_stats(): array
     {
         return $this->isOperator() ? $this->platformStats() : $this->businessStats();

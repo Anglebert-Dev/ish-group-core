@@ -21,7 +21,7 @@ Route::prefix('app/injonge-pay/integrations')->name('injongepayconnect.')->middl
     Route::get('/invoices', [InvoiceController::class, 'index'])->middleware('permission:list injongepay_connect.invoice')->name('invoices');
 });
 
-// Inhills: the partner systems businesses can connect to, and the call log.
+// Injonge Pay: the partner systems businesses can connect to, and the call log.
 Route::prefix('app/injonge-pay/platform/partners')->name('injongepayconnect.platform.')->middleware($staff)->group(function () {
     Route::redirect('/', '/app/injonge-pay/platform/partners/integrators')->name('index');
 

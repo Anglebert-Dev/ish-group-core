@@ -9,7 +9,7 @@ use Illuminate\View\View;
 use Modules\InjongePay\Models\BusinessProfile;
 use Modules\InjongePay\Support\Rate;
 
-/** The business's own details. TIN, fee and limits stay with Inhills (they go to GTBank and set the rules). */
+/** The business's own details. TIN, fee and limits stay with Injonge Pay (they go to GTBank and set the rules). */
 class ProfileController extends Controller
 {
     public const EDITABLE = ['short_name', 'city', 'address', 'contact_person', 'contact_phone', 'contact_email'];

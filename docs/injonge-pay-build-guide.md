@@ -6,12 +6,12 @@ Progress is tracked in the phase table at the end (✅ = built and tested).
 
 ## 1. Context
 
-Injonge Pay is in production in `~/Documents/Inhills/INJONGE-PAY` (branch `refactor/code-quality`; analysis in `docs/injonge-pay-module.md`). It connects to GTBank PaymentBridge, collects mobile-money payments into merchant codes, splits fees, keeps wallet balances, cashes out to bank accounts and serves a POS/EBM partner API. Its logic is wrong in many places, and merchant management, transactions and cash-outs in particular are unstable. We rebuild it on ISH Core as a normal **sellable** module, using the core pieces we trust. Inhills installs core plus this module and runs it themselves; no link to our server is needed. A **database migration** from production follows as its own phase, so every table is designed for it.
+Injonge Pay is in production in `~/Documents/Inhills/INJONGE-PAY` (branch `refactor/code-quality`; analysis in `docs/injonge-pay-module.md`). It connects to GTBank PaymentBridge, collects mobile-money payments into merchant codes, splits fees, keeps wallet balances, cashes out to bank accounts and serves a POS/EBM partner API. Its logic is wrong in many places, and merchant management, transactions and cash-outs in particular are unstable. We rebuild it on ISH Core as a normal **sellable** module, using the core pieces we trust. Injonge Pay installs core plus this module and runs it themselves; no link to our server is needed. A **database migration** from production follows as its own phase, so every table is designed for it.
 
 Decided by the user:
 - **Businesses** are the customers. The word "institution" is not used anywhere in the new code; a business's **type** (school, hospital, fuel station, … 53 kinds) is a core field on every Business (`config('core.business_types')`).
-- **A business does everything itself except create merchant codes.** It manages its own users and roles, settlement accounts, POS connections, transfers, cash-outs and reports. Inhills creates the merchant codes (they are registered at GTBank) and sets each business's KYC, fee and limits.
-- **Inhills helps a business with "Log in as"** (core impersonation), never from platform pages that reach into a business. Money actions (cash-outs, transfers, PIN, settlement accounts, POS secrets) are blocked while logged in as someone.
+- **A business does everything itself except create merchant codes.** It manages its own users and roles, settlement accounts, POS connections, transfers, cash-outs and reports. Injonge Pay creates the merchant codes (they are registered at GTBank) and sets each business's KYC, fee and limits.
+- **Injonge Pay helps a business with "Log in as"** (core impersonation), never from platform pages that reach into a business. Money actions (cash-outs, transfers, PIN, settlement accounts, POS secrets) are blocked while logged in as someone.
 - **Data isolation:** a business never sees or reaches another business's data. Transfers only go between a business's own merchant accounts.
 - External APIs stay **identical**.
 - **Refunds and manual "Record payment" are dropped.**
@@ -53,7 +53,7 @@ Partner API:
 
 ## Principle 1: our books = GTBank (the main goal)
 
-All customer money physically sits in Inhills' **participant settlement account** at GTBank. Our wallets only divide that money up. So:
+All customer money physically sits in Injonge Pay's **participant settlement account** at GTBank. Our wallets only divide that money up. So:
 
 - **The bank is the source of truth.** Each ledger movement that touches the outside world points to exactly one bank fact: a payment points to a GTBank `transactionId` with SUCCESS, a cash-out to a GTBank disbursement `reference` with ACSC. Transfers and fee splits move money between our own wallets only and must net to zero.
 - **Bank mirror.** `ijp_bank_transactions` holds every transaction GTBank reports, from the webhook and from a scheduled pull of `/transactions?merchantId&startDate&endDate` with date-time windows. `ijp_bank_disbursements` does the same for disbursements, from `/disbursement/status` and the webhook. A **matcher** links each bank row to our record. Its outcomes:
@@ -79,7 +79,7 @@ The current pattern (an emailed OTP on every action) is slow and doesn't actuall
   - it is the first cash-out to this account
   - velocity is unusual (count or sum per hour)
   - the PIN was recently reset
-- **Limits** set by Inhills per business: per-transaction, daily and monthly cash-out limits. **Maker-checker** above an approval threshold: a second business user approves with their own PIN.
+- **Limits** set by Injonge Pay per business: per-transaction, daily and monthly cash-out limits. **Maker-checker** above an approval threshold: a second business user approves with their own PIN.
 - **Trusted devices**: a signed device cookie, registered after a step-up and listed so it can be revoked.
 - Every PIN set, wrong PIN, lock, trusted browser, account change and approval is audited.
 
@@ -132,10 +132,10 @@ The document is not reliable on responses and codes, so the client acts on what 
 | Actor | How | Can |
 |---|---|---|
 | Superadmin | core `is_superadmin` | everything, and "Log in as" any user to help |
-| **Platform staff** (Inhills) | users of the operator (primary) business holding the **platform permissions** (`{action} injongepay_platform.{x}`, `injongepay_connect_platform.{x}`) through core roles | create, register and close merchant codes; KYC, fee and limits; reconciliation; money to allocate; settle cash-outs GTBank gave no final answer for; GTBank call log; register partner systems (integrators); the platform's own **Fee earnings** and their cash-out |
+| **Platform staff** (Injonge Pay) | users of the operator (primary) business holding the **platform permissions** (`{action} injongepay_platform.{x}`, `injongepay_connect_platform.{x}`) through core roles | create, register and close merchant codes; KYC, fee and limits; reconciliation; money to allocate; settle cash-outs GTBank gave no final answer for; GTBank call log; register partner systems (integrators); the platform's own **Fee earnings** and their cash-out |
 | Business admin and staff | core business roles, `{action} injongepay.{x}` / `injongepay_connect.{x}` | everything about their own money: payments, wallet pages, ledger, transfers between their own accounts, settlement accounts, cash-outs, approvals, reports, business contact details, POS connections and linked invoices, their own users and roles |
 
-Inhills' own business does not show the business menus (it has no merchant codes); it sees only its platform menu plus **My PIN & devices**.
+Injonge Pay's own business does not show the business menus (it has no merchant codes); it sees only its platform menu plus **My PIN & devices**.
 
 Core changes built for this:
 - **Platform-only permissions** (`app/Support/Access/PlatformAccess.php`): permission modules a module marks `platform_modules` are held only by superadmins and operator staff; a customer business's Admin never gets them, and its role editor never offers them.
@@ -205,9 +205,9 @@ Money is **bigint cents** with no floats; a `Support/Money.php` modelled on `Mod
    - Business users see status only.
 9. **TransferService.** Only between the business's own merchant accounts; wallets are locked in id order.
 10. **Reconciliation.** Daily close per merchant and day, plus the global identity and Σ entries = balance per wallet. Open items go to a platform queue with a resolution note, and every step is audited.
-11. **Fee earnings.** The platform revenue and bank-cut wallets belong to the operator business. Inhills cashes them out to its own settlement accounts through the same CashoutService, Approvals and PIN rules a business uses. Business screens never list these wallets.
+11. **Fee earnings.** The platform revenue and bank-cut wallets belong to the operator business. Injonge Pay cashes them out to its own settlement accounts through the same CashoutService, Approvals and PIN rules a business uses. Business screens never list these wallets.
 
-**Business screens:** overview, a page per merchant account (today, this month, cash-outs on the way, latest payments and cash-outs), payments, ledger, transfers (with a preview of the receiving account before the PIN), settlement accounts, cash-outs with their timeline, approvals, reports, business details (contacts and address; TIN, fee and limits are Inhills'), My PIN & devices.
+**Business screens:** overview, a page per merchant account (today, this month, cash-outs on the way, latest payments and cash-outs), payments, ledger, transfers (with a preview of the receiving account before the PIN), settlement accounts, cash-outs with their timeline, approvals, reports, business details (contacts and address; TIN, fee and limits are Injonge Pay's), My PIN & devices.
 
 Webhooks (`/api/payments/webhook`, `/api/gtbank/disbursement-status`) keep their URLs, request payloads, the secret header and the success response body. Two changes follow GTBank's own doc (§10.1.5): a duplicate gets **200 instead of 422**, and the answer is fast. The "secret check off" switch is removed.
 
@@ -218,9 +218,9 @@ Webhooks (`/api/payments/webhook`, `/api/gtbank/disbursement-status`) keep their
 
 ## Module 2: `Modules/InjongePayConnect` (partner sub-module, `requires: ["InjongePay"]`, sellable on its own)
 
-- **Integrators** are partner systems (e.g. "Injonge EBM") registered by Inhills. Each speaks one **contract profile** (`config('injongepayconnect.profiles')`), a class that owns its answer shapes. Today there is one, `pos-ebm-v1`.
+- **Integrators** are partner systems (e.g. "Injonge EBM") registered by Injonge Pay. Each speaks one **contract profile** (`config('injongepayconnect.profiles')`), a class that owns its answer shapes. Today there is one, `pos-ebm-v1`.
 - **The business connects its own systems**: Integrations → Connect a system → choose an integrator → the client ID and secret are shown once. It renews the secret, switches the connection off (tokens stop at once) and sets allowed addresses. Linked invoices are on their own tab.
-- **Inhills** keeps the integrator list (switching one off stops it everywhere), sees which businesses use each (names only, never credentials) and reads the API call log.
+- **Injonge Pay** keeps the integrator list (switching one off stops it everywhere), sees which businesses use each (names only, never credentials) and reads the API call log.
 - **`pos-ebm-v1`** reproduces `/api/partner/v1/*` answer for answer (token, institution, merchant-accounts, payments, totals, confirm, unconfirm, invoices), checked by `PartnerApiV1Test`; the legacy `/api/ebm/payments/lookup` is kept unchanged.
   - Fixes that keep the contract: a cashed-out payment stays AVAILABLE/CONFIRMED in the filters; confirm/unconfirm shows in `updated_since`; a reversed payment can't be confirmed; `date_to` as a date covers the whole day; the filter is a join instead of `whereIn`; rate limit per connection; expired tokens pruned daily.
 - A new integrator with different needs gets **a new profile class**. The money core is never touched.
@@ -273,7 +273,7 @@ Webhooks (`/api/payments/webhook`, `/api/gtbank/disbursement-status`) keep their
    - Whole RWF only.
    - `/api/gtbank/disbursement-status` keeps its URL and answers.
 7. ✅ Reports for a business (period totals, PDF/Excel of payments, ledger per wallet with balances after each entry) and the platform money overview (every business, fee wallets, books check, Excel).
-8. ✅ InjongePayConnect: integrators with a contract each; the business connects its own systems (secret shown once, renew or switch off ends tokens, allowed addresses, linked invoices); Inhills registers integrators and reads the call log. `/api/partner/v1/*` and `/api/ebm/payments/lookup` answer exactly as production (contract tests in `PartnerApiV1Test`); partner document in `Modules/InjongePayConnect/API.md`.
+8. ✅ InjongePayConnect: integrators with a contract each; the business connects its own systems (secret shown once, renew or switch off ends tokens, allowed addresses, linked invoices); Injonge Pay registers integrators and reads the call log. `/api/partner/v1/*` and `/api/ebm/payments/lookup` answer exactly as production (contract tests in `PartnerApiV1Test`); partner document in `Modules/InjongePayConnect/API.md`.
 After the phases, from trying it: Fee earnings, dashboard by module, business wallet pages and business details, transfer preview, test-mode banner, and moving settlement accounts and POS connections to the business.
 
 9. The **data-migration phase**, planned separately: production Postgres → `ijp_*`, keeping UUIDs, references, merchant codes, partner secret hashes and the webhook secret, with a dry run and count/amount checks.
@@ -330,12 +330,12 @@ After the phases, from trying it: Fee earnings, dashboard by module, business wa
 - Requests waiting for a second person expire after 24 h by themselves (every 10 minutes, and when Approvals is opened); the requester is told.
 
 **Many merchant codes** (built 04/11/2026)
-- Inhills imports merchant codes from a CSV (Merchant codes → Import from CSV). The whole file is checked first and nothing is created if a line is wrong. GTBank registrations are queued 3 seconds apart. Export CSV hands the codes to the business. One audit entry is written for the import, plus one per code.
+- Injonge Pay imports merchant codes from a CSV (Merchant codes → Import from CSV). The whole file is checked first and nothing is created if a line is wrong. GTBank registrations are queued 3 seconds apart. Export CSV hands the codes to the business. One audit entry is written for the import, plus one per code.
 - GTBank traffic no longer grows with the number of codes: the mirror and the daily close make one participant call and split it by merchant code (unknown codes are parked as money to allocate). The status sync takes at most 100 codes per run, oldest first, skipping any checked in the last 10 minutes.
 
 **Smaller**
-- The partner rate limit per connection is set by Inhills on the integrator's page.
-- Every page is opened by `EveryScreenTest` with data on it, as the business and as Inhills (and refused to the business on Inhills' pages); it passes on SQLite and on Postgres.
+- The partner rate limit per connection is set by Injonge Pay on the integrator's page.
+- Every page is opened by `EveryScreenTest` with data on it, as the business and as Injonge Pay (and refused to the business on Injonge Pay's pages); it passes on SQLite and on Postgres.
 
 **Open**
 - **Translations**: the whole app (core and every module) is English only. A language is offered once `resources/lang/<code>` exists in the core, so French or Kinyarwanda means translating the core and every module together, not Injonge Pay alone.

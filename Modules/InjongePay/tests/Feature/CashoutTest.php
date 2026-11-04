@@ -201,8 +201,58 @@ class CashoutTest extends InjongePayTestCase
         $cashout = $this->cashout(1000);
         $this->check($cashout);
         $this->assertSame(Cashout::SUBMITTED, $cashout->fresh()->status);
+
+        // Pressing the button again is not a second answer.
+        $this->assertSame(Cashout::SUBMITTED, $this->check($cashout)->status);
+
+        $this->travel(11)->minutes();
         $this->assertSame(Cashout::FAILED, $this->check($cashout)->status);
         $this->assertSame(1960000, $this->till->fresh()->available_balance);
+    }
+
+    public function test_rejected_after_an_unclear_send_goes_to_a_person_with_the_money_held(): void
+    {
+        $this->fund('20000.00');
+        $this->fakeBank([
+            '/disbursement/transfer' => fn () => throw new \Illuminate\Http\Client\ConnectionException('timeout'),
+            '/disbursement/status' => Http::response($this->acsc(['status' => 'RJCT'])),
+        ]);
+
+        $cashout = $this->cashout(1000);
+        $this->check($cashout);
+        $this->travel(11)->minutes();
+
+        $this->assertSame(Cashout::NEEDS_REVIEW, $this->check($cashout)->status);
+        $this->assertSame(1960000 - 100000, $this->till->fresh()->available_balance);
+    }
+
+    public function test_gtbank_saying_paid_late_still_completes_after_review(): void
+    {
+        $this->fund('20000.00');
+        $this->fakeBank([
+            '/disbursement/transfer' => fn () => throw new \Illuminate\Http\Client\ConnectionException('timeout'),
+            '/disbursement/status' => Http::sequence()->push(['error' => 'Transaction not found for the provided reference'])->push($this->acsc())->push($this->acsc()),
+        ]);
+
+        $cashout = $this->cashout(1000);
+        $this->travel(3)->hours();
+        $this->assertSame(Cashout::NEEDS_REVIEW, $this->check($cashout)->status);
+
+        $this->check($cashout);
+        $this->assertSame(Cashout::COMPLETED, $this->check($cashout)->status);
+    }
+
+    public function test_paid_after_the_money_came_back_raises_the_alarm(): void
+    {
+        $this->fund('20000.00');
+        $this->fakeBank(['/disbursement/transfer' => Http::response(['identifier' => 'X', 'status' => 'PENDING'])]);
+        $cashout = $this->cashout(1000);
+        app(CashoutService::class)->resolve($cashout->fresh(), 'failed', 'GTBank said it never left');
+
+        app(CashoutService::class)->webhook($cashout->fresh(), $this->acsc());
+
+        $this->assertTrue(\Modules\InjongePay\Models\ReconciliationItem::query()->where('kind', 'cashout_paid_after_failed')->exists());
+        $this->assertSame(Cashout::FAILED, $cashout->fresh()->status);
     }
 
     public function test_a_status_for_another_amount_is_never_taken_as_paid(): void

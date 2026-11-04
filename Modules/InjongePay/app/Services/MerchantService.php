@@ -284,7 +284,7 @@ class MerchantService
         return $wallet->bank_missing_since !== null && $wallet->bank_missing_since->lte(now()->subMinutes(self::CONFIRM_MISSING_AFTER_MINUTES));
     }
 
-    /** Inhills must act; the business must know customers can't pay into this code. */
+    /** Injonge Pay must act; the business must know customers can't pay into this code. */
     private function tellCodeStopped(Wallet $wallet, string $key): void
     {
         $title = __('injongepay::injongepay.'.$key.'_title');

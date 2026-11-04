@@ -4,7 +4,7 @@ Mobile-money collection through GTBank PaymentBridge: merchant codes (wallets) p
 
 **Requires:** no other module.
 
-Businesses do everything except merchant codes. Inhills creates merchant codes and sets KYC, fees and limits. It also handles reconciliation, unclear cash-outs and money to allocate.
+Businesses do everything except merchant codes. Injonge Pay creates merchant codes and sets KYC, fees and limits. It also handles reconciliation, unclear cash-outs and money to allocate.
 
 ## Server packages
 
@@ -115,12 +115,12 @@ Every request to GTBank has its own button, so nobody has to wait for a schedule
 
 | You see | Where | Button | Who |
 |---|---|---|---|
-| A cash-out not final yet | The cash-out's page | **Check status now** | The business and Inhills |
-| A merchant code pending, or with an error | The code's page | **Check status now** (business), **Sync from GTBank** and **Register at GTBank** (Inhills) | The business and Inhills |
+| A cash-out not final yet | The cash-out's page | **Check status now** | The business and Injonge Pay |
+| A merchant code pending, or with an error | The code's page | **Check status now** (business), **Sync from GTBank** and **Register at GTBank** (Injonge Pay) | The business and Injonge Pay |
 | A payment still pending | The payment's page | **Check status now** | The business |
-| A settlement account GTBank didn't answer about | Settlement accounts, or Fee earnings for Inhills | **Check with GTBank** | The business, or Inhills |
-| Webhooks waiting | Money to allocate | **Process waiting webhooks** | Inhills |
-| GTBank's list for today and yesterday | Reconciliation | **Read GTBank's list now** | Inhills |
+| A settlement account GTBank didn't answer about | Settlement accounts, or Fee earnings for Injonge Pay | **Check with GTBank** | The business, or Injonge Pay |
+| Webhooks waiting | Money to allocate | **Process waiting webhooks** | Injonge Pay |
+| GTBank's list for today and yesterday | Reconciliation | **Read GTBank's list now** | Injonge Pay |
 
 A check only asks. A cash-out is never sent twice. Every press is in the audit log. A business can press these 10 times a minute, and only on its own records.
 
@@ -140,7 +140,10 @@ A check only asks. A cash-out is never sent twice. Every press is in the audit l
 - The money stays held. It is out of the balance so it can't be spent twice, but no payment shows as cashed out.
 - Nothing is resent and no new transfer is made. We only ask GTBank about the same reference.
 - GTBank saying it has never heard of the transfer proves nothing, so the money doesn't come back by itself. After 2 hours it goes to staff.
-- The money comes back by itself only when GTBank clearly says the transfer was rejected, twice.
+- The same goes for any unclear answer: an error, an odd status or nothing at all. If GTBank answers later, the next check or webhook updates us.
+- The money comes back by itself only when GTBank accepted the transfer when we sent it, and then clearly says rejected twice, at least 10 minutes apart. Pressing the button twice counts once.
+- If the send wasn't clear and GTBank says rejected, staff decide.
+- If GTBank says paid after the money already came back, staff are alerted at once.
 
 **People still decide one case:** when staff mark an unclear cash-out as failed, the money goes back to the business. Confirm with GTBank first that it didn't pay.
 
@@ -166,7 +169,7 @@ A job that is off stops that work completely until it is on again or someone pre
 The top of the page shows the **Scheduler** and the **Queue worker**. If either has a problem, the page shows the command to start it.
 
 **How you get told:**
-- A banner appears on Injonge Pay pages for Inhills staff who hold that permission, when a job is failed, late or off, or when the scheduler or queue has a problem.
+- A banner appears on Injonge Pay pages for Injonge Pay staff who hold that permission, when a job is failed, late or off, or when the scheduler or queue has a problem.
 - A job that fails sends one notification and email to those staff and to superadmins. It alerts again only if it fails again after working.
 - Superadmins also see the core banner about the scheduler and queue on every page.
 

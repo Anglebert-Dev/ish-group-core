@@ -16,7 +16,7 @@ return [
     'connect_system_description' => 'Your POS, EBM or other system reads your payments and links them to its invoices. Choose it; you get a client ID and secret to give it.',
     'system' => 'System',
     'no_connections_business' => 'No system connected yet.',
-    'no_integrators_business' => 'No system can be connected yet. Ask Inhills to register the one you use.',
+    'no_integrators_business' => 'No system can be connected yet. Ask Injonge Pay to register the one you use.',
     'linked_invoices' => 'Linked invoices',
     'invoices_description' => 'Invoices your systems linked to your payments.',
     'businesses_using' => 'Businesses using it',

@@ -55,7 +55,7 @@ sudo chmod 644 /etc/cron.d/ish-core
 ## Set it up
 
 1. Turn on **InjongePayConnect** on the business's page.
-2. As Inhills, create the integrator. Use the `pos-ebm-v1` contract for the Injonge EBM/POS.
+2. As Injonge Pay, create the integrator. Use the `pos-ebm-v1` contract for the Injonge EBM/POS.
 3. Set its rate limit if the default of 120 requests a minute doesn't fit.
 4. As the business, create the POS connection. The secret is shown once, so copy it then.
 5. Give the partner the client ID, the secret and the API address `https://your-domain/api/partner/v1`.

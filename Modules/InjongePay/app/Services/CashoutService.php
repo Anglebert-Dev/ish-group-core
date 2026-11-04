@@ -2,6 +2,7 @@
 
 namespace Modules\InjongePay\Services;
 
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\InjongePay\Exceptions\InjongePayException;
 use Modules\InjongePay\Gtbank\BankAnswers;
@@ -39,6 +40,9 @@ class CashoutService
 {
     // Minutes between status checks: soon at first, then less often.
     public const BACKOFF = [1, 2, 5, 10, 20, 30, 60];
+
+    // "Not paid" must be said this far apart before money comes back by itself.
+    public const REJECTED_APART_MINUTES = 10;
 
     // An unclear submit: how long before a person has to decide.
     public const UNKNOWN_GRACE_MINUTES = 120;
@@ -203,6 +207,7 @@ class CashoutService
             $state = $answer['state'];
             $d = $answer['details'];
             $previous = $locked->last_answer;
+            $previousAt = $locked->last_checked_at;
 
             $locked->forceFill([
                 'checks' => $locked->checks + 1, 'last_checked_at' => now(), 'last_answer' => $state,
@@ -220,7 +225,7 @@ class CashoutService
 
             match ($state) {
                 BankAnswers::COMPLETED => $this->agree($locked, 'completed', $previous === BankAnswers::COMPLETED || $locked->webhook_status === 'ACSC', $source, $result->callId),
-                BankAnswers::FAILED => $this->agree($locked, 'failed', $previous === BankAnswers::FAILED || in_array($locked->webhook_status, ['RJCT', 'CANC'], true), $source, $result->callId),
+                BankAnswers::FAILED => $this->agree($locked, 'failed', $this->rejectedTwice($previous, $previousAt) || in_array($locked->webhook_status, ['RJCT', 'CANC'], true), $source, $result->callId),
                 BankAnswers::NOT_FOUND => $this->notFound($locked, $source, $result->callId),
                 BankAnswers::INCONCLUSIVE => $this->inconclusive($locked, $answer, $source, $result->callId),
                 default => $this->waitOrReview($locked, $source),
@@ -243,6 +248,12 @@ class CashoutService
         }
 
         $cashout->forceFill(['webhook_status' => $d['status'] ? strtoupper($d['status']) : null, 'webhook_at' => now()])->save();
+
+        // GTBank paid something we already gave back: only a person can fix that, and now.
+        if ($cashout->status === Cashout::FAILED && $answer['state'] === BankAnswers::COMPLETED) {
+            $this->items->open('cashout_paid_after_failed', $cashout->reference, Wallet::query()->withoutGlobalScopes()->find($cashout->wallet_id), $cashout, $cashout->amount);
+        }
+
         $this->event($cashout, $cashout->status, $cashout->status, 'webhook', null, ['status' => $d['status']]);
 
         if (! $cashout->isFinal()) {
@@ -267,16 +278,33 @@ class CashoutService
     private function agree(Cashout $cashout, string $state, bool $confirmed, string $source, ?int $callId): void
     {
         if (! $confirmed) {
-            // One signal so far; the next read (soon) must say the same.
-            $cashout->forceFill(['next_check_at' => now()->addMinute()])->save();
+            // One signal so far; the next read must say the same. "Not paid" must hold over time.
+            $cashout->forceFill(['next_check_at' => now()->addMinutes($state === 'failed' ? self::REJECTED_APART_MINUTES + 1 : 1)])->save();
             $this->event($cashout, $cashout->status, $cashout->status, $source, __('injongepay::injongepay.cashout_first_signal_'.$state), [], $callId);
 
             return;
         }
 
-        $state === 'completed'
-            ? $this->complete($cashout, $source, null, $callId)
-            : $this->fail($cashout, $source, __('injongepay::injongepay.cashout_bank_failed', ['status' => $cashout->bank_status]), $callId);
+        if ($state === 'completed') {
+            $this->complete($cashout, $source, null, $callId);
+
+            return;
+        }
+
+        // We never had a clear yes when sending, so this "no" isn't enough to give money back alone.
+        if ($cashout->submit_outcome !== 'accepted') {
+            $this->askPerson($cashout, $source, __('injongepay::injongepay.cashout_rejected_after_unclear_send', ['status' => $cashout->bank_status]));
+
+            return;
+        }
+
+        $this->fail($cashout, $source, __('injongepay::injongepay.cashout_bank_failed', ['status' => $cashout->bank_status]), $callId);
+    }
+
+    /** Two "not paid" answers count only when time has passed between them: pressing a button twice is one answer. */
+    private function rejectedTwice(?string $previous, ?Carbon $previousAt): bool
+    {
+        return $previous === BankAnswers::FAILED && $previousAt?->lte(now()->subMinutes(self::REJECTED_APART_MINUTES));
     }
 
     /**
@@ -307,8 +335,15 @@ class CashoutService
     {
         $since = $cashout->submitted_at ?? $cashout->created_at;
 
-        if ($cashout->status !== Cashout::NEEDS_REVIEW && $since->lt(now()->subMinutes(self::UNKNOWN_GRACE_MINUTES))) {
-            $this->move($cashout, Cashout::NEEDS_REVIEW, $source, __('injongepay::injongepay.cashout_no_final_answer'));
+        if ($since->lt(now()->subMinutes(self::UNKNOWN_GRACE_MINUTES))) {
+            $this->askPerson($cashout, $source, __('injongepay::injongepay.cashout_no_final_answer'));
+        }
+    }
+
+    private function askPerson(Cashout $cashout, string $source, string $why): void
+    {
+        if ($cashout->status !== Cashout::NEEDS_REVIEW) {
+            $this->move($cashout, Cashout::NEEDS_REVIEW, $source, $why);
             $this->items->open('cashout_unresolved', $cashout->reference, Wallet::query()->withoutGlobalScopes()->find($cashout->wallet_id), $cashout, $cashout->amount, ['last_answer' => $cashout->last_answer, 'checks' => $cashout->checks]);
             PlatformAlert::send('approve injongepay_platform.cashout', __('injongepay::injongepay.notify_cashout_review'),
                 __('injongepay::injongepay.notify_cashout_review_body', ['ref' => $cashout->reference, 'amount' => Money::format($cashout->amount)]),

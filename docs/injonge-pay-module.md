@@ -46,7 +46,7 @@
 
 ## 0. TL;DR
 
-- **What it is:** a Laravel 12 / PHP 8.2 / PostgreSQL multi-tenant collection platform operated by Inhills. Tenants are **Institutions** (merchants, identified by TIN). Each institution has one or more **Wallets**; each wallet has a GTBank **merchant code** (`555xxxxx`) that customers pay into via mobile money (MTN/Airtel) through **GTBank PaymentBridge**.
+- **What it is:** a Laravel 12 / PHP 8.2 / PostgreSQL multi-tenant collection platform operated by Injonge Pay. Tenants are **Institutions** (merchants, identified by TIN). Each institution has one or more **Wallets**; each wallet has a GTBank **merchant code** (`555xxxxx`) that customers pay into via mobile money (MTN/Airtel) through **GTBank PaymentBridge**.
 - **Money in:** GTBank posts a **webhook** → `PaymentService::receive()` creates a `buyer_payments` row, takes a **fee**, and posts **ledger credits** to the merchant wallet (net) and to two internal wallets (bank cut + platform revenue).
 - **Money moves:** inside the system only through `LedgerService::post()` — **transfers** (wallet → wallet), **refunds** (debit wallet), **cash-outs** (debit wallet + GTBank disbursement to a bank account). Every outgoing operation needs an emailed **6-digit OTP**.
 - **Money out to partners (your module):** the **PartnerConnect** module exposes `api/partner/v1/*` — OAuth-style client credentials → list merchant accounts → list payments → `confirm` a payment against a POS/EBM invoice (or `unconfirm`). It **never touches** balances or `buyer_payments`; confirmations live in their own table.
@@ -61,8 +61,8 @@
 
 | Actor | How they get in | What they do |
 |---|---|---|
-| **Super Admin** (Inhills) | email + password + OTP/2FA | Everything; `Gate::before` grants all abilities |
-| **Platform staff** (Inhills users with `institution_id = NULL`) | email + password + OTP/2FA | Manage institutions, wallets, platform fees, logs — per their role's permissions |
+| **Super Admin** (Injonge Pay) | email + password + OTP/2FA | Everything; `Gate::before` grants all abilities |
+| **Platform staff** (Injonge Pay users with `institution_id = NULL`) | email + password + OTP/2FA | Manage institutions, wallets, platform fees, logs — per their role's permissions |
 | **Support staff** | same as platform staff | A platform user assigned to an institution via `institutions.support_staff_id`; treated as a member of it |
 | **Institution users** (merchant staff) | **TIN + username** + password + OTP/2FA | Work inside their own institution: wallets, transfers, refunds, cash-outs, reports, users |
 | **GTBank PaymentBridge** | shared secret header | Sends payment and disbursement-status webhooks; answers our outbound API calls |
@@ -910,7 +910,7 @@ Base URL: `https://<host>/api/partner/v1`. Errors: `{"error":{"code","message"}}
 - **Partial payments:** call `confirm` once per payment with the same `invoice_no`, `partial: true`, `invoice_total`, `balance_after`, `note`. Rebuild an invoice's history with `GET /invoices/{invoice_no}/payments`.
 - **Check `REVERSED` yourself** before confirming (the server will let you confirm a refunded payment).
 - **Rate limit:** 60 requests/min **per public IP** shared by every terminal of the business. Poll per merchant account at a modest interval and back off on `429`.
-- **Credentials:** issued per institution by Inhills platform staff (not self-service). The secret is shown once. Rotation or disabling kills live tokens immediately → expect a 401 and re-authenticate; if re-auth fails with `invalid_client`, surface "credentials revoked".
+- **Credentials:** issued per institution by Injonge Pay platform staff (not self-service). The secret is shown once. Rotation or disabling kills live tokens immediately → expect a 401 and re-authenticate; if re-auth fails with `invalid_client`, surface "credentials revoked".
 - **Merchant account status:** only `ACTIVE` accounts can receive new payments; `PENDING/FAILED/INACTIVE/CLOSED` can't. Show it next to the linked account.
 - **Amounts** are floats in JSON, RWF, 2 decimals; `amount` is gross (what the customer paid); `fee_amount` is Injonge Pay's fee. Book the gross on the invoice.
 - **No sandbox:** API.md §8 — the partner API runs against production. Test payments come from the admin "Record payment" action (see §10 item 4 for why that action should be restricted).

@@ -37,7 +37,7 @@ class BackgroundJobs
     /** A job killed mid-run (a server restart) frees its lock after this, so it can't stay stopped for a day. */
     private const LOCK_MINUTES = 60;
 
-    /** How long GTBank call logs are kept unless Inhills sets otherwise. */
+    /** How long GTBank call logs are kept unless Injonge Pay sets otherwise. */
     public const DEFAULT_LOG_DAYS = 90;
 
     public const MIN_LOG_DAYS = 30;

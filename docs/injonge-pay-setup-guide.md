@@ -12,11 +12,11 @@ In ISH Core the work is split in three layers. You always go through them in thi
 |---|---|---|---|
 | **1. The server** | whoever runs the server | `.env`, cron, queue | GTBank credentials, the scheduler and the queue |
 | **2. The core** | superadmin | **Super admin** menu (Businesses, Modules, Platform settings) | businesses and their owners, which modules a business has, security rules, roles |
-| **3. Injonge Pay** | Inhills staff | the **Injonge Pay platform** group in the sidebar | KYC, fees, merchant codes, bank accounts, reconciliation, cash-outs, partners |
+| **3. Injonge Pay** | Injonge Pay staff | the **Injonge Pay platform** group in the sidebar | KYC, fees, merchant codes, bank accounts, reconciliation, cash-outs, partners |
 
-Businesses (the old institutions) run themselves: their own users and roles, settlement accounts, payments, transfers, cash-outs, reports. The one thing only Inhills does is **create merchant codes** (they are registered at GTBank), along with the fee, KYC and limits that go with them.
+Businesses (the old institutions) run themselves: their own users and roles, settlement accounts, payments, transfers, cash-outs, reports. The one thing only Injonge Pay does is **create merchant codes** (they are registered at GTBank), along with the fee, KYC and limits that go with them.
 
-Inhills itself is the **primary business** (the one created when the app was installed). Its staff are "platform staff", and the platform's own fee wallets belong to it.
+Injonge Pay itself is the **primary business** (the one created when the app was installed). Its staff are "platform staff", and the platform's own fee wallets belong to it.
 
 ## Old app → new app at a glance
 
@@ -35,8 +35,8 @@ Inhills itself is the **primary business** (the one created when the app was ins
 | Record payment (manual) | Gone. Money that couldn't be credited waits in **Money to allocate** |
 | Refunds | Gone |
 | OTP email on every transfer/cash-out | **PIN** every time; an extra code only when something is unusual |
-| Cash-out "Retry" / "Reverse" | Never needed by the business. Unclear cash-outs go to Inhills in **Cash-outs (all)** |
-| API credentials on the institution | The business's own **Integrations → Connect a system** (Inhills only registers the partner systems) |
+| Cash-out "Retry" / "Reverse" | Never needed by the business. Unclear cash-outs go to Injonge Pay in **Cash-outs (all)** |
+| API credentials on the institution | The business's own **Integrations → Connect a system** (Injonge Pay only registers the partner systems) |
 | Financial monitor | Injonge Pay platform → **Money overview** |
 | API call logs | **GTBank call log** (bank) and the call list in **Partners & API** (POS) |
 
@@ -128,9 +128,9 @@ Those are the defaults. **Injonge Pay platform → Background jobs** sets each j
 - **Sign staff out after (minutes idle)**: `2`.
 - **Businesses manage their own staff and roles**: leave **on** (the default). Each business manages its own users and roles.
 
-### B2. The Inhills team (platform staff)
+### B2. The Injonge Pay team (platform staff)
 
-Inhills staff are users of the **Inhills** business. In Inhills, open **Users → Roles** and create roles with the **"Injonge Pay platform (operator only)"** permissions. These permissions only exist in the Inhills business; a customer business's Admin never gets them. For example:
+Injonge Pay staff are users of the **Injonge Pay** business. In Injonge Pay, open **Users → Roles** and create roles with the **"Injonge Pay platform (operator only)"** permissions. These permissions only exist in the Injonge Pay business; a customer business's Admin never gets them. For example:
 
 | Role | Give it |
 |---|---|
@@ -138,7 +138,7 @@ Inhills staff are users of the **Inhills** business. In Inhills, open **Users �
 | Finance officer | Reconciliation, Cash-outs (approve), Fee rates, Fee earnings |
 | Support | read only on the above, GTBank call log, Partners & API (integrators, call log) |
 
-The Inhills Admin (owner) has everything automatically.
+The Injonge Pay Admin (owner) has everything automatically.
 
 ### B3. Injonge Pay settings
 
@@ -183,7 +183,7 @@ On the business's page (**Super admin → Businesses → the business**), tick *
 - **TIN** (9 digits), owner or representative, contact email.
 - **Contact phone as `+250XXXXXXXXX`.** GTBank refuses any other format.
 - **Fee (%)**: blank means the platform rate.
-- The business can also edit its own contacts and address later (Injonge Pay → Business details). TIN, fee and limits stay with Inhills.
+- The business can also edit its own contacts and address later (Injonge Pay → Business details). TIN, fee and limits stay with Injonge Pay.
 - **Limits and approvals**, in RWF, blank means no limit:
   - *Most per operation / day / month*
   - *Extra check above*: the PIN is not enough above this amount; the authenticator or emailed code is needed too.
@@ -207,10 +207,10 @@ To stop a code temporarily, use **Switch off**: payments to it are held, not los
 
 ### C5. Hand over to the business
 
-To help a business with anything in its own panel, use **Super admin → Businesses → the business → Log in as**. Inhills never manages a business's settlement accounts, staff or connections from the platform pages.
+To help a business with anything in its own panel, use **Super admin → Businesses → the business → Log in as**. Injonge Pay never manages a business's settlement accounts, staff or connections from the platform pages.
 
 
-That's all Inhills does. The business's owner signs in and does the rest:
+That's all Injonge Pay does. The business's owner signs in and does the rest:
 
 - **Users and Roles**: their own staff, for example:
 
@@ -241,7 +241,7 @@ The business is ready.
 
 ---
 
-## Part D: what to look at every day (Inhills)
+## Part D: what to look at every day (Injonge Pay)
 
 | Screen | Look for |
 |---|---|
@@ -250,7 +250,7 @@ The business is ready.
 | **Cash-outs (all) → Being checked with GTBank** | Cash-outs GTBank gave no final answer for. Confirm with GTBank, then **Settle**. Never guess. |
 | **Money to allocate** | Payments GTBank credited to a code that couldn't take them. **Credit** them to the right wallet, or record how they were settled. |
 | **GTBank call log** | When something looks wrong: every request and answer, secrets hidden. |
-| **Fee earnings** | Inhills' share of the fees and GTBank's cut. Cash them out to Inhills' own settlement accounts, added on the same page, exactly as a business does: PIN, an account GTBank confirms, the extra code the first time. |
+| **Fee earnings** | Injonge Pay's share of the fees and GTBank's cut. Cash them out to Injonge Pay's own settlement accounts, added on the same page, exactly as a business does: PIN, an account GTBank confirms, the extra code the first time. |
 
 You get a notification (in the app and by email) whenever one of these needs you.
 
@@ -262,7 +262,7 @@ You get a notification (in the app and by email) whenever one of these needs you
 4. **Cash-outs → New cash-out** (or **Cash out** on a merchant account):
    - choose the wallet, the approved account and a whole RWF amount
    - enter the PIN, plus the extra code if asked
-   - follow the status: *Sent* → *Paid*. If it says *Being checked with GTBank*, the money is safe and Inhills is on it.
+   - follow the status: *Sent* → *Paid*. If it says *Being checked with GTBank*, the money is safe and Injonge Pay is on it.
 5. **Transfers**: move money between their own merchant accounts. The receiving account is shown before the PIN is asked.
 6. **Approvals**: a second person approves large amounts with their own PIN.
 7. **Reports**: totals for any period, PDF/Excel.

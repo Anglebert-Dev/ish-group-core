@@ -34,7 +34,7 @@ class DataController
             ['label' => 'injongepayconnect::connect.menu_platform', 'route' => 'injongepayconnect.platform.integrators.index', 'active' => 'injongepayconnect.platform.*', 'permission' => 'list injongepay_connect_platform.integrator', 'group' => 'Injonge Pay platform', 'order' => 70, 'icon' => $plug],
         ];
 
-        // Inhills (the operator) has no merchant codes of its own: only its platform menu.
+        // Injonge Pay (the operator) has no merchant codes of its own: only its platform menu.
         if (app(\App\Support\Access\PlatformAccess::class)->isOperator(auth('staff')->user())) {
             $items = array_values(array_filter($items, fn (array $item) => isset($item['group'])));
         }

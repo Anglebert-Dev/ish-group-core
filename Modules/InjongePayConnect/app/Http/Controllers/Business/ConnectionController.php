@@ -14,7 +14,7 @@ use Modules\InjongePayConnect\Services\Credentials;
 
 /**
  * The business connects its own systems (POS, EBM…) to its Injonge Pay. It
- * chooses one of the integrators Inhills has registered and gets the
+ * chooses one of the integrators Injonge Pay has registered and gets the
  * credentials to give that system.
  */
 class ConnectionController extends Controller

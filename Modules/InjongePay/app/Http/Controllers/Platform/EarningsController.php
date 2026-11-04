@@ -76,7 +76,7 @@ class EarningsController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        $accounts->disable($account, 'Removed by Inhills');
+        $accounts->disable($account, 'Removed by Injonge Pay');
 
         return back()->with('success', __('injongepay::injongepay.account_removed'));
     }
