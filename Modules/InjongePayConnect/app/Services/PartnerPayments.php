@@ -21,7 +21,6 @@ use Modules\InjongePayConnect\Models\Connection;
  *  - a cashed-out payment is still AVAILABLE or CONFIRMED in the filters;
  *  - updated_since also returns payments whose confirmation changed;
  *  - a payment GTBank reversed can't be confirmed;
- *  - date_to given as a date includes that whole day.
  */
 class PartnerPayments
 {
@@ -57,15 +56,15 @@ class PartnerPayments
         }
 
         if (! empty($filters['date_from'])) {
-            $query->where('created_at', '>=', self::moment($filters['date_from'], false));
+            $query->where('created_at', '>=', self::moment($filters['date_from']));
         }
 
         if (! empty($filters['date_to'])) {
-            $query->where('created_at', '<=', self::moment($filters['date_to'], true));
+            $query->where('created_at', '<=', self::moment($filters['date_to']));
         }
 
         if (! empty($filters['updated_since'])) {
-            $since = self::moment($filters['updated_since'], false);
+            $since = self::moment($filters['updated_since']);
             $query->where(fn ($q) => $q->where('updated_at', '>', $since)->orWhereExists(fn ($c) => $c->select(DB::raw(1))->from('ijpc_confirmations')
                 ->whereColumn('ijpc_confirmations.payment_id', 'ijp_payments.id')->where('ijpc_confirmations.updated_at', '>', $since)));
         }
@@ -75,7 +74,8 @@ class PartnerPayments
             $query->where(fn ($q) => $q->where('buyer_phone', 'like', $term)->orWhere('buyer_name', 'like', $term)->orWhere('bank_reference', 'like', $term));
         }
 
-        $perPage = min(max((int) ($filters['per_page'] ?? 50), 1), 200);
+        // 0 falls back to the framework's own default, as it always has for partners.
+        $perPage = min(max((int) ($filters['per_page'] ?? 50), 0), 200) ?: null;
 
         return $query->orderByDesc('created_at')->orderByDesc('id')->paginate($perPage, ['*'], 'page', (int) ($filters['page'] ?? 1));
     }
@@ -176,14 +176,10 @@ class PartnerPayments
         return ['date' => $date, 'count' => (int) $row->c, 'gross_total' => Money::toFloat((int) $row->g), 'fee_total' => Money::toFloat((int) $row->f), 'net_total' => Money::toFloat((int) $row->n)];
     }
 
-    /** "2026-10-09" → that day's start (or end); a date-time is taken as given. */
-    private static function moment(string $value, bool $endOfDay): Carbon
+    /** "2026-10-09" → midnight that day; a date-time is taken as given. */
+    private static function moment(string $value): Carbon
     {
         $at = Carbon::parse($value, (string) config('injongepayconnect.timezone'));
-
-        if ($endOfDay && preg_match('/^\d{4}-\d{2}-\d{2}$/', trim($value))) {
-            $at = $at->endOfDay();
-        }
 
         return $at->setTimezone((string) config('app.timezone'));
     }

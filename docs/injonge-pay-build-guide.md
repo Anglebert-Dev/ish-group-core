@@ -310,32 +310,63 @@ After the phases, from trying it: Fee earnings, dashboard by module, business wa
 - **Contract tests**: golden JSON captured from the production app for every partner, webhook and EBM endpoint, asserted byte for byte against the `pos-ebm-v1` profile.
 - Manual: both panels clicked through in test mode on the local install.
 
-## What's remaining (04/11/2026)
+## What's remaining (updated 04/11/2026)
 
 **Before go-live (blocking)**
-1. **Data migration** from production (phase 9). Needs a `pg_dump` or read-only access to the production database.
-2. **First run against the real GTBank.** These answers have never been seen from GTBank, only from its document:
-   - `/participant/transactions` with `startDate`/`endDate`: the 10-minute mirror and the daily close read it once for all merchant codes (the per-merchant `/transactions` is kept for the button on one code)
+1. **Decide on the production data.** The first import was reversed because it sat inside this sellable module, so nothing brings the old data across today. Choose one:
+   - **Everything:** all history moves.
+   - **Balances only:** businesses, users, wallets with their merchant codes and balances, settlement accounts and partner logins. History stays in the old app.
+   - **Fresh start:** only if production holds no real money.
+
+   If production holds real money, the balances and the same merchant codes must move, because those codes already exist at GTBank. Any import must stay out of the sellable module.
+2. **Deploy on Ubuntu.** Follow `Modules/InjongePay/README.md`: packages, `.env`, the GTBank CA file, cron, the Supervisor queue worker and log rotation. Run `npm ci && npm run build`, because `public/build` isn't in git.
+3. **GTBank's side.** Send them the **Webhooks** section of that README with the real domain, get both webhooks pointed at it, and get their IP addresses for **GTBank's addresses** in Injonge Pay settings.
+4. **First live run.** Register one merchant code, take one small payment and make one small cash-out. These have never been seen live:
+   - `/participant/transactions`
    - `/merchants/register`
-   - the disbursement-status webhook (production logs only show payment webhooks)
+   - the cash-out status webhook
 
-   Run on the server with the real keys: register one merchant code, read one day's list, make one small cash-out. Then add the answers to `tests/fixtures/gtbank-production.php`.
-3. **Server setup**: cron `schedule:run`, a `queue:work` under Supervisor, `APP_ENV=production`, an https `APP_URL`, the `GTBANK_*` keys, the GTBank CA file. GTBank must call the two webhook URLs on the new domain.
+   Add the real answers to `tests/fixtures/gtbank-production.php`. Until then every money test runs against imitated GTBank answers.
 
-**Built on 04/11/2026** (were promised but missing)
-- A new or changed PIN, a locked PIN, a new or removed settlement account and changed limits notify the business's Admins (in the app and by email) and the person concerned.
-- Changing a PIN needs the authenticator code, or a code by email; a first PIN needs the password.
-- **Statement checks** (Reconciliation → Statement checks): GTBank's CSV statement of the settlement account is compared with the books. Credits are matched with payments and debits with paid cash-outs, by reference first, then by amount and day. The closing balance is compared with what the books say GTBank holds. A difference opens a reconciliation item. Columns are found by their headings. Still ask GTBank for a statement API.
-- *Extra check above (per hour)*: the step-up also triggers when the business's total in the last hour would pass it.
-- Requests waiting for a second person expire after 24 h by themselves (every 10 minutes, and when Approvals is opened); the requester is told.
+**Not checked yet**
+- The CSV import hasn't been clicked through in a browser, and it hasn't run on Postgres.
 
-**Many merchant codes** (built 04/11/2026)
-- Injonge Pay imports merchant codes from a CSV (Merchant codes → Import from CSV). The whole file is checked first and nothing is created if a line is wrong. GTBank registrations are queued 3 seconds apart. Export CSV hands the codes to the business. One audit entry is written for the import, plus one per code.
-- GTBank traffic no longer grows with the number of codes: the mirror and the daily close make one participant call and split it by merchant code (unknown codes are parked as money to allocate). The status sync takes at most 100 codes per run, oldest first, skipping any checked in the last 10 minutes.
+**Open decisions**
+- **24-hour cooling-off on new settlement accounts.** It is in the plan above but isn't built: an account is usable as soon as GTBank's name matches. The first payout to it still needs the extra code.
+- **`date_to` in the partner API.** See below.
+- **Translations.** The whole app is English only. A language is offered once `resources/lang/<code>` exists in the core, so French or Kinyarwanda means translating the core and every module together.
+- **Ask GTBank** for a statement API and signed webhooks.
 
-**Smaller**
-- The partner rate limit per connection is set by Injonge Pay on the integrator's page.
-- Every page is opened by `EveryScreenTest` with data on it, as the business and as Injonge Pay (and refused to the business on Injonge Pay's pages); it passes on SQLite and on Postgres.
+## Partner and webhook contract: compared with the old app
 
-**Open**
-- **Translations**: the whole app (core and every module) is English only. A language is offered once `resources/lang/<code>` exists in the core, so French or Kinyarwanda means translating the core and every module together, not Injonge Pay alone.
+On 04/11/2026 the old app and this one ran side by side with identical data. Each got the same 84 requests, covering `/api/partner/v1`, the EBM lookup and both webhooks, including filters, errors and other businesses' records. Answers were compared byte for byte, except access tokens, new `PAY`/`CSH` references and a stray newline the old app puts before every answer.
+
+**78 are identical. The 6 that differ are deliberate:**
+
+| Request | Old app | This app | Why |
+|---|---|---|---|
+| Payments filtered `status=AVAILABLE` | Leaves out cashed-out payments | Includes them | They vanished from the POS |
+| Confirm a reversed payment | `200`, and it links the invoice | `409 conflict` | Money that went back can't pay an invoice |
+| EBM lookup of a refunded payment | `payment_status: REFUNDED`, `bank_status: SUCCESS` | `REVERSED`, `REVERSED` | Refunds were dropped. This only affects refunded rows, if they are ever imported |
+| Payment webhook sent twice | `422` | `200`, `Payment already received.` | GTBank's own document asks for this |
+| Payment webhook for an unknown code | `422`, money left uncredited | `200`, held for review | The money must not be lost |
+| Payment webhook for an inactive code | `422`, money left uncredited | `200`, held for review | The money must not be lost |
+
+The comparison also found two changes that had slipped in, and both now match the old app:
+- `per_page=0` returns 15 rows.
+- `date_to` with only a date means midnight at the start of that day. So `date_to=2026-11-03` leaves out that day's payments, although the API document says "on/before". The old behaviour is kept so the live contract doesn't change. If the POS team wants the whole day, it is a one-line change.
+
+## Built on 04/11/2026
+
+- **Security:** PIN changes need the authenticator or an emailed code. PINs, settlement accounts and limits notify the business's Admins.
+- **Statement checks:** GTBank's CSV of the settlement account is compared with the books.
+- **Many merchant codes:** import from a CSV, registered 3 seconds apart. The mirror and the daily close make one GTBank call for all codes.
+- **A code GTBank removes:** one "no record" only triggers a recheck, and a second one 10 minutes later fails the code and alerts people. Live codes are checked every 6 hours.
+- **Background jobs page:** each job can be switched on or off and timed from the screen, with status, the scheduler, the queue and alerts.
+- **Slow GTBank:** after 3 calls in a row with no answer a job leaves and comes back on its turn. Locks free themselves within an hour. Old call logs are deleted after 90 days, except calls about cash-outs.
+- **Checking by hand:** every request to GTBank has a button on its own page, even after an error. The jobs are the safety net.
+- **Money leaves once:** one-time form token, no identical repeat within 2 minutes, database rules, tested with 8 processes on Postgres.
+- **Unclear answers:** the money stays held and nothing is resent. Payments show as cashed out only once GTBank has paid. "Never heard of it" never returns money by itself.
+- **After a cash-out closes:** watched for 7 days. A late "paid" freezes the wallet and alerts staff, and a late reversal alerts staff, who can give the money back once.
+
+The full list is under **Every safeguard** in `Modules/InjongePay/README.md`.

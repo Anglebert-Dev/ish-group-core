@@ -139,8 +139,8 @@ class PartnerApiV1Test extends InjongePayTestCase
         $this->postJson('/api/partner/v1/payments/'.$cashedOut->uuid.'/confirm', ['invoice_no' => 'INV-2'])->assertOk();
         $this->getJson('/api/partner/v1/merchant-accounts/'.$this->till->uuid.'/payments?updated_since='.urlencode($since))->assertJson(['total' => 1]);
 
-        // date_to as a date includes that day.
-        $this->getJson('/api/partner/v1/merchant-accounts/'.$this->till->uuid.'/payments?date_from='.now()->toDateString().'&date_to='.now()->toDateString())->assertJson(['total' => 2]);
+        // A date on its own means midnight, as it always has for partners.
+        $this->getJson('/api/partner/v1/merchant-accounts/'.$this->till->uuid.'/payments?date_from='.now()->toDateString().'&date_to='.now()->toDateString())->assertJson(['total' => 0]);
     }
 
     public function test_another_business_ids_are_not_found(): void
