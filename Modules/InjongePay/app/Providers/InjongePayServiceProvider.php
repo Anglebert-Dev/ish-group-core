@@ -22,6 +22,7 @@ class InjongePayServiceProvider extends CoreModuleServiceProvider
         \Modules\InjongePay\Console\CloseDayCommand::class,
         \Modules\InjongePay\Console\CheckCashoutsCommand::class,
         \Modules\InjongePay\Console\ExpireApprovalsCommand::class,
+        \Modules\InjongePay\Console\PruneLogsCommand::class,
     ];
 
     protected array $providers = [

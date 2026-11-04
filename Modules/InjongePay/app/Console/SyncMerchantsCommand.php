@@ -31,22 +31,13 @@ class SyncMerchantsCommand extends Command
 
         $wallets = self::due($this->option('all'))->get();
         $routine = $this->option('all') ? collect() : self::stale()->whereNotIn('id', $wallets->pluck('id'))->limit(self::PER_RUN - $wallets->count())->get();
+        $checked = 0;
 
-        foreach ($wallets as $wallet) {
-            $this->check($merchants, $wallet);
-        }
-
-        $checked = $wallets->count();
-
-        foreach ($routine as $wallet) {
-            $result = $this->check($merchants, $wallet);
+        self::eachUntilNoAnswer($wallets->concat($routine), function (Wallet $wallet) use ($merchants, &$checked) {
             $checked++;
 
-            // GTBank isn't answering: don't spend the run waiting on timeouts for routine checks.
-            if (! $result->ok() && ! $result->notFound()) {
-                break;
-            }
-        }
+            return $this->check($merchants, $wallet);
+        });
 
         $this->info($checked.' merchant code(s) checked.');
 
@@ -60,6 +51,23 @@ class SyncMerchantsCommand extends Command
         $this->line("{$wallet->merchant_code}: {$wallet->bank_status} ({$result->outcome})");
 
         return $result;
+    }
+
+    /** GTBank isn't answering: leave after this many in a row and come back on the next turn. */
+    public const LEAVE_AFTER_NO_ANSWERS = 3;
+
+    /** @param callable(Wallet): BankResult $check */
+    public static function eachUntilNoAnswer(iterable $wallets, callable $check): void
+    {
+        $noAnswers = 0;
+
+        foreach ($wallets as $wallet) {
+            $noAnswers = $check($wallet)->unknown() ? $noAnswers + 1 : 0;
+
+            if ($noAnswers >= self::LEAVE_AFTER_NO_ANSWERS) {
+                return;
+            }
+        }
     }
 
     /** Per run at most this many lookups, oldest checked first, so many new codes never flood GTBank. */

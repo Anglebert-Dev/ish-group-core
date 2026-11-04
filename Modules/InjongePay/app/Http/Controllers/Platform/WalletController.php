@@ -158,10 +158,11 @@ class WalletController extends Controller
     public function syncWaiting(): RedirectResponse
     {
         $count = 0;
-        foreach (SyncMerchantsCommand::due()->get() as $wallet) {
-            $this->merchants->sync($wallet);
+        SyncMerchantsCommand::eachUntilNoAnswer(SyncMerchantsCommand::due()->get(), function (Wallet $wallet) use (&$count) {
             $count++;
-        }
+
+            return $this->merchants->sync($wallet);
+        });
 
         return back()->with('success', __('injongepay::injongepay.wallets_synced', ['count' => $count]));
     }

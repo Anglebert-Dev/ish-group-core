@@ -27,9 +27,19 @@ class CheckCashoutsCommand extends Command
         $due = Cashout::query()->withoutGlobalScopes()->whereIn('status', [Cashout::SUBMITTING, Cashout::SUBMITTED, Cashout::UNKNOWN, Cashout::NEEDS_REVIEW])
             ->where(fn ($q) => $q->whereNull('next_check_at')->orWhere('next_check_at', '<=', now()))->orderBy('id')->limit(100)->get();
 
+        $noAnswers = 0;
+
         foreach ($due as $cashout) {
             app(CurrentBusiness::class)->set($cashout->business_id);
-            $this->line($cashout->reference.': '.$cashouts->check($cashout));
+            $state = $cashouts->check($cashout);
+            $this->line($cashout->reference.': '.$state);
+
+            $noAnswers = $state === CashoutService::NO_ANSWER ? $noAnswers + 1 : 0;
+
+            // GTBank isn't answering: leave now and come back on the next turn.
+            if ($noAnswers >= SyncMerchantsCommand::LEAVE_AFTER_NO_ANSWERS) {
+                break;
+            }
         }
 
         return self::SUCCESS;

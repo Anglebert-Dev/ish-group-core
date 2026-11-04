@@ -283,7 +283,7 @@ class MerchantTest extends InjongePayTestCase
         Http::assertNotSent(fn (Request $r) => str_contains($r->url(), '/merchants/lookup') && str_contains($r->url().$r->body(), $recent->merchant_code));
     }
 
-    public function test_routine_checks_stop_when_gtbank_does_not_answer(): void
+    public function test_the_sync_leaves_when_gtbank_does_not_answer(): void
     {
         foreach (range(1, 5) as $i) {
             $this->wallet(overrides: ['name' => "Till {$i}", 'bank_status' => Wallet::BANK_ACTIVE, 'bank_synced_at' => now()->subHours(7)]);
@@ -292,6 +292,6 @@ class MerchantTest extends InjongePayTestCase
 
         $this->artisan('injongepay:sync-merchants')->assertSuccessful();
 
-        Http::assertSentCount(2); // token + one lookup
+        Http::assertSentCount(4); // token + three lookups, then it leaves
     }
 }

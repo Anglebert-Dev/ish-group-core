@@ -2,6 +2,7 @@
 
 namespace Modules\InjongePay\Services;
 
+use App\Models\System\System;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +25,7 @@ class BackgroundJobs
         'sync_merchants' => ['command' => 'injongepay:sync-merchants', 'every' => 15, 'options' => [15, 30, 60]],
         'close_day' => ['command' => 'injongepay:close-day', 'daily' => '01:30'],
         'sync_all' => ['command' => 'injongepay:sync-merchants --all', 'daily' => '02:00'],
+        'prune_logs' => ['command' => 'injongepay:prune-logs', 'daily' => '03:30'],
     ];
 
     public const RUNNING = 'running';
@@ -31,6 +33,14 @@ class BackgroundJobs
     public const OK = 'ok';
 
     public const FAILED = 'failed';
+
+    /** A job killed mid-run (a server restart) frees its lock after this, so it can't stay stopped for a day. */
+    private const LOCK_MINUTES = 60;
+
+    /** How long GTBank call logs are kept unless Inhills sets otherwise. */
+    public const DEFAULT_LOG_DAYS = 90;
+
+    public const MIN_LOG_DAYS = 30;
 
     /** A run still open after this long has stopped, whatever its row says. */
     private const STUCK_AFTER_MINUTES = 30;
@@ -42,7 +52,7 @@ class BackgroundJobs
         foreach (self::JOBS as $key => $job) {
             $row = $rows[$key] ?? null;
 
-            $schedule->command($job['command'])->cron($this->cron($key, $row?->timing))->withoutOverlapping()
+            $schedule->command($job['command'])->cron($this->cron($key, $row?->timing))->withoutOverlapping(self::LOCK_MINUTES)
                 ->createMutexNameUsing('injongepay-job-'.$key)
                 ->when(fn () => (bool) ($row->is_enabled ?? true))
                 ->before(fn () => $this->started($key))
@@ -92,6 +102,22 @@ class BackgroundJobs
         if ($changes) {
             audit('injongepay_background_jobs_changed', __('injongepay::injongepay.audit_background_jobs', ['count' => count($changes)]), null, ['changes' => $changes]);
         }
+    }
+
+    public static function logDays(): int
+    {
+        return (int) (System::getProperty('injongepay_bank_call_days') ?: self::DEFAULT_LOG_DAYS);
+    }
+
+    public function setLogDays(int $days): void
+    {
+        if ($days === self::logDays()) {
+            return;
+        }
+
+        $old = self::logDays();
+        System::addProperty('injongepay_bank_call_days', (string) $days);
+        audit('injongepay_log_retention_changed', __('injongepay::injongepay.audit_log_retention', ['days' => $days]), null, ['old' => $old, 'new' => $days]);
     }
 
     public function started(string $key): void

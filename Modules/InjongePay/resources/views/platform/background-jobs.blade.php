@@ -50,6 +50,9 @@
             @endforeach
         </x-common.table>
         <p class="text-sm text-muted">{{ __('injongepay::injongepay.background_jobs_off_warning') }}</p>
+        <div class="max-w-xs">
+            <x-common.input name="log_days" type="number" :min="$minLogDays" max="3650" :label="__('injongepay::injongepay.log_days')" :value="old('log_days', $logDays)" :hint="__('injongepay::injongepay.log_days_hint', ['min' => $minLogDays])" required />
+        </div>
         <x-common.button type="submit">{{ __('body.save') }}</x-common.button>
     </form>
 </x-layouts.app>

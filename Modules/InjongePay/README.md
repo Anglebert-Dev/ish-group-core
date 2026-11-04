@@ -82,6 +82,7 @@ The times below are the defaults. Change them, or switch a job on or off, on the
 | Every 15 minutes | `injongepay:sync-merchants` | Syncs waiting merchant codes, then live codes not checked for 6 hours, at most 100 per run |
 | Daily 01:30 | `injongepay:close-day` | Closes yesterday and checks the books |
 | Daily 02:00 | `injongepay:sync-merchants --all` | Syncs every merchant code |
+| Daily 03:30 | `injongepay:prune-logs` | Deletes old GTBank call logs |
 
 Add the scheduler once for the whole app. Skip this if the server already has it.
 
@@ -138,6 +139,40 @@ The top of the page shows the **Scheduler** and the **Queue worker**. If either 
 - If the scheduler stops, nothing can send an email, because the scheduler is what would send it. It shows on the page and in the banners, so someone has to open the app. An outside uptime monitor is the only way to be told without opening it.
 - A stopped queue worker shows only once work has waited more than 5 minutes, and only when `QUEUE_CONNECTION=database`. To check it directly: `sudo supervisorctl status ish-core-queue`
 - The page covers this module's jobs only. The token clean-up in InjongePayConnect and jobs of other modules aren't listed.
+
+## When GTBank is slow or down
+
+A call to GTBank waits 20 seconds at most, then we leave. After 3 calls in a row with no answer, that job stops and tries again on its next turn. Nothing is lost, and the server isn't left waiting. The only longer wait is sending a cash-out, which allows 60 seconds because GTBank can take longer and still process it.
+
+If the server restarts while a job is running, that job's lock frees itself within 60 minutes and the job carries on. To free it right away:
+
+```bash
+cd /var/www/ish-core
+sudo -u www-data php artisan schedule:clear-cache
+```
+
+## Disk space
+
+**GTBank call logs:** deleted after 90 days by default. Change it on the Background jobs page, 30 days at least. Calls about cash-outs are always kept. The audit log is never deleted.
+
+**Queue log:** rotate it, or it grows forever.
+
+```bash
+sudo tee /etc/logrotate.d/ish-core > /dev/null <<'EOF'
+/var/www/ish-core/storage/logs/*.log {
+    weekly
+    rotate 8
+    compress
+    missingok
+    notifempty
+    copytruncate
+    su www-data www-data
+}
+EOF
+sudo logrotate -d /etc/logrotate.d/ish-core
+```
+
+Watch the disk: `df -h`
 
 ## Webhooks
 

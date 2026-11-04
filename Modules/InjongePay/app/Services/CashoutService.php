@@ -48,6 +48,9 @@ class CashoutService
     // An unclear submit: how long before a person has to decide.
     public const UNKNOWN_GRACE_MINUTES = 120;
 
+    /** What check() returns when GTBank gave no answer this time. */
+    public const NO_ANSWER = 'no_answer';
+
     public function __construct(protected Ledger $ledger, protected GtbankClient $bank, protected Approvals $approvals, protected ReconciliationItems $items)
     {
     }
@@ -230,7 +233,7 @@ class CashoutService
             };
         });
 
-        return $answer['state'];
+        return $result->unknown() ? self::NO_ANSWER : $answer['state'];
     }
 
     /** GTBank's disbursement webhook: recorded as one signal, then a status read decides. */

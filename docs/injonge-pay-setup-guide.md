@@ -107,6 +107,7 @@ What runs, and when:
 | 15 minutes | sync merchant codes waiting on GTBank, then live codes not checked for 6 hours (at most 100 per run, oldest first) |
 | 01:30 | close yesterday for every merchant code (one call to GTBank); check the books |
 | 02:00 | sync every merchant code |
+| 03:30 | delete old GTBank call logs (90 days by default; calls about cash-outs are kept) |
 
 Each job also has a button on its screen.
 

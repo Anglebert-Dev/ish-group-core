@@ -23,12 +23,14 @@ class BackgroundJobController extends Controller
             'problems' => Health::problems(),
             'schedulerSeen' => $beat ? Carbon::parse($beat) : null,
             'graceMinutes' => Health::GRACE_MINUTES,
+            'logDays' => BackgroundJobs::logDays(),
+            'minLogDays' => BackgroundJobs::MIN_LOG_DAYS,
         ]);
     }
 
     public function update(Request $request, BackgroundJobs $jobs): RedirectResponse
     {
-        $rules = [];
+        $rules = ['log_days' => ['required', 'integer', 'min:'.BackgroundJobs::MIN_LOG_DAYS, 'max:3650']];
         foreach (BackgroundJobs::JOBS as $key => $job) {
             $rules["jobs.{$key}.enabled"] = ['nullable', 'boolean'];
             $rules["jobs.{$key}.timing"] = isset($job['options'])
@@ -36,7 +38,9 @@ class BackgroundJobController extends Controller
                 : ['required', 'date_format:H:i'];
         }
 
-        $jobs->update($request->validate($rules)['jobs']);
+        $data = $request->validate($rules);
+        $jobs->update($data['jobs']);
+        $jobs->setLogDays((int) $data['log_days']);
 
         return back()->with('success', __('injongepay::injongepay.background_jobs_saved'));
     }

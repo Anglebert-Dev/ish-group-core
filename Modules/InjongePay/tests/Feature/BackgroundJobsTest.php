@@ -10,7 +10,10 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
+use Modules\InjongePay\Models\BankCall;
+use Modules\InjongePay\Models\Cashout;
 use Modules\InjongePay\Services\BackgroundJobs;
+use Modules\InjongePay\Models\Wallet;
 
 class BackgroundJobsTest extends InjongePayTestCase
 {
@@ -31,7 +34,7 @@ class BackgroundJobsTest extends InjongePayTestCase
             $jobs[$job['key']] = ($overrides[$job['key']] ?? []) + ['enabled' => 1, 'timing' => $job['timing']];
         }
 
-        return ['jobs' => $jobs];
+        return ['jobs' => $jobs, 'log_days' => BackgroundJobs::logDays()];
     }
 
     private function scheduled(string $command): \Illuminate\Console\Scheduling\Event
@@ -145,5 +148,88 @@ class BackgroundJobsTest extends InjongePayTestCase
         $this->asOperator();
 
         $this->get(route('injongepay.platform.background-jobs'))->assertOk()->assertSee(__('injongepay::injongepay.jobs_needs_action'))->assertSee('schedule:');
+    }
+
+    public function test_a_job_killed_mid_run_frees_its_lock_within_the_hour(): void
+    {
+        $this->assertSame(60, $this->scheduled('injongepay:mirror')->expiresAt);
+    }
+
+    public function test_the_daily_sync_leaves_after_three_no_answers(): void
+    {
+        foreach (range(1, 6) as $i) {
+            $this->wallet(overrides: ['name' => "Till {$i}", 'bank_status' => Wallet::BANK_ACTIVE]);
+        }
+        $this->fakeBank(['/merchants/lookup' => Http::response('', 504)]);
+
+        $this->artisan('injongepay:sync-merchants --all')->assertSuccessful();
+
+        Http::assertSentCount(4); // token + three lookups
+    }
+
+    public function test_the_cashout_check_leaves_after_three_no_answers_and_comes_back(): void
+    {
+        $wallet = $this->wallet();
+        foreach (range(1, 5) as $i) {
+            $cashout = new Cashout(['amount' => 100000]);
+            $cashout->forceFill(['reference' => "CSH{$i}", 'business_id' => $wallet->business_id, 'wallet_id' => $wallet->id, 'amount' => 100000, 'account' => '0001', 'account_holder' => 'X', 'status' => Cashout::UNKNOWN, 'submitted_at' => now()])->save();
+        }
+        $this->fakeBank(['/disbursement/status' => Http::response('', 504)]);
+
+        $this->artisan('injongepay:check-cashouts')->assertSuccessful();
+
+        $this->assertSame(3, Cashout::query()->withoutGlobalScopes()->whereNotNull('last_checked_at')->count());
+        Http::assertSentCount(4);
+
+        $this->artisan('injongepay:check-cashouts')->assertSuccessful();
+        $this->assertSame(5, Cashout::query()->withoutGlobalScopes()->whereNotNull('last_checked_at')->count());
+    }
+
+    public function test_one_slow_answer_does_not_end_the_run(): void
+    {
+        foreach (range(1, 3) as $i) {
+            $this->wallet(overrides: ['name' => "Till {$i}", 'bank_status' => Wallet::BANK_ACTIVE]);
+        }
+        $this->fakeBank(['/merchants/lookup' => Http::sequence()->push('', 504)->push('', 504)->push(['responseCode' => '01'])]);
+
+        $this->artisan('injongepay:sync-merchants --all')->assertSuccessful();
+
+        Http::assertSentCount(4);
+    }
+
+    public function test_old_call_logs_go_but_cashout_proof_stays(): void
+    {
+        $wallet = $this->wallet();
+        $cashout = new Cashout;
+        $cashout->forceFill(['reference' => 'CSH1', 'business_id' => $wallet->business_id, 'wallet_id' => $wallet->id, 'amount' => 100000, 'account' => '0001', 'account_holder' => 'X', 'status' => Cashout::COMPLETED])->save();
+        $call = fn (array $extra, $at) => tap(new BankCall($extra + ['direction' => 'outbound', 'method' => 'GET', 'endpoint' => '/x', 'outcome' => 'ok', 'duration_ms' => 1]), function ($c) use ($at) {
+            $c->created_at = $at;
+            $c->save();
+        });
+
+        $old = $call([], now()->subDays(91));
+        $recent = $call([], now()->subDays(89));
+        $proof = $call(['subject_type' => $cashout->getMorphClass(), 'subject_id' => $cashout->id], now()->subDays(400));
+        $event = $call([], now()->subDays(400));
+        DB::table('ijp_cashout_events')->insert(['cashout_id' => $cashout->id, 'to_status' => 'COMPLETED', 'source' => 'poller', 'bank_call_id' => $event->id, 'created_at' => now()]);
+
+        $this->artisan('injongepay:prune-logs')->assertSuccessful();
+
+        $this->assertDatabaseMissing('ijp_bank_calls', ['id' => $old->id]);
+        foreach ([$recent, $proof, $event] as $kept) {
+            $this->assertDatabaseHas('ijp_bank_calls', ['id' => $kept->id]);
+        }
+        $this->assertDatabaseHas('activity_logs', ['action' => 'injongepay_logs_pruned']);
+    }
+
+    public function test_retention_is_set_on_the_page_with_a_floor(): void
+    {
+        $this->asOperator();
+
+        $this->withConfirmedPassword()->put(route('injongepay.platform.background-jobs.update'), array_merge($this->form(), ['log_days' => 180]))->assertSessionHasNoErrors();
+        $this->assertSame(180, BackgroundJobs::logDays());
+        $this->assertDatabaseHas('activity_logs', ['action' => 'injongepay_log_retention_changed']);
+
+        $this->withConfirmedPassword()->put(route('injongepay.platform.background-jobs.update'), array_merge($this->form(), ['log_days' => 5]))->assertSessionHasErrors('log_days');
     }
 }
