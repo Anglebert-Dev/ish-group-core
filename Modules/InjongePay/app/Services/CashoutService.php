@@ -44,6 +44,11 @@ class CashoutService
     // "Not paid" must be said this far apart before money comes back by itself.
     public const REJECTED_APART_MINUTES = 10;
 
+    // After money came back, how long and how often we keep asking GTBank.
+    public const WATCH_CLOSED_DAYS = 7;
+
+    public const WATCH_EVERY_MINUTES = 60;
+
     // An unclear submit: how long before a person has to decide.
     public const UNKNOWN_GRACE_MINUTES = 120;
 
@@ -183,6 +188,35 @@ class CashoutService
         });
     }
 
+    /**
+     * After money came back, keep asking for a while: a late "paid" must be found
+     * even if GTBank never sends the webhook. This only reads.
+     */
+    public function watchClosed(Cashout $cashout): string
+    {
+        if ($cashout->status !== Cashout::FAILED || ! GtbankClient::isConfigured()) {
+            return 'skipped';
+        }
+
+        $result = $this->bank->disbursementStatus($cashout->reference, $cashout);
+        $answer = BankAnswers::disbursement($result, $cashout->reference, $cashout->amount, $cashout->account);
+
+        $cashout->forceFill(['last_checked_at' => now(), 'last_answer' => $answer['state'], 'next_check_at' => now()->addMinutes(self::WATCH_EVERY_MINUTES)])->save();
+
+        if ($answer['state'] === BankAnswers::COMPLETED) {
+            $this->paidAfterFailed($cashout);
+        }
+
+        return $result->unknown() ? self::NO_ANSWER : $answer['state'];
+    }
+
+    /** GTBank paid something we already gave back: only a person can fix that, and now. */
+    private function paidAfterFailed(Cashout $cashout): void
+    {
+        $cashout->forceFill(['next_check_at' => null])->save();
+        $this->items->open('cashout_paid_after_failed', $cashout->reference, Wallet::query()->withoutGlobalScopes()->find($cashout->wallet_id), $cashout, $cashout->amount);
+    }
+
     /** Ask GTBank where it stands and act only on a clear, matching answer. */
     public function check(Cashout $cashout, string $source = 'poller'): string
     {
@@ -249,9 +283,8 @@ class CashoutService
 
         $cashout->forceFill(['webhook_status' => $d['status'] ? strtoupper($d['status']) : null, 'webhook_at' => now()])->save();
 
-        // GTBank paid something we already gave back: only a person can fix that, and now.
         if ($cashout->status === Cashout::FAILED && $answer['state'] === BankAnswers::COMPLETED) {
-            $this->items->open('cashout_paid_after_failed', $cashout->reference, Wallet::query()->withoutGlobalScopes()->find($cashout->wallet_id), $cashout, $cashout->amount);
+            $this->paidAfterFailed($cashout);
         }
 
         $this->event($cashout, $cashout->status, $cashout->status, 'webhook', null, ['status' => $d['status']]);
@@ -372,7 +405,7 @@ class CashoutService
         ]);
 
         Payment::query()->withoutGlobalScopes()->where('cashout_id', $cashout->id)->update(['payment_status' => Payment::STATUS_AVAILABLE, 'cashout_id' => null]);
-        $cashout->forceFill(['failed_at' => now(), 'failure_reason' => $reason, 'reversal_entry_id' => $entry->id, 'next_check_at' => null])->save();
+        $cashout->forceFill(['failed_at' => now(), 'failure_reason' => $reason, 'reversal_entry_id' => $entry->id, 'next_check_at' => now()->addMinutes(self::WATCH_EVERY_MINUTES)])->save();
         $this->move($cashout, Cashout::FAILED, $source, $reason, [], $callId);
 
         audit('injongepay_cashout_failed', __('injongepay::injongepay.audit_cashout_failed', ['amount' => Money::format($cashout->amount), 'ref' => $cashout->reference]),

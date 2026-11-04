@@ -242,6 +242,90 @@ class CashoutTest extends InjongePayTestCase
         $this->assertSame(Cashout::COMPLETED, $this->check($cashout)->status);
     }
 
+    /** GTBank accepts, says rejected twice 10 minutes apart, the money comes back by itself. */
+    private function acceptedThenRejected(array &$gtbankSays): Cashout
+    {
+        $this->fund('20000.00');
+        $this->fakeBank([
+            '/disbursement/transfer' => Http::response(['identifier' => 'X', 'status' => 'PENDING']),
+            '/disbursement/status' => function () use (&$gtbankSays) {
+                return Http::response($gtbankSays);
+            },
+        ]);
+        $gtbankSays = $this->acsc(['status' => 'RJCT']);
+
+        $cashout = $this->cashout(1000);
+        $this->assertSame('accepted', $cashout->submit_outcome);
+        $this->check($cashout);
+        $this->travel(11)->minutes();
+        $this->assertSame(Cashout::FAILED, $this->check($cashout)->status);
+        $this->assertSame(1960000, $this->till->fresh()->available_balance);
+
+        return $cashout->fresh();
+    }
+
+    private function gtbankWebhook(Cashout $cashout, string $status = 'ACSC')
+    {
+        PlatformSettings::set('webhook_allowed_ips', '10.22.198.46');
+
+        return $this->withServerVariables(['REMOTE_ADDR' => '10.22.198.46'])->postJson('/api/gtbank/disbursement-status', [
+            'identifier' => $cashout->reference, 'status' => $status, 'amount' => 1000, 'currency' => 'RWF', 'beneficiaryAccount' => '0788811607',
+            'receiverNames' => 'Rose Mary MUSABYIMANA', 'creditTime' => '2026-11-03T15:28:17.006Z', 'completedAt' => '2026-11-03T15:28:25.123Z',
+        ]);
+    }
+
+    public function test_gtbank_rejects_twice_then_pays_and_sends_the_webhook(): void
+    {
+        $says = [];
+        $cashout = $this->acceptedThenRejected($says);
+
+        $this->gtbankWebhook($cashout)->assertOk()->assertExactJson(['success' => true, 'message' => 'Acknowledged.', 'data' => null]);
+
+        $this->assertTrue(\Modules\InjongePay\Models\ReconciliationItem::query()->where('kind', 'cashout_paid_after_failed')->where('status', 'open')->exists());
+        $this->assertSame(Cashout::FAILED, $cashout->fresh()->status);
+        $this->assertSame(1960000, $this->till->fresh()->available_balance);
+        $this->assertSame(1, count(Http::recorded(fn ($r) => str_contains($r->url(), '/disbursement/transfer'))));
+    }
+
+    public function test_gtbank_rejects_twice_then_pays_and_never_sends_the_webhook(): void
+    {
+        $says = [];
+        $cashout = $this->acceptedThenRejected($says);
+        $item = fn () => \Modules\InjongePay\Models\ReconciliationItem::query()->where('kind', 'cashout_paid_after_failed');
+
+        // Still rejected at GTBank: we keep asking and stay quiet.
+        $this->travel(2)->hours();
+        $this->artisan('injongepay:check-cashouts')->assertSuccessful();
+        $this->assertFalse($item()->exists());
+
+        // Two days later GTBank has paid it. No webhook, only our own question.
+        $says = $this->acsc();
+        $this->travel(2)->days();
+        $this->artisan('injongepay:check-cashouts')->assertSuccessful();
+
+        $this->assertTrue($item()->exists());
+        Notification::assertSentTo($this->operatorAdmin, \App\Notifications\BrandedNotification::class);
+        $this->assertSame(1, count(Http::recorded(fn ($r) => str_contains($r->url(), '/disbursement/transfer'))));
+
+        // Once found, it isn't reported again every hour.
+        $reads = count(Http::recorded(fn ($r) => str_contains($r->url(), '/disbursement/status')));
+        $this->travel(2)->hours();
+        $this->artisan('injongepay:check-cashouts')->assertSuccessful();
+        $this->assertSame($reads, count(Http::recorded(fn ($r) => str_contains($r->url(), '/disbursement/status'))));
+    }
+
+    public function test_we_stop_asking_about_returned_money_after_seven_days(): void
+    {
+        $says = [];
+        $this->acceptedThenRejected($says);
+        $reads = count(Http::recorded(fn ($r) => str_contains($r->url(), '/disbursement/status')));
+
+        $this->travel(8)->days();
+        $this->artisan('injongepay:check-cashouts')->assertSuccessful();
+
+        $this->assertSame($reads, count(Http::recorded(fn ($r) => str_contains($r->url(), '/disbursement/status'))));
+    }
+
     public function test_paid_after_the_money_came_back_raises_the_alarm(): void
     {
         $this->fund('20000.00');

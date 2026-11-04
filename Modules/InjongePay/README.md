@@ -143,7 +143,7 @@ A check only asks. A cash-out is never sent twice. Every press is in the audit l
 - The same goes for any unclear answer: an error, an odd status or nothing at all. If GTBank answers later, the next check or webhook updates us.
 - The money comes back by itself only when GTBank accepted the transfer when we sent it, and then clearly says rejected twice, at least 10 minutes apart. Pressing the button twice counts once.
 - If the send wasn't clear and GTBank says rejected, staff decide.
-- If GTBank says paid after the money already came back, staff are alerted at once.
+- After money comes back, we keep asking GTBank about that reference every hour for 7 days. If GTBank says paid, by status or by webhook, staff are alerted at once. These checks only read and never send money.
 
 **People still decide one case:** when staff mark an unclear cash-out as failed, the money goes back to the business. Confirm with GTBank first that it didn't pay.
 

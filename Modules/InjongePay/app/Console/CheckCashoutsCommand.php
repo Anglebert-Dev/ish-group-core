@@ -42,6 +42,20 @@ class CheckCashoutsCommand extends Command
             }
         }
 
+        // Money that came back: a late "paid" must be found even without a webhook.
+        $closed = Cashout::query()->withoutGlobalScopes()->where('status', Cashout::FAILED)->where('failed_at', '>=', now()->subDays(CashoutService::WATCH_CLOSED_DAYS))
+            ->whereNotNull('next_check_at')->where('next_check_at', '<=', now())->orderBy('next_check_at')->limit(100)->get();
+        $noAnswers = 0;
+
+        foreach ($closed as $cashout) {
+            app(CurrentBusiness::class)->set($cashout->business_id);
+            $noAnswers = $cashouts->watchClosed($cashout) === CashoutService::NO_ANSWER ? $noAnswers + 1 : 0;
+
+            if ($noAnswers >= SyncMerchantsCommand::LEAVE_AFTER_NO_ANSWERS) {
+                break;
+            }
+        }
+
         return self::SUCCESS;
     }
 }
