@@ -45,6 +45,7 @@ class Wallet extends BaseModel
             'pending_balance' => 'integer',
             'available_balance' => 'integer',
             'bank_synced_at' => 'datetime',
+            'bank_missing_since' => 'datetime',
             'bank_error_at' => 'datetime',
             'bank_update_pending_at' => 'datetime',
         ];

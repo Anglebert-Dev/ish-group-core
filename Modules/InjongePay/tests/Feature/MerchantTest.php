@@ -5,6 +5,9 @@ namespace Modules\InjongePay\Tests\Feature;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\BrandedNotification;
+use Modules\InjongePay\Console\SyncMerchantsCommand;
 use Modules\InjongePay\Exceptions\InjongePayException;
 use Modules\InjongePay\Models\LedgerEntry;
 use Modules\InjongePay\Models\Wallet;
@@ -199,5 +202,96 @@ class MerchantTest extends InjongePayTestCase
         $this->withConfirmedPassword()->post(route('injongepay.platform.wallets.store'), ['business' => $this->business->uuid, 'name' => 'Mine'])->assertForbidden();
         $this->withConfirmedPassword()->put(route('injongepay.platform.wallets.toggle', $wallet->uuid), ['reason' => 'x'])->assertForbidden();
         $this->post(route('injongepay.platform.wallets.sync', $wallet->uuid))->assertForbidden();
+    }
+
+    public function test_one_no_record_answer_changes_nothing_but_a_recheck(): void
+    {
+        Notification::fake();
+        $wallet = $this->wallet(overrides: ['bank_status' => Wallet::BANK_ACTIVE, 'available_balance' => 0]);
+        $this->fakeBank(['/merchants/lookup' => Http::response(['responseCode' => '01', 'responseMessage' => 'Merchant not found'])]);
+
+        $this->merchants()->sync($wallet);
+
+        $this->assertSame(Wallet::BANK_ACTIVE, $wallet->fresh()->bank_status);
+        $this->assertTrue($wallet->fresh()->acceptsPayments());
+        $this->assertNotNull($wallet->fresh()->bank_missing_since);
+        Notification::assertNothingSent();
+
+        // Asking again straight away is not a second opinion.
+        $this->merchants()->sync($wallet->fresh());
+        $this->assertSame(Wallet::BANK_ACTIVE, $wallet->fresh()->bank_status);
+
+        $this->travel(11)->minutes();
+        $this->assertContains($wallet->id, SyncMerchantsCommand::due()->pluck('id'));
+    }
+
+    public function test_gtbank_finding_the_code_again_clears_the_doubt(): void
+    {
+        $wallet = $this->wallet(overrides: ['bank_status' => Wallet::BANK_ACTIVE]);
+        $this->fakeBank(['/merchants/lookup' => Http::sequence()->push(['responseCode' => '01'])->push($this->found($wallet->merchant_code))]);
+
+        $this->merchants()->sync($wallet);
+        $this->travel(11)->minutes();
+        $this->merchants()->sync($wallet->fresh());
+
+        $this->assertSame(Wallet::BANK_ACTIVE, $wallet->fresh()->bank_status);
+        $this->assertNull($wallet->fresh()->bank_missing_since);
+        $this->assertNull($wallet->fresh()->bank_error);
+    }
+
+    public function test_a_code_gtbank_really_removed_fails_keeps_its_money_and_tells_people(): void
+    {
+        Notification::fake();
+        $wallet = $this->wallet(overrides: ['bank_status' => Wallet::BANK_ACTIVE]);
+        app(Ledger::class)->post($wallet, 'credit', 'available', 500000, 'test', 'test-in');
+        $this->fakeBank(['/merchants/lookup' => Http::response(['responseCode' => '01'])]);
+
+        $this->merchants()->sync($wallet->fresh());
+        $this->travel(11)->minutes();
+        $this->merchants()->sync($wallet->fresh());
+
+        $fresh = $wallet->fresh();
+        $this->assertSame(Wallet::BANK_FAILED, $fresh->bank_status);
+        $this->assertNull($fresh->bank_missing_since);
+        $this->assertSame(500000, $fresh->available_balance);
+        $this->assertFalse($fresh->acceptsPayments());
+        Notification::assertSentTo($this->owner, BrandedNotification::class);
+        Notification::assertSentTo($this->operatorAdmin, BrandedNotification::class);
+    }
+
+    public function test_gtbank_stopping_an_active_code_tells_people(): void
+    {
+        Notification::fake();
+        $wallet = $this->wallet(overrides: ['bank_status' => Wallet::BANK_ACTIVE]);
+        $this->fakeBank(['/merchants/lookup' => Http::response($this->found($wallet->merchant_code, 'INACTIVE'))]);
+
+        $this->merchants()->sync($wallet);
+
+        $this->assertSame(Wallet::BANK_INACTIVE, $wallet->fresh()->bank_status);
+        Notification::assertSentTo($this->owner, BrandedNotification::class);
+    }
+
+    public function test_the_regular_sync_also_checks_live_codes_not_seen_for_hours(): void
+    {
+        $old = $this->wallet(overrides: ['bank_status' => Wallet::BANK_ACTIVE, 'bank_synced_at' => now()->subHours(7)]);
+        $recent = $this->wallet(overrides: ['name' => 'Recent', 'bank_status' => Wallet::BANK_ACTIVE, 'bank_synced_at' => now()->subHour()]);
+        $this->fakeBank(['/merchants/lookup' => Http::response($this->found($old->merchant_code))]);
+
+        $this->artisan('injongepay:sync-merchants')->assertSuccessful();
+
+        Http::assertSent(fn (Request $r) => str_contains($r->url(), '/merchants/lookup') && str_contains($r->url().$r->body(), $old->merchant_code));
+        Http::assertNotSent(fn (Request $r) => str_contains($r->url(), '/merchants/lookup') && str_contains($r->url().$r->body(), $recent->merchant_code));
+    }
+
+    public function test_routine_checks_stop_when_gtbank_does_not_answer(): void
+    {
+        foreach (range(1, 5) as $i) {
+            $this->wallet(overrides: ['name' => "Till {$i}", 'bank_status' => Wallet::BANK_ACTIVE, 'bank_synced_at' => now()->subHours(7)]);
+        }
+        $this->fakeBank(['/merchants/lookup' => Http::response('', 504)]);
+
+        $this->artisan('injongepay:sync-merchants')->assertSuccessful();
+
+        Http::assertSentCount(2); // token + one lookup
     }
 }

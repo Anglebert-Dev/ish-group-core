@@ -11,6 +11,8 @@ use Modules\InjongePay\Gtbank\GtbankClient;
 use Modules\InjongePay\Jobs\RegisterMerchant;
 use Modules\InjongePay\Models\BusinessProfile;
 use Modules\InjongePay\Models\Wallet;
+use Modules\InjongePay\Support\BusinessAlert;
+use Modules\InjongePay\Support\PlatformAlert;
 
 /**
  * A wallet's merchant code at GTBank (v2.5 §6):
@@ -24,6 +26,8 @@ use Modules\InjongePay\Models\Wallet;
  */
 class MerchantService
 {
+    public const CONFIRM_MISSING_AFTER_MINUTES = 10;
+
     private const BANK_STATUSES = [Wallet::BANK_ACTIVE, Wallet::BANK_PENDING, Wallet::BANK_INACTIVE, Wallet::BANK_CLOSED];
 
     public function __construct(protected GtbankClient $bank, protected MerchantCodes $codes)
@@ -119,9 +123,23 @@ class MerchantService
             return $this->applyLookup($wallet, $result, $wallet->bank_status);
         }
 
+        if ($result->notFound() && $this->isLive($wallet) && ! $this->confirmedMissing($wallet)) {
+            // One answer from GTBank can be wrong: payments keep flowing until a later check agrees.
+            $this->apply($wallet, ['bank_missing_since' => $wallet->bank_missing_since ?? now(), 'bank_error' => __('injongepay::injongepay.err_bank_missing_once'), 'bank_error_at' => now(), 'bank_synced_at' => now()]);
+            $this->audit('injongepay_wallet_bank_status', $wallet, ['status' => $wallet->bank_status, 'reason' => 'not_found_once']);
+
+            return $result;
+        }
+
         if ($result->notFound() && in_array($wallet->bank_status, [Wallet::BANK_PENDING, Wallet::BANK_ACTIVE, Wallet::BANK_INACTIVE, Wallet::BANK_REGISTERING], true)) {
+            $wasLive = $this->isLive($wallet);
             $this->apply($wallet, ['bank_status' => Wallet::BANK_FAILED, 'bank_error' => __('injongepay::injongepay.err_bank_no_record'), 'bank_error_at' => now(), 'bank_synced_at' => now()]);
+            $wallet->forceFill(['bank_missing_since' => null])->save();
             $this->audit('injongepay_wallet_bank_status', $wallet, ['status' => Wallet::BANK_FAILED, 'reason' => 'not_found']);
+
+            if ($wasLive) {
+                $this->tellCodeStopped($wallet, 'alert_code_missing');
+            }
 
             return $result;
         }
@@ -235,6 +253,7 @@ class MerchantService
             'bank_registered_owner' => $merchant['owner'] ?? $wallet->bank_registered_owner,
             'bank_synced_at' => now(),
             'bank_error' => $status === Wallet::BANK_INACTIVE ? __('injongepay::injongepay.err_bank_inactive') : null,
+            'bank_missing_since' => null,
         ];
 
         if ($wallet->bank_update_pending_at && $nameMatches) {
@@ -245,9 +264,36 @@ class MerchantService
 
         if ($status !== $previous) {
             $this->audit('injongepay_wallet_bank_status', $wallet, ['from' => $previous, 'to' => $status, 'bank_call' => $result->callId]);
+
+            if ($previous === Wallet::BANK_ACTIVE && in_array($status, [Wallet::BANK_INACTIVE, Wallet::BANK_CLOSED], true)) {
+                $this->tellCodeStopped($wallet, 'alert_code_inactive');
+            }
         }
 
         return $result;
+    }
+
+    private function isLive(Wallet $wallet): bool
+    {
+        return in_array($wallet->bank_status, [Wallet::BANK_ACTIVE, Wallet::BANK_INACTIVE], true);
+    }
+
+    /** A second "no record", at least CONFIRM_MISSING_AFTER_MINUTES after the first. */
+    private function confirmedMissing(Wallet $wallet): bool
+    {
+        return $wallet->bank_missing_since !== null && $wallet->bank_missing_since->lte(now()->subMinutes(self::CONFIRM_MISSING_AFTER_MINUTES));
+    }
+
+    /** Inhills must act; the business must know customers can't pay into this code. */
+    private function tellCodeStopped(Wallet $wallet, string $key): void
+    {
+        $title = __('injongepay::injongepay.'.$key.'_title');
+        $business = Business::query()->whereKey($wallet->business_id)->value('name');
+
+        PlatformAlert::send('list injongepay_platform.wallet', $title, __('injongepay::injongepay.'.$key.'_platform', ['code' => $wallet->merchant_code, 'name' => $wallet->name, 'business' => $business]),
+            route('injongepay.platform.wallets.show', $wallet->uuid, false));
+        BusinessAlert::send((int) $wallet->business_id, $title, __('injongepay::injongepay.'.$key.'_business', ['code' => $wallet->merchant_code, 'name' => $wallet->name]),
+            route('injongepay.wallets.show', $wallet->uuid, false));
     }
 
     /** A call that didn't get an answer: keep the state GTBank last gave us, note the problem. */

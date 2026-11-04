@@ -104,7 +104,7 @@ What runs, and when:
 |---|---|
 | minute | process stored GTBank webhooks; check open cash-outs |
 | 10 minutes | read GTBank's transaction list (one call for all merchant codes); credit fees to the platform wallets |
-| 15 minutes | sync merchant codes waiting on GTBank (at most 100 per run, oldest first) |
+| 15 minutes | sync merchant codes waiting on GTBank, then live codes not checked for 6 hours (at most 100 per run, oldest first) |
 | 01:30 | close yesterday for every merchant code (one call to GTBank); check the books |
 | 02:00 | sync every merchant code |
 

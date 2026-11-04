@@ -77,7 +77,7 @@ Both are required. Without them merchant codes don't register, cash-outs don't g
 | Every 10 minutes | `injongepay:mirror` | Reads GTBank's transaction list |
 | Every 10 minutes | `injongepay:sweep-fees` | Credits fees to the platform wallets |
 | Every 10 minutes | `injongepay:expire-approvals` | Expires waiting approvals |
-| Every 15 minutes | `injongepay:sync-merchants` | Syncs waiting merchant codes, at most 100 per run |
+| Every 15 minutes | `injongepay:sync-merchants` | Syncs waiting merchant codes, then live codes not checked for 6 hours, at most 100 per run |
 | Daily 01:30 | `injongepay:close-day` | Closes yesterday and checks the books |
 | Daily 02:00 | `injongepay:sync-merchants --all` | Syncs every merchant code |
 
