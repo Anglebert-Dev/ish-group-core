@@ -36,7 +36,7 @@ class MovingMoneyTest extends InjongePayTestCase
     private function send(array $overrides = [])
     {
         return $this->post(route('injongepay.transfers.store'), $overrides + [
-            'wallet' => $this->from->uuid, 'merchant_code' => $this->to->merchant_code, 'amount' => '10000', 'pin' => '48213',
+            'request_token' => (string) \Illuminate\Support\Str::uuid(), 'wallet' => $this->from->uuid, 'merchant_code' => $this->to->merchant_code, 'amount' => '10000', 'pin' => '48213',
         ]);
     }
 
@@ -201,7 +201,7 @@ class MovingMoneyTest extends InjongePayTestCase
         $this->get(route('injongepay.transfers.index'))->assertDontSee('Their till');
         $this->get(route('injongepay.transfers.index', ['wallet' => $this->from->uuid, 'to_wallet' => $theirs->merchant_code, 'amount' => 100]))
             ->assertDontSee('Their till')->assertDontSee('Other Business')->assertDontSee('name="pin"', false);
-        $this->post(route('injongepay.transfers.store'), ['wallet' => $this->from->uuid, 'merchant_code' => $theirs->merchant_code, 'amount' => '100', 'pin' => '48213'])->assertSessionHas('error');
+        $this->post(route('injongepay.transfers.store'), ['request_token' => (string) \Illuminate\Support\Str::uuid(), 'wallet' => $this->from->uuid, 'merchant_code' => $theirs->merchant_code, 'amount' => '100', 'pin' => '48213'])->assertSessionHas('error');
 
         $this->assertSame(0, Transfer::query()->withoutGlobalScopes()->count());
         $this->assertSame(0, $theirs->fresh()->balance());

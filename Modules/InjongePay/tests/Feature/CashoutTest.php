@@ -244,7 +244,7 @@ class CashoutTest extends InjongePayTestCase
         app(\Modules\InjongePay\Services\Security\Pins::class)->set($this->owner, '48213');
         $this->fakeBank(['/disbursement/transfer' => Http::response(['identifier' => 'X', 'status' => 'PENDING'])]);
         $this->asOwner();
-        $form = ['wallet' => $this->till->uuid, 'account' => $this->account->uuid, 'amount' => 1000, 'pin' => '48213'];
+        $form = ['request_token' => (string) \Illuminate\Support\Str::uuid(), 'wallet' => $this->till->uuid, 'account' => $this->account->uuid, 'amount' => 1000, 'pin' => '48213'];
 
         $this->get(route('injongepay.cashouts.index'))->assertOk()->assertSee('MUSABYIMANA');
         $this->post(route('injongepay.cashouts.store'), ['amount' => '1000.50'] + $form)->assertSessionHasErrors('amount');
@@ -312,7 +312,7 @@ class CashoutTest extends InjongePayTestCase
         $this->post(route('injongepay.platform.earnings.accounts.store'), ['kind' => 'bank', 'account' => '4005101091278', 'holder_name' => 'Inhills Technology Ltd', 'pin' => '48213'])->assertSessionHas('success');
         $account = SettlementAccount::query()->where('business_id', $this->operator->id)->firstOrFail();
 
-        $form = ['wallet' => $revenue->uuid, 'account' => $account->uuid, 'amount' => 400, 'pin' => '48213'];
+        $form = ['request_token' => (string) \Illuminate\Support\Str::uuid(), 'wallet' => $revenue->uuid, 'account' => $account->uuid, 'amount' => 400, 'pin' => '48213'];
         $this->post(route('injongepay.platform.earnings.cashout'), $form)->assertSessionHas('step_up');
         $code = null;
         Notification::assertSentTo($this->operatorAdmin, \App\Notifications\BrandedNotification::class, function ($n) use (&$code) {
@@ -330,7 +330,7 @@ class CashoutTest extends InjongePayTestCase
         // A business can never use the platform's wallets or this page.
         $this->flushSession();
         $this->asOwner()->get(route('injongepay.platform.earnings'))->assertForbidden();
-        $this->post(route('injongepay.cashouts.store'), ['wallet' => $revenue->uuid, 'account' => $this->account->uuid, 'amount' => 1, 'pin' => '48213'])->assertNotFound();
+        $this->post(route('injongepay.cashouts.store'), ['request_token' => (string) \Illuminate\Support\Str::uuid(), 'wallet' => $revenue->uuid, 'account' => $this->account->uuid, 'amount' => 1, 'pin' => '48213'])->assertNotFound();
         $this->assertSame(1, Cashout::query()->withoutGlobalScopes()->where('wallet_id', $revenue->id)->count());
     }
 }

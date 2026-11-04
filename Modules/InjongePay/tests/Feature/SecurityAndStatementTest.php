@@ -80,7 +80,7 @@ class SecurityAndStatementTest extends InjongePayTestCase
         app(Pins::class)->set($this->owner, '48213');
         TransactionPin::query()->update(['set_at' => now()->subDays(3)]);
         $this->asOwner();
-        $send = fn (string $amount, ?string $code = null) => $this->post(route('injongepay.transfers.store'), array_filter(['wallet' => $from->uuid, 'merchant_code' => $to->merchant_code, 'amount' => $amount, 'pin' => '48213', 'code' => $code]));
+        $send = fn (string $amount, ?string $code = null) => $this->post(route('injongepay.transfers.store'), array_filter(['request_token' => (string) \Illuminate\Support\Str::uuid(), 'wallet' => $from->uuid, 'merchant_code' => $to->merchant_code, 'amount' => $amount, 'pin' => '48213', 'code' => $code]));
 
         // First: a new browser asks anyway; after that this browser is trusted.
         $send('10000');

@@ -1,5 +1,7 @@
 {{-- PIN always; the extra code only when the last attempt asked for it. --}}
 @php $stepUp = session('step_up'); @endphp
+{{-- One form, one request: sent twice, this makes it the same request. --}}
+<input type="hidden" name="request_token" value="{{ old('request_token', (string) \Illuminate\Support\Str::uuid()) }}">
 @if (isset($hasPin) && ! $hasPin)
     <div class="rounded-xl border border-warning/40 bg-warning/5 p-3 text-sm">
         {{ __('injongepay::injongepay.set_pin_first') }} <a href="{{ route('injongepay.security') }}" class="text-brand font-semibold">{{ __('injongepay::injongepay.pin_set') }}</a>

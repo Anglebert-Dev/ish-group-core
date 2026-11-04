@@ -53,6 +53,7 @@ class TransferController extends Controller
     public function store(Request $request, Approvals $approvals, TransferService $transfers): RedirectResponse
     {
         $data = $request->validate([
+            'request_token' => ['required', 'uuid'],
             'wallet' => ['required', 'string'],
             'merchant_code' => ['required', 'string', 'max:20'],
             'amount' => ['required', 'numeric', 'min:1', 'decimal:0,2'],
@@ -67,7 +68,7 @@ class TransferController extends Controller
             $amount = Money::toCents((string) $data['amount']);
 
             $approval = $approvals->request($request, $request->user('staff'), $from, 'transfer', $amount,
-                ['to_wallet_id' => $to->id, 'to_merchant_code' => $to->merchant_code, 'description' => $data['description'] ?? null], null, $data['pin'], $data['code'] ?? null);
+                ['to_wallet_id' => $to->id, 'to_merchant_code' => $to->merchant_code, 'description' => $data['description'] ?? null], null, $data['pin'], $data['code'] ?? null, $data['request_token']);
 
             if ($approval->status === Approval::AWAITING) {
                 return redirect()->route('injongepay.transfers.index')->with('success', __('injongepay::injongepay.awaiting_second_approval'));
@@ -80,6 +81,10 @@ class TransferController extends Controller
         } catch (InjongePayException $e) {
             return redirect()->route('injongepay.transfers.index', ['wallet' => $data['wallet'], 'to' => $data['merchant_code'], 'amount' => $data['amount'], 'description' => $data['description'] ?? null])
                 ->with('error', $e->getMessage());
+        }
+
+        if (! $transfer) {
+            return redirect()->route('injongepay.transfers.index')->with('success', __('injongepay::injongepay.request_in_progress'));
         }
 
         return redirect()->route('injongepay.transfers.index')->with('success', __('injongepay::injongepay.transfer_done', ['amount' => Money::format($transfer->amount), 'ref' => $transfer->reference]));

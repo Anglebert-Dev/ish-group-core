@@ -40,6 +40,7 @@ class CashoutController extends Controller
     public function store(Request $request, Approvals $approvals, CashoutService $cashouts): RedirectResponse
     {
         $data = $request->validate([
+            'request_token' => ['required', 'uuid'],
             'wallet' => ['required', 'string'],
             'account' => ['required', 'string'],
             'amount' => ['required', 'integer', 'min:1'],
@@ -54,7 +55,7 @@ class CashoutController extends Controller
             $cashouts->validate($wallet, $account, $amount);
 
             $approval = $approvals->request($request, $request->user('staff'), $wallet, 'cashout', $amount,
-                ['settlement_account_id' => $account->id, 'account_label' => $account->label()], $account, $data['pin'], $data['code'] ?? null);
+                ['settlement_account_id' => $account->id, 'account_label' => $account->label()], $account, $data['pin'], $data['code'] ?? null, $data['request_token']);
 
             if ($approval->status === Approval::AWAITING) {
                 return redirect()->route('injongepay.cashouts.index')->with('success', __('injongepay::injongepay.awaiting_second_approval'));
@@ -65,6 +66,11 @@ class CashoutController extends Controller
             return back()->withInput($request->except('pin', 'code'))->with('step_up', ['reasons' => $e->reasons, 'method' => $e->method])->with('error', $e->getMessage());
         } catch (InjongePayException $e) {
             return back()->withInput($request->except('pin', 'code'))->with('error', $e->getMessage());
+        }
+
+        // Its twin got there first and is still being recorded.
+        if (! $cashout) {
+            return redirect()->route('injongepay.cashouts.index')->with('success', __('injongepay::injongepay.request_in_progress'));
         }
 
         return redirect()->route('injongepay.cashouts.show', $cashout)->with('success', __('injongepay::injongepay.cashout_queued', ['ref' => $cashout->reference]));

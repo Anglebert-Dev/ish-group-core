@@ -25,6 +25,8 @@ class Approvals
 {
     public const EXPIRE_HOURS = 24;
 
+    public const REPEAT_MINUTES = 2;
+
     public function __construct(
         protected Authorization $authorization,
         protected Pins $pins,
@@ -37,9 +39,15 @@ class Approvals
      * @throws StepUpRequired when a step-up code is needed and none (or a new one) was given
      * @throws InjongePayException
      */
-    public function request(Request $request, User $user, Wallet $wallet, string $operation, int $amount, array $payload, ?SettlementAccount $destination, ?string $pin, ?string $code): Approval
+    public function request(Request $request, User $user, Wallet $wallet, string $operation, int $amount, array $payload, ?SettlementAccount $destination, ?string $pin, ?string $code, ?string $token = null): Approval
     {
         $this->pins->check($user, $pin);
+
+        // The same form sent twice (a double click, the browser resending): the same request, not a new one.
+        if ($sent = $this->alreadySent($token, $wallet)) {
+            return $sent;
+        }
+
         $checks = $this->authorization->assess($request, $user, $wallet, $operation, $amount, $destination);
         $purpose = $operation.':'.$wallet->id.':'.$amount.':'.($destination?->id ?? ($payload['to_wallet_id'] ?? ''));
 
@@ -57,13 +65,28 @@ class Approvals
             }
         }
 
-        $approval = Approval::query()->create([
-            'business_id' => $wallet->business_id, 'wallet_id' => $wallet->id, 'operation' => $operation, 'payload' => $payload,
-            'amount' => $amount, 'requested_by' => $user->id,
-            'status' => $checks['second_approval'] ? Approval::AWAITING : Approval::APPROVED,
-            'checks' => $checks + ['method' => $checks['step_up'] ? $this->stepUp->method($user) : 'pin'],
-            'expires_at' => now()->addHours(self::EXPIRE_HOURS),
-        ]);
+        // Under the wallet's lock, so two requests at the same moment can't both pass.
+        $approval = DB::transaction(function () use ($wallet, $operation, $payload, $amount, $user, $checks, $token) {
+            Wallet::query()->withoutGlobalScopes()->whereKey($wallet->id)->lockForUpdate()->first();
+
+            if ($sent = $this->alreadySent($token, $wallet)) {
+                return $sent;
+            }
+
+            $this->refuseRepeat($wallet, $operation, $amount, $payload);
+
+            return Approval::query()->create([
+                'business_id' => $wallet->business_id, 'wallet_id' => $wallet->id, 'request_token' => $token, 'operation' => $operation, 'payload' => $payload,
+                'amount' => $amount, 'requested_by' => $user->id,
+                'status' => $checks['second_approval'] ? Approval::AWAITING : Approval::APPROVED,
+                'checks' => $checks + ['method' => $checks['step_up'] ? $this->stepUp->method($user) : 'pin'],
+                'expires_at' => now()->addHours(self::EXPIRE_HOURS),
+            ]);
+        });
+
+        if (! $approval->wasRecentlyCreated) {
+            return $approval;
+        }
 
         audit('injongepay_'.$operation.'_requested', __('injongepay::injongepay.audit_requested', ['operation' => __('injongepay::injongepay.operation_'.$operation), 'amount' => Money::format($amount), 'wallet' => $wallet->label()]),
             $approval, ['checks' => $approval->checks], $wallet->business_id);
@@ -75,6 +98,25 @@ class Approvals
         }
 
         return $approval;
+    }
+
+    private function alreadySent(?string $token, Wallet $wallet): ?Approval
+    {
+        return $token ? Approval::query()->withoutGlobalScopes()->where('request_token', $token)->where('wallet_id', $wallet->id)->first() : null;
+    }
+
+    /** The same money to the same place moments ago is a mistake until proven otherwise. */
+    private function refuseRepeat(Wallet $wallet, string $operation, int $amount, array $payload): void
+    {
+        $destination = fn (array $p) => $p['settlement_account_id'] ?? $p['to_wallet_id'] ?? null;
+
+        $repeat = Approval::query()->withoutGlobalScopes()->where('wallet_id', $wallet->id)->where('operation', $operation)->where('amount', $amount)
+            ->whereIn('status', [Approval::AWAITING, Approval::APPROVED, Approval::EXECUTED])->where('created_at', '>=', now()->subMinutes(self::REPEAT_MINUTES))
+            ->get()->contains(fn (Approval $a) => $destination($a->payload) === $destination($payload));
+
+        if ($repeat) {
+            throw new InjongePayException(__('injongepay::injongepay.err_repeat_request', ['minutes' => self::REPEAT_MINUTES]));
+        }
     }
 
     /** A second person, with their own PIN. Never the one who asked. */
@@ -179,7 +221,8 @@ class Approvals
 
     public function fail(Approval $approval, string $reason): void
     {
-        $approval->forceFill(['status' => Approval::FAILED, 'failure_reason' => $reason])->save();
+        // Nothing went out: the same form may be sent again.
+        $approval->forceFill(['status' => Approval::FAILED, 'failure_reason' => $reason, 'request_token' => null])->save();
         audit('injongepay_approval_failed', __('injongepay::injongepay.audit_failed', ['reason' => $reason]), $approval, [], $approval->business_id);
     }
 }

@@ -124,6 +124,20 @@ Every request to GTBank has its own button, so nobody has to wait for a schedule
 
 A check only asks. A cash-out is never sent twice. Every press is in the audit log. A business can press these 10 times a minute, and only on its own records.
 
+## Money leaves once
+
+**A request can't be made twice:**
+- Each cash-out and transfer form carries a one-time token. A double click or a browser resend comes back to the same request.
+- The same amount from the same wallet to the same place within 2 minutes is refused, even from another tab. To really send it again, wait 2 minutes.
+- The database refuses a used token, and a second cash-out or transfer on one approval.
+
+**A cash-out can't go to GTBank twice:**
+- One worker takes it under a lock, and the queue never retries it.
+- After a timeout or an unclear answer it is never sent again. The checks only ask GTBank.
+- Money comes back once at most.
+
+**People still decide one case:** when staff mark an unclear cash-out as failed, the money goes back to the business. Confirm with GTBank first that it didn't pay.
+
 ## Background jobs page
 
 Open **Injonge Pay platform → Background jobs**. You need the `update injongepay_platform.setting` permission.

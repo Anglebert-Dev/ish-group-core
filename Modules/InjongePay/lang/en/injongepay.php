@@ -698,6 +698,8 @@ return [
     'err_amount_positive' => 'The amount must be more than zero.',
     'err_ledger_invalid' => 'Unknown ledger movement.',
     'err_insufficient_balance' => 'Not enough balance in this wallet.',
+    'err_repeat_request' => 'The same amount to the same place was just requested, so this one was stopped to avoid sending it twice. If you really mean to send it again, wait :minutes minutes.',
+    'request_in_progress' => 'This request was already received and is being processed. It will not be sent twice.',
     'err_net_not_positive' => 'The fee would take the whole payment.',
     'err_no_operator' => 'The platform\'s own business is not set (primary business).',
 ];
