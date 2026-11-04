@@ -4,6 +4,7 @@ return [
     'injongepay_fee_changed' => 'Fee rate changed',
     'injongepay_webhook_secret_generated' => 'GTBank webhook secret generated',
     'injongepay_wallet_created' => 'Merchant code created',
+    'injongepay_legacy_imported' => 'Old app data imported',
     'injongepay_wallets_imported' => 'Merchant codes imported',
     'injongepay_wallets_exported' => 'Merchant codes exported',
     'injongepay_wallet_registered' => 'Merchant code registered at GTBank',
