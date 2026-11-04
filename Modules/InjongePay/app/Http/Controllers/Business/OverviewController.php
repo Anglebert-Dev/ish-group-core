@@ -3,11 +3,13 @@
 namespace Modules\InjongePay\Http\Controllers\Business;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Modules\InjongePay\Models\BusinessProfile;
 use Modules\InjongePay\Models\Cashout;
 use Modules\InjongePay\Models\Payment;
 use Modules\InjongePay\Models\Wallet;
+use Modules\InjongePay\Services\MerchantService;
 
 class OverviewController extends Controller
 {
@@ -39,5 +41,17 @@ class OverviewController extends Controller
             'payments' => Payment::query()->where('wallet_id', $wallet->id)->latest('id')->limit(10)->get(),
             'cashouts' => Cashout::query()->where('wallet_id', $wallet->id)->latest('id')->limit(10)->get(),
         ]);
+    }
+
+    /** Asks GTBank about this code now, instead of waiting for the regular sync. */
+    public function checkWallet(string $wallet, MerchantService $merchants): RedirectResponse
+    {
+        $wallet = Wallet::query()->whereNull('internal_role')->whereUuid($wallet)->firstOrFail();
+        $result = $merchants->sync($wallet);
+        audit('injongepay_checked_at_bank', __('injongepay::injongepay.audit_checked_at_bank', ['what' => $wallet->merchant_code]), $wallet, ['outcome' => $result->outcome], $wallet->business_id);
+
+        return $result->ok()
+            ? back()->with('success', __('injongepay::injongepay.wallet_synced'))
+            : back()->with('error', __('injongepay::injongepay.bank_said', ['outcome' => __('injongepay::injongepay.bank_outcome_'.$result->outcome), 'message' => $result->message()]));
     }
 }

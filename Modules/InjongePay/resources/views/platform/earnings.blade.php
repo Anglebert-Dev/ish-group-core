@@ -50,6 +50,9 @@
                             <td class="px-5 py-3"><x-common.badge :color="$account->status === 'approved' ? 'success' : 'warning'">{{ __('injongepay::injongepay.account_'.$account->status) }}</x-common.badge></td>
                             <td class="px-5 py-3 text-right">
                                 @if (AuthHelper::can('delete injongepay_platform.earnings'))
+                                    @if ($account->status === 'pending')
+                                        <x-common.action-button :action="route('injongepay.platform.earnings.accounts.verify', $account)">{{ __('injongepay::injongepay.verify_at_bank') }}</x-common.action-button>
+                                    @endif
                                     <form action="{{ route('injongepay.platform.earnings.accounts.destroy', $account) }}" method="POST" class="inline-flex gap-2 items-end">
                                         @csrf @method('DELETE')
                                         <x-common.input name="pin" :id="'pin-'.$account->id" type="password" inputmode="numeric" maxlength="5" autocomplete="off" :label="__('injongepay::injongepay.your_pin')" required compact />

@@ -2,6 +2,9 @@
 <x-layouts.app :title="$payment->reference">
     <x-common.page-header :title="Money::format($payment->gross_amount)" :description="$payment->reference">
         <x-slot:actions>
+            @if ($payment->cleared_at === null && $payment->payment_status !== 'REVERSED' && \Modules\InjongePay\Gtbank\GtbankClient::isConfigured())
+                <x-common.action-button :action="route('injongepay.payments.check', $payment->uuid)">{{ __('injongepay::injongepay.check_now') }}</x-common.action-button>
+            @endif
             <x-common.button href="{{ route('injongepay.payments.index') }}" variant="secondary" size="sm">{{ __('body.back') }}</x-common.button>
         </x-slot:actions>
     </x-common.page-header>

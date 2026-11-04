@@ -3,11 +3,13 @@
 namespace Modules\InjongePay\Http\Controllers\Business;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Modules\InjongePay\Models\LedgerEntry;
 use Modules\InjongePay\Models\Payment;
 use Modules\InjongePay\Models\Wallet;
+use Modules\InjongePay\Services\BankMirror;
 
 class PaymentController extends Controller
 {
@@ -33,5 +35,21 @@ class PaymentController extends Controller
             'payment' => $payment->load('wallet'),
             'entries' => LedgerEntry::query()->where('source_type', $payment->getMorphClass())->where('source_id', $payment->id)->orderBy('id')->get(),
         ]);
+    }
+
+    /** Reads GTBank's list for this payment's days now, instead of waiting for the regular read. */
+    public function check(Payment $payment, BankMirror $mirror): RedirectResponse
+    {
+        $day = $payment->value_date ?? $payment->created_at;
+        $pulled = $mirror->pull($payment->wallet, $day->copy()->subDay()->startOfDay(), $day->copy()->addDay()->endOfDay());
+        $confirmed = $payment->fresh()->cleared_at !== null;
+
+        audit('injongepay_checked_at_bank', __('injongepay::injongepay.audit_checked_at_bank', ['what' => $payment->reference]), $payment, ['answered' => $pulled !== null, 'confirmed' => $confirmed], $payment->business_id);
+
+        return match (true) {
+            $pulled === null => back()->with('error', __('injongepay::injongepay.payment_check_no_answer')),
+            $confirmed => back()->with('success', __('injongepay::injongepay.payment_check_confirmed')),
+            default => back()->with('error', __('injongepay::injongepay.payment_check_not_listed')),
+        };
     }
 }

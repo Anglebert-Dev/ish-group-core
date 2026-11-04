@@ -4,6 +4,7 @@ return [
     'injongepay_fee_changed' => 'Fee rate changed',
     'injongepay_webhook_secret_generated' => 'GTBank webhook secret generated',
     'injongepay_wallet_created' => 'Merchant code created',
+    'injongepay_checked_at_bank' => 'Status checked with GTBank',
     'injongepay_log_retention_changed' => 'GTBank call log retention changed',
     'injongepay_logs_pruned' => 'Old GTBank call logs deleted',
     'injongepay_background_jobs_changed' => 'Background job settings changed',

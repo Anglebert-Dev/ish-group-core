@@ -17,7 +17,7 @@ use Modules\InjongePay\Services\CashoutService;
 use Modules\InjongePay\Services\Security\Pins;
 use Modules\InjongePay\Support\Money;
 
-/** A business asks for cash-outs and follows them; it never reverses or retries one. */
+/** A business asks for cash-outs and follows them, and can ask GTBank where one is; it never reverses or resends one. */
 class CashoutController extends Controller
 {
     public function index(Request $request, Pins $pins): View
@@ -73,5 +73,14 @@ class CashoutController extends Controller
     public function show(Cashout $cashout): View
     {
         return view('injongepay::business.cashouts.show', ['cashout' => $cashout->load(['wallet', 'events'])]);
+    }
+
+    /** Asks GTBank now, instead of waiting for the regular check. Nothing is ever sent again. */
+    public function check(Cashout $cashout, CashoutService $cashouts): RedirectResponse
+    {
+        $state = $cashouts->check($cashout, 'business');
+        audit('injongepay_checked_at_bank', __('injongepay::injongepay.audit_checked_at_bank', ['what' => $cashout->reference]), $cashout, ['state' => $state], $cashout->business_id);
+
+        return back()->with($state === CashoutService::NO_ANSWER ? 'error' : 'success', __('injongepay::injongepay.cashout_checked', ['state' => __('injongepay::injongepay.answer_'.$state)]));
     }
 }

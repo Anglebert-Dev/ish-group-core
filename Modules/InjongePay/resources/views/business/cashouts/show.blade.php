@@ -2,6 +2,9 @@
 <x-layouts.app :title="$cashout->reference">
     <x-common.page-header :title="Money::format($cashout->amount)" :description="$cashout->reference">
         <x-slot:actions>
+            @if (! $cashout->isFinal() && \Modules\InjongePay\Gtbank\GtbankClient::isConfigured())
+                <x-common.action-button :action="route('injongepay.cashouts.check', $cashout->uuid)">{{ __('injongepay::injongepay.check_now') }}</x-common.action-button>
+            @endif
             <x-common.button href="{{ route('injongepay.cashouts.index') }}" variant="secondary" size="sm">{{ __('body.back') }}</x-common.button>
         </x-slot:actions>
     </x-common.page-header>

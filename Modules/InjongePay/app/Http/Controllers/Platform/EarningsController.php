@@ -56,6 +56,18 @@ class EarningsController extends Controller
         return back()->with('success', __('injongepay::injongepay.account_added'));
     }
 
+    /** GTBank gave no answer when the account was added: ask again. */
+    public function verifyAccount(SettlementAccount $account, SettlementAccounts $accounts): RedirectResponse
+    {
+        try {
+            $accounts->verify($account);
+        } catch (InjongePayException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', __('injongepay::injongepay.account_added'));
+    }
+
     public function removeAccount(Request $request, SettlementAccount $account, SettlementAccounts $accounts, Pins $pins): RedirectResponse
     {
         try {

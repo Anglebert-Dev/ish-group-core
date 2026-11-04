@@ -109,7 +109,7 @@ What runs, and when:
 | 02:00 | sync every merchant code |
 | 03:30 | delete old GTBank call logs (90 days by default; calls about cash-outs are kept) |
 
-Each job also has a button on its screen.
+These jobs are the safety net. Every request to GTBank also has a button on its own page (a cash-out, a merchant code, a pending payment), so anyone can ask GTBank right away and try again after an error.
 
 Those are the defaults. **Injonge Pay platform → Background jobs** sets each job on or off and how often, and shows whether it is working, along with the scheduler and the queue.
 

@@ -2,6 +2,9 @@
 <x-layouts.app :title="$wallet->label()">
     <x-common.page-header :title="$wallet->name" :description="$wallet->merchant_code">
         <x-slot:actions>
+            @if (\Modules\InjongePay\Gtbank\GtbankClient::isConfigured() && ! in_array($wallet->bank_status, ['NOT_REGISTERED', 'CLOSED'], true))
+                <x-common.action-button :action="route('injongepay.wallets.check', $wallet->uuid)">{{ __('injongepay::injongepay.check_now') }}</x-common.action-button>
+            @endif
             @if (AuthHelper::can('create injongepay.cashout') && $wallet->is_enabled && $wallet->available_balance >= 100)
                 <x-common.button href="{{ route('injongepay.cashouts.index', ['wallet' => $wallet->uuid]) }}" size="sm">{{ __('injongepay::injongepay.cashout_send') }}</x-common.button>
             @endif

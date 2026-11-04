@@ -109,6 +109,21 @@ sudo supervisorctl reread && sudo supervisorctl update
 sudo supervisorctl status ish-core-queue
 ```
 
+## Checking with GTBank by hand
+
+Every request to GTBank has its own button, so nobody has to wait for a scheduled job. The jobs are only the safety net. If GTBank gives an error or no answer, the page says so and you can press it again.
+
+| You see | Where | Button | Who |
+|---|---|---|---|
+| A cash-out not final yet | The cash-out's page | **Check status now** | The business and Inhills |
+| A merchant code pending, or with an error | The code's page | **Check status now** (business), **Sync from GTBank** and **Register at GTBank** (Inhills) | The business and Inhills |
+| A payment still pending | The payment's page | **Check status now** | The business |
+| A settlement account GTBank didn't answer about | Settlement accounts, or Fee earnings for Inhills | **Verify at GTBank** | The business, or Inhills |
+| Webhooks waiting | Money to allocate | **Process waiting webhooks** | Inhills |
+| GTBank's list for today and yesterday | Reconciliation | **Read GTBank's list now** | Inhills |
+
+A check only asks. A cash-out is never sent twice. Every press is in the audit log. A business can press these 10 times a minute, and only on its own records.
+
 ## Background jobs page
 
 Open **Injonge Pay platform → Background jobs**. You need the `update injongepay_platform.setting` permission.
