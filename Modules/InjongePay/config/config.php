@@ -33,21 +33,4 @@ return [
     'merchant_code_prefix' => '555',
     'merchant_code_digits' => 5,
     'internal_merchant_code_start' => 900001,
-
-    // The old Injonge Pay database, read once by injongepay:import-legacy. Never written to.
-    'legacy' => [
-        'driver' => 'pgsql',
-        'host' => env('LEGACY_DB_HOST', '127.0.0.1'),
-        'port' => env('LEGACY_DB_PORT', '5432'),
-        'database' => env('LEGACY_DB_DATABASE'),
-        'username' => env('LEGACY_DB_USERNAME'),
-        'password' => env('LEGACY_DB_PASSWORD', ''),
-        'charset' => 'utf8',
-        'prefix' => '',
-        'search_path' => 'public',
-        'sslmode' => env('LEGACY_DB_SSLMODE', 'prefer'),
-    ],
-
-    // The old app's APP_KEY: only to carry authenticator (2FA) secrets across.
-    'legacy_app_key' => env('LEGACY_APP_KEY'),
 ];
