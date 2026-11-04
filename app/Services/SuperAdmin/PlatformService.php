@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Repositories\Business\BusinessRepository;
 use App\Repositories\User\UserRepository;
 use App\Services\BaseService;
+use App\Services\Mail\MailSettings;
 use App\Services\Module\ModuleManager;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -256,6 +257,8 @@ class PlatformService extends BaseService
      */
     public function systemInfo(): array
     {
+        app(MailSettings::class)->apply();
+
         return [
             __('body.app_name') => (string) config('app.name'),
             __('body.environment') => app()->environment(),

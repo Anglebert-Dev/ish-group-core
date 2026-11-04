@@ -86,7 +86,7 @@ return [
     'mail_send_test' => 'Send test',
     'mail_skip_hint' => 'You can skip this; emails are then only written to the log until you set it in .env.',
     'mail_test_subject' => 'Test email',
-    'mail_test_body' => 'This is a test from the installer. Email works.',
+    'mail_test_body' => 'This is a test email. Sending works.',
     'mail_sent' => 'Test email sent to :email.',
     'mail_failed' => 'Could not send: :error',
 

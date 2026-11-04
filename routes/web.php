@@ -249,6 +249,8 @@ Route::prefix('app')->middleware(['auth:staff', 'auth.session', 'exclusive.porta
 
         Route::get('/settings', [PlatformSettingController::class, 'index'])->name('settings.index');
         Route::put('/settings', [PlatformSettingController::class, 'update'])->name('settings.update');
+        Route::put('/settings/mail', [PlatformSettingController::class, 'updateMail'])->middleware(['password.confirm.staff', 'throttle:10,1'])->name('settings.mail.update');
+        Route::delete('/settings/mail', [PlatformSettingController::class, 'resetMail'])->middleware('password.confirm.staff')->name('settings.mail.reset');
     });
 });
 

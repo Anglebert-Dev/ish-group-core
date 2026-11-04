@@ -2,6 +2,7 @@
     $tabs = [
         'registration' => __('body.settings_tab_registration'),
         'security' => __('body.settings_tab_security'),
+        'email' => __('body.settings_tab_email'),
         'system' => __('body.settings_tab_system'),
     ];
     $tab = array_key_exists(request('tab'), $tabs) ? request('tab') : 'registration';
@@ -50,6 +51,8 @@
                     </div>
                     <x-common.button type="submit">{{ __('body.update') }}</x-common.button>
                 </form>
+            @elseif ($tab === 'email')
+                @include('app.super-admin.partials.mail-settings')
             @else
                 <dl class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     @foreach ($system as $label => $value)

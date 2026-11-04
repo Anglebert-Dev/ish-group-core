@@ -7,6 +7,7 @@ use App\Listeners\AuditAuthEvents;
 use App\Models\Business\Business;
 use App\Models\User;
 use App\Services\Branding\ThemeService;
+use App\Services\Mail\MailSettings;
 use App\Services\Module\ModuleManager;
 use App\Services\Notification\NotificationService;
 use App\Services\Setting\SettingService;
@@ -25,6 +26,7 @@ use Illuminate\Support\Str;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\Request;
+use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -60,6 +62,11 @@ class AppServiceProvider extends ServiceProvider
         // A billing module rebinds Entitlements; Quota counters are global.
         $this->app->bindIf(Entitlements::class, UnlimitedEntitlements::class);
         $this->app->singleton(Quota::class);
+
+        // Email settings saved in Platform settings: read when mail is first needed,
+        // not on every request, and again per job so a running worker sees a change.
+        $this->app->singleton(MailSettings::class);
+        $this->app->afterResolving('mail.manager', fn () => $this->app->make(MailSettings::class)->apply());
     }
 
     /**
@@ -78,6 +85,11 @@ class AppServiceProvider extends ServiceProvider
 
         Event::listen(RequestHandled::class, fn () => $this->app->forgetScopedInstances());
         Event::subscribe(AuditAuthEvents::class);
+        Event::listen(JobProcessing::class, function () {
+            if ($this->app->resolved('mail.manager')) {
+                $this->app->make(MailSettings::class)->apply();
+            }
+        });
 
         Password::defaults(function () {
             $rule = Password::min(12)

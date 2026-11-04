@@ -190,7 +190,7 @@ Every action must be traceable. Each business sees only its own entries (**Audit
 
 ## Email
 
-Set the SMTP details in `.env`. `MAIL_FROM_ADDRESS` must be the SMTP account itself; each business's emails use that business's name as the sender and its contact email for replies.
+Set the SMTP details in **Super admin → Platform settings → Email**, which test them before saving and replace what is in `.env` (with nothing saved there, `.env` is used). The sending address must be the SMTP account itself; each business's emails use that business's name as the sender and its contact email for replies.
 
 Emails are queued: **without a running `php artisan queue:work`, nothing is sent**. On the server, keep it running under Supervisor or systemd.
 
