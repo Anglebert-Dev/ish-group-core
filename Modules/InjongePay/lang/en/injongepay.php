@@ -325,7 +325,7 @@ return [
     'err_already_resolved' => 'Already dealt with.',
 
     // Reconciliation
-    'menu_reconciliation' => 'Reconciliation with GTBank',
+    'menu_reconciliation' => 'Reconciliation',
     'reconciliation' => 'Reconciliation with GTBank',
     'reconciliation_description' => 'GTBank\'s own transaction list is read every 10 minutes; each day is closed at 01:30. Anything that doesn\'t agree with GTBank stays here until someone explains it.',
     'pull_now' => 'Read GTBank\'s list now (today and yesterday)',
