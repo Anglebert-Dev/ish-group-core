@@ -93,18 +93,27 @@
                     <p class="text-sm text-danger mt-1 max-w-2xl">{{ __('distribution::distribution.zip_contacts_not_https') }}</p>
                 @endif
             </div>
-            <form method="POST" action="{{ route('superadmin.distribution.sites.builds.store', $site) }}"
-                  onsubmit="var b=this.querySelector('button'); b.disabled=true; b.textContent=@js(__('distribution::distribution.building_wait'));">
-                @csrf
-                <div class="flex flex-wrap items-center gap-3">
-                    <x-common.checkbox name="developer" value="1" inline :label="__('distribution::distribution.build_developer')" title="{{ __('distribution::distribution.build_developer_hint') }}" />
-                    <x-common.checkbox name="standalone" value="1" inline :label="__('distribution::distribution.build_standalone')" title="{{ __('distribution::distribution.build_standalone_hint') }}"
-                        onchange="document.querySelectorAll('[data-standalone-hides]').forEach(function (el) { el.classList.toggle('hidden', this.checked); }, this); this.form.querySelector('[data-standalone-note]').classList.toggle('hidden', !this.checked);" />
-                    <x-common.button type="submit" size="sm">{{ __('distribution::distribution.build_zip') }}</x-common.button>
-                </div>
-                <p data-standalone-note class="hidden text-xs text-muted max-w-sm mt-2">{{ __('distribution::distribution.build_standalone_hint') }}</p>
-            </form>
         </div>
+
+        <form method="POST" action="{{ route('superadmin.distribution.sites.builds.store', $site) }}" class="px-5 py-4 border-b border-line space-y-3"
+              onsubmit="var b=this.querySelector('button[type=submit]'); b.disabled=true; b.textContent=@js(__('distribution::distribution.building_wait'));">
+            @csrf
+            <p class="text-sm font-semibold text-ink">{{ __('distribution::distribution.build_kind') }}</p>
+            <div class="grid gap-3 md:grid-cols-2">
+                @foreach ([0 => ['build_normal', $site->is_test ? 'build_normal_test_hint' : 'build_normal_hint'], 1 => ['build_standalone', 'build_standalone_hint']] as $value => [$label, $hint])
+                    <label class="flex items-start gap-3 rounded-lg border border-line p-3 cursor-pointer has-[:checked]:border-brand">
+                        <input type="radio" name="standalone" value="{{ $value }}" @checked($value === 0) class="mt-1"
+                               onchange="document.querySelectorAll('[data-standalone-hides]').forEach(function (el) { el.classList.toggle('hidden', {{ $value }} === 1); });">
+                        <span class="min-w-0">
+                            <span class="block text-sm font-semibold text-ink">{{ __('distribution::distribution.'.$label) }}</span>
+                            <span class="block text-xs text-muted leading-relaxed">{{ __('distribution::distribution.'.$hint) }}</span>
+                        </span>
+                    </label>
+                @endforeach
+            </div>
+            <x-common.checkbox name="developer" value="1" :label="__('distribution::distribution.build_developer')" :description="__('distribution::distribution.build_developer_hint')" />
+            <x-common.button type="submit" size="sm">{{ __('distribution::distribution.build_zip') }}</x-common.button>
+        </form>
 
 
         <div class="overflow-x-auto">

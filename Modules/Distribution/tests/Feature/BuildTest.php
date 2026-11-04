@@ -233,6 +233,22 @@ class BuildTest extends TestCase
         $zip->close();
     }
 
+    public function test_in_production_linked_zips_and_link_keys_need_https(): void
+    {
+        $this->app['env'] = 'production';
+        config(['app.url' => 'http://updates.example.com']);
+        $site = $this->site(['Savings']);
+
+        $refused = app(BuildService::class)->start($site);
+        $this->assertFalse($refused['status']);
+        $this->assertSame(__('distribution::distribution.zip_contacts_not_https'), $refused['message']);
+
+        $this->assertTrue(app(BuildService::class)->start($site, standalone: true)['status'], 'a standalone zip never uses the address');
+
+        config(['app.url' => 'https://updates.example.com']);
+        $this->assertTrue(app(BuildService::class)->start($this->site(['Savings']))['status']);
+    }
+
     public function test_a_failed_build_says_why_and_leaves_no_working_token(): void
     {
         Process::fake(['*' => Process::result(errorOutput: 'fatal: not a git repository', exitCode: 128)]);

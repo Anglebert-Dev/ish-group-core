@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex">
     <title>{{ __('install.title') }} · {{ config('app.name') }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{{ asset('js/tailwind-3.4.17.js') }}"></script>
     <script>
         tailwind.config = { theme: { extend: { colors: {
             brand: { DEFAULT: '#124EB0', dark: '#0d3a85' },

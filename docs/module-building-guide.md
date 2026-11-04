@@ -41,7 +41,7 @@ Four rules shape everything else:
 - **A module's tables appear when it's installed,** not on `php artisan migrate`. Installing runs its migrations and records its version.
 - **Every admin action has a button.** A terminal command can be a twin of a button, never a replacement for it.
 
-The stack: Laravel 13, PHP 8.3+, `nwidart/laravel-modules`, `spatie/laravel-permission`, MySQL or PostgreSQL, Tailwind from a CDN. There is no npm build step.
+The stack: Laravel 13, PHP 8.3+, `nwidart/laravel-modules`, `spatie/laravel-permission`, MySQL or PostgreSQL, Tailwind from a local script (`public/js/tailwind-3.4.17.js`). There is no npm build step.
 
 ## 2. Where to build it
 
@@ -831,7 +831,7 @@ There is one layout and one component kit. Use them and your pages get branding,
 </x-layouts.app>
 ```
 
-**Colours: use the names, never real colours.** A business can change every colour, and each user can pick dark mode, so `bg-white`, `text-gray-500`, `text-blue-600` or `#1a2b3c` will break on someone's screen.
+**Colours: use the names, never real colours.** A business can change every colour, and each user can pick dark mode, so `bg-white`, `text-gray-500`, `text-blue-600` or `#1a2b3c` will break on someone's screen. `NoRawColoursTest` fails if a page uses one. See-through overlays such as `bg-black/50` are fine.
 
 | Use | For |
 |---|---|
@@ -895,7 +895,7 @@ data-confirm data-confirm-title="{{ __('…') }}" data-confirm-variant="danger"
 - A list with no rows says so.
 - One screen, one job. Split long pages into tabs or a separate page.
 
-**Scripts:** there's no build step. Write small plain JavaScript in the view, inside `@once`. Tailwind classes work anywhere because they come from the CDN.
+**Scripts:** there's no build step. Write small plain JavaScript in the view, inside `@once`. Tailwind classes work anywhere, because the local script builds them in the browser.
 
 ## 12. Translations
 
@@ -1110,7 +1110,7 @@ All of these come from the site page → Install tab, or `php artisan distributi
 
 Terminal twin: add `--standalone` or `--developer`.
 
-**A Standalone copy** has no token, no address of your server, no signing keys, no update check and no Updates page, and it can't be linked later. You won't see whether it's installed, and fixes can only reach it by hand. It still loads Tailwind from the public CDN and calls any outside service its modules use.
+**A Standalone copy** has no token, no address of your server, no signing keys, no update check and no Updates page, and it can't be linked later. You won't see whether it's installed, and fixes can only reach it by hand. It still calls any outside service its modules use.
 
 **Normal and Developer zips also get updates.** To release a new version:
 

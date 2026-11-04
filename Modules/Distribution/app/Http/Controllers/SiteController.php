@@ -4,6 +4,7 @@ namespace Modules\Distribution\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog\ActivityLog;
+use App\Support\Distribution\ServerAddress;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -149,6 +150,10 @@ class SiteController extends Controller
 
     public function linkKey(Request $request, Site $site, CustomerMailer $mailer): RedirectResponse
     {
+        if (ServerAddress::refused((string) config('app.url'))) {
+            return back()->with('error', __('distribution::distribution.zip_contacts_not_https'));
+        }
+
         if (! $site->canReceiveLinkKey()) {
             return back()->with('error', __('distribution::distribution.link_key_too_early'));
         }

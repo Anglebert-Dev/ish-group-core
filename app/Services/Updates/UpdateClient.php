@@ -4,6 +4,7 @@ namespace App\Services\Updates;
 
 use App\Models\System\System;
 use App\Support\Distribution\PackageSignature;
+use App\Support\Distribution\ServerAddress;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Crypt;
@@ -153,6 +154,10 @@ class UpdateClient
 
     private function request(): PendingRequest
     {
+        if (ServerAddress::refused($this->serverUrl())) {
+            throw new UpdateException(__('updates.server_not_https', ['url' => $this->serverUrl()]));
+        }
+
         return Http::withToken(Crypt::decryptString((string) System::getProperty('distribution_token')))
             ->acceptJson()
             ->timeout(30)

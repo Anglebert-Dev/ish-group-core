@@ -4,6 +4,7 @@ namespace Modules\Distribution\Services;
 
 use App\Services\BaseService;
 use App\Services\Install\EnvWriter;
+use App\Support\Distribution\ServerAddress;
 use App\Support\Installer\SiteManifest;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\File;
@@ -78,6 +79,11 @@ class BuildService extends BaseService
     {
         if ($site->moduleNames() === []) {
             return $this->failure(__('distribution::distribution.build_needs_modules'));
+        }
+
+        // A linked zip sends its token to this address for as long as it runs.
+        if (! $standalone && ServerAddress::refused((string) config('app.url'))) {
+            return $this->failure(__('distribution::distribution.zip_contacts_not_https'));
         }
 
         // Signing is for updates and the licence gates them: a standalone copy has neither.

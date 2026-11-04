@@ -15,6 +15,7 @@ use App\Services\Updates\UpdateException;
 use App\Services\Updates\UpdateService;
 use App\Support\Distribution\LinkKey;
 use App\Support\Distribution\PackageSignature;
+use App\Support\Distribution\ServerAddress;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\Request;
@@ -374,6 +375,21 @@ class ModuleUpdatesTest extends TestCase
 
         $this->actingAs($this->makeSuperAdmin(), 'staff');
         $this->get(route('superadmin.updates.index'))->assertNotFound();
+    }
+
+    public function test_in_production_updates_only_go_over_https(): void
+    {
+        $this->app['env'] = 'production';
+        System::setProperty('distribution_server_url', 'http://updates.example.com');
+        Http::fake();
+
+        $this->assertSame(__('updates.server_not_https', ['url' => 'http://updates.example.com']), app(UpdateService::class)->check()['message']);
+        Http::assertNothingSent();
+
+        foreach (['https://updates.example.com', 'http://localhost:9000', 'http://192.168.1.20:9000', 'http://127.0.0.1:9000'] as $url) {
+            $this->assertFalse(ServerAddress::refused($url), $url);
+        }
+        $this->assertTrue(ServerAddress::refused('http://8.8.8.8'));
     }
 
     public function test_a_link_key_relinks_the_server_after_checking_it(): void

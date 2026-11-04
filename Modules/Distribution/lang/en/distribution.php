@@ -75,7 +75,7 @@ return [
 
     // Builds
     'builds' => 'Zips',
-    'builds_hint' => 'A ready-to-extract copy for this site: the core from the last commit, its modules, and a link back here for updates. Built right away (about 10 seconds); kept 14 days.',
+    'builds_hint' => 'A ready-to-extract copy for this site: the core from the last commit and its modules. Built right away (about 10 seconds); kept 14 days.',
     'build_zip' => 'Build zip',
     'no_builds' => 'No zips yet.',
     'build_in_progress' => 'A zip for this site is being built right now. Wait for it to finish.',
@@ -336,7 +336,7 @@ return [
     'is_test' => 'Test site',
     'is_test_hint' => 'For your own testing, never a real customer: a test site needs no licence (zips and updates work without payment) and gets releases published "to test sites first" before everyone else.',
     'test_site' => 'Test site',
-    'zip_contacts_not_https' => 'This address is not https: customers\' servers would fetch updates without encryption. Use your https:// domain in APP_URL before sending zips.',
+    'zip_contacts_not_https' => 'This address is not https: customers\' servers would send their access key without encryption, so linked zips and link keys are refused. Use your https:// domain in APP_URL, or build a Standalone zip.',
     'release_yanked' => ':module :version withdrawn.',
     'release_already_yanked' => 'This release was already withdrawn.',
     'version_not_newer' => ':module :version is not newer than :latest. Raise the version in its module.json first.',
@@ -552,6 +552,10 @@ return [
 
     // Standalone zips: handed over for good
     'build_standalone' => 'Standalone',
-    'build_standalone_hint' => 'Handed over for good: no licence or signing key needed, no link back to this server, no updates, no check-ins. Fixes can only be sent by hand. You will not see whether it is installed.',
+    'build_kind' => 'Which zip?',
+    'build_normal' => 'Normal',
+    'build_normal_hint' => 'Stays linked to this server: updates, support and check-ins. Needs the licence paid.',
+    'build_normal_test_hint' => 'Stays linked to this server: updates and check-ins. No licence needed, because this is a test site.',
+    'build_standalone_hint' => 'Handed over for good: no link to this server, no updates, no check-ins, and no licence needed. Fixes can only be sent by hand, and you will not see whether it is installed.',
     'steps_standalone' => 'The last zip is standalone: that copy never reports back, so nothing after sending it shows here.',
 ];

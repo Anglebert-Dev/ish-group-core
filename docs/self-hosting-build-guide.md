@@ -515,7 +515,7 @@ A zip handed over for good, for copies that will never come back to us.
 
 ## 12. Open points
 
-- **HTTPS:** nothing enforces HTTPS for the update server address yet. Our `APP_URL` must be `https://` in production, because builds put it in every `site.json`.
+- **HTTPS:** enforced since 04/11/2026 (`ServerAddress`): in production a linked zip or link key is refused unless APP_URL is https, and a customer's server won't call an update server over plain http (local and private addresses are exempt). Earlier note: nothing enforced HTTPS for the update server address. Our `APP_URL` must be `https://` in production, because builds put it in every `site.json`.
 - **Core updates are built (§5.3).** A server installed from a zip built before 02/11/2026 needs one new zip to receive them.
 - Should a customer's admin be allowed to switch modules off on their server? They can today, through Super Admin → Modules, because they are superadmin there.
 - Docker: `storage/` and `Modules/` must be persistent volumes for updates to survive a container restart. Otherwise use `manual` mode and ship new images.

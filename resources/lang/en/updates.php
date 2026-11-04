@@ -64,6 +64,7 @@ return [
     'result_core' => 'core',
 
     // Messages
+    'server_not_https' => 'Updates were not requested: :url is not https, so this server\'s access key could be read on the way. Ask your provider for an https address.',
     'standalone' => 'This copy is standalone: it has no update server and cannot be linked to one.',
     'not_linked' => 'This server is not linked to an update server.',
     'up_to_date' => 'Everything is up to date.',
