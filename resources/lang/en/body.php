@@ -1371,4 +1371,8 @@ return [
     'user_status_banned' => 'Banned',
     'log_status_active' => 'Active',
     'log_status_inactive' => 'Inactive',
+    'confirm' => 'Confirm',
+    'confirm_title' => 'Are you sure?',
+    'confirm_message' => 'This action cannot be undone.',
+    'empty_title' => 'Nothing here yet',
 ];

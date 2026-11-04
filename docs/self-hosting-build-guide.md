@@ -501,6 +501,18 @@ For customers who keep developing the code they bought.
 - **The advice we give:** put changes in a module of their own (`php artisan module:make`), because updates never touch it. Hold a module only when it really has to be changed.
 - Distribution **1.6.0**: run `php artisan core:module update Distribution` on our server.
 
+## 15. Standalone zips (added 04/11/2026)
+
+A zip handed over for good, for copies that will never come back to us.
+
+- **Site page → Install tab → tick "Standalone"**, or `distribution:build "<site>" --standalone`. `distribution_builds.standalone`. Can be combined with Developer edition.
+- **Needs neither a paid licence nor a signing key:** both exist for updates. Server-detail problems still block the build.
+- **In the zip:** `site.json` holds only the modules, the install-code hash and the installer defaults (no site id, server address, token or build id). No token is created. `config/distribution.php` gets `'standalone' => true` and an empty `public_keys`.
+- **On that copy:** `UpdateClient::linked()` is always false, so there's no first check-in, no Updates tab, no `core:updates` in the schedule, and `core:link` and the link route refuse. The update code is still in the files but never runs.
+- **On our side:** no link key can be made from a standalone build, and the site's overview says nothing after sending it can be followed.
+- **To add a module later:** copy its folder across and run `core:module install <Name>` (docs/module-building-guide.md §21).
+- **Trade-off:** fixes can only reach that copy by hand.
+
 ## 12. Open points
 
 - **HTTPS:** nothing enforces HTTPS for the update server address yet. Our `APP_URL` must be `https://` in production, because builds put it in every `site.json`.

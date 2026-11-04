@@ -81,6 +81,8 @@ On/off is stored in the database (not in a file), so switching modules on a serv
 
 ## Building a module
 
+The full guide, with a complete starter module: [docs/module-building-guide.md](docs/module-building-guide.md).
+
 - `module.json`: `"requires": ["Inventory"]` for dependencies.
 - `Http/Controllers/DataController.php` answers the core's hooks: `user_permissions`, `modifyAdminMenu`, `dashboard_stats`, `dashboard_quick_actions`, `customer_links`, `customer_panel`, `after_business_created`, …
 - Shared services:
@@ -144,6 +146,8 @@ Then add **Savings** to a package (Super Admin → Billing → Packages); your o
 ## Self-hosting (a customer runs it on their own server)
 
 Full design and status: [docs/self-hosting-build-guide.md](docs/self-hosting-build-guide.md).
+
+**Handing a copy over for good:** tick **Standalone** when building the zip (or `php artisan distribution:build "<site>" --standalone`). No licence or signing key is needed, and that copy has no link back, no updates and no check-ins. Add **Developer edition** to hand over the code.
 
 **Our server, once** (all from the browser): Super Admin → Modules → install **Distribution**, then Self-hosting → Releases → **Create signing key**. Back up the secret it shows (it is saved in `.env` as `DISTRIBUTION_SIGNING_SECRET`). Terminal equivalents: `php artisan core:module install Distribution`, `php artisan distribution:keygen`.
 

@@ -6,10 +6,10 @@
             <p id="confirm-modal-message" class="text-sm text-muted mt-2 leading-relaxed"></p>
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center sm:justify-end gap-2 sm:gap-3 mt-6">
                 <button type="button" data-confirm-cancel class="h-11 sm:h-10 px-4 rounded-lg border border-line text-sm font-medium text-body hover:border-brand">
-                    Cancel
+                    {{ __('body.cancel') }}
                 </button>
                 <button type="button" id="confirm-modal-confirm" class="h-11 sm:h-10 px-4 rounded-lg text-sm font-semibold text-on-danger bg-danger hover:opacity-90">
-                    Confirm
+                    {{ __('body.confirm') }}
                 </button>
             </div>
         </div>
@@ -31,9 +31,9 @@
 
     window.openConfirm = function (opts) {
         opts = opts || {};
-        titleEl.textContent = opts.title || 'Are you sure?';
-        messageEl.textContent = opts.message || 'This action cannot be undone.';
-        confirmBtn.textContent = opts.confirmText || 'Confirm';
+        titleEl.textContent = opts.title || @js(__('body.confirm_title'));
+        messageEl.textContent = opts.message || @js(__('body.confirm_message'));
+        confirmBtn.textContent = opts.confirmText || @js(__('body.confirm'));
         confirmBtn.className = 'h-11 sm:h-10 px-4 rounded-lg text-sm font-semibold ' + (variantClasses[opts.variant] || variantClasses.danger);
         pending = typeof opts.onConfirm === 'function' ? opts.onConfirm : null;
         modal.classList.remove('hidden');
