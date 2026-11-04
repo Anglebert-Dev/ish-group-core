@@ -146,7 +146,7 @@ class CashoutTest extends InjongePayTestCase
         $this->assertSame(0, app(Reconciliation::class)->platformDifference());
     }
 
-    public function test_refused_by_the_bridge_and_unknown_to_gtbank_returns_the_money_by_itself(): void
+    public function test_refused_and_unknown_to_gtbank_never_returns_by_itself_a_person_decides(): void
     {
         $this->fund('5000.00', '3000.00');
         $this->fakeBank([
@@ -156,15 +156,38 @@ class CashoutTest extends InjongePayTestCase
 
         $cashout = $this->cashout(4900);
         $this->assertSame('refused', $cashout->submit_outcome);
-        $this->assertSame(Payment::STATUS_CASHED_OUT, Payment::query()->withoutGlobalScopes()->orderBy('id')->value('payment_status'));
+
+        foreach (range(1, 4) as $i) {
+            $this->check($cashout);
+            $this->travel(1)->hours();
+        }
+        $this->assertSame(Cashout::NEEDS_REVIEW, $this->check($cashout)->status);
+
+        // Still held, nothing returned, nothing resent, no payment called cashed out.
+        $this->assertSame(800000 - 490000 - 16000, $this->till->fresh()->available_balance);
+        $this->assertSame(0, Payment::query()->withoutGlobalScopes()->where('payment_status', Payment::STATUS_CASHED_OUT)->count());
+        Http::assertSentCount(1 + 1 + 5); // token, one transfer, the status reads
+        $this->assertSame(1, count(Http::recorded(fn ($r) => str_contains($r->url(), '/disbursement/transfer'))));
+
+        app(CashoutService::class)->resolve($cashout->fresh(), 'failed', 'GTBank confirmed in writing it never left');
+        $this->assertSame(Cashout::FAILED, $cashout->fresh()->status);
+        $this->assertSame(800000 - 16000, $this->till->fresh()->available_balance);
+    }
+
+    public function test_nothing_says_the_money_left_until_gtbank_has_paid(): void
+    {
+        $this->fund('5000.00');
+        $this->fakeBank(['/disbursement/transfer' => fn () => throw new \Illuminate\Http\Client\ConnectionException('timeout'), '/disbursement/status' => Http::response($this->acsc())]);
+
+        $cashout = $this->cashout(4900);
+        $this->assertSame(Cashout::UNKNOWN, $cashout->status);
+        $this->assertSame(0, Payment::query()->withoutGlobalScopes()->where('payment_status', Payment::STATUS_CASHED_OUT)->count());
 
         $this->check($cashout);
-        $this->assertSame(Cashout::UNKNOWN, $cashout->fresh()->status);
-        $this->travel(11)->minutes();
-        $this->assertSame(Cashout::FAILED, $this->check($cashout)->status);
-
-        $this->assertSame(490000 + 294000, $this->till->fresh()->available_balance);
         $this->assertSame(0, Payment::query()->withoutGlobalScopes()->where('payment_status', Payment::STATUS_CASHED_OUT)->count());
+
+        $this->assertSame(Cashout::COMPLETED, $this->check($cashout)->status);
+        $this->assertSame(1, Payment::query()->withoutGlobalScopes()->where('payment_status', Payment::STATUS_CASHED_OUT)->where('cashout_id', $cashout->id)->count());
     }
 
     public function test_rejected_twice_returns_the_money(): void
@@ -234,6 +257,7 @@ class CashoutTest extends InjongePayTestCase
 
         $this->cashout(6000);
 
+        app(CashoutService::class)->resolve(Cashout::query()->withoutGlobalScopes()->firstOrFail(), 'completed', 'GTBank confirmed the payment');
         $this->assertSame([Payment::STATUS_CASHED_OUT, Payment::STATUS_AVAILABLE, Payment::STATUS_AVAILABLE],
             Payment::query()->withoutGlobalScopes()->orderBy('id')->pluck('payment_status')->all());
     }

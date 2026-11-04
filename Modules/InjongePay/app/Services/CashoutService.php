@@ -40,11 +40,6 @@ class CashoutService
     // Minutes between status checks: soon at first, then less often.
     public const BACKOFF = [1, 2, 5, 10, 20, 30, 60];
 
-    // GTBank refused it at submit: after this many "not found" answers (and this long), give the money back.
-    public const REFUSED_NOT_FOUND = 2;
-
-    public const REFUSED_GRACE_MINUTES = 10;
-
     // An unclear submit: how long before a person has to decide.
     public const UNKNOWN_GRACE_MINUTES = 120;
 
@@ -103,7 +98,6 @@ class CashoutService
                 ]);
 
                 $cashout->forceFill(['ledger_entry_id' => $entry->id])->save();
-                $this->markCoveredPayments($cashout);
                 $claimed->forceFill(['subject_type' => $cashout->getMorphClass(), 'subject_id' => $cashout->id])->save();
                 $this->event($cashout, null, Cashout::QUEUED, 'request', null, ['approval' => $claimed->uuid]);
 
@@ -285,16 +279,12 @@ class CashoutService
             : $this->fail($cashout, $source, __('injongepay::injongepay.cashout_bank_failed', ['status' => $cashout->bank_status]), $callId);
     }
 
+    /**
+     * "Never heard of it" proves nothing: GTBank has timed out and paid later.
+     * The money stays held and a person decides; it never comes back by itself.
+     */
     private function notFound(Cashout $cashout, string $source, ?int $callId): void
     {
-        // GTBank refused it when sent, and still has never heard of it: it never left.
-        if ($cashout->submit_outcome === 'refused' && $cashout->not_found_count >= self::REFUSED_NOT_FOUND
-            && $cashout->submitted_at?->lt(now()->subMinutes(self::REFUSED_GRACE_MINUTES))) {
-            $this->fail($cashout, $source, __('injongepay::injongepay.cashout_refused_never_created', ['reason' => $cashout->failure_reason]), $callId);
-
-            return;
-        }
-
         $this->waitOrReview($cashout, $source);
     }
 
@@ -329,6 +319,8 @@ class CashoutService
     private function complete(Cashout $cashout, string $source, ?string $note = null, ?int $callId = null): void
     {
         $cashout->forceFill(['completed_at' => now(), 'next_check_at' => null])->save();
+        // Only now: until GTBank has paid, nothing says this money left.
+        $this->markCoveredPayments($cashout);
         $this->move($cashout, Cashout::COMPLETED, $source, $note, [], $callId);
 
         audit('injongepay_cashout_completed', __('injongepay::injongepay.audit_cashout_completed', ['amount' => Money::format($cashout->amount), 'ref' => $cashout->reference]),

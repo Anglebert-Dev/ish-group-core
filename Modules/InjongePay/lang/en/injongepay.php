@@ -608,7 +608,6 @@ return [
     'cashout_first_signal_completed' => 'GTBank says paid; waiting for a second confirmation.',
     'cashout_first_signal_failed' => 'GTBank says not paid; waiting for a second confirmation.',
     'cashout_bank_failed' => 'GTBank: :status.',
-    'cashout_refused_never_created' => 'GTBank refused it (:reason) and confirms it has no such transfer.',
     'cashout_no_final_answer' => 'No final answer from GTBank in time.',
     'test_mode' => 'Test mode: no bank connected, nothing was sent.',
     'test_mode_title' => 'Test mode.',

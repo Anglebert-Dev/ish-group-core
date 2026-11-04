@@ -136,6 +136,12 @@ A check only asks. A cash-out is never sent twice. Every press is in the audit l
 - After a timeout or an unclear answer it is never sent again. The checks only ask GTBank.
 - Money comes back once at most.
 
+**When GTBank times out:**
+- The money stays held. It is out of the balance so it can't be spent twice, but no payment shows as cashed out.
+- Nothing is resent and no new transfer is made. We only ask GTBank about the same reference.
+- GTBank saying it has never heard of the transfer proves nothing, so the money doesn't come back by itself. After 2 hours it goes to staff.
+- The money comes back by itself only when GTBank clearly says the transfer was rejected, twice.
+
 **People still decide one case:** when staff mark an unclear cash-out as failed, the money goes back to the business. Confirm with GTBank first that it didn't pay.
 
 ## Background jobs page
