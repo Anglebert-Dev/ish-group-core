@@ -4,6 +4,7 @@
     "description": "Quotes and samples before an order: follow-up dates, deposits as a list, samples sent from stock and returned to it, and \"Convert to order\" that copies the customer, products and prices. Deposits are applied to the order's invoice automatically.",
     "keywords": ["quotes", "samples", "deposits"],
     "version": "1.0.0",
+    "category": "sales",
     "requires": ["SalesOrders"],
     "menu_group": "Sales",
     "priority": 0,

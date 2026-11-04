@@ -133,14 +133,13 @@ class ModuleSystemTest extends TestCase
 
     public function test_a_business_only_uses_a_module_with_its_requirements(): void
     {
-        $this->frontendRequiresBilling();
         [$business] = $this->makeBusiness();
 
-        $business->forceFill(['enabled_modules' => ['Frontend']])->save();
-        $this->assertFalse($business->fresh()->canUseModule('Frontend'));
+        $business->forceFill(['enabled_modules' => ['Delivery']])->save();
+        $this->assertFalse($business->fresh()->canUseModule('Delivery'));
 
-        $business->forceFill(['enabled_modules' => ['Frontend', 'Billing']])->save();
-        $this->assertTrue($business->fresh()->canUseModule('Frontend'));
+        $business->forceFill(['enabled_modules' => ['Delivery', 'SalesOrders', 'Inventory']])->save();
+        $this->assertTrue($business->fresh()->canUseModule('Delivery'));
     }
 
     public function test_switching_a_module_on_for_a_business_brings_its_requirements(): void

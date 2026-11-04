@@ -28,6 +28,9 @@ use Throwable;
  */
 class ModuleManager extends BaseService
 {
+    /** Order of the sections on Super Admin → Modules. module.json "category"; anything else shows after these. */
+    public const CATEGORIES = ['sales', 'operations', 'finance', 'reports', 'website', 'platform'];
+
     /** @var array<string, string>|null lowername => installed version */
     private ?array $installed = null;
 
@@ -388,6 +391,11 @@ class ModuleManager extends BaseService
         return $this->success($module->getName(), __($billable ? 'body.module_now_billable' : 'body.module_now_free', ['name' => $module->getName()]));
     }
 
+    public function category(string $name): string
+    {
+        return strtolower((string) (Module::find($name)?->get('category') ?: 'other'));
+    }
+
     public function menuGroup(string $name): string
     {
         return (string) (Module::find($name)?->get('menu_group') ?: $name);
@@ -450,7 +458,10 @@ class ModuleManager extends BaseService
             'name' => $module->getName(),
             'alias' => $module->getLowerName(),
             'description' => (string) $module->getDescription(),
+            'keywords' => array_values((array) $module->get('keywords', [])),
+            'category' => $this->category($module->getName()),
             'requires' => $this->requires($module->getName()),
+            'missing_requirements' => $this->missingRequirements($module->getName()),
             'needed_by' => $installedVersion !== null && $this->isEnabled($module->getName()) ? $this->allDependents($module->getName()) : [],
             'enabled' => $this->isEnabled($module->getName()),
             'installed' => $installedVersion !== null,

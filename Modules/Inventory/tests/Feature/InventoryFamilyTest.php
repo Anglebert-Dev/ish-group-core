@@ -21,7 +21,7 @@ class InventoryFamilyTest extends InventoryTestCase
 
         $super = $this->makeSuperAdmin();
         $this->actingAs($super, 'staff');
-        $this->get(route('superadmin.modules.index'))->assertOk()->assertSee(__('body.module_disable_cascade', ['modules' => implode(', ', $modules->allDependents('Inventory'))]), false);
+        $this->get(route('superadmin.modules.show', 'Inventory'))->assertOk()->assertSee(__('body.module_disable_cascade', ['modules' => implode(', ', $modules->allDependents('Inventory'))]), false);
 
         $this->withConfirmedPassword()->post(route('superadmin.modules.toggle', 'Inventory'), ['enabled' => 0])->assertSessionHas('success');
         $modules->flush();

@@ -220,6 +220,7 @@ Route::prefix('app')->middleware(['auth:staff', 'auth.session', 'exclusive.porta
         Route::post('/users/{user}/impersonate', [ImpersonationController::class, 'start'])->middleware(['not.impersonating', 'password.confirm.staff'])->name('impersonate');
 
         Route::get('/modules', [ModuleController::class, 'index'])->name('modules.index');
+        Route::get('/modules/{module}', [ModuleController::class, 'show'])->name('modules.show');
         Route::post('/modules/{module}/install', [ModuleController::class, 'install'])->middleware('password.confirm.staff')->name('modules.install');
         Route::post('/modules/{module}/update', [ModuleController::class, 'update'])->middleware('password.confirm.staff')->name('modules.update');
         Route::post('/modules/{module}/uninstall', [ModuleController::class, 'uninstall'])->middleware('password.confirm.staff')->name('modules.uninstall');

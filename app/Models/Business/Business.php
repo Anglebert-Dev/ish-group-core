@@ -76,6 +76,11 @@ class Business extends BaseModel
      */
     public function canUseModule(string $module, array $seen = []): bool
     {
+        // Free means free for every business: it has no switch or package to pass.
+        if (app(ModuleManager::class)->isBillingExempt($module)) {
+            return true;
+        }
+
         $entitlements = app(Entitlements::class);
 
         $allowed = $entitlements->controlsModules()

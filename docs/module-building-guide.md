@@ -96,6 +96,7 @@ Modules/Tickets/
     "description": "Support tickets: log a request and close it when it is done.",
     "keywords": ["support", "tickets"],
     "version": "1.0.0",
+    "category": "operations",
     "menu_group": "Support",
     "priority": 0,
     "providers": [
@@ -590,7 +591,7 @@ php artisan core:module install Tickets
 php artisan test --filter=TicketsTest
 ```
 
-"Tickets" is now under "Support" in the sidebar, and its permissions are on the Roles page.
+"Tickets" is now under "Support" in the sidebar, its permissions are on the Roles page, and it has its own page on Super Admin → Modules. That page reads your pages, permissions, printed documents and tables from the module itself.
 
 ## 4. module.json
 
@@ -598,12 +599,14 @@ php artisan test --filter=TicketsTest
 |---|---|
 | `name` | The folder name, PascalCase. |
 | `alias` | Lowercase. Used for `tickets::` views and translations and `config('tickets.…')`. |
-| `description` | Shown on Super Admin → Modules. |
+| `description` | Shown on the module's card and its page on Super Admin → Modules. Say what it does in a sentence or two. |
 | `version` | `major.minor.patch`. **Raise it with every migration** (section 5). |
+| `category` | The section on Super Admin → Modules: `sales`, `operations`, `finance`, `reports`, `website` or `platform`. Any other word gets its own section, after these. |
+| `keywords` | Found by the search on the Modules page. |
 | `requires` | Other modules this one can't run without, e.g. `["SalesOrders"]`. Installing refuses until they're installed; turning one off turns this off too. |
 | `menu_group` | The sidebar section. Modules with the same value share one. Without it, the module's own name is used. |
 | `priority` | Load order. Keep `0`, unless the module extends another one in its group: then use `1`. |
-| `billing_exempt` | `true` means always free and never sold in packages. |
+| `billing_exempt` | `true` means always free and never sold in packages. Every business gets it, with no switch to turn on. |
 | `providers` | Your service provider. |
 
 ## 5. Database and models
@@ -1170,7 +1173,7 @@ A customised copy of a module should be held on the customer's Updates page, bec
 | A command touches every business's rows | No current business in a command. | Loop and set `CurrentBusiness` (section 16). |
 | Page is unreadable in dark mode | Real colours such as `bg-white`. | Use `bg-card`, `text-ink`, `border-line`. |
 | Permission isn't on the Roles page | Permissions sync on install or update. | Run `core:module update`, or reinstall in a test copy. |
-| Menu item doesn't show | Permission missing, route name wrong, or the module is off for this business. | Check `permission` and `route`. |
+| Menu item doesn't show | Permission missing, route name wrong, or the module is off for this business. | Open the module's page on Super Admin → Modules: it says if it's off for your business. Then check `permission` and `route`. |
 | A hook does nothing, with no error | Errors in hooks are logged, not shown. | Check `storage/logs`. Confirm the class is named `DataController`. |
 | Works for the owner, 403 for staff | The Admin role passes everything. | Test with `makeMember()`. |
 | Another business's id gives a 500 on PostgreSQL | Routing by id instead of uuid. | Extend `BaseModel`. |

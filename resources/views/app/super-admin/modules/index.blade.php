@@ -3,102 +3,82 @@
 
     <x-common.page-header :title="__('body.modules')" :description="__('body.modules_description')" />
 
-    <div class="bg-card border border-line rounded-xl overflow-hidden">
-        <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="text-left text-xs text-muted uppercase tracking-wide border-b border-line bg-surface/60">
-                    <th class="px-5 py-3 font-semibold">{{ __('body.module') }}</th>
-                    <th class="px-5 py-3 font-semibold">{{ __('body.version') }}</th>
-                    <th class="px-5 py-3 font-semibold">{{ __('body.status') }}</th>
-                    <th class="px-5 py-3 font-semibold">{{ __('body.module_billing') }}</th>
-                    <th class="px-5 py-3 font-semibold">{{ __('body.actions') }}</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-line">
-                @forelse ($modules as $module)
-                    <tr class="align-top hover:bg-surface">
-                        <td class="px-5 py-4">
-                            <p class="font-medium text-ink">{{ $module['name'] }}</p>
-                            @if ($module['description'])
-                                <p class="text-xs text-muted mt-1 max-w-xl leading-relaxed">{{ $module['description'] }}</p>
-                            @endif
-                            @if ($module['requires'])
-                                <p class="text-xs font-semibold text-brand mt-1">{{ __('body.module_requires_list', ['modules' => implode(', ', $module['requires'])]) }}</p>
-                            @endif
-                            @if ($module['needed_by'])
-                                <p class="text-xs text-muted mt-0.5">{{ __('body.module_needed_by_list', ['modules' => implode(', ', $module['needed_by'])]) }}</p>
-                            @endif
-                        </td>
-                        <td class="px-5 py-4 whitespace-nowrap text-muted">
-                            @if ($module['installed'])
-                                {{ $module['installed_version'] }}
-                                @if ($module['update_available'])
-                                    <span class="block text-xs text-warning font-semibold">{{ __('body.update_to', ['version' => $module['available_version']]) }}</span>
-                                @endif
-                            @else
-                                {{ $module['available_version'] }}
-                            @endif
-                        </td>
-                        <td class="px-5 py-4 whitespace-nowrap">
-                            @if ($module['active'])
-                                <x-common.badge color="success">{{ __('body.active') }}</x-common.badge>
-                            @elseif ($module['installed'])
-                                <x-common.badge color="warning">{{ __('body.disabled') }}</x-common.badge>
-                            @else
-                                <x-common.badge color="muted">{{ __('body.not_installed') }}</x-common.badge>
-                            @endif
-                        </td>
-                        <td class="px-5 py-4 whitespace-nowrap">
-                            <div class="flex flex-col items-start gap-1.5">
-                                <x-common.badge :color="$module['billable'] ? 'brand' : 'muted'">{{ $module['billable'] ? __('body.module_in_packages') : __('body.module_free') }}</x-common.badge>
-                                @if ($module['billable_locked'])
-                                    <span class="text-xs text-muted">{{ __('body.module_free_always') }}</span>
-                                @else
-                                    <x-common.action-button :action="route('superadmin.modules.billable', $module['name'])" color="brand">
-                                        <x-slot:fields><input type="hidden" name="billable" value="{{ $module['billable'] ? 0 : 1 }}"></x-slot:fields>
-                                        {{ $module['billable'] ? __('body.module_make_free') : __('body.module_make_billable') }}
-                                    </x-common.action-button>
-                                @endif
-                            </div>
-                        </td>
-                        <td class="px-5 py-4">
-                            <div class="flex flex-col items-start gap-1.5">
-                                @if (! $module['installed'])
-                                    <x-common.action-button :action="route('superadmin.modules.install', $module['name'])" color="success">{{ __('body.install') }}</x-common.action-button>
-                                @else
-                                    @if ($module['update_available'])
-                                        <x-common.action-button :action="route('superadmin.modules.update', $module['name'])" color="brand">{{ __('body.update') }}</x-common.action-button>
-                                    @endif
-                                    @php $cascade = $module['enabled'] && $module['needed_by']; @endphp
-                                    <x-common.action-button :action="route('superadmin.modules.toggle', $module['name'])" :color="$module['enabled'] ? 'warning' : 'success'"
-                                        :data-confirm="$cascade"
-                                        :data-confirm-title="$cascade ? __('body.disable').' '.$module['name'].'?' : false"
-                                        :data-confirm-message="$cascade ? __('body.module_disable_cascade', ['modules' => implode(', ', $module['needed_by'])]) : false"
-                                        :data-confirm-variant="$cascade ? 'danger' : false">
-                                        <x-slot:fields><input type="hidden" name="enabled" value="{{ $module['enabled'] ? 0 : 1 }}"></x-slot:fields>
-                                        {{ $module['enabled'] ? __('body.disable') : __('body.enable') }}
-                                    </x-common.action-button>
-                                    <x-common.action-button :action="route('superadmin.modules.uninstall', $module['name'])" color="danger"
-                                        data-confirm
-                                        data-confirm-title="{{ __('body.uninstall') }} {{ $module['name'] }}?"
-                                        data-confirm-message="{{ __('body.uninstall_module_warning') }}"
-                                        data-confirm-variant="danger"
-                                        data-confirm-text="{{ __('body.uninstall') }}">
-                                        {{ __('body.uninstall') }}
-                                    </x-common.action-button>
-                                @endif
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr><td colspan="5" class="px-5 py-10 text-center text-muted">{{ __('body.no_modules_found') }}</td></tr>
-                @endforelse
-            </tbody>
-        </table>
+    @php
+        $filters = [
+            'all' => [__('body.module_filter_all'), $modules->count()],
+            'active' => [__('body.active'), $modules->where('active', true)->count()],
+            'update' => [__('body.module_filter_updates'), $modules->where('update_available', true)->count()],
+            'off' => [__('body.disabled'), $modules->where('installed', true)->where('active', false)->count()],
+            'available' => [__('body.not_installed'), $modules->where('installed', false)->count()],
+        ];
+    @endphp
+
+    <div class="flex flex-col lg:flex-row lg:items-center gap-3 mb-6" data-module-filters>
+        <input type="search" data-module-search placeholder="{{ __('body.module_search') }}" aria-label="{{ __('body.module_search') }}"
+               class="h-10 w-full lg:w-72 rounded-lg border border-line bg-card px-3 text-sm text-ink">
+        <div class="flex flex-wrap gap-2">
+            @foreach ($filters as $key => [$label, $count])
+                <button type="button" data-module-filter="{{ $key }}" aria-pressed="{{ $key === 'all' ? 'true' : 'false' }}"
+                        class="h-9 px-3 rounded-lg border text-sm font-medium aria-pressed:border-brand aria-pressed:text-brand border-line text-body">
+                    {{ $label }} <span class="text-muted">{{ $count }}</span>
+                </button>
+            @endforeach
         </div>
     </div>
 
-    <p class="text-sm text-muted mt-4">{{ __('body.module_billing_hint') }}</p>
+    <div class="space-y-8">
+        @forelse ($categories as $key => $group)
+            <section data-module-section>
+                <h2 class="font-display font-bold text-ink mb-3">{{ \Illuminate\Support\Facades\Lang::has('body.module_category_'.$key) ? __('body.module_category_'.$key) : \Illuminate\Support\Str::headline($key) }}</h2>
+                <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    @foreach ($group as $module)
+                        @include('app.super-admin.modules.partials.card')
+                    @endforeach
+                </div>
+            </section>
+        @empty
+            <x-common.empty-state :title="__('body.no_modules_found')" />
+        @endforelse
+
+        <p data-module-none class="hidden py-10 text-center text-sm text-muted">{{ __('body.module_search_none') }}</p>
+    </div>
+
+    <p class="text-sm text-muted mt-8">{{ __('body.module_billing_hint') }}</p>
     <p class="text-sm text-muted mt-2">{{ __('body.modules_cli_hint') }}</p>
+
+    <script>
+    (function () {
+        var search = document.querySelector('[data-module-search]');
+        var buttons = document.querySelectorAll('[data-module-filter]');
+        var state = 'all';
+
+        function apply() {
+            var term = search.value.trim().toLowerCase();
+            var shown = 0;
+            document.querySelectorAll('[data-module-section]').forEach(function (section) {
+                var inSection = 0;
+                section.querySelectorAll('[data-module-card]').forEach(function (card) {
+                    var cardState = card.getAttribute('data-state');
+                    // An update waiting still means the module is running.
+                    var matches = (state === 'all' || cardState === state || (state === 'active' && cardState === 'update'))
+                        && card.getAttribute('data-search').indexOf(term) !== -1;
+                    card.classList.toggle('hidden', !matches);
+                    if (matches) inSection++;
+                });
+                section.classList.toggle('hidden', inSection === 0);
+                shown += inSection;
+            });
+            document.querySelector('[data-module-none]').classList.toggle('hidden', shown > 0);
+        }
+
+        search.addEventListener('input', apply);
+        buttons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                state = button.getAttribute('data-module-filter');
+                buttons.forEach(function (other) { other.setAttribute('aria-pressed', other === button ? 'true' : 'false'); });
+                apply();
+            });
+        });
+    })();
+    </script>
 </x-layouts.app>
