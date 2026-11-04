@@ -50,6 +50,10 @@ class TransferService
                 $from = Wallet::query()->withoutGlobalScopes()->findOrFail($claimed->wallet_id);
                 $to = Wallet::query()->withoutGlobalScopes()->findOrFail($claimed->payload['to_wallet_id']);
 
+                if ($from->isFrozen()) {
+                    throw new InjongePayException(__('injongepay::injongepay.err_wallet_frozen'));
+                }
+
                 if (! $from->is_enabled || ! $to->is_enabled || $to->business_id !== $from->business_id) {
                     throw new InjongePayException(__('injongepay::injongepay.err_transfer_destination'));
                 }

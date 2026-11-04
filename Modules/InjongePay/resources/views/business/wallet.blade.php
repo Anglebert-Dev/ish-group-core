@@ -17,6 +17,9 @@
         </x-slot:actions>
     </x-common.page-header>
     @include('injongepay::partials.test-mode')
+    @if ($wallet->isFrozen())
+        <div class="rounded-xl border border-danger/40 bg-danger/10 p-3 mb-4 text-sm text-ink">{{ __('injongepay::injongepay.wallet_frozen_business') }}</div>
+    @endif
 
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         @foreach ([

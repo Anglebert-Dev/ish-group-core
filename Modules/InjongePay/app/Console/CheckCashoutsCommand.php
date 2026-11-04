@@ -42,8 +42,11 @@ class CheckCashoutsCommand extends Command
             }
         }
 
-        // Money that came back: a late "paid" must be found even without a webhook.
-        $closed = Cashout::query()->withoutGlobalScopes()->where('status', Cashout::FAILED)->where('failed_at', '>=', now()->subDays(CashoutService::WATCH_CLOSED_DAYS))
+        // Closed ones: a late "paid" or a late reversal must be found even without a webhook.
+        $since = now()->subDays(CashoutService::WATCH_CLOSED_DAYS);
+        $closed = Cashout::query()->withoutGlobalScopes()
+            ->where(fn ($q) => $q->where(fn ($w) => $w->where('status', Cashout::FAILED)->where('failed_at', '>=', $since))
+                ->orWhere(fn ($w) => $w->where('status', Cashout::COMPLETED)->where('completed_at', '>=', $since)))
             ->whereNotNull('next_check_at')->where('next_check_at', '<=', now())->orderBy('next_check_at')->limit(100)->get();
         $noAnswers = 0;
 

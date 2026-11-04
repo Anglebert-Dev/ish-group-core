@@ -27,6 +27,16 @@
                 [__('injongepay::injongepay.receiver'), $cashout->receiver_names ?? '—'],
                 [__('injongepay::injongepay.message'), $cashout->failure_reason ?? '—'],
             ]" />
+            @if (app(\Modules\InjongePay\Services\CashoutService::class)->reversedAtBank($cashout) && AuthHelper::can('approve injongepay_platform.cashout'))
+                <form action="{{ route('injongepay.platform.cashouts.resolve', $cashout->uuid) }}" method="POST" class="bg-card border border-danger/40 rounded-xl p-5 space-y-3">
+                    @csrf
+                    <input type="hidden" name="outcome" value="failed">
+                    <h2 class="font-display font-bold text-danger">{{ __('injongepay::injongepay.give_back_reversed') }}</h2>
+                    <p class="text-sm text-muted">{{ __('injongepay::injongepay.give_back_reversed_hint') }}</p>
+                    <x-common.textarea name="note" :label="__('injongepay::injongepay.evidence')" required />
+                    <x-common.button type="submit" size="sm" variant="danger">{{ __('injongepay::injongepay.give_back_reversed') }}</x-common.button>
+                </form>
+            @endif
             @if (! $cashout->isFinal() && AuthHelper::can('approve injongepay_platform.cashout'))
                 <form action="{{ route('injongepay.platform.cashouts.resolve', $cashout->uuid) }}" method="POST" class="bg-card border border-danger/40 rounded-xl p-5 space-y-3">
                     @csrf

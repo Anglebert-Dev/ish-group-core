@@ -314,6 +314,119 @@ class CashoutTest extends InjongePayTestCase
         $this->assertSame($reads, count(Http::recorded(fn ($r) => str_contains($r->url(), '/disbursement/status'))));
     }
 
+    public function test_paid_after_the_money_came_back_freezes_the_wallet_but_not_money_coming_in(): void
+    {
+        $says = [];
+        $cashout = $this->acceptedThenRejected($says);
+
+        $this->gtbankWebhook($cashout)->assertOk();
+
+        $wallet = $this->till->fresh();
+        $this->assertTrue($wallet->isFrozen());
+        $this->assertTrue($wallet->acceptsPayments());
+        Notification::assertSentTo($this->owner, \App\Notifications\BrandedNotification::class, fn ($n) => str_contains(json_encode($n), 'frozen'));
+
+        // Nothing can leave: not a cash-out, not one already approved, not one already queued.
+        $this->expectFrozen(fn () => app(CashoutService::class)->validate($wallet, $this->account, 10000));
+        $this->expectFrozen(fn () => $this->cashout(500));
+
+        $queued = new Cashout;
+        $queued->forceFill(['reference' => 'CSHQUEUED', 'business_id' => $wallet->business_id, 'wallet_id' => $wallet->id, 'amount' => 10000, 'account' => '0788811607', 'account_holder' => 'Rose', 'status' => Cashout::QUEUED])->save();
+        app(CashoutService::class)->submit($queued);
+        $this->assertSame(Cashout::QUEUED, $queued->fresh()->status);
+        $this->assertSame(1, count(Http::recorded(fn ($r) => str_contains($r->url(), '/disbursement/transfer'))));
+
+        // A person lifts it, with a reason.
+        $this->asOperator();
+        $this->get(route('injongepay.platform.wallets.show', $wallet->uuid))->assertSee(__('injongepay::injongepay.unfreeze'));
+        $this->withConfirmedPassword()->put(route('injongepay.platform.wallets.unfreeze', $wallet->uuid), ['reason' => 'short'])->assertSessionHasErrors('reason');
+        $this->withConfirmedPassword()->put(route('injongepay.platform.wallets.unfreeze', $wallet->uuid), ['reason' => 'GTBank confirmed and the money was recovered'])->assertSessionHas('success');
+        $this->assertFalse($wallet->fresh()->isFrozen());
+        $this->assertDatabaseHas('activity_logs', ['action' => 'injongepay_wallet_unfrozen']);
+    }
+
+    private function expectFrozen(callable $run): void
+    {
+        try {
+            $run();
+            $this->fail('It should have been stopped.');
+        } catch (\Modules\InjongePay\Exceptions\InjongePayException $e) {
+            $this->assertSame(__('injongepay::injongepay.err_wallet_frozen'), $e->getMessage());
+        }
+    }
+
+    public function test_a_business_cannot_lift_a_freeze(): void
+    {
+        $this->till->forceFill(['frozen_at' => now(), 'frozen_reason' => 'x'])->save();
+        $this->asOwner();
+
+        $this->get(route('injongepay.wallets.show', $this->till->uuid))->assertSee(__('injongepay::injongepay.wallet_frozen_business'));
+        $this->withConfirmedPassword()->put(route('injongepay.platform.wallets.unfreeze', $this->till->uuid), ['reason' => 'I would like my money please'])->assertForbidden();
+    }
+
+    private function paid(array &$says): Cashout
+    {
+        $this->fund('20000.00');
+        $this->fakeBank([
+            '/disbursement/transfer' => Http::response(['identifier' => 'X', 'status' => 'PENDING']),
+            '/disbursement/status' => function () use (&$says) {
+                return Http::response($says);
+            },
+        ]);
+        $says = $this->acsc();
+        $cashout = $this->cashout(1000);
+        $this->check($cashout);
+        $this->assertSame(Cashout::COMPLETED, $this->check($cashout)->status);
+
+        return $cashout->fresh();
+    }
+
+    public function test_gtbank_reversing_a_paid_cashout_alerts_and_moves_nothing_by_itself(): void
+    {
+        $says = [];
+        $cashout = $this->paid($says);
+        $before = $this->till->fresh()->available_balance;
+
+        $this->gtbankWebhook($cashout, 'RJCT')->assertOk();
+
+        $this->assertTrue(\Modules\InjongePay\Models\ReconciliationItem::query()->where('kind', 'cashout_reversed_after_paid')->exists());
+        $this->assertSame(Cashout::COMPLETED, $cashout->fresh()->status);
+        $this->assertSame($before, $this->till->fresh()->available_balance);
+
+        // A person gives it back, once.
+        $this->asOperator();
+        $this->get(route('injongepay.platform.cashouts.show', $cashout->uuid))->assertSee(__('injongepay::injongepay.give_back_reversed'));
+        app(CashoutService::class)->resolve($cashout->fresh(), 'failed', 'GTBank confirmed the reversal in writing');
+        $this->assertSame(Cashout::FAILED, $cashout->fresh()->status);
+        $this->assertSame($before + 100000, $this->till->fresh()->available_balance);
+        $this->assertSame(0, Payment::query()->withoutGlobalScopes()->where('cashout_id', $cashout->id)->count());
+
+        $this->expectException(\Modules\InjongePay\Exceptions\InjongePayException::class);
+        app(CashoutService::class)->resolve($cashout->fresh(), 'failed', 'Pressed again by mistake here');
+    }
+
+    public function test_a_paid_cashout_reversed_without_any_webhook_is_found_by_our_daily_question(): void
+    {
+        $says = [];
+        $cashout = $this->paid($says);
+
+        $says = $this->acsc(['status' => 'REVERSED']);
+        $this->travel(25)->hours();
+        $this->artisan('injongepay:check-cashouts')->assertSuccessful();
+
+        $this->assertTrue(\Modules\InjongePay\Models\ReconciliationItem::query()->where('kind', 'cashout_reversed_after_paid')->exists());
+        $this->assertSame(Cashout::COMPLETED, $cashout->fresh()->status);
+    }
+
+    public function test_a_paid_cashout_with_no_reversal_cannot_be_given_back(): void
+    {
+        $says = [];
+        $cashout = $this->paid($says);
+
+        $this->expectException(\Modules\InjongePay\Exceptions\InjongePayException::class);
+        app(CashoutService::class)->resolve($cashout, 'failed', 'Trying to undo a paid cash-out');
+    }
+
     public function test_we_stop_asking_about_returned_money_after_seven_days(): void
     {
         $says = [];

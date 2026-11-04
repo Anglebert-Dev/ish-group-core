@@ -190,6 +190,15 @@ class WalletController extends Controller
         return back()->with('success', __($wallet->is_enabled ? 'injongepay::injongepay.wallet_enabled' : 'injongepay::injongepay.wallet_disabled'));
     }
 
+    /** Only after a person has checked with GTBank why it was frozen. */
+    public function unfreeze(Request $request, string $wallet): RedirectResponse
+    {
+        $data = $request->validate(['reason' => ['required', 'string', 'min:10', 'max:255']]);
+        $this->merchants->unfreeze($this->find($wallet), $data['reason']);
+
+        return back()->with('success', __('injongepay::injongepay.wallet_unfrozen'));
+    }
+
     public function close(Request $request, string $wallet): RedirectResponse
     {
         $wallet = $this->find($wallet);

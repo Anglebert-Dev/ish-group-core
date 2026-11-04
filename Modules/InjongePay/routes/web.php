@@ -85,6 +85,7 @@ Route::prefix('app/injonge-pay/platform')->name('injongepay.platform.')->middlew
     Route::post('/wallets/{wallet}/register', [WalletController::class, 'register'])->middleware(['permission:update injongepay_platform.bank', 'throttle:10,1'])->name('wallets.register');
     Route::post('/wallets/{wallet}/sync', [WalletController::class, 'sync'])->middleware(['permission:update injongepay_platform.bank', 'throttle:20,1'])->name('wallets.sync');
     Route::put('/wallets/{wallet}/toggle', [WalletController::class, 'toggle'])->middleware(['permission:update injongepay_platform.wallet', 'password.confirm.staff'])->name('wallets.toggle');
+    Route::put('/wallets/{wallet}/unfreeze', [WalletController::class, 'unfreeze'])->middleware(['permission:approve injongepay_platform.reconciliation', 'password.confirm.staff'])->name('wallets.unfreeze');
     Route::post('/wallets/{wallet}/close', [WalletController::class, 'close'])->middleware(['permission:delete injongepay_platform.wallet', 'password.confirm.staff'])->name('wallets.close');
 
     Route::get('/reconciliation', [ReconciliationController::class, 'index'])->middleware('permission:list injongepay_platform.reconciliation')->name('reconciliation.index');

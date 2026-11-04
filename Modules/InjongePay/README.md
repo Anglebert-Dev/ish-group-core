@@ -143,7 +143,9 @@ A check only asks. A cash-out is never sent twice. Every press is in the audit l
 - The same goes for any unclear answer: an error, an odd status or nothing at all. If GTBank answers later, the next check or webhook updates us.
 - The money comes back by itself only when GTBank accepted the transfer when we sent it, and then clearly says rejected twice, at least 10 minutes apart. Pressing the button twice counts once.
 - If the send wasn't clear and GTBank says rejected, staff decide.
-- After money comes back, we keep asking GTBank about that reference every hour for 7 days. If GTBank says paid, by status or by webhook, staff are alerted at once. These checks only read and never send money.
+- After a cash-out closes we keep asking GTBank about that reference for 7 days: every hour if the money came back, once a day if it was paid. These checks only read and never send money.
+- If GTBank says paid after the money came back, by status or by webhook, the wallet is frozen and staff are alerted at once. A frozen wallet still receives payments, but no cash-out or transfer leaves it, including one still waiting in the queue. Staff lift the freeze on the wallet's page, with a reason.
+- If GTBank reverses a cash-out we had marked paid, nothing changes by itself and staff are alerted. **Give the money back** then appears on the cash-out's page. It works once.
 
 **People still decide one case:** when staff mark an unclear cash-out as failed, the money goes back to the business. Confirm with GTBank first that it didn't pay.
 

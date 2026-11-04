@@ -26,6 +26,20 @@
                 @endforeach
             </div>
 
+            @if ($wallet->isFrozen())
+                <div class="bg-card border border-danger/40 rounded-xl p-5 space-y-3">
+                    <h2 class="font-display font-bold text-danger">{{ __('injongepay::injongepay.wallet_frozen') }}</h2>
+                    <p class="text-sm text-body">{{ $wallet->frozen_reason }}</p>
+                    <p class="text-xs text-muted">{{ GeneralLibrary::formatDateTime($wallet->frozen_at) }}</p>
+                    @if (AuthHelper::can('approve injongepay_platform.reconciliation'))
+                        <form action="{{ route('injongepay.platform.wallets.unfreeze', $wallet->uuid) }}" method="POST" class="space-y-3">
+                            @csrf @method('PUT')
+                            <x-common.input name="reason" :id="'unfreeze-reason'" :label="__('injongepay::injongepay.unfreeze_reason')" required compact />
+                            <x-common.button type="submit" size="sm" variant="danger">{{ __('injongepay::injongepay.unfreeze') }}</x-common.button>
+                        </form>
+                    @endif
+                </div>
+            @endif
             @if ($wallet->bank_error)
                 <div class="rounded-xl border border-danger/40 bg-danger/5 p-4 text-sm">
                     <p class="font-semibold text-danger">{{ __('injongepay::injongepay.bank_problem') }}</p>

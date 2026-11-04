@@ -233,4 +233,23 @@ class MovingMoneyTest extends InjongePayTestCase
         $this->flushSession();
         $this->asOperator()->get(route('injongepay.platform.businesses.edit', $this->business))->assertOk()->assertSee('name="limit_daily"', false);
     }
+
+    public function test_a_frozen_wallet_cannot_transfer_out_but_can_receive(): void
+    {
+        $this->from->forceFill(['frozen_at' => now(), 'frozen_reason' => 'Checking with GTBank'])->save();
+        $before = $this->from->fresh()->available_balance;
+        $approval = \Modules\InjongePay\Models\Approval::query()->create(['business_id' => $this->from->business_id, 'wallet_id' => $this->from->id, 'operation' => 'transfer', 'amount' => 100000,
+            'payload' => ['to_wallet_id' => $this->to->id, 'to_merchant_code' => $this->to->merchant_code], 'requested_by' => $this->owner->id, 'status' => 'approved', 'checks' => []]);
+
+        try {
+            app(\Modules\InjongePay\Services\TransferService::class)->execute($approval);
+            $this->fail('It should have been stopped.');
+        } catch (\Modules\InjongePay\Exceptions\InjongePayException $e) {
+            $this->assertSame(__('injongepay::injongepay.err_wallet_frozen'), $e->getMessage());
+        }
+
+        $this->assertSame($before, $this->from->fresh()->available_balance);
+        $this->assertSame(0, Transfer::query()->withoutGlobalScopes()->count());
+        $this->assertTrue($this->from->fresh()->acceptsPayments());
+    }
 }

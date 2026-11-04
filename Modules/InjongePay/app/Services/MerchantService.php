@@ -214,6 +214,26 @@ class MerchantService
         $this->audit($enabled ? 'injongepay_wallet_enabled' : 'injongepay_wallet_disabled', $wallet, ['reason' => $reason]);
     }
 
+    /** Nothing leaves this wallet until a person lifts it; money keeps coming in. */
+    public function freeze(Wallet $wallet, string $reason): void
+    {
+        if ($wallet->isFrozen()) {
+            return;
+        }
+
+        $this->apply($wallet, ['frozen_at' => now(), 'frozen_reason' => mb_substr($reason, 0, 255)]);
+        $this->audit('injongepay_wallet_frozen', $wallet, ['reason' => $reason]);
+
+        BusinessAlert::send((int) $wallet->business_id, __('injongepay::injongepay.alert_wallet_frozen_title'), __('injongepay::injongepay.alert_wallet_frozen_body', ['code' => $wallet->merchant_code, 'name' => $wallet->name]),
+            route('injongepay.wallets.show', $wallet->uuid, false));
+    }
+
+    public function unfreeze(Wallet $wallet, string $reason): void
+    {
+        $this->apply($wallet, ['frozen_at' => null, 'frozen_reason' => null]);
+        $this->audit('injongepay_wallet_unfrozen', $wallet, ['reason' => $reason]);
+    }
+
     /**
      * What we send GTBank: wallet values first, then the business's KYC.
      *

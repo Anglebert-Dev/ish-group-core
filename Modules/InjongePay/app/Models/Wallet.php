@@ -36,7 +36,7 @@ class Wallet extends BaseModel
 
     protected $table = 'ijp_wallets';
 
-    protected $guarded = ['id', 'uuid', 'business_id', 'merchant_code', 'pending_balance', 'available_balance', 'internal_role', 'legacy_id'];
+    protected $guarded = ['id', 'uuid', 'business_id', 'merchant_code', 'pending_balance', 'available_balance', 'internal_role', 'legacy_id', 'frozen_at', 'frozen_reason'];
 
     protected function casts(): array
     {
@@ -46,6 +46,7 @@ class Wallet extends BaseModel
             'available_balance' => 'integer',
             'bank_synced_at' => 'datetime',
             'bank_missing_since' => 'datetime',
+            'frozen_at' => 'datetime',
             'bank_error_at' => 'datetime',
             'bank_update_pending_at' => 'datetime',
         ];
@@ -67,6 +68,11 @@ class Wallet extends BaseModel
     }
 
     /** Takes payments: switched on here and live at GTBank (internal wallets never take payments). */
+    public function isFrozen(): bool
+    {
+        return $this->frozen_at !== null;
+    }
+
     public function acceptsPayments(bool $bankConfigured = true): bool
     {
         return $this->is_enabled && ! $this->isInternal()

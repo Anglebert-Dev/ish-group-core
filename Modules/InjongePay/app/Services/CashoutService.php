@@ -15,6 +15,7 @@ use Modules\InjongePay\Models\Cashout;
 use Modules\InjongePay\Models\CashoutEvent;
 use Modules\InjongePay\Models\LedgerEntry;
 use Modules\InjongePay\Models\Payment;
+use Modules\InjongePay\Models\ReconciliationItem;
 use Modules\InjongePay\Models\SettlementAccount;
 use Modules\InjongePay\Models\Wallet;
 use Modules\InjongePay\Support\Counter;
@@ -44,10 +45,12 @@ class CashoutService
     // "Not paid" must be said this far apart before money comes back by itself.
     public const REJECTED_APART_MINUTES = 10;
 
-    // After money came back, how long and how often we keep asking GTBank.
+    // After a cash-out closes, how long and how often we keep asking GTBank: hourly if the money came back, daily if paid.
     public const WATCH_CLOSED_DAYS = 7;
 
     public const WATCH_EVERY_MINUTES = 60;
+
+    public const WATCH_PAID_EVERY_MINUTES = 1440;
 
     // An unclear submit: how long before a person has to decide.
     public const UNKNOWN_GRACE_MINUTES = 120;
@@ -55,7 +58,7 @@ class CashoutService
     /** What check() returns when GTBank gave no answer this time. */
     public const NO_ANSWER = 'no_answer';
 
-    public function __construct(protected Ledger $ledger, protected GtbankClient $bank, protected Approvals $approvals, protected ReconciliationItems $items)
+    public function __construct(protected Ledger $ledger, protected GtbankClient $bank, protected Approvals $approvals, protected ReconciliationItems $items, protected MerchantService $merchants)
     {
     }
 
@@ -64,6 +67,10 @@ class CashoutService
     {
         if (! $wallet->is_enabled) {
             throw new InjongePayException(__('injongepay::injongepay.err_wallet_off'));
+        }
+
+        if ($wallet->isFrozen()) {
+            throw new InjongePayException(__('injongepay::injongepay.err_wallet_frozen'));
         }
 
         if ($account->business_id !== $wallet->business_id || ! $account->isUsable()) {
@@ -136,6 +143,11 @@ class CashoutService
                 return null;
             }
 
+            // Frozen while waiting: it stays queued, and the money stays held, until a person looks.
+            if (Wallet::query()->withoutGlobalScopes()->whereKey($locked->wallet_id)->value('frozen_at') !== null) {
+                return null;
+            }
+
             $this->move($locked, Cashout::SUBMITTING, 'submit');
 
             return $locked;
@@ -194,27 +206,47 @@ class CashoutService
      */
     public function watchClosed(Cashout $cashout): string
     {
-        if ($cashout->status !== Cashout::FAILED || ! GtbankClient::isConfigured()) {
+        if (! $cashout->isFinal() || ! GtbankClient::isConfigured()) {
             return 'skipped';
         }
 
         $result = $this->bank->disbursementStatus($cashout->reference, $cashout);
         $answer = BankAnswers::disbursement($result, $cashout->reference, $cashout->amount, $cashout->account);
 
-        $cashout->forceFill(['last_checked_at' => now(), 'last_answer' => $answer['state'], 'next_check_at' => now()->addMinutes(self::WATCH_EVERY_MINUTES)])->save();
+        $cashout->forceFill(['last_checked_at' => now(), 'last_answer' => $answer['state'],
+            'next_check_at' => now()->addMinutes($cashout->status === Cashout::FAILED ? self::WATCH_EVERY_MINUTES : self::WATCH_PAID_EVERY_MINUTES)])->save();
 
-        if ($answer['state'] === BankAnswers::COMPLETED) {
-            $this->paidAfterFailed($cashout);
-        }
+        $this->contradicted($cashout, $answer['state']);
 
         return $result->unknown() ? self::NO_ANSWER : $answer['state'];
     }
 
-    /** GTBank paid something we already gave back: only a person can fix that, and now. */
-    private function paidAfterFailed(Cashout $cashout): void
+    /** GTBank now says the opposite of how we closed this: nothing moves by itself, a person decides, now. */
+    private function contradicted(Cashout $cashout, string $state): void
     {
+        $paidAfterReturn = $cashout->status === Cashout::FAILED && $state === BankAnswers::COMPLETED;
+        $reversedAfterPaid = $cashout->status === Cashout::COMPLETED && $state === BankAnswers::FAILED;
+
+        if (! $paidAfterReturn && ! $reversedAfterPaid) {
+            return;
+        }
+
+        $wallet = Wallet::query()->withoutGlobalScopes()->find($cashout->wallet_id);
         $cashout->forceFill(['next_check_at' => null])->save();
-        $this->items->open('cashout_paid_after_failed', $cashout->reference, Wallet::query()->withoutGlobalScopes()->find($cashout->wallet_id), $cashout, $cashout->amount);
+
+        if ($paidAfterReturn) {
+            // The money is back in the wallet and GTBank paid it too: it must not leave again.
+            $this->merchants->freeze($wallet, __('injongepay::injongepay.frozen_paid_after_failed', ['ref' => $cashout->reference]));
+        }
+
+        $this->items->open($paidAfterReturn ? 'cashout_paid_after_failed' : 'cashout_reversed_after_paid', $cashout->reference, $wallet, $cashout, $cashout->amount);
+    }
+
+    /** GTBank reversed a cash-out we had marked paid: only then can a finished one be given back. */
+    public function reversedAtBank(Cashout $cashout): bool
+    {
+        return $cashout->status === Cashout::COMPLETED
+            && ReconciliationItem::query()->where('kind', 'cashout_reversed_after_paid')->where('subject_id', $cashout->id)->where('subject_type', $cashout->getMorphClass())->where('status', ReconciliationItem::OPEN)->exists();
     }
 
     /** Ask GTBank where it stands and act only on a clear, matching answer. */
@@ -283,9 +315,7 @@ class CashoutService
 
         $cashout->forceFill(['webhook_status' => $d['status'] ? strtoupper($d['status']) : null, 'webhook_at' => now()])->save();
 
-        if ($cashout->status === Cashout::FAILED && $answer['state'] === BankAnswers::COMPLETED) {
-            $this->paidAfterFailed($cashout);
-        }
+        $this->contradicted($cashout, $answer['state']);
 
         $this->event($cashout, $cashout->status, $cashout->status, 'webhook', null, ['status' => $d['status']]);
 
@@ -300,7 +330,7 @@ class CashoutService
         DB::transaction(function () use ($cashout, $outcome, $note) {
             $locked = Cashout::query()->withoutGlobalScopes()->whereKey($cashout->id)->lockForUpdate()->firstOrFail();
 
-            if ($locked->isFinal()) {
+            if ($locked->isFinal() && ! ($outcome === 'failed' && $this->reversedAtBank($locked))) {
                 throw new InjongePayException(__('injongepay::injongepay.err_already_resolved'));
             }
 
@@ -386,7 +416,7 @@ class CashoutService
 
     private function complete(Cashout $cashout, string $source, ?string $note = null, ?int $callId = null): void
     {
-        $cashout->forceFill(['completed_at' => now(), 'next_check_at' => null])->save();
+        $cashout->forceFill(['completed_at' => now(), 'next_check_at' => now()->addMinutes(self::WATCH_PAID_EVERY_MINUTES)])->save();
         // Only now: until GTBank has paid, nothing says this money left.
         $this->markCoveredPayments($cashout);
         $this->move($cashout, Cashout::COMPLETED, $source, $note, [], $callId);
