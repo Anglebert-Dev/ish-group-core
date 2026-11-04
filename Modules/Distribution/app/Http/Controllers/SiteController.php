@@ -113,7 +113,7 @@ class SiteController extends Controller
      */
     public function build(Request $request, Site $site, BuildService $builds): RedirectResponse
     {
-        $started = $builds->start($site, $request->boolean('developer'));
+        $started = $builds->start($site, $request->boolean('developer'), $request->boolean('standalone'));
 
         if (! $started['status']) {
             return back()->with('error', $started['message']);

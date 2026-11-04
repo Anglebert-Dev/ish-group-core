@@ -10,6 +10,7 @@ use App\Notifications\BrandedNotification;
 use App\Services\Module\ModuleManager;
 use App\Services\Updates\ModulePackageInstaller;
 use App\Services\Updates\SafeZipExtractor;
+use App\Services\Updates\UpdateClient;
 use App\Services\Updates\UpdateException;
 use App\Services\Updates\UpdateService;
 use App\Support\Distribution\LinkKey;
@@ -356,6 +357,23 @@ class ModuleUpdatesTest extends TestCase
             Http::fake(['*' => Http::response(['message' => 'x'], $status)]);
             $this->assertSame(__('updates.'.$message), app(UpdateService::class)->check()['message'], "HTTP {$status}");
         }
+    }
+
+    public function test_a_standalone_copy_has_no_updates_and_cannot_be_linked(): void
+    {
+        config(['distribution.standalone' => true]);
+        System::addProperty('distribution_token', Crypt::encryptString('left-over'));
+        System::addProperty('distribution_server_url', 'https://updates.example.com');
+        Http::fake();
+
+        $this->assertFalse(app(UpdateClient::class)->linked(), 'even with old link details in the database');
+        $this->assertFalse(app(UpdateService::class)->link('ISH1-anything')['status']);
+
+        $this->artisan('core:updates')->assertSuccessful();
+        Http::assertNothingSent();
+
+        $this->actingAs($this->makeSuperAdmin(), 'staff');
+        $this->get(route('superadmin.updates.index'))->assertNotFound();
     }
 
     public function test_a_link_key_relinks_the_server_after_checking_it(): void

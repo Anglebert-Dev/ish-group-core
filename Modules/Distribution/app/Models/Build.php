@@ -15,6 +15,7 @@ class Build extends BaseModel
 
     protected $fillable = [
         'developer',
+        'standalone',
         'site_id', 'token_id', 'core_version', 'modules', 'filename', 'path', 'sha256', 'size',
         'install_code_hash', 'install_code', 'status', 'error', 'expires_at', 'emailed_to', 'emailed_at',
     ];
@@ -25,6 +26,7 @@ class Build extends BaseModel
     {
         return [
             'developer' => 'boolean',
+            'standalone' => 'boolean',
             'modules' => 'array',
             'size' => 'integer',
             'status' => BuildStatus::class,

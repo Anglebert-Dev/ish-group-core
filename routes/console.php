@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\Schedule;
 | their service providers.
 */
 
-
 Schedule::call(fn () => System::addProperty(BackgroundJobs::HEARTBEAT, now()->toIso8601String()))
     ->everyMinute()->name('scheduler-heartbeat');
 
@@ -28,4 +27,7 @@ if (config('queue.via_scheduler')) {
 
 // Self-hosted servers: check our update server hourly (a minute of their
 // own, so sites don't all call at once). Does nothing when not linked.
-Schedule::command('core:updates')->hourlyAt(crc32((string) config('app.key')) % 60)->withoutOverlapping()->runInBackground();
+// A standalone copy has no update server: nothing to check, nothing scheduled.
+if (! config('distribution.standalone')) {
+    Schedule::command('core:updates')->hourlyAt(crc32((string) config('app.key')) % 60)->withoutOverlapping()->runInBackground();
+}

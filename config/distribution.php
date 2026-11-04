@@ -7,6 +7,10 @@ return [
     // Never put in a customer's zip, never assignable, refused by updates.
     'never_ship' => ['Billing', 'Distribution'],
 
+    // True only in a standalone zip (the build writes it): this copy was
+    // handed over for good, so it never contacts an update server.
+    'standalone' => false,
+
     // Ed25519 public keys (base64) that module packages must be signed
     // with. A list, so a key can be replaced without breaking older sites.
     // Zips get our keys written in here; locally they come from .env.

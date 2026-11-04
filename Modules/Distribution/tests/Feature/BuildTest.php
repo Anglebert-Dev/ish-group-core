@@ -157,6 +157,82 @@ class BuildTest extends TestCase
         }
     }
 
+    public function test_a_standalone_zip_has_no_way_back_to_us(): void
+    {
+        // Nothing paid and no signing key: neither matters for a copy handed over for good.
+        $site = app(SiteService::class)->create(['name' => 'Handed Over', 'contact_email' => 'it@handed.test'], ['Savings'])['data'];
+        config(['distribution.signing_secret' => null]);
+
+        $this->assertFalse(app(BuildService::class)->start($site)['status'], 'a normal zip still needs both');
+
+        $started = app(BuildService::class)->start($site, developer: false, standalone: true);
+        $this->assertTrue($started['status'], $started['message']);
+        $result = app(BuildService::class)->run($started['data']['build'], vendor: false);
+        $this->assertTrue($result['status'], $result['message']);
+        $build = $result['data']->fresh();
+
+        $this->assertTrue($build->standalone);
+        $this->assertNull($build->token_id);
+        $this->assertSame(0, $site->tokens()->count(), 'no token exists for it');
+        $this->assertFalse($site->fresh()->canReceiveLinkKey(), 'and no link key can be made for it');
+
+        $extract = sys_get_temp_dir().'/ish-build-'.uniqid();
+        $zip = new ZipArchive;
+        $zip->open(app(BuildService::class)->absolutePath($build));
+        $zip->extractTo($extract);
+        $zip->close();
+
+        try {
+            $root = File::directories($extract)[0];
+            $manifest = json_decode(File::get($root.'/storage/app/distribution/site.json'), true);
+            $this->assertSame(['modules', 'install_code_hash', 'defaults'], array_keys($manifest));
+
+            $shipped = require $root.'/config/distribution.php';
+            $this->assertTrue($shipped['standalone']);
+            $this->assertSame([], $shipped['public_keys']);
+
+            // Our address, in any file of the copy.
+            foreach (File::allFiles($root) as $file) {
+                $this->assertStringNotContainsString('updates.example.com', $file->getContents(), $file->getRelativePathname());
+            }
+        } finally {
+            File::deleteDirectory($extract);
+        }
+    }
+
+    public function test_the_standalone_box_builds_from_the_page_and_is_audited(): void
+    {
+        $this->actingAs($this->root, 'staff');
+        $site = app(SiteService::class)->create(['name' => 'Handed Over'], ['Savings'])['data'];
+        Process::fake(['*' => Process::result('v1')]);
+
+        $this->post(route('superadmin.distribution.sites.builds.store', $site), ['standalone' => '1']);
+
+        $build = Build::query()->firstOrFail();
+        $this->assertTrue($build->standalone);
+        $log = ActivityLog::query()->where('action', 'distribution_build_started')->firstOrFail();
+        $this->assertTrue($log->properties['standalone']);
+
+        $this->get(route('superadmin.distribution.sites.show', ['site' => $site, 'tab' => 'install']))->assertOk()
+            ->assertSee(__('distribution::distribution.build_standalone'));
+    }
+
+    public function test_a_developer_edition_leaves_out_the_guides_of_modules_it_does_not_have(): void
+    {
+        $site = $this->site(['Savings']);
+        $started = app(BuildService::class)->start($site, developer: true);
+        $result = app(BuildService::class)->run($started['data']['build'], vendor: false);
+
+        $zip = new ZipArchive;
+        $zip->open(app(BuildService::class)->absolutePath($result['data']));
+        $root = Str::slug($site->name);
+
+        $this->assertNotFalse($zip->locateName($root.'/docs/savings-build-guide.md'));
+        $this->assertFalse($zip->locateName($root.'/docs/injonge-pay-module.md'));
+        $this->assertFalse($zip->locateName($root.'/docs/GT_PaymentBridge_API_Documentation_v2.5.pdf'));
+        $zip->close();
+    }
+
     public function test_a_failed_build_says_why_and_leaves_no_working_token(): void
     {
         Process::fake(['*' => Process::result(errorOutput: 'fatal: not a git repository', exitCode: 128)]);

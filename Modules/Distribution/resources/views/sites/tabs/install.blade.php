@@ -61,14 +61,14 @@
         </div>
     @endif
     @unless ($site->licencePaid())
-        <div class="m-5 rounded-xl border border-warning/30 bg-warning/10 p-4 text-sm text-ink">
+        <div data-standalone-hides class="m-5 rounded-xl border border-warning/30 bg-warning/10 p-4 text-sm text-ink">
             <p class="font-semibold">{{ __('distribution::distribution.licence_unpaid_title') }}</p>
             <p>{{ __('distribution::distribution.build_needs_paid_licence') }}
                 <button type="button" data-go-tab="licence" class="font-semibold text-link hover:underline">{{ __('distribution::distribution.tab_licence') }} →</button></p>
         </div>
     @endunless
     @unless ($signingReady)
-        <div class="m-5 rounded-xl border border-warning/30 bg-warning/10 p-4 flex flex-wrap items-center justify-between gap-3">
+        <div data-standalone-hides class="m-5 rounded-xl border border-warning/30 bg-warning/10 p-4 flex flex-wrap items-center justify-between gap-3">
             <div class="text-sm text-ink max-w-2xl">
                 <p class="font-semibold">{{ __('distribution::distribution.signing_needed_title') }}</p>
                 <p>{{ __('distribution::distribution.signing_needed_body') }}</p>
@@ -98,8 +98,11 @@
                 @csrf
                 <div class="flex flex-wrap items-center gap-3">
                     <x-common.checkbox name="developer" value="1" inline :label="__('distribution::distribution.build_developer')" title="{{ __('distribution::distribution.build_developer_hint') }}" />
+                    <x-common.checkbox name="standalone" value="1" inline :label="__('distribution::distribution.build_standalone')" title="{{ __('distribution::distribution.build_standalone_hint') }}"
+                        onchange="document.querySelectorAll('[data-standalone-hides]').forEach(function (el) { el.classList.toggle('hidden', this.checked); }, this); this.form.querySelector('[data-standalone-note]').classList.toggle('hidden', !this.checked);" />
                     <x-common.button type="submit" size="sm">{{ __('distribution::distribution.build_zip') }}</x-common.button>
                 </div>
+                <p data-standalone-note class="hidden text-xs text-muted max-w-sm mt-2">{{ __('distribution::distribution.build_standalone_hint') }}</p>
             </form>
         </div>
 
@@ -113,6 +116,7 @@
                             <td class="px-5 py-3.5">
                                 {{ implode(', ', (array) $build->modules) }}
                                 @if ($build->developer)<x-common.badge color="brand" class="ml-1">{{ __('distribution::distribution.build_developer_badge') }}</x-common.badge>@endif
+                                @if ($build->standalone)<x-common.badge color="warning" class="ml-1">{{ __('distribution::distribution.build_standalone') }}</x-common.badge>@endif
                             </td>
                             <td class="px-5 py-3.5 font-mono text-xs">{{ $build->core_version ?: '—' }}</td>
                             <td class="px-5 py-3.5 whitespace-nowrap text-muted">{{ $build->size ? number_format($build->size / 1048576, 1).' MB' : '' }}</td>

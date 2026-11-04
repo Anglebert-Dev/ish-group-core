@@ -28,6 +28,9 @@ use ZipArchive;
  * the last commit of the core, only that site's modules, production vendor,
  * our public key, and a site.json linking it back to us.
  *
+ * A standalone zip is handed over for good: no token, no address of ours, no
+ * keys and no update code running, so that copy never contacts this server.
+ *
  * start() records the build and makes the install code (kept encrypted, to email it);
  * run() does the work, right after, in the same request (about 10 s).
  */
@@ -48,6 +51,16 @@ class BuildService extends BaseService
     /** Docs about our own server: never in any zip. */
     private const INTERNAL_DOCS = ['docs/self-hosting-build-guide.md', 'docs/modules-roles-superadmin-reference.txt', 'docs/factory-user-manual-source.md'];
 
+    /** Guides that belong to one module: a developer edition keeps them only with it. */
+    private const MODULE_DOCS = [
+        'docs/GT_PaymentBridge_API_Documentation_v2.5.pdf' => 'InjongePay',
+        'docs/injonge-pay-build-guide.md' => 'InjongePay',
+        'docs/injonge-pay-module.md' => 'InjongePay',
+        'docs/injonge-pay-setup-guide.md' => 'InjongePay',
+        'docs/savings-build-guide.md' => 'Savings',
+        'docs/garment-build-guide.md' => 'GarmentPack',
+    ];
+
     /** Unambiguous characters for install codes (no 0/O, 1/I/L). */
     private const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
@@ -61,17 +74,18 @@ class BuildService extends BaseService
      *
      * @return array{status: bool, data: array{build: Build, code: string}|null, message: string}
      */
-    public function start(Site $site, bool $developer = false): array
+    public function start(Site $site, bool $developer = false, bool $standalone = false): array
     {
         if ($site->moduleNames() === []) {
             return $this->failure(__('distribution::distribution.build_needs_modules'));
         }
 
-        if (! $this->keys->configured()) {
+        // Signing is for updates and the licence gates them: a standalone copy has neither.
+        if (! $standalone && ! $this->keys->configured()) {
             return $this->failure(__('distribution::distribution.keys_missing'));
         }
 
-        if (! $site->licencePaid()) {
+        if (! $standalone && ! $site->licencePaid()) {
             return $this->failure(__('distribution::distribution.build_needs_paid_licence'));
         }
 
@@ -89,12 +103,13 @@ class BuildService extends BaseService
             'site_id' => $site->id,
             'modules' => $site->moduleNames(),
             'developer' => $developer,
+            'standalone' => $standalone,
             'install_code_hash' => password_hash(SiteManifest::normalizeCode($code), PASSWORD_DEFAULT),
             'install_code' => $code, // encrypted; emailed to the customer with the download link
             'status' => BuildStatus::Queued,
         ]);
 
-        PlatformAudit::log('distribution_build_started', "Zip build started for site {$site->name}", $build, ['modules' => $build->modules]);
+        PlatformAudit::log('distribution_build_started', "Zip build started for site {$site->name}", $build, ['modules' => $build->modules, 'developer' => $developer, 'standalone' => $standalone]);
 
         return $this->success(['build' => $build, 'code' => $code], __('distribution::distribution.build_ready'));
     }
@@ -133,10 +148,10 @@ class BuildService extends BaseService
 
         try {
             $commit = $this->stage($stage, (array) $build->modules, $vendor, (bool) $build->developer);
-            $coreVersion = $this->seal($stage, $commit).'+'.$commit;
+            $coreVersion = $this->seal($stage, $commit, (bool) $build->standalone).'+'.$commit;
 
-            $token = $this->sites->issueToken($site, $build->id);
-            $tokenId = $site->tokens()->where('build_id', $build->id)->value('id');
+            $token = $build->standalone ? null : $this->sites->issueToken($site, $build->id);
+            $tokenId = $token ? $site->tokens()->where('build_id', $build->id)->value('id') : null;
             $this->personalise($stage, $site, $build, $token);
 
             if ($vendor) {
@@ -236,6 +251,11 @@ class BuildService extends BaseService
         if ($developer) {
             foreach (self::INTERNAL_DOCS as $path) {
                 File::delete("{$stage}/{$path}");
+            }
+            foreach (self::MODULE_DOCS as $path => $module) {
+                if (! in_array(strtolower($module), $keep, true)) {
+                    File::delete("{$stage}/{$path}");
+                }
             }
             $this->dropForeignTests($stage, $modules);
         }
@@ -373,10 +393,11 @@ class BuildService extends BaseService
     /**
      * Our public keys into config/distribution.php, the commit into
      * config/core.php. Returns the core version (from config/core.php).
+     * A standalone copy gets no keys and is marked so nothing can link it.
      */
-    private function seal(string $stage, string $commit): string
+    private function seal(string $stage, string $commit, bool $standalone = false): string
     {
-        $publicKeys = array_values(array_unique([$this->keys->publicKey(), ...(array) config('distribution.public_keys', [])]));
+        $publicKeys = $standalone ? [] : array_values(array_unique([$this->keys->publicKey(), ...(array) config('distribution.public_keys', [])]));
 
         // Only the key list changes; the rest of the shipped config stays as written.
         $config = File::get($stage.'/config/distribution.php');
@@ -384,6 +405,14 @@ class BuildService extends BaseService
 
         if ($count !== 1) {
             throw new RuntimeException('config/distribution.php has no public_keys line to fill in.');
+        }
+
+        if ($standalone) {
+            $written = preg_replace("/^(\s*)'standalone' => .*$/m", "\\1'standalone' => true,", $written, 1, $count);
+
+            if ($count !== 1) {
+                throw new RuntimeException('config/distribution.php has no standalone line to fill in.');
+            }
         }
 
         File::put($stage.'/config/distribution.php', $written);
@@ -398,17 +427,20 @@ class BuildService extends BaseService
     /**
      * What makes this zip this site's: site.json and a production .env.example.
      */
-    private function personalise(string $stage, Site $site, Build $build, string $token): void
+    private function personalise(string $stage, Site $site, Build $build, ?string $token): void
     {
         File::ensureDirectoryExists($stage.'/storage/app/distribution');
-        File::put($stage.'/storage/app/distribution/site.json', json_encode([
+        // Standalone: what the installer needs and nothing that points back here.
+        $link = $build->standalone ? [] : [
             'site_uuid' => $site->uuid,
             'site_name' => $site->name,
             'server_url' => rtrim((string) config('app.url'), '/'),
             'token' => $token,
+            'build_id' => $build->uuid,
+        ];
+        File::put($stage.'/storage/app/distribution/site.json', json_encode($link + [
             'modules' => array_values((array) $build->modules),
             'install_code_hash' => $build->install_code_hash,
-            'build_id' => $build->uuid,
             // The customer's answers: their installer starts filled in (never passwords).
             'defaults' => ServerDetails::installerDefaults((array) $site->server_details, $site->name),
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES).PHP_EOL);

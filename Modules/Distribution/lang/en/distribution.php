@@ -549,4 +549,9 @@ return [
     'change_due_on' => 'Due date',
     'change_description' => 'Description',
     'updates_server' => 'Their server',
+
+    // Standalone zips: handed over for good
+    'build_standalone' => 'Standalone',
+    'build_standalone_hint' => 'Handed over for good: no licence or signing key needed, no link back to this server, no updates, no check-ins. Fixes can only be sent by hand. You will not see whether it is installed.',
+    'steps_standalone' => 'The last zip is standalone: that copy never reports back, so nothing after sending it shows here.',
 ];

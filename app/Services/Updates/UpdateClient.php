@@ -22,7 +22,17 @@ class UpdateClient
 
     public function linked(): bool
     {
+        if ($this->standalone()) {
+            return false;
+        }
+
         return filled(System::getProperty('distribution_token')) && filled(System::getProperty('distribution_server_url'));
+    }
+
+    /** Handed over for good: no update server, ever (see config/distribution.php). */
+    public function standalone(): bool
+    {
+        return (bool) config('distribution.standalone');
     }
 
     public function siteUuid(): string

@@ -30,12 +30,23 @@
             'done' => $site->hasSupport(),
             'text' => $supportText],
     ];
+
+    // The last zip went out standalone: that copy never reports back, so
+    // these steps can't be followed from here (a licence on record still shows).
+    $handedOver = $lastZip?->standalone;
+    if ($handedOver) {
+        $steps = array_values(array_filter($steps, fn ($step) => ! in_array($step['label'], [
+            __('distribution::distribution.step_installed'),
+            __('distribution::distribution.step_support'),
+            ...($licence ? [] : [__('distribution::distribution.step_licence')]),
+        ], true)));
+    }
 @endphp
 
 <div class="grid gap-6 lg:grid-cols-3 p-5">
     <div class="lg:col-span-2">
         <p class="font-semibold text-ink">{{ __('distribution::distribution.steps_title') }}</p>
-        <p class="text-xs text-muted mb-3">{{ __('distribution::distribution.steps_hint') }}</p>
+        <p class="text-xs text-muted mb-3">{{ $handedOver ? __('distribution::distribution.steps_standalone') : __('distribution::distribution.steps_hint') }}</p>
         <ol class="divide-y divide-line border border-line rounded-xl">
             @foreach ($steps as $i => $step)
                 <li class="flex items-start gap-3 px-4 py-3">

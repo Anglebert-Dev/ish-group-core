@@ -23,6 +23,8 @@ class UpdateController extends Controller
      */
     public function index(): View
     {
+        abort_if((bool) config('distribution.standalone'), 404);
+
         return view('app.super-admin.updates', [
             'linked' => $this->updates->linked(),
             'offers' => array_values(array_filter($this->updates->offers(), fn (array $offer) => $offer['action'] !== 'core')),
@@ -61,6 +63,8 @@ class UpdateController extends Controller
 
     public function link(Request $request): RedirectResponse
     {
+        abort_if((bool) config('distribution.standalone'), 404);
+
         $key = $request->validate(['key' => ['required', 'string', 'max:2000']])['key'];
         $result = $this->updates->link($key);
 

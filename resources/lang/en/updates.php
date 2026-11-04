@@ -64,6 +64,7 @@ return [
     'result_core' => 'core',
 
     // Messages
+    'standalone' => 'This copy is standalone: it has no update server and cannot be linked to one.',
     'not_linked' => 'This server is not linked to an update server.',
     'up_to_date' => 'Everything is up to date.',
     'n_available' => '{1} One update available.|[2,*] :count updates available.',

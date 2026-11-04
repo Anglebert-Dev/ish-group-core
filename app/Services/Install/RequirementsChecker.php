@@ -83,12 +83,15 @@ class RequirementsChecker
             'detail' => __('install.req_modules_writable_hint'),
         ];
 
-        $checks[] = [
-            'label' => __('install.req_proc_open'),
-            'ok' => function_exists('proc_open') && ! in_array('proc_open', array_map('trim', explode(',', (string) ini_get('disable_functions'))), true),
-            'required' => false,
-            'detail' => __('install.req_proc_open_hint'),
-        ];
+        // Only core updates need it, and a standalone copy gets none.
+        if (! config('distribution.standalone')) {
+            $checks[] = [
+                'label' => __('install.req_proc_open'),
+                'ok' => function_exists('proc_open') && ! in_array('proc_open', array_map('trim', explode(',', (string) ini_get('disable_functions'))), true),
+                'required' => false,
+                'detail' => __('install.req_proc_open_hint'),
+            ];
+        }
 
         $memory = $this->megabytes((string) ini_get('memory_limit'));
         $checks[] = [

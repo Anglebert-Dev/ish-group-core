@@ -83,6 +83,10 @@ class UpdateService extends BaseService
      */
     public function link(string $key): array
     {
+        if ($this->client->standalone()) {
+            return $this->failure(__('updates.standalone'));
+        }
+
         $link = LinkKey::decode($key);
 
         if (! $link) {

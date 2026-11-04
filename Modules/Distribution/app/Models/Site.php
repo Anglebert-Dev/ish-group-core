@@ -74,7 +74,7 @@ class Site extends BaseModel
 
     public function canReceiveLinkKey(): bool
     {
-        return $this->installed_at !== null || $this->builds()->where('status', 'ready')->exists();
+        return $this->installed_at !== null || $this->builds()->where('status', 'ready')->where('standalone', false)->exists();
     }
 
     public function charges(): HasMany
