@@ -110,6 +110,8 @@ What runs, and when:
 
 Each job also has a button on its screen.
 
+Those are the defaults. **Injonge Pay platform → Background jobs** sets each job on or off and how often, and shows whether it is working, along with the scheduler and the queue.
+
 ### A3. Install the modules
 
 **Super admin → Modules**: install **InjongePay**, then **InjongePayConnect** (only needed if POS/EBM systems connect).

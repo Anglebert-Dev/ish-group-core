@@ -21,6 +21,6 @@ class CloseDayCommand extends Command
         $this->line("{$day->toDateString()}: {$result['closed']} merchant code(s) closed".($result['unreachable'] ? ', GTBank did not answer' : ''));
         $this->line(json_encode($reconciliation->checkBooks()));
 
-        return self::SUCCESS;
+        return $result['unreachable'] ? self::FAILURE : self::SUCCESS;
     }
 }

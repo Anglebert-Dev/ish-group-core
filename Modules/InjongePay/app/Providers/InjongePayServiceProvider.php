@@ -30,14 +30,7 @@ class InjongePayServiceProvider extends CoreModuleServiceProvider
 
     protected function configureSchedules(\Illuminate\Console\Scheduling\Schedule $schedule): void
     {
-        $schedule->command('injongepay:sync-merchants')->everyFifteenMinutes()->withoutOverlapping();
-        $schedule->command('injongepay:sync-merchants --all')->dailyAt('02:00')->withoutOverlapping();
-        $schedule->command('injongepay:process-inbox')->everyMinute()->withoutOverlapping();
-        $schedule->command('injongepay:sweep-fees')->everyTenMinutes()->withoutOverlapping();
-        $schedule->command('injongepay:mirror')->everyTenMinutes()->withoutOverlapping();
-        $schedule->command('injongepay:check-cashouts')->everyMinute()->withoutOverlapping();
-        $schedule->command('injongepay:expire-approvals')->everyTenMinutes()->withoutOverlapping();
-        $schedule->command('injongepay:close-day')->dailyAt('01:30')->withoutOverlapping();
+        app(\Modules\InjongePay\Services\BackgroundJobs::class)->register($schedule);
     }
 
     public function register(): void

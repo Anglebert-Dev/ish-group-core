@@ -16,6 +16,7 @@ use Modules\InjongePay\Http\Controllers\Business\TransferController;
 use Modules\InjongePay\Http\Controllers\Platform\ReconciliationController;
 use Modules\InjongePay\Http\Controllers\Platform\StatementController;
 use Modules\InjongePay\Http\Controllers\Platform\UnallocatedController;
+use Modules\InjongePay\Http\Controllers\Platform\BackgroundJobController;
 use Modules\InjongePay\Http\Controllers\Platform\BankCallController;
 use Modules\InjongePay\Http\Controllers\Platform\BusinessController;
 use Modules\InjongePay\Http\Controllers\Platform\WalletController;
@@ -112,6 +113,9 @@ Route::prefix('app/injonge-pay/platform')->name('injongepay.platform.')->middlew
 
     Route::get('/bank-calls', [BankCallController::class, 'index'])->middleware('permission:list injongepay_platform.bank')->name('bank-calls.index');
     Route::get('/bank-calls/{call}', [BankCallController::class, 'show'])->middleware('permission:read injongepay_platform.bank')->name('bank-calls.show');
+
+    Route::get('/background-jobs', [BackgroundJobController::class, 'index'])->middleware('permission:update injongepay_platform.setting')->name('background-jobs');
+    Route::put('/background-jobs', [BackgroundJobController::class, 'update'])->middleware(['permission:update injongepay_platform.setting', 'password.confirm.staff'])->name('background-jobs.update');
 
     Route::get('/settings', [SettingsController::class, 'index'])->middleware('permission:update injongepay_platform.setting|update injongepay_platform.fee')->name('settings');
     Route::put('/settings/fees', [SettingsController::class, 'updateFees'])->middleware(['permission:update injongepay_platform.fee', 'password.confirm.staff'])->name('settings.fees');

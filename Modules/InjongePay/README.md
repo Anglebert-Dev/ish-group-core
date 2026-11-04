@@ -70,6 +70,8 @@ sudo chmod 640 /var/www/ish-core/storage/key/gtbank-ca.pem
 
 Both are required. Without them merchant codes don't register, cash-outs don't go out, and payments don't get confirmed.
 
+The times below are the defaults. Change them, or switch a job on or off, on the **Background jobs** page. No server change is needed: a change applies from the next minute.
+
 | When | Command | Does |
 |---|---|---|
 | Every minute | `injongepay:process-inbox` | Processes stored GTBank webhooks |
@@ -106,6 +108,37 @@ sudo supervisorctl reread && sudo supervisorctl update
 sudo supervisorctl status ish-core-queue
 ```
 
+## Background jobs page
+
+Open **Injonge Pay platform → Background jobs**. You need the `update injongepay_platform.setting` permission.
+
+**Set each job:** on or off, and how often. Daily jobs take a time of day, in the server's timezone (`APP_TIMEZONE`). Saving asks for your password, and every change goes in the audit log.
+
+A job that is off stops that work completely until it is on again or someone presses its button. With the mirror off, for example, payments stay pending and can't be cashed out.
+
+**See if it is working:**
+
+| Status | Meaning |
+|---|---|
+| Working | Its last run finished on time |
+| Running now | It is running at this moment |
+| Failed | Its last run ended with an error, or GTBank gave no answer to the mirror or the daily close |
+| Late | It should have run by now. If every job is late, the scheduler has stopped |
+| Off | Someone switched it off |
+| Waiting for its first run | It hasn't run since it was installed |
+
+The top of the page shows the **Scheduler** and the **Queue worker**. If either has a problem, the page shows the command to start it.
+
+**How you get told:**
+- A banner appears on Injonge Pay pages for Inhills staff who hold that permission, when a job is failed, late or off, or when the scheduler or queue has a problem.
+- A job that fails sends one notification and email to those staff and to superadmins. It alerts again only if it fails again after working.
+- Superadmins also see the core banner about the scheduler and queue on every page.
+
+**Limits:**
+- If the scheduler stops, nothing can send an email, because the scheduler is what would send it. It shows on the page and in the banners, so someone has to open the app. An outside uptime monitor is the only way to be told without opening it.
+- A stopped queue worker shows only once work has waited more than 5 minutes, and only when `QUEUE_CONNECTION=database`. To check it directly: `sudo supervisorctl status ish-core-queue`
+- The page covers this module's jobs only. The token clean-up in InjongePayConnect and jobs of other modules aren't listed.
+
 ## Webhooks
 
 GTBank must call these two addresses over https:
@@ -129,7 +162,7 @@ GTBank is recognised by the secret header or by its IP address. Production logs 
 
 - Without GTBank: leave `GTBANK_BASE_URL` empty. Merchant codes become active at once and cash-outs complete at once.
 - With GTBank: register one merchant code, read one day's list, and make one small cash-out.
-- Confirm the jobs run: `sudo -u www-data php artisan schedule:list`
+- Confirm the jobs run: open **Background jobs**, or run `sudo -u www-data php artisan schedule:list`
 - Confirm the worker runs: `sudo supervisorctl status ish-core-queue`
 
 More detail: `docs/injonge-pay-setup-guide.md`.

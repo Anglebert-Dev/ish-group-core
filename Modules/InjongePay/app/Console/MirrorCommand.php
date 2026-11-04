@@ -28,7 +28,7 @@ class MirrorCommand extends Command
 
         $this->line($summary === null ? 'no answer from GTBank' : json_encode($summary));
 
-        return self::SUCCESS;
+        return $summary === null ? self::FAILURE : self::SUCCESS;
     }
 
     public static function wallets()
