@@ -118,7 +118,7 @@ Every request to GTBank has its own button, so nobody has to wait for a schedule
 | A cash-out not final yet | The cash-out's page | **Check status now** | The business and Inhills |
 | A merchant code pending, or with an error | The code's page | **Check status now** (business), **Sync from GTBank** and **Register at GTBank** (Inhills) | The business and Inhills |
 | A payment still pending | The payment's page | **Check status now** | The business |
-| A settlement account GTBank didn't answer about | Settlement accounts, or Fee earnings for Inhills | **Verify at GTBank** | The business, or Inhills |
+| A settlement account GTBank didn't answer about | Settlement accounts, or Fee earnings for Inhills | **Check with GTBank** | The business, or Inhills |
 | Webhooks waiting | Money to allocate | **Process waiting webhooks** | Inhills |
 | GTBank's list for today and yesterday | Reconciliation | **Read GTBank's list now** | Inhills |
 
