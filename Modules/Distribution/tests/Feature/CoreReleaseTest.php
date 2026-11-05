@@ -64,6 +64,7 @@ class CoreReleaseTest extends TestCase
         $this->assertFalse($names->contains(fn ($name) => str_starts_with($name, 'core/Modules/') || str_starts_with($name, 'core/storage/')), 'no modules, no storage');
         $this->assertContains('core/app/Support/Updates/apply-core.php', $names);
         $this->assertStringContainsString("'version' => '".$release->version."'", $core);
+        $this->assertStringContainsString("'business_types' => [", $core);
     }
 
     public function test_the_same_core_version_cannot_be_published_twice_and_core_is_reserved(): void

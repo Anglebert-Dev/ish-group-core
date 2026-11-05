@@ -118,6 +118,8 @@ class BuildTest extends TestCase
             $this->assertContains('Billing', $shipped['never_ship']);
             $core = require $root.'/config/core.php';
             $this->assertSame($core['version'].'+'.$core['build'], $build->core_version, 'version + commit');
+            $this->assertSame(array_keys(config('core')), array_keys($core), 'the build keeps every core setting');
+            $this->assertSame(config('core.business_types'), $core['business_types']);
 
             $env = File::get($root.'/.env.example');
             $this->assertStringContainsString('APP_ENV=production', $env);

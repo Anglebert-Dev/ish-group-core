@@ -423,9 +423,16 @@ class BuildService extends BaseService
 
         File::put($stage.'/config/distribution.php', $written);
 
+        // Only the commit changes here too: everything else in this file ships as written.
         $core = (array) require $stage.'/config/core.php';
         $version = (string) ($core['version'] ?? '0.0.0');
-        File::put($stage.'/config/core.php', "<?php\n\n// Written by the build. docs/self-hosting-build-guide.md\n\nreturn ".var_export(['version' => $version, 'build' => $commit], true).";\n");
+        $written = preg_replace("/^(\s*)'build' => .*$/m", "\\1'build' => ".var_export($commit, true).',', File::get($stage.'/config/core.php'), 1, $count);
+
+        if ($count !== 1) {
+            throw new RuntimeException('config/core.php has no build line to fill in.');
+        }
+
+        File::put($stage.'/config/core.php', $written);
 
         return $version;
     }
