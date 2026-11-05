@@ -26,6 +26,35 @@
                 @endforeach
             </div>
 
+            @if ($wallet->bank_status === 'EXISTS')
+                <div class="bg-card border border-warning/40 rounded-xl p-5 space-y-3">
+                    <h2 class="font-display font-bold text-ink">{{ __('injongepay::injongepay.code_exists_title', ['code' => $wallet->merchant_code]) }}</h2>
+                    <p class="text-sm text-muted">{{ __('injongepay::injongepay.code_exists_hint') }}</p>
+                    <x-common.info-card :rows="[
+                        [__('injongepay::injongepay.gtbank_business_name'), $wallet->bank_registered_name ?? '—'],
+                        [__('injongepay::injongepay.gtbank_owner'), $wallet->bank_registered_owner ?? '—'],
+                        [__('injongepay::injongepay.gtbank_status'), $wallet->bank_reported_status ?? '—'],
+                        [__('injongepay::injongepay.will_become'), $wallet->business?->name],
+                    ]" />
+                    @if (AuthHelper::can('update injongepay_platform.bank'))
+                        <div class="flex flex-wrap gap-3">
+                            <form action="{{ route('injongepay.platform.wallets.use-existing', $wallet->uuid) }}" method="POST">
+                                @csrf
+                                <x-common.button type="submit" size="sm">{{ __('injongepay::injongepay.use_existing') }}</x-common.button>
+                            </form>
+                            <form action="{{ route('injongepay.platform.wallets.next-code', $wallet->uuid) }}" method="POST">
+                                @csrf
+                                <x-common.button type="submit" size="sm" variant="secondary">{{ __('injongepay::injongepay.use_next_code') }}</x-common.button>
+                            </form>
+                        </div>
+                    @endif
+                </div>
+            @endif
+
+            @if ($wallet->live_from)
+                <p class="text-sm text-muted">{{ __('injongepay::injongepay.live_from', ['date' => GeneralLibrary::formatDateTime($wallet->live_from)]) }}</p>
+            @endif
+
             @if ($wallet->isFrozen())
                 <div class="bg-card border border-danger/40 rounded-xl p-5 space-y-3">
                     <h2 class="font-display font-bold text-danger">{{ __('injongepay::injongepay.wallet_frozen') }}</h2>

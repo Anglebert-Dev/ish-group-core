@@ -76,7 +76,7 @@ class MerchantService
         $lookup = $this->bank->lookupMerchant($wallet->merchant_code, $wallet);
 
         if ($lookup->ok()) {
-            return $this->applyLookup($wallet, $lookup, $previous);
+            return $this->foundAtBank($wallet, $lookup, $previous);
         }
 
         if ($lookup->unknown() || $lookup->rejected()) {
@@ -95,8 +95,13 @@ class MerchantService
 
         $result = $this->bank->registerMerchant(['merchantId' => $wallet->merchant_code] + $details + ['channel' => (string) config('injongepay.gtbank.participant_name')], $wallet);
 
-        if ($result->ok() || ($result->rejected() && $result->code === '02')) {
-            // 02 = already exists: GTBank has it, the next sync reads its status.
+        if ($result->rejected() && ($result->code === '02' || $result->duplicate())) {
+            $again = $this->bank->lookupMerchant($wallet->merchant_code, $wallet);
+
+            return $again->ok() ? $this->foundAtBank($wallet, $again, $previous) : $this->markExisting($wallet, BankPayloads::merchant([]), $previous, $result);
+        }
+
+        if ($result->ok()) {
             $this->apply($wallet, ['bank_status' => Wallet::BANK_PENDING, 'bank_error' => null, 'bank_synced_at' => now()]);
             $this->audit('injongepay_wallet_registered', $wallet, ['bank_call' => $result->callId]);
         } elseif ($result->rejected()) {
@@ -118,6 +123,17 @@ class MerchantService
         }
 
         $result = $this->bank->lookupMerchant($wallet->merchant_code, $wallet);
+
+        // Waiting for a person: a sync refreshes what we show, it never decides.
+        if ($wallet->bank_status === Wallet::BANK_EXISTS) {
+            match (true) {
+                $result->ok() => $this->markExisting($wallet, BankPayloads::merchant($result->data), Wallet::BANK_EXISTS, $result),
+                $result->notFound() => $this->apply($wallet, ['bank_status' => Wallet::BANK_NOT_REGISTERED, 'bank_reported_status' => null, 'bank_registered_name' => null, 'bank_registered_owner' => null, 'bank_error' => null]),
+                default => $this->failSoft($wallet, Wallet::BANK_EXISTS, $result),
+            };
+
+            return $result;
+        }
 
         if ($result->ok()) {
             return $this->applyLookup($wallet, $result, $wallet->bank_status);
@@ -214,6 +230,49 @@ class MerchantService
         $this->audit($enabled ? 'injongepay_wallet_enabled' : 'injongepay_wallet_disabled', $wallet, ['reason' => $reason]);
     }
 
+    /**
+     * Keep the code GTBank already has: GTBank gets this business's KYC. From
+     * this moment on the code's transactions are ours; earlier ones aren't.
+     */
+    public function useExisting(Wallet $wallet): BankResult
+    {
+        if ($wallet->bank_status !== Wallet::BANK_EXISTS) {
+            throw new InjongePayException(__('injongepay::injongepay.err_not_existing_code'));
+        }
+
+        $payload = ['merchantId' => $wallet->merchant_code] + $this->details($wallet);
+
+        if ($missing = $this->missingKyc($payload)) {
+            throw new InjongePayException(__('injongepay::injongepay.err_kyc_missing', ['field' => $missing]));
+        }
+
+        $before = ['name' => $wallet->bank_registered_name, 'owner' => $wallet->bank_registered_owner, 'status' => $wallet->bank_reported_status];
+        $result = $this->bank->updateMerchant($payload, $wallet);
+
+        if (! $result->ok()) {
+            throw new InjongePayException(__('injongepay::injongepay.err_bank_update', ['reason' => $result->message()]));
+        }
+
+        $this->apply($wallet, ['bank_status' => Wallet::BANK_PENDING, 'bank_reported_status' => null, 'bank_update_pending_at' => now(), 'bank_error' => null, 'live_from' => now()]);
+        $this->audit('injongepay_wallet_taken_over', $wallet, ['gtbank_had' => $before, 'bank_call' => $result->callId]);
+
+        return $result;
+    }
+
+    /** Leave that code alone and register this wallet under the next one. */
+    public function useNextCode(Wallet $wallet): void
+    {
+        if ($wallet->bank_status !== Wallet::BANK_EXISTS) {
+            throw new InjongePayException(__('injongepay::injongepay.err_not_existing_code'));
+        }
+
+        $old = $wallet->merchant_code;
+        $this->apply($wallet, ['merchant_code' => $this->codes->next(), 'bank_status' => Wallet::BANK_NOT_REGISTERED, 'bank_reported_status' => null,
+            'bank_registered_name' => null, 'bank_registered_owner' => null, 'bank_error' => null]);
+        $this->audit('injongepay_wallet_code_changed', $wallet, ['from' => $old, 'to' => $wallet->merchant_code]);
+        RegisterMerchant::dispatch($wallet->id)->afterCommit();
+    }
+
     /** Nothing leaves this wallet until a person lifts it; money keeps coming in. */
     public function freeze(Wallet $wallet, string $reason): void
     {
@@ -251,6 +310,36 @@ class MerchantService
             'contactPhone' => $wallet->kyc_contact_phone ?: $profile?->contact_phone,
             'contactEmail' => $wallet->kyc_contact_email ?: $profile?->contact_email,
         ];
+    }
+
+    /** GTBank has this code. Ours from an earlier attempt, or someone else's for a person to decide. */
+    private function foundAtBank(Wallet $wallet, BankResult $result, ?string $previous): BankResult
+    {
+        $merchant = BankPayloads::merchant($result->data);
+        $business = (string) Business::query()->whereKey($wallet->business_id)->value('name');
+
+        if ($merchant['merchant_id'] !== null && $merchant['merchant_id'] !== $wallet->merchant_code) {
+            return $this->applyLookup($wallet, $result, $previous);
+        }
+
+        return $merchant['name'] !== null && strcasecmp($merchant['name'], $business) === 0
+            ? $this->applyLookup($wallet, $result, $previous)
+            : $this->markExisting($wallet, $merchant, $previous, $result);
+    }
+
+    /** @param  array{status: ?string, name: ?string, owner: ?string}  $merchant */
+    private function markExisting(Wallet $wallet, array $merchant, ?string $previous, BankResult $result): BankResult
+    {
+        $this->apply($wallet, ['bank_status' => Wallet::BANK_EXISTS, 'bank_reported_status' => $merchant['status'], 'bank_registered_name' => $merchant['name'] ?? $wallet->bank_registered_name,
+            'bank_registered_owner' => $merchant['owner'] ?? $wallet->bank_registered_owner, 'bank_synced_at' => now(), 'bank_error' => null]);
+
+        if ($previous !== Wallet::BANK_EXISTS) {
+            $this->audit('injongepay_wallet_exists_at_bank', $wallet, ['name' => $merchant['name'], 'owner' => $merchant['owner'], 'status' => $merchant['status'], 'bank_call' => $result->callId]);
+            PlatformAlert::send('update injongepay_platform.bank', __('injongepay::injongepay.notify_code_exists_title'),
+                __('injongepay::injongepay.notify_code_exists_body', ['code' => $wallet->merchant_code, 'name' => $wallet->name]), route('injongepay.platform.wallets.show', $wallet->uuid, false));
+        }
+
+        return $result;
     }
 
     private function applyLookup(Wallet $wallet, BankResult $result, ?string $previous): BankResult

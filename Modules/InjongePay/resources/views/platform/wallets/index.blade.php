@@ -16,7 +16,7 @@
 
     <x-common.filter-panel :action="route('injongepay.platform.wallets.index')" :open="request()->hasAny(['business', 'status', 'search'])">
         <x-common.select name="business" :label="__('body.business')" :options="['' => '—'] + $businesses" :value="request('business')" hide-placeholder searchable compact />
-        <x-common.select name="status" :label="__('injongepay::injongepay.bank_status')" :options="['' => '—'] + collect(['NOT_REGISTERED', 'REGISTERING', 'PENDING', 'ACTIVE', 'INACTIVE', 'CLOSED', 'FAILED'])->mapWithKeys(fn ($s) => [$s => __('injongepay::injongepay.bank_status_'.$s)])->all()" :value="request('status')" hide-placeholder compact />
+        <x-common.select name="status" :label="__('injongepay::injongepay.bank_status')" :options="['' => '—'] + collect(['NOT_REGISTERED', 'REGISTERING', 'PENDING', 'EXISTS', 'ACTIVE', 'INACTIVE', 'CLOSED', 'FAILED'])->mapWithKeys(fn ($s) => [$s => __('injongepay::injongepay.bank_status_'.$s)])->all()" :value="request('status')" hide-placeholder compact />
         <x-common.input name="search" :label="__('body.search')" :value="request('search')" :placeholder="__('injongepay::injongepay.search_wallet')" compact />
     </x-common.filter-panel>
 

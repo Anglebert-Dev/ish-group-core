@@ -54,7 +54,8 @@ class Reconciliation
             $pulled = GtbankClient::isConfigured() ? $this->mirror->pull($wallet, $day->copy()->startOfDay(), $day->copy()->endOfDay()) : [];
         }
 
-        $bank = BankTransaction::query()->where('wallet_id', $wallet->id)->where('status', 'SUCCESS')->whereDate('value_date', $day)->get(['transaction_id', 'amount']);
+        $bank = BankTransaction::query()->where('wallet_id', $wallet->id)->where('status', 'SUCCESS')->whereDate('value_date', $day)
+            ->where(fn ($q) => $q->whereNull('match_state')->orWhere('match_state', '!=', BankMirror::BEFORE_TAKEOVER))->get(['transaction_id', 'amount']);
         $ours = Payment::query()->withoutGlobalScopes()->where('wallet_id', $wallet->id)->where('payment_status', '!=', Payment::STATUS_REVERSED)
             ->where(fn ($q) => $q->whereDate('value_date', $day)->orWhere(fn ($w) => $w->whereNull('value_date')->whereDate('created_at', $day)))
             ->get(['id', 'bank_reference', 'gross_amount']);

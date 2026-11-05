@@ -294,4 +294,163 @@ class MerchantTest extends InjongePayTestCase
 
         Http::assertSentCount(4); // token + three lookups, then it leaves
     }
+
+    private function exists(): Wallet
+    {
+        $this->profile();
+        $this->fakeBank([
+            '/merchants/lookup' => Http::response($this->found('55500001', 'ACTIVE', 'Old Company Ltd')),
+            '/merchants/update' => Http::response(['status' => 'PENDING', 'message' => 'Merchant update request accepted']),
+        ]);
+        $this->asOperator();
+
+        return $this->merchants()->create($this->business, ['name' => 'Main till'])->fresh();
+    }
+
+    public function test_a_code_gtbank_already_has_waits_for_a_person_and_shows_what_gtbank_has(): void
+    {
+        Notification::fake();
+        $wallet = $this->exists();
+
+        $this->assertSame(Wallet::BANK_EXISTS, $wallet->bank_status);
+        $this->assertSame(['Old Company Ltd', 'Owner Name', 'ACTIVE'], [$wallet->bank_registered_name, $wallet->bank_registered_owner, $wallet->bank_reported_status]);
+        $this->assertFalse($wallet->acceptsPayments());
+        Http::assertNotSent(fn (Request $r) => str_contains($r->url(), '/merchants/register'));
+        Http::assertNotSent(fn (Request $r) => str_contains($r->url(), '/merchants/update'));
+        Notification::assertSentTo($this->operatorAdmin, BrandedNotification::class);
+
+        $this->get(route('injongepay.platform.wallets.show', $wallet->uuid))->assertOk()->assertSee('Old Company Ltd')->assertSee(__('injongepay::injongepay.use_existing'));
+    }
+
+    public function test_gtbank_refusing_a_registration_because_it_exists_gets_the_same_panel(): void
+    {
+        $this->profile();
+        $this->fakeBank([
+            '/merchants/lookup' => Http::sequence()->push(['responseCode' => '01'])->push($this->found('55500001', 'ACTIVE', 'Old Company Ltd')),
+            '/merchants/register' => Http::response(['error' => 'Merchant already exists'], 409),
+        ]);
+        $this->asOperator();
+
+        $wallet = $this->merchants()->create($this->business, ['name' => 'Main till'])->fresh();
+
+        $this->assertSame(Wallet::BANK_EXISTS, $wallet->bank_status);
+        $this->assertSame('Old Company Ltd', $wallet->bank_registered_name);
+    }
+
+    public function test_our_own_code_from_a_timed_out_attempt_is_not_asked_about(): void
+    {
+        $this->profile();
+        $this->fakeBank(['/merchants/lookup' => Http::response($this->found('55500001', 'ACTIVE', $this->business->name))]);
+        $this->asOperator();
+
+        $this->assertSame(Wallet::BANK_ACTIVE, $this->merchants()->create($this->business, ['name' => 'Main till'])->fresh()->bank_status);
+    }
+
+    public function test_using_the_code_sends_gtbank_the_business_kyc_and_it_goes_live(): void
+    {
+        $wallet = $this->exists();
+
+        $this->withConfirmedPassword()->post(route('injongepay.platform.wallets.use-existing', $wallet->uuid))->assertSessionHas('success');
+
+        Http::assertSent(fn (Request $r) => str_contains($r->url(), '/merchants/update') && $r['merchantId'] === '55500001'
+            && $r['businessName'] === $this->business->name && $r['taxIdentificationNumber'] === '100001498' && $r['contactPhone'] === '+250788111222');
+
+        $wallet = $wallet->fresh();
+        $this->assertSame(Wallet::BANK_PENDING, $wallet->bank_status);
+        $this->assertNotNull($wallet->live_from);
+        $this->assertFalse($wallet->acceptsPayments());
+        $this->assertDatabaseHas('activity_logs', ['action' => 'injongepay_wallet_taken_over', 'business_id' => $this->business->id]);
+    }
+
+    public function test_it_goes_active_when_gtbank_shows_the_new_details(): void
+    {
+        $this->profile();
+        $this->fakeBank([
+            '/merchants/lookup' => Http::sequence()->push($this->found('55500001', 'ACTIVE', 'Old Company Ltd'))->push($this->found('55500001', 'ACTIVE', 'Rhenium Group')),
+            '/merchants/update' => Http::response(['status' => 'PENDING']),
+        ]);
+        $this->asOperator();
+        $wallet = $this->merchants()->create($this->business, ['name' => 'Main till'])->fresh();
+
+        $this->merchants()->useExisting($wallet);
+        $this->merchants()->sync($wallet->fresh());
+
+        $this->assertSame(Wallet::BANK_ACTIVE, $wallet->fresh()->bank_status);
+        $this->assertNull($wallet->fresh()->bank_update_pending_at);
+        $this->assertTrue($wallet->fresh()->acceptsPayments());
+    }
+
+    public function test_missing_kyc_stops_the_takeover_and_nothing_is_sent(): void
+    {
+        $wallet = $this->exists();
+        \Modules\InjongePay\Models\BusinessProfile::query()->withoutGlobalScopes()->update(['tin' => null]);
+
+        $this->withConfirmedPassword()->post(route('injongepay.platform.wallets.use-existing', $wallet->uuid))->assertSessionHas('error');
+
+        Http::assertNotSent(fn (Request $r) => str_contains($r->url(), '/merchants/update'));
+        $this->assertSame(Wallet::BANK_EXISTS, $wallet->fresh()->bank_status);
+        $this->assertNull($wallet->fresh()->live_from);
+    }
+
+    public function test_gtbank_refusing_the_update_leaves_it_to_try_again(): void
+    {
+        $this->profile();
+        $this->fakeBank(['/merchants/lookup' => Http::response($this->found('55500001', 'ACTIVE', 'Old Company Ltd')), '/merchants/update' => Http::response(['error' => 'Bad'], 400)]);
+        $this->asOperator();
+        $wallet = $this->merchants()->create($this->business, ['name' => 'Main till'])->fresh();
+
+        $this->withConfirmedPassword()->post(route('injongepay.platform.wallets.use-existing', $wallet->uuid))->assertSessionHas('error');
+
+        $this->assertSame(Wallet::BANK_EXISTS, $wallet->fresh()->bank_status);
+        $this->assertNull($wallet->fresh()->live_from);
+    }
+
+    public function test_taking_the_next_code_leaves_the_old_one_alone(): void
+    {
+        $wallet = $this->exists();
+        $this->fakeBank(['/merchants/lookup' => Http::response(['responseCode' => '01']), '/merchants/register' => Http::response(['status' => 'PENDING'])]);
+
+        $this->withConfirmedPassword()->post(route('injongepay.platform.wallets.next-code', $wallet->uuid))->assertSessionHas('success');
+
+        $this->assertNotSame('55500001', $wallet->fresh()->merchant_code);
+        Http::assertNotSent(fn (Request $r) => str_contains($r->url(), '/merchants/update'));
+    }
+
+    public function test_the_sync_never_decides_for_a_person(): void
+    {
+        $wallet = $this->exists();
+
+        $this->merchants()->sync($wallet);
+        $this->artisan('injongepay:sync-merchants --all')->assertSuccessful();
+
+        $this->assertSame(Wallet::BANK_EXISTS, $wallet->fresh()->bank_status);
+    }
+
+    public function test_a_business_cannot_take_a_code(): void
+    {
+        $wallet = $this->exists();
+        $this->flushSession();
+        $this->asOwner();
+
+        $this->withConfirmedPassword()->post(route('injongepay.platform.wallets.use-existing', $wallet->uuid))->assertForbidden();
+        $this->withConfirmedPassword()->post(route('injongepay.platform.wallets.next-code', $wallet->uuid))->assertForbidden();
+    }
+
+    public function test_old_transactions_of_a_taken_over_code_are_recorded_but_never_credited(): void
+    {
+        $wallet = $this->wallet(overrides: ['bank_status' => Wallet::BANK_ACTIVE]);
+        $wallet->forceFill(['live_from' => '2026-11-03 12:00:00'])->save();
+        $row = fn (string $id, string $at) => ['transactionId' => $id, 'merchantId' => $wallet->merchant_code, 'amount' => '10000.00', 'status' => 'SUCCESS', 'valueDate' => substr($at, 0, 10), 'createdAt' => $at];
+        $this->fakeBank(['/participant/transactions' => Http::response([$row('TX-OLD', '2026-11-03T09:00:00'), $row('TX-NEW', '2026-11-03T13:00:00')])]);
+
+        app(\Modules\InjongePay\Services\BankMirror::class)->pullAll(now()->setDate(2026, 11, 3), now()->setDate(2026, 11, 3));
+        app(\Modules\InjongePay\Services\BankMirror::class)->pullAll(now()->setDate(2026, 11, 3), now()->setDate(2026, 11, 3));
+
+        $this->assertSame(['TX-NEW'], \Modules\InjongePay\Models\Payment::query()->withoutGlobalScopes()->pluck('bank_reference')->all());
+        $this->assertSame('before_takeover', \Modules\InjongePay\Models\BankTransaction::query()->where('transaction_id', 'TX-OLD')->value('match_state'));
+
+        app(\Modules\InjongePay\Services\Reconciliation::class)->closeDayForAll(now()->setDate(2026, 11, 3));
+        $this->assertSame(1, \Modules\InjongePay\Models\DailyClose::query()->value('bank_count'));
+        $this->assertSame('reconciled', \Modules\InjongePay\Models\DailyClose::query()->value('state'));
+    }
 }

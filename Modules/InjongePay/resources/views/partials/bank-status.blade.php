@@ -1,7 +1,7 @@
 @php
     $color = match ($wallet->bank_status) {
         'ACTIVE' => 'success',
-        'PENDING', 'REGISTERING' => 'warning',
+        'PENDING', 'REGISTERING', 'EXISTS' => 'warning',
         'FAILED', 'CLOSED', 'INACTIVE' => 'danger',
         default => 'muted',
     };

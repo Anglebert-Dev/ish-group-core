@@ -155,6 +155,21 @@ This is the full list of what protects the money, how each part works, and its l
 | Books check | Each balance is recomputed from its entries, and the platform total is checked: payments = balances + fees waiting + money out |
 | Statement check | GTBank's monthly CSV is compared with the books. The closing balance must agree |
 
+### A merchant code that already exists at GTBank
+
+Nothing gets stuck. When we register a code and GTBank already has it under other details, the wallet shows **Already at GTBank**, staff are alerted, and the wallet's page shows GTBank's name, owner and status. It takes no payments until staff choose:
+
+- **Use this code and update GTBank:** GTBank gets the business's KYC, so set that first. The code shows as waiting, then active once GTBank applies it.
+- **Take the next code instead:** the wallet registers under the next number.
+
+A code GTBank has under the same business name is treated as ours, from an earlier attempt that timed out.
+
+| Safeguard | How it works |
+|---|---|
+| No silent takeover | Only a person can take a code |
+| Nothing credited twice | From the moment a code is taken over, older GTBank transactions are recorded but never credited |
+| The balance starts at 0 | Old balances don't come across |
+
 ### Who can move money
 
 | Safeguard | How it works |

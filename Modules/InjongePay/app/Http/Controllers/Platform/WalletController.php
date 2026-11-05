@@ -190,6 +190,29 @@ class WalletController extends Controller
         return back()->with('success', __($wallet->is_enabled ? 'injongepay::injongepay.wallet_enabled' : 'injongepay::injongepay.wallet_disabled'));
     }
 
+    /** GTBank already has this code: keep it, sending GTBank this business's KYC. */
+    public function useExisting(string $wallet): RedirectResponse
+    {
+        try {
+            $this->merchants->useExisting($this->find($wallet));
+        } catch (InjongePayException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', __('injongepay::injongepay.wallet_taken_over'));
+    }
+
+    public function useNextCode(string $wallet): RedirectResponse
+    {
+        try {
+            $this->merchants->useNextCode($wallet = $this->find($wallet));
+        } catch (InjongePayException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', __('injongepay::injongepay.wallet_code_changed', ['code' => $wallet->merchant_code]));
+    }
+
     /** Only after a person has checked with GTBank why it was frozen. */
     public function unfreeze(Request $request, string $wallet): RedirectResponse
     {

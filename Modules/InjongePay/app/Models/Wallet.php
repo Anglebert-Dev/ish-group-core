@@ -30,13 +30,16 @@ class Wallet extends BaseModel
 
     public const BANK_FAILED = 'FAILED';
 
+    /** GTBank already has this code under other details: staff decide. */
+    public const BANK_EXISTS = 'EXISTS';
+
     public const ROLE_BANK_CUT = 'bank_cut';
 
     public const ROLE_PLATFORM_REVENUE = 'platform_revenue';
 
     protected $table = 'ijp_wallets';
 
-    protected $guarded = ['id', 'uuid', 'business_id', 'merchant_code', 'pending_balance', 'available_balance', 'internal_role', 'legacy_id', 'frozen_at', 'frozen_reason'];
+    protected $guarded = ['id', 'uuid', 'business_id', 'merchant_code', 'pending_balance', 'available_balance', 'internal_role', 'legacy_id', 'frozen_at', 'frozen_reason', 'live_from'];
 
     protected function casts(): array
     {
@@ -47,6 +50,7 @@ class Wallet extends BaseModel
             'bank_synced_at' => 'datetime',
             'bank_missing_since' => 'datetime',
             'frozen_at' => 'datetime',
+            'live_from' => 'datetime',
             'bank_error_at' => 'datetime',
             'bank_update_pending_at' => 'datetime',
         ];

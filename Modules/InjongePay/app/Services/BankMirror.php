@@ -22,6 +22,8 @@ use Throwable;
  */
 class BankMirror
 {
+    public const BEFORE_TAKEOVER = 'before_takeover';
+
     public function __construct(
         protected GtbankClient $bank,
         protected PaymentIntake $intake,
@@ -104,6 +106,17 @@ class BankMirror
         return $summary;
     }
 
+    private function beforeTakeover(Wallet $wallet, BankTransaction $row): bool
+    {
+        if ($wallet->live_from === null) {
+            return false;
+        }
+
+        return $row->bank_created_at
+            ? $row->bank_created_at->lt($wallet->live_from)
+            : ($row->value_date === null || $row->value_date->lt($wallet->live_from->copy()->startOfDay()));
+    }
+
     private function apply(Wallet $wallet, array $raw): string
     {
         $tx = BankPayloads::transaction($raw);
@@ -156,6 +169,13 @@ class BankMirror
 
         if (UnallocatedPayment::query()->where('bank_reference', $tx['transaction_id'])->exists()) {
             $row->forceFill(['match_state' => 'held'])->save();
+
+            return 'matched';
+        }
+
+        // From before we took this code over: handled elsewhere, so recorded and never credited.
+        if ($this->beforeTakeover($wallet, $row)) {
+            $row->forceFill(['match_state' => self::BEFORE_TAKEOVER])->save();
 
             return 'matched';
         }
