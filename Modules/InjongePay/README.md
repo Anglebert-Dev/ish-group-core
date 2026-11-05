@@ -167,7 +167,7 @@ A code GTBank has under the same business name is treated as ours, from an earli
 | Safeguard | How it works |
 |---|---|
 | No silent takeover | Only a person can take a code |
-| Nothing credited twice | From the moment a code is taken over, older GTBank transactions are recorded but never credited. A resent webhook for an earlier day is held under **Money to allocate** and can't be allocated, because the old app handled it. Close it with **Settle outside**. One from the takeover day stays pending until GTBank's list dates it, and if it's older it stays pending and staff are alerted |
+| Nothing credited twice | From the moment a code is taken over, older GTBank transactions are recorded but never credited. A resent webhook for an earlier day is held under **Money to allocate** and can't be allocated, because the old app handled it. Close it with **Settled outside**. One from the takeover day stays pending until GTBank's list dates it, and if it's older it stays pending and staff are alerted |
 | The balance starts at 0 | Old balances don't come across |
 
 ### Who can move money

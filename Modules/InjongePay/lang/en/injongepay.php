@@ -371,7 +371,7 @@ return [
     'unallocated_none' => 'Nothing waiting.',
     'park_reason_unknown_code' => 'Unknown merchant code',
     'park_reason_before_takeover' => 'From before this code was taken over: the old app handled it',
-    'err_allocate_before_takeover' => 'The old app already handled this payment, so it can\'t be allocated here. Use Settle outside to close it.',
+    'err_allocate_before_takeover' => 'The old app already handled this payment, so it can\'t be allocated here. Use Settled outside to close it.',
     'park_reason_wallet_disabled' => 'Merchant account switched off',
     'park_reason_not_active' => 'Merchant code not active at GTBank yet',
     'park_reason_internal' => 'Sent to a platform account',
