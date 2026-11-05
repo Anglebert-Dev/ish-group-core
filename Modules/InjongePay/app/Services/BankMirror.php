@@ -161,6 +161,14 @@ class BankMirror
                 return 'mismatches';
             }
 
+            // A webhook from takeover day that GTBank's list dates before it: it stays pending, a person looks.
+            if ($payment->cleared_at === null && $this->beforeTakeover($wallet, $row)) {
+                $this->items->open('payment_before_takeover', $tx['transaction_id'], $wallet, $payment, $payment->gross_amount);
+                $row->forceFill(['match_state' => self::BEFORE_TAKEOVER, 'payment_id' => $payment->id])->save();
+
+                return 'mismatches';
+            }
+
             $this->intake->clear($payment);
             $row->forceFill(['match_state' => 'matched', 'payment_id' => $payment->id])->save();
 

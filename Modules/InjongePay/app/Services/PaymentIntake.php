@@ -4,6 +4,7 @@ namespace Modules\InjongePay\Services;
 
 use App\Services\ActivityLog\ActivityLogService;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\InjongePay\Exceptions\InjongePayException;
 use Modules\InjongePay\Gtbank\BankPayloads;
@@ -72,7 +73,7 @@ class PaymentIntake
 
         $wallet = Wallet::query()->withoutGlobalScopes()->whereNull('deleted_at')->where('merchant_code', $tx['merchant_id'])->first();
 
-        if ($reason = $this->cannotTake($wallet)) {
+        if ($reason = $this->cannotTake($wallet) ?? $this->fromBeforeTakeover($wallet, $tx)) {
             return $this->park($tx, $gross, $wallet, $reason, $transaction);
         }
 
@@ -103,6 +104,10 @@ class PaymentIntake
      */
     public function allocate(UnallocatedPayment $row, Wallet $wallet, string $note): Payment
     {
+        if ($row->reason === 'before_takeover') {
+            throw new InjongePayException(__('injongepay::injongepay.err_allocate_before_takeover'));
+        }
+
         if (! $wallet->is_enabled || $wallet->isInternal()) {
             throw new InjongePayException(__('injongepay::injongepay.err_allocate_wallet'));
         }
@@ -245,6 +250,22 @@ class PaymentIntake
             ! $wallet->acceptsPayments(GtbankClient::isConfigured()) => 'not_active',
             default => null,
         };
+    }
+
+    /**
+     * A webhook for a day before we took this code over (GTBank resending an old
+     * one): that money was handled elsewhere. A webhook has no time, so one from
+     * the takeover day itself waits as pending and GTBank's list settles it.
+     */
+    private function fromBeforeTakeover(Wallet $wallet, array $tx): ?string
+    {
+        if ($wallet->live_from === null || $tx['value_date'] === null) {
+            return null;
+        }
+
+        $day = rescue(fn () => Carbon::parse($tx['value_date']), null, false);
+
+        return $day && $day->startOfDay()->lt($wallet->live_from->copy()->startOfDay()) ? 'before_takeover' : null;
     }
 
     private function existing(string $bankReference): Payment|UnallocatedPayment|null

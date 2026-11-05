@@ -453,4 +453,65 @@ class MerchantTest extends InjongePayTestCase
         $this->assertSame(1, \Modules\InjongePay\Models\DailyClose::query()->value('bank_count'));
         $this->assertSame('reconciled', \Modules\InjongePay\Models\DailyClose::query()->value('state'));
     }
+
+    private function takenOver(): Wallet
+    {
+        $wallet = $this->wallet(overrides: ['bank_status' => Wallet::BANK_ACTIVE]);
+        $wallet->forceFill(['live_from' => '2026-11-03 12:00:00'])->save();
+        $this->fakeBank();
+
+        return $wallet->fresh();
+    }
+
+    private function webhook(Wallet $wallet, string $day): array
+    {
+        return app(\Modules\InjongePay\Services\PaymentIntake::class)->receive(['transactionId' => 'TX-W', 'merchantId' => $wallet->merchant_code, 'amount' => '10000.00', 'valueDate' => $day, 'status' => 'SUCCESS'], \Modules\InjongePay\Models\Payment::VIA_WEBHOOK);
+    }
+
+    public function test_a_resent_webhook_from_before_the_takeover_day_is_held_not_credited(): void
+    {
+        $wallet = $this->takenOver();
+
+        [$outcome, $row] = $this->webhook($wallet, '2026-11-02');
+
+        $this->assertSame('parked', $outcome);
+        $this->assertSame('before_takeover', $row->reason);
+        $this->assertSame(0, $wallet->fresh()->balance());
+
+        $this->expectException(InjongePayException::class);
+        app(\Modules\InjongePay\Services\PaymentIntake::class)->allocate($row, $wallet, 'Trying to credit it anyway');
+    }
+
+    public function test_a_webhook_after_the_takeover_day_is_a_normal_payment(): void
+    {
+        $wallet = $this->takenOver();
+
+        $this->assertSame('created', $this->webhook($wallet, '2026-11-04')[0]);
+    }
+
+    public function test_a_webhook_from_takeover_day_that_gtbank_dates_earlier_never_becomes_available(): void
+    {
+        $wallet = $this->takenOver();
+        $payment = $this->webhook($wallet, '2026-11-03')[1];
+        $this->assertGreaterThan(0, $wallet->fresh()->pending_balance);
+
+        $this->fakeBank(['/participant/transactions' => Http::response([['transactionId' => 'TX-W', 'merchantId' => $wallet->merchant_code, 'amount' => '10000.00', 'status' => 'SUCCESS', 'valueDate' => '2026-11-03', 'createdAt' => '2026-11-03T09:00:00']])]);
+        app(\Modules\InjongePay\Services\BankMirror::class)->pullAll(now()->setDate(2026, 11, 3), now()->setDate(2026, 11, 3));
+
+        $this->assertNull($payment->fresh()->cleared_at);
+        $this->assertSame(0, $wallet->fresh()->available_balance);
+        $this->assertTrue(\Modules\InjongePay\Models\ReconciliationItem::query()->where('kind', 'payment_before_takeover')->exists());
+    }
+
+    public function test_a_webhook_from_takeover_day_after_the_moment_confirms_normally(): void
+    {
+        $wallet = $this->takenOver();
+        $payment = $this->webhook($wallet, '2026-11-03')[1];
+
+        $this->fakeBank(['/participant/transactions' => Http::response([['transactionId' => 'TX-W', 'merchantId' => $wallet->merchant_code, 'amount' => '10000.00', 'status' => 'SUCCESS', 'valueDate' => '2026-11-03', 'createdAt' => '2026-11-03T15:00:00']])]);
+        app(\Modules\InjongePay\Services\BankMirror::class)->pullAll(now()->setDate(2026, 11, 3), now()->setDate(2026, 11, 3));
+
+        $this->assertNotNull($payment->fresh()->cleared_at);
+        $this->assertGreaterThan(0, $wallet->fresh()->available_balance);
+    }
 }
